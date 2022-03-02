@@ -30,7 +30,6 @@ extern void set_message_line_length (size_t l);
  */
 extern void CTIerror (const struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIerrorLoc (struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
-extern void CTIerrorLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIerrorContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
 extern void CTIerrorInternal (const char *format, ...) PRINTF_FORMAT (1, 2);
 /* helpers: */

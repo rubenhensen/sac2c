@@ -121,7 +121,7 @@ ExtractAplPragmaAp (node *exprs, node *pragma, size_t line)
             if ((SPAP_EXPRS1 (ap) == NULL) || (NODE_TYPE (SPAP_ARG1 (ap)) != N_id)
                 || (SPAP_EXPRS2 (ap) == NULL) || (NODE_TYPE (SPAP_ARG2 (ap)) != N_num)
                 || (SPAP_EXPRS3 (ap) == NULL) || (NODE_TYPE (SPAP_ARG3 (ap)) != N_num)) {
-                CTIerrorLine (line, "Illegal wlcomp-pragma entry APL found");
+                CTIerror (LINE_TO_LOC (line), "Illegal wlcomp-pragma entry APL found");
             } else {
                 switch (NUM_VAL (SPAP_ARG3 (ap))) {
                 case 1:
@@ -865,10 +865,10 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, size_t line)
                 strategy = SPID_NAME (SPAP_ARG1 (arg));
                 if (!STReq (strategy, "FirstStatic") && !STReq (strategy, "FirstDynamic")
                     && !STReq (strategy, "FirstAutomatic")) {
-                    CTIerrorLine (line,
-                                  "Scheduler Self needs one of the following strategies"
-                                  " for his first task: FirstStatic, FirstDynamic,"
-                                  " FirstAutomatic");
+                    CTIerror (LINE_TO_LOC (line),
+                              "Scheduler Self needs one of the following strategies"
+                              " for his first task: FirstStatic, FirstDynamic,"
+                              " FirstAutomatic");
                 }
             }
 
@@ -939,9 +939,9 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, size_t line)
 
                 // negative numbers don't get parsed apparently, so not checking for that
                 if (dim >= dims) {
-                    CTIerrorLine (line,
-                                  "Task Distribution Dimension should be between 0 and"
-                                  " the dimension of the withloop");
+                    CTIerror (LINE_TO_LOC (line),
+                              "Task Distribution Dimension should be between 0 and"
+                              " the dimension of the withloop");
                 }
 
                 /* check tasks_per_thread too? */

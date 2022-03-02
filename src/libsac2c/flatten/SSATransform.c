@@ -935,9 +935,9 @@ SSATid (node *arg_node, info *arg_info)
              * there is NO valid definition. Hence AVIS_SSASTACK_TOP is NULL.
              */
             if (INFO_ALLOW_GOS (arg_info) == FALSE) {
-                CTIerrorLine (global.linenum,
-                              "SSATid: Variable %s used without definition",
-                              ID_NAME (arg_node));
+                CTIerror (LINE_TO_LOC (global.linenum),
+                          "SSATid: Variable %s used without definition",
+                          ID_NAME (arg_node));
             }
         } else {
             ID_AVIS (arg_node) = new_avis;
@@ -1540,9 +1540,9 @@ TreatIdsAsRhs (node *arg_node, info *arg_info)
          * there is NO valid definition. Hence AVIS_SSASTACK_TOP is NULL.
          */
         if (INFO_ALLOW_GOS (arg_info) == FALSE) {
-            CTIerrorLine (global.linenum,
-                          "TreatIdsAsRhs: Variable %s used without definition",
-                          IDS_NAME (arg_node));
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "TreatIdsAsRhs: Variable %s used without definition",
+                      IDS_NAME (arg_node));
         }
     } else {
         IDS_AVIS (arg_node) = new_avis;

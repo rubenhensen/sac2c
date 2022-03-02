@@ -253,9 +253,9 @@ BuildDotList (node *tree, dotinfo *info)
                     info->triplepos = info->selcnt;
                 } else {
                     /* there are multiple occurences of '...' */
-                    CTIerrorLine (global.linenum,
-                                  "Multiple occurences of ... are not allowed in a "
-                                  "single select statement.");
+                    CTIerror (LINE_TO_LOC (global.linenum),
+                              "Multiple occurences of ... are not allowed in a "
+                              "single select statement.");
                 }
             }
         }

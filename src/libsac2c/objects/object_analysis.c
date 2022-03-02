@@ -341,9 +341,9 @@ AddAffectedObjects (node **exprs, node *list, info *info)
         objdef = LookupObjdef (SPID_NS (spid), SPID_NAME (spid), INFO_OBJDEFS (info));
 
         if (objdef == NULL) {
-            CTIerrorLine (NODE_LINE (spid),
-                          "Objdef %s:%s referenced in effect pragma is undefined",
-                          NSgetName (SPID_NS (spid)), SPID_NAME (spid));
+            CTIerror (NODE_LOCATION (spid),
+                      "Objdef %s:%s referenced in effect pragma is undefined",
+                      NSgetName (SPID_NS (spid)), SPID_NAME (spid));
         } else {
             /*
              * remove all aliasings first. We do this here for

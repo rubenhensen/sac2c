@@ -4003,14 +4003,15 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
         char *scheduler_name = SPID_NAME (SPAP_ID (schedul));
         if (STReq (scheduler_name, "Static") || STReq (scheduler_name, "Self")) {
             if (tasksel == NULL) {
-                CTIerrorLine (global.linenum, "The Scheduler %s requires a Task Selector",
-                              scheduler_name);
+                CTIerror (LINE_TO_LOC (global.linenum), 
+                          "The Scheduler %s requires a Task Selector",
+                          scheduler_name);
             }
         } else if (STReq (scheduler_name, "Affinity")) {
             if (tasksel == NULL
                 || !STReq (SPID_NAME (SPAP_ID (SPAP_ARG1 (tasksel))), "Even")) {
-                CTIerrorLine (global.linenum, "Please use Affinity only with Taskselector"
-                                              " Even");
+                CTIerror (LINE_TO_LOC (global.linenum), 
+                          "Please use Affinity only with Taskselector Even");
             }
         }
     }

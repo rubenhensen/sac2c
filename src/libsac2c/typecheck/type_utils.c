@@ -1578,11 +1578,11 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
                               : UTfindUserType (TYgetName (base_elem),
                                                 TYgetNamespace (base_elem));
                 if (inner_udt == UT_NOT_DEFINED) {
-                    CTIerrorLine (global.linenum,
-                                  "Typedef of %s::%s is illegal; type %s::%s unknown",
-                                  NSgetName (UTgetNamespace (udt)), UTgetName (udt),
-                                  NSgetName (TYgetNamespace (base_elem)),
-                                  TYgetName (base_elem));
+                    CTIerror (LINE_TO_LOC (global.linenum),
+                              "Typedef of %s::%s is illegal; type %s::%s unknown",
+                              NSgetName (UTgetNamespace (udt)), UTgetName (udt),
+                              NSgetName (TYgetNamespace (base_elem)),
+                              TYgetName (base_elem));
                 } else {
                     /*
                      * First, we replace the defining symbol type by the appropriate
@@ -1610,8 +1610,8 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
                      * CheckUdtAndSetBaseType!
                      */
                     if (visited[inner_udt] == 1) {
-                        CTIerrorLine (global.linenum, "Type %s:%s recursively defined",
-                                      NSgetName (UTgetNamespace (udt)), UTgetName (udt));
+                        CTIerror (LINE_TO_LOC (global.linenum), "Type %s:%s recursively defined",
+                                  NSgetName (UTgetNamespace (udt)), UTgetName (udt));
                     } else {
                         visited[udt] = 1;
                         inner_base = TUcheckUdtAndSetBaseType (inner_udt, visited);

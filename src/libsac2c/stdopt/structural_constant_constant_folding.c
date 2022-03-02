@@ -523,11 +523,10 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
                 arg2xrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2array));
                 resxrho = arg2xrho - abs (dc);
                 if (resxrho < 0) {
-                    CTIerrorLine (global.linenum,
-                                  "SCCFprf_drop_SxV tried overdrop of size %d on vector "
-                                  "of shape %d",
-                                  resxrho, arg2xrho);
-                    CTIabort ("Compilation terminated");
+                    CTIerror (LINE_TO_LOC (global.linenum),
+                              "SCCFprf_drop_SxV tried overdrop of size %d on vector of shape %d",
+                              resxrho, arg2xrho);
+                    CTIabortOnError ();
                 }
                 DBUG_ASSERT (dropcount >= 0, "drop count cannot be < 0");
                 tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2array));

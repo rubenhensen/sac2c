@@ -738,10 +738,10 @@ SCHcheckSuitabilityConstSeg (sched_t *sched)
     DBUG_ENTER ();
 
     if ((sched->mclass != SC_const_seg) && (sched->mclass != SC_var_seg)) {
-        CTIerrorLine (sched->line,
-                      "Scheduling discipline '%s` is not suitable for "
-                      "constant segments",
-                      sched->discipline);
+        CTIerror (LINE_TO_LOC (sched->line),
+                  "Scheduling discipline '%s` is not suitable for "
+                  "constant segments",
+                  sched->discipline);
     }
 
     DBUG_RETURN ();
@@ -753,10 +753,10 @@ SCHcheckSuitabilityVarSeg (sched_t *sched)
     DBUG_ENTER ();
 
     if (sched->mclass != SC_var_seg) {
-        CTIerrorLine (sched->line,
-                      "Scheduling discipline '%s` is not suitable for "
-                      "variable segments",
-                      sched->discipline);
+        CTIerror (LINE_TO_LOC (sched->line),
+                  "Scheduling discipline '%s` is not suitable for "
+                  "variable segments",
+                  sched->discipline);
     }
 
     DBUG_RETURN ();
@@ -768,10 +768,10 @@ SCHcheckSuitabilityWithloop (sched_t *sched)
     DBUG_ENTER ();
 
     if (sched->mclass != SC_withloop) {
-        CTIerrorLine (sched->line,
-                      "Scheduling discipline '%s` is not suitable for "
-                      "with-loops",
-                      sched->discipline);
+        CTIerror (LINE_TO_LOC (sched->line),
+                  "Scheduling discipline '%s` is not suitable for "
+                  "with-loops",
+                  sched->discipline);
     }
 
     DBUG_RETURN ();

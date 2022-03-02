@@ -19,8 +19,8 @@ CUAobjdef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (!TUisUniqueUserType (TYgetScalar (OBJDEF_TYPE (arg_node)))) {
-        CTIerrorLine (NODE_LINE (arg_node),
-                      "Objects can only be declared on unique types!");
+        CTIerror (NODE_LOCATION (arg_node),
+                  "Objects can only be declared on unique types!");
     }
 
     DBUG_RETURN (arg_node);
@@ -37,8 +37,8 @@ CUAarg (node *arg_node, info *arg_info)
     }
 
     if (ARG_WASREFERENCE (arg_node) && !ARG_ISUNIQUE (arg_node)) {
-        CTIerrorLine (NODE_LINE (arg_node),
-                      "Reference args can only be declared on unique types!");
+        CTIerror (NODE_LOCATION (arg_node),
+                  "Reference args can only be declared on unique types!");
     }
 
     arg_node = TRAVcont (arg_node, arg_info);

@@ -318,9 +318,9 @@ INSVDspid (node *arg_node, info *arg_info)
                                           SPID_NAME (arg_node), INFO_OBJDEFS (arg_info));
 
             if (vardec == NULL) {
-                CTIerrorLine (global.linenum,
-                              "Identifier '%s` used without previous definition",
-                              SPID_NAME (arg_node));
+                CTIerror (LINE_TO_LOC (global.linenum),
+                          "Identifier '%s` used without previous definition",
+                          SPID_NAME (arg_node));
             } else {
                 /*
                  * we have to unalias it first!
@@ -351,13 +351,13 @@ INSVDspid (node *arg_node, info *arg_info)
                 /*
                  * this is most likely a reference to an undefined variable
                  */
-                CTIerrorLine (global.linenum,
-                              "Variable '%s' used without previous definition",
-                              SPID_NAME (arg_node));
+                CTIerror (LINE_TO_LOC (global.linenum),
+                          "Variable '%s' used without previous definition",
+                          SPID_NAME (arg_node));
             } else {
-                CTIerrorLine (global.linenum,
-                              "No definition for global object '%s:%s' found",
-                              NSgetName (SPID_NS (arg_node)), SPID_NAME (arg_node));
+                CTIerror (LINE_TO_LOC (global.linenum),
+                          "No definition for global object '%s:%s' found",
+                          NSgetName (SPID_NS (arg_node)), SPID_NAME (arg_node));
             }
         } else {
             /*

@@ -79,8 +79,8 @@ CheckSymbolVisibility (const namespace_t *ns, const char *symb)
     if ((symbol == NULL)
         || ((!(STsymbolVisibility (symbol) == SVT_exported))
             && (!(STsymbolVisibility (symbol) == SVT_provided)))) {
-        CTIerrorLine (global.linenum, "Symbol `%s::%s' not defined", NSgetName (ns),
-                      symb);
+        CTIerror (LINE_TO_LOC (global.linenum), "Symbol `%s::%s' not defined",
+                  NSgetName (ns), symb);
 
         result = FALSE;
     }

@@ -978,39 +978,6 @@ CTIerror(const struct location loc, const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIerrorLine( int line, const char *format, ...)
- *
- *   @brief  Produces an error message preceded by file name and line number.
- *
- *
- *   @param line    line number
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIerrorLine (size_t line, const char *format, ...)
-{
-    char *error_msg;
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    va_start (arg_p, format);
-
-    error_msg = CTIcreateMessageLine (error_message_header, line, format, arg_p);
-    fprintf (cti_stderr, "%s", error_msg);
-    MEMfree (error_msg);
-
-    va_end (arg_p);
-
-    errors++;
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
  * @fn char *CTIgetErrorMessageVA( int line, const char *file,
  *                                 const char *format, va_list arg_p)
  *
@@ -1023,7 +990,7 @@ CTIerrorLine (size_t line, const char *format, ...)
  *
  *          equates to
  *
- *          CTIerrorLine (line, format, ...args);
+ *          CTIerror (LINE_TO_LOC (line), format, ...args);
  *
  *          This allows preparing error messages in advance and activating
  *          them when needed.

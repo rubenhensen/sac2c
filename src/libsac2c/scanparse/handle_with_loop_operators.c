@@ -567,8 +567,8 @@ HWLOwith (node *arg_node, info *arg_info)
     if ( (TCcountExprs (INFO_HWLO_CEXPRS (arg_info)) > 1)
          && !IsLegitimateMoWl (WITH_WITHOP (arg_node), arg_info)) {
         if (INFO_HWLO_LHS (arg_info) == NULL) {
-            CTIerrorLine (global.linenum,
-                          "Multi-Operator With-Loop used in expression position");
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "Multi-Operator With-Loop used in expression position");
             CTIabortOnError ();
         }
         /**
@@ -656,24 +656,24 @@ StdWithOp (node *arg_node, info *arg_info)
      */
     if (WITHOP_NEXT (arg_node) != NULL) {
         if (EXPRS_NEXT (my_cexprs) == NULL) {
-            CTIerrorLine (global.linenum,
-                          "more operator parts than body expressions in with loop");
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "more operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) == NULL) {
-            CTIerrorLine (global.linenum, "more operator parts in with loop than left "
-                                          "hand side variables");
+            CTIerror (LINE_TO_LOC (global.linenum), 
+                      "more operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
 
         L_WITHOP_NEXT (arg_node, TRAVdo (WITHOP_NEXT (arg_node), arg_info));
     } else {
         if (EXPRS_NEXT (my_cexprs) != NULL) {
-            CTIerrorLine (global.linenum,
-                          "less operator parts than body expressions in with loop");
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "less operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) != NULL) {
-            CTIerrorLine (global.linenum, "less operator parts in with loop than left "
-                                          "hand side variables");
+            CTIerror (LINE_TO_LOC (global.linenum), 
+                      "less operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
     }
@@ -807,12 +807,12 @@ HWLOpropagate (node *arg_node, info *arg_info)
         PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
     } else {
         if (EXPRS_NEXT (my_cexprs) != NULL) {
-            CTIerrorLine (global.linenum,
-                          "less operator parts than body expressions in with loop");
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "less operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) != NULL) {
-            CTIerrorLine (global.linenum, "less operator parts in with loop than left "
-                                          "hand side variables");
+            CTIerror (LINE_TO_LOC (global.linenum), 
+                      "less operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
     }

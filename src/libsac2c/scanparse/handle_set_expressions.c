@@ -183,7 +183,7 @@ Idxs2Withid (node *idxs)
         result = TBmakeWithid (NULL,
                                Exprs2Spids (idxs));
     } else {
-        CTIerrorLine (global.linenum, "illegal LHS in set expression!");
+        CTIerror (LINE_TO_LOC (global.linenum), "illegal LHS in set expression!");
     }
 
     DBUG_RETURN (result);

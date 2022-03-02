@@ -229,8 +229,8 @@ SplitWrapper (node *fundef, info *arg_info)
         new_rets = TYgetWrapperRetType (new_type);
         bottom = TYgetBottom (new_rets);
         if (bottom != NULL) {
-            CTIerrorLine (global.linenum, "All instances of \"%s\" contain type errors",
-                          FUNDEF_NAME (new_fundef));
+            CTIerror (LINE_TO_LOC (global.linenum), "All instances of \"%s\" contain type errors",
+                      FUNDEF_NAME (new_fundef));
             CTIabortOnBottom (TYgetBottomError (bottom));
         }
 
