@@ -1156,15 +1156,21 @@ CTIabortOnBottom (char *err_msg)
  *
  * @fn void CTIabort( const char *format, ...)
  *
- *   @brief   Produces an error message without file name and line number
- *            and terminates the compilation process.
+ *   @brief   Aborts with an abort message with the file name, line number and
+ *            column if they are available.
  *
+ *   @param loc     If no location is available or relevant, you can provide
+ *                  the macro EMPTY_LOC.
+ *                  If the file name and line numbers are available, but the
+ *                  column is unknown, use the macro LINE_TO_LOC (line).
+ *                  If all information is available, just provide a location
+ *                  struct as normal.
  *   @param format  format string like in printf
  *
  ******************************************************************************/
 
 void
-CTIabort (const char *format, ...)
+CTIabort (const struct location loc, const char *format, ...)
 {
     char *abort_msg;
     va_list arg_p;
@@ -1173,7 +1179,7 @@ CTIabort (const char *format, ...)
 
     va_start (arg_p, format);
 
-    abort_msg = CTIcreateMessage (abort_message_header, format, arg_p);
+    abort_msg = CTIfinalizeMessage (loc2str (loc), abort_message_header, format, arg_p);
     fprintf (cti_stderr, "%s", abort_msg);
     MEMfree (abort_msg);
 

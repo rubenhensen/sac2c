@@ -27,7 +27,7 @@ SPdoLocateSource (node *syntax_tree)
         pathname = FMGRfindFile (PK_path, global.sacfilename);
 
         if (pathname == NULL) {
-            CTIabort ("Unable to open file \"%s\"", global.sacfilename);
+            CTIabort (EMPTY_LOC, "Unable to open file \"%s\"", global.sacfilename);
         }
 
         CTInote ("Reading from file \"%s\" ...", pathname);
@@ -89,7 +89,7 @@ SPdoScanParse (node *syntax_tree)
     yyin = fopen (cppfile, "r");
 
     if ((yyin == NULL) || (ferror (yyin))) {
-        CTIabort ("C preprocessing failed");
+        CTIabort (EMPTY_LOC, "C preprocessing failed");
     }
 
     global.start_token = PARSE_PRG;
@@ -102,7 +102,7 @@ SPdoScanParse (node *syntax_tree)
 
     err = fclose (yyin);
     if (err) {
-        CTIabort ("C preprocessor error");
+        CTIabort (EMPTY_LOC, "C preprocessor error");
     }
 
     if (global.show_syscall) {
@@ -114,11 +114,11 @@ SPdoScanParse (node *syntax_tree)
     cppfile = MEMfree (cppfile);
 
     if (err) {
-        CTIabort ("Could not delete /tmp-file");
+        CTIabort (EMPTY_LOC, "Could not delete /tmp-file");
     }
 
     if (global.syntax_tree == NULL)
-        CTIabort ("Failed to construct a syntax tree for `%s'\n", global.filename);
+        CTIabort (EMPTY_LOC, "Failed to construct a syntax tree for `%s'\n", global.filename);
 
     FMGRsetFileNames (global.syntax_tree);
 

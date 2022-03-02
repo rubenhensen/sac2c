@@ -472,7 +472,7 @@ NTCCTprf_guard (te_info *info, ntype *args)
     TEassureBoolS ("predicate (last argument of guard())", pred);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
-        CTIabort ("%s", err_msg);
+        CTIabort (EMPTY_LOC, "%s", err_msg);
     }
 
     res = TYmakeEmptyProductType (num_rets);
@@ -506,7 +506,7 @@ NTCCTprf_guardhold (te_info *info, ntype *args)
     TEassureBoolS ("requires predicate", pred);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
-        CTIabort ("%s", err_msg);
+        CTIabort (EMPTY_LOC, "%s", err_msg);
     }
 
     res = TYcopyType (pred);

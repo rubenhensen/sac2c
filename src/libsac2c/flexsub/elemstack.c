@@ -57,7 +57,7 @@ popElemstack (elemstack **s)
     elem *e;
 
     if (*s == NULL) {
-        CTIabort ("Trying to pop from empty elemstack\n");
+        CTIabort (EMPTY_LOC, "Trying to pop from empty elemstack\n");
     } else {
         top = *s;
         *s = ELEMSTACK_NEXT (top);

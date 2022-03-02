@@ -361,7 +361,7 @@ EATavis (node *arg_node, info *arg_info)
         DBUG_EXECUTE (tmp_str = MEMfree (tmp_str); tmp_str2 = MEMfree (tmp_str2));
 
         if (!(TYisArray (type) || TYisBottom (type))) {
-            CTIabort ("Could not infer proper type for arg %s", AVIS_NAME (arg_node));
+            CTIabort (EMPTY_LOC, "Could not infer proper type for arg %s", AVIS_NAME (arg_node));
         }
     } else {
         /*

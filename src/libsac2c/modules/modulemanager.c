@@ -84,12 +84,14 @@ checkMixedCasesCorrect (module_t *module)
     mixedcasenamefun.v = LIBMgetLibraryFunction (name, module->lib);
 
     if (mixedcasenamefun.f == NULL)
-        CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
+        CTIabort (EMPTY_LOC, 
+                  "The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
 
     if (!STReq (mixedcasenamefun.f (), module->name))
-        CTIabort ("Module '%s' not found; file-system search returned a module "
+        CTIabort (EMPTY_LOC, 
+                  "Module '%s' not found; file-system search returned a module "
                   "named '%s'. "
                   "Most likely, you are using a case-insensitive filesystem. "
                   "Please check your module spelling and make sure you do "
@@ -114,12 +116,14 @@ checkHasSameASTVersion (module_t *module)
     astverfun.v = LIBMgetLibraryFunction (name, module->lib);
 
     if (astverfun.f == NULL)
-        CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
+        CTIabort (EMPTY_LOC, 
+                  "The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
 
     if (!STReq (astverfun.f (), build_ast))
-        CTIabort ("The module '%s' (%s) uses an incompatible syntax tree layout. "
+        CTIabort (EMPTY_LOC, 
+                  "The module '%s' (%s) uses an incompatible syntax tree layout. "
                   "Please update the module and compiler to the most "
                   "recent version.",
                   module->name, module->sofile);
@@ -129,14 +133,16 @@ checkHasSameASTVersion (module_t *module)
     serverfun.v = LIBMgetLibraryFunction (name, module->lib);
 
     if (serverfun.f == NULL)
-        CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
+        CTIabort (EMPTY_LOC, 
+                  "The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
 
     name = MEMfree (name);
 
     if (!(serverfun.f () == SAC_SERIALIZE_VERSION))
-        CTIabort ("The module '%s' (%s) uses an incompatible serialisation algorithm. "
+        CTIabort (EMPTY_LOC, 
+                  "The module '%s' (%s) uses an incompatible serialisation algorithm. "
                   "Please update the module and compiler to the most "
                   "recent version.",
                   module->name, module->sofile);
@@ -158,13 +164,15 @@ checkWasBuildUsingSameFlags (module_t *module)
     flagfun.v = LIBMgetLibraryFunction (name, module->lib);
 
     if (flagfun.f == NULL)
-        CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
+        CTIabort (EMPTY_LOC, 
+                  "The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
 
 #if 0
   if (!(flagfun( ) == GLOBALS_MODFLAGS))
-    CTIabort( "The module '%s' (%s) was built using incompatible compiler "
+    CTIabort (EMPTY_LOC, 
+              "The module '%s' (%s) was built using incompatible compiler "
               "settings. The settings were [%s]. Please recompile the "
               "module using the current settings or switch the "
               "settings used when compiling the module.", module->name,
@@ -190,7 +198,8 @@ checkWhetherDeprecated (module_t *module)
     dfun.v = LIBMgetLibraryFunction (name, module->lib);
 
     if (dfun.f == NULL)
-        CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
+        CTIabort (EMPTY_LOC, 
+                  "The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
 
@@ -215,8 +224,8 @@ loadModuleHeaders (module_t *module)
     result.v = LIBMgetLibraryFunction (name, module->lib);
 
     if (result.f == NULL)
-        CTIabort ("Error loading external header information for "
-                  "module `%s' (%s): %s",
+        CTIabort (EMPTY_LOC, 
+                  "Error loading external header information for module `%s' (%s): %s",
                   module->name, module->sofile, LIBMgetError ());
 
     name = MEMfree (name);
@@ -238,8 +247,8 @@ addNamespaceMappings (module_t *module)
     mapfun.v = LIBMgetLibraryFunction (name, module->lib);
 
     if (mapfun.f == NULL)
-        CTIabort ("Error loading namespace mapping information for "
-                  "module `%s' (%s): %s",
+        CTIabort (EMPTY_LOC, 
+                  "Error loading namespace mapping information for module `%s' (%s): %s",
                   module->name, module->sofile, LIBMgetError ());
 
     mapfun.f ();
@@ -304,7 +313,7 @@ AddModuleToPool (const char *name)
     result->sofile = STRcpy (FMGRfindFile (PK_tree_path, treerelpath));
 
     if (result->sofile == NULL)
-        CTIabort ("Cannot find library `%s' for module `%s'", treerelpath, name);
+        CTIabort (EMPTY_LOC, "Cannot find library `%s' for module `%s'", treerelpath, name);
 
     MEMfree (treerelpath);
 
@@ -319,8 +328,9 @@ AddModuleToPool (const char *name)
     result->usecount = 1;
 
     if (result->lib == NULL)
-        CTIabort ("Unable to open module `%s' (%s). The reported error was: %s", name,
-                  result->sofile, LIBMgetError ());
+        CTIabort (EMPTY_LOC, 
+                  "Unable to open module `%s' (%s). The reported error was: %s", 
+                  name, result->sofile, LIBMgetError ());
 
 #if IS_CYGWIN
     CYGHpassToMod (result->lib);
@@ -413,8 +423,9 @@ GetSymbolTableFunction (module_t *module)
     result.v = LIBMgetLibraryFunction (name, module->lib);
 
     if (result.f == NULL)
-        CTIabort ("Error loading symbol table for module `%s' (%s): %s", module->name,
-                  module->sofile, LIBMgetError ());
+        CTIabort (EMPTY_LOC, 
+                  "Error loading symbol table for module `%s' (%s): %s", 
+                  module->name, module->sofile, LIBMgetError ());
 
     name = MEMfree (name);
 
@@ -451,8 +462,8 @@ GetDependencyTableFunction (module_t *module)
     result.v = LIBMgetLibraryFunction (name, module->lib);
 
     if (result.f == NULL)
-        CTIabort ("Error loading dependency table for module `%s' (%s): %s", module->name,
-                  module->sofile, LIBMgetError ());
+        CTIabort (EMPTY_LOC, "Error loading dependency table for module `%s' (%s): %s", 
+                  module->name, module->sofile, LIBMgetError ());
 
     name = MEMfree (name);
 

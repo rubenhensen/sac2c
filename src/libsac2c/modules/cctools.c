@@ -405,10 +405,10 @@ CCTperformTask (ccm_task_t task)
         // Special case: we arrive here directly after options.c,
         // before any SAC compilation and thus before FMGRsetFileNames.
         if (global.sacfilename == NULL) {
-            CTIabort ("Cannot proceed: no input file(s) specified");
+            CTIabort (EMPTY_LOC, "Cannot proceed: no input file(s) specified");
         }
         if (global.outfilename == NULL) {
-            CTIabort ("Cannot proceed: no output file specified");
+            CTIabort (EMPTY_LOC, "Cannot proceed: no output file specified");
         }
 
         char *path_subst = FMGRdirname (global.outfilename);

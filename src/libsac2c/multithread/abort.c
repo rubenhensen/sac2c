@@ -10,7 +10,7 @@ MTABabort (node *syntax_tree)
 {
     DBUG_ENTER ();
 
-    CTIabort ("MT mode 3 cannot be compiled any further!");
+    CTIabort (EMPTY_LOC, "MT mode 3 cannot be compiled any further!");
 
     DBUG_RETURN (syntax_tree);
 }

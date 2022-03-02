@@ -65,7 +65,8 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
          * give an error!
          */
         if (STReq (global.modulename, global.preludename)) {
-            CTIabort ("Cannot load `%s' when compiling a module of the same "
+            CTIabort (EMPTY_LOC, 
+                      "Cannot load `%s' when compiling a module of the same "
                       "name. Try compiling with option -noprelude!", global.modulename);
         }
 

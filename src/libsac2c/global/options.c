@@ -1033,7 +1033,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("maxoptcyc", ARG_NUM (global.max_optcycles));
 
-    ARGS_OPTION ("maxrecinl", CTIabort ("Option -maxrecinl de-activated temporarily");
+    ARGS_OPTION ("maxrecinl", CTIabort (EMPTY_LOC, "Option -maxrecinl de-activated temporarily");
                  ARG_NUM (global.max_recursive_inlining));
 
     ARGS_OPTION ("maxlur", ARG_NUM (global.unrnum));
@@ -1150,7 +1150,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("o")
     {
         if (global.outfilename != NULL && global.runtime != TRUE) {
-            CTIabort ("-o cannot be specified multiple times.");
+            CTIabort (EMPTY_LOC, "-o cannot be specified multiple times.");
         }
         if (global.outfilename == NULL) {
             global.outfilename = STRcpy (ARG);
@@ -1161,7 +1161,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("olib")
     {
         if (global.target_modlibdir != NULL)
-            CTIabort ("-olib cannot be specified multiple times.");
+            CTIabort (EMPTY_LOC, "-olib cannot be specified multiple times.");
         global.target_modlibdir = STRcpy (ARG);
     }
     ARGS_OPTION_END ("olib");
@@ -1261,7 +1261,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
                               });
 #else
         ARG_CHOICE ("hash",
-                    CTIabort ("hash support not available in the current build."));
+                    CTIabort (EMPTY_LOC, "hash support not available in the current build."));
 #endif /* ENABLE_HASH */
 
 #if ENABLE_UUID
@@ -1273,7 +1273,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
                             });
 #else
         ARG_CHOICE ("uuid",
-                    CTIabort ("uuid support not available in the current build."));
+                    CTIabort (EMPTY_LOC, "uuid support not available in the current build."));
 #endif /* ENABLE_UUID */
 
         ARG_CHOICE_END ();
@@ -1630,7 +1630,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("target")
     {
         if (global.target_name == NULL)
-            CTIabort ("-target is missing an argument.");
+            CTIabort (EMPTY_LOC, "-target is missing an argument.");
         global.target_name = ARG;
     }
     ARGS_OPTION_END ("target");
@@ -1638,7 +1638,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("t")
     {
         if (global.target_name == NULL)
-            CTIabort ("-target is missing an argument.");
+            CTIabort (EMPTY_LOC, "-target is missing an argument.");
         global.target_name = ARG;
     }
     ARGS_OPTION_END ("t");
@@ -1724,11 +1724,11 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     }
 
     if (global.exported_modules == NULL) {
-        CTIabort ("No modules given as argument. See sac4c -h for details.");
+        CTIabort (EMPTY_LOC, "No modules given as argument. See sac4c -h for details.");
     }
 
     if (global.printldflags && global.printccflags) {
-        CTIabort ("-ldflags and -ccflags cannot be used simultaneously.");
+        CTIabort (EMPTY_LOC, "-ldflags and -ccflags cannot be used simultaneously.");
     }
 
     if (global.optimize.dophm) {

@@ -677,7 +677,7 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname)
 
     global.cwd = getcwd (0, 0);
     if (!global.cwd)
-        CTIabort ("getcwd: %s", strerror (errno));
+        CTIabort (EMPTY_LOC, "getcwd: %s", strerror (errno));
 
     DBUG_RETURN ();
 }
@@ -701,7 +701,7 @@ GLOBsetupBackend (void)
     }
 #include "backends.mac"
     else {
-        CTIabort ("Unknown compiler backend in sac2crc file: %s", global.config.backend);
+        CTIabort (EMPTY_LOC, "Unknown compiler backend in sac2crc file: %s", global.config.backend);
     }
 
     DBUG_RETURN ();
@@ -722,7 +722,7 @@ GLOBsetupDistMemCommLib (void)
     }
 #include "distmem_commlibs.mac"
     else {
-        CTIabort (
+        CTIabort (EMPTY_LOC,
           "Unknown distributed memory backend communication library in sac2crc file: %s",
           global.config.distmem_commlib);
     }

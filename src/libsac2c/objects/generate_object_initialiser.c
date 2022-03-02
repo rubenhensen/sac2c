@@ -113,7 +113,8 @@ SortObjdefList (node *objlist)
             }
         }
         if (changes == 0) {
-            CTIabort ("Cannot compute initialisation order for objdefs. This "
+            CTIabort (EMPTY_LOC, 
+                      "Cannot compute initialisation order for objdefs. This "
                       "may be due to circular dependencies!");
         }
     }

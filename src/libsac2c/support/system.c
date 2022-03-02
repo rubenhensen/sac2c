@@ -146,22 +146,27 @@ SYScall (char *format, ...)
     MEMfree (syscall_str);
 
     if (exit_code == -1) {
-        CTIabort ("System failure while trying to execute shell command.\n"
+        CTIabort (EMPTY_LOC, 
+                  "System failure while trying to execute shell command.\n"
                   "(e.g. out of memory).");
     } else if (WEXITSTATUS (exit_code) > 0) {
-        CTIabort ("System failed to execute shell command\n%s\n"
+        CTIabort (EMPTY_LOC, 
+                  "System failed to execute shell command\n%s\n"
                   "with exit code %d",
                   SBUF2strAndFree (&syscall), WEXITSTATUS (exit_code));
     } else if (WIFSIGNALED (exit_code)) {
         if (WTERMSIG (exit_code) == SIGINT) {
-            CTIabort ("Child recieved SIGINT when executing shell command \n%s\n",
+            CTIabort (EMPTY_LOC, 
+                      "Child recieved SIGINT when executing shell command \n%s\n",
                       SBUF2strAndFree (&syscall));
         } else if (WTERMSIG (exit_code) == SIGQUIT) {
-            CTIabort ("Child recieved SIGQUIT when executing shell command \n%s\n",
+            CTIabort (EMPTY_LOC, 
+                      "Child recieved SIGQUIT when executing shell command \n%s\n",
                       SBUF2strAndFree (&syscall));
         }
     } else if (exit_code != 0) {
-        CTIabort ("Unknown failure while executing shell command \n%s\n"
+        CTIabort (EMPTY_LOC, 
+                  "Unknown failure while executing shell command \n%s\n"
                   "Return value was %d",
                   SBUF2strAndFree (&syscall), exit_code);
     } else {
@@ -264,7 +269,7 @@ SYSexec_and_read_output (char *cmd, char **out)
     FILE *f = popen (cmd, "r");
     if (!f) {
         perror ("popen");
-        CTIabort ("system call '%s' failed", cmd);
+        CTIabort (EMPTY_LOC, "system call '%s' failed", cmd);
     }
 
     outp = SBUFcreate (1024);

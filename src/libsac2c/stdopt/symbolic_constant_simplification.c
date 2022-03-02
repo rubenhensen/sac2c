@@ -2205,7 +2205,7 @@ SCSprf_mod (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    CTIabort ("Modulo using vectors is not supported!");
+    CTIabort (EMPTY_LOC, "Modulo using vectors is not supported!");
 
     DBUG_RETURN (res);
 }

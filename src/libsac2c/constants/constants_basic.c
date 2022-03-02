@@ -188,7 +188,7 @@ COINTcopyCVVaListToMem (simpletype type, size_t length, va_list cv)
         CASE (T_long, long);
 
     default:
-        CTIabort ("unknown type in CV list");
+        CTIabort (EMPTY_LOC, "unknown type in CV list");
     }
 
     DBUG_RETURN (res);
