@@ -200,9 +200,9 @@ RSAuse (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (STReq (USE_MOD (arg_node), NSgetModule (INFO_CURRENTNS (arg_info)))) {
-        CTIerrorLoc (NODE_LOCATION (arg_node),
-                     "The namespace of the module being compiled cannot be "
-                     "referenced in use statements.");
+        CTIerror (NODE_LOCATION (arg_node),
+                  "The namespace of the module being compiled cannot be "
+                  "referenced in use statements.");
 
         if (USE_NEXT (arg_node) != NULL) {
             USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
@@ -243,9 +243,9 @@ RSAimport (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (STReq (IMPORT_MOD (arg_node), NSgetModule (INFO_CURRENTNS (arg_info)))) {
-        CTIerrorLoc (NODE_LOCATION (arg_node),
-                     "The namespace of the module being compiled cannot be "
-                     "referenced in import statements.");
+        CTIerror (NODE_LOCATION (arg_node),
+                  "The namespace of the module being compiled cannot be "
+                  "referenced in import statements.");
 
         if (IMPORT_NEXT (arg_node) != NULL) {
             IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);

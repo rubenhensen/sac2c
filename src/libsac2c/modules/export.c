@@ -217,9 +217,9 @@ EXPsymbol (node *arg_node, info *arg_info)
         }
     } else if (INFO_SYMBMODE (arg_info) == SYM_check) {
         if (!SYMBOL_USED (arg_node)) {
-            CTIerrorLoc (NODE_LOCATION (arg_node),
-                         "Symbol '%s' used in export or provide is not defined.",
-                         SYMBOL_ID (arg_node));
+            CTIerror (NODE_LOCATION (arg_node),
+                      "Symbol '%s' used in export or provide is not defined.",
+                      SYMBOL_ID (arg_node));
         }
     }
 

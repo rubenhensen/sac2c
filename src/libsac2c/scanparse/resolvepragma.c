@@ -79,10 +79,10 @@ CheckRefReadNums (struct location loc, int size, node *nums)
         DBUG_PRINT_TAG ("PRAGMA", "Nums value is %d", NUMS_VAL (tmp));
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) >= size)) {
-            CTIerrorLoc (loc,
-                         "Invalid argument of pragma 'readonly` or 'refcounting`: "
-                         "Entry no. %d with value %d does not match a function parameter",
-                         i, NUMS_VAL (tmp));
+            CTIerror (loc,
+                      "Invalid argument of pragma 'readonly` or 'refcounting`: "
+                      "Entry no. %d with value %d does not match a function parameter",
+                      i, NUMS_VAL (tmp));
         }
 
         tmp = NUMS_NEXT (tmp);
@@ -105,19 +105,19 @@ CheckLinkSignNums (struct location loc, int size, node *nums)
         DBUG_PRINT_TAG ("PRAGMA", "Nums value is %d", NUMS_VAL (tmp));
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) > size)) {
-            CTIerrorLoc (loc,
-                         "Invalid argument of pragma 'linksign`: "
-                         "Entry no. %d does not match a valid parameter position",
-                         i + 1);
+            CTIerror (loc,
+                      "Invalid argument of pragma 'linksign`: "
+                      "Entry no. %d does not match a valid parameter position",
+                      i + 1);
             result = FALSE;
         }
     }
 
     if (i < size) {
-        CTIerrorLoc (loc,
-                     "Invalid argument of pragma 'linksign` :"
-                     "Less entries (%d) than parameters of function (%d)",
-                     i, size);
+        CTIerror (loc,
+                  "Invalid argument of pragma 'linksign` :"
+                  "Less entries (%d) than parameters of function (%d)",
+                  i, size);
         result = FALSE;
     }
 
@@ -130,7 +130,7 @@ CheckLinkSignNums (struct location loc, int size, node *nums)
             tmp = NUMS_NEXT (tmp);
         } while (tmp != NULL);
 
-        CTIerrorLoc (loc,
+        CTIerror (loc,
                      "Invalid argument of pragma 'linksign`: "
                      "More entries (%d) than function parameters (%d)",
                      i, size);

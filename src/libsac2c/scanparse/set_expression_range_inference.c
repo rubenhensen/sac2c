@@ -300,9 +300,9 @@ SERIgenerator (node *arg_node, info *arg_info)
             }
         } else {
             if (INFO_SERI_ISLASTPART (arg_info)) {
-                CTIerrorLoc ( NODE_LOCATION (arg_node),
-                              "Unable to infer upper bound for final partition of"
-                              " set expression; please specify an upper bound.");
+                CTIerror (NODE_LOCATION (arg_node),
+                          "Unable to infer upper bound for final partition of"
+                          " set expression; please specify an upper bound.");
             } else {
                 /*
                  * The shiny new "adjustable length bound-dot" (see HWLD for details)

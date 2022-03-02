@@ -1015,37 +1015,6 @@ CTIgetErrorMessageVA (size_t line, const char *file, const char *format, va_list
     DBUG_RETURN (ret);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn void CTIerrorLoc( struct location loc, const char *format, ...)
- *
- *   @brief   Produces an error message preceded by location info.
- *
- *   @param loc     location info
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-void
-CTIerrorLoc (struct location loc, const char *format, ...)
-{    
-    char *error_msg;
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    va_start (arg_p, format);
-
-    error_msg = CTIcreateMessageLoc (error_message_header, loc, format, arg_p);
-    fprintf (cti_stderr, "%s", error_msg);
-    MEMfree (error_msg);
-
-    va_end (arg_p);
-
-    errors++;
-
-    DBUG_RETURN ();
-}
-
 char *
 CTIerrorBegin (const char *format, ...)
 {

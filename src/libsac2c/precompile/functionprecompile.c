@@ -207,8 +207,8 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
          * the C return expression.
          */
         if (idx == 0) {
-            CTIerrorLoc (loc, "Pragma 'linksign' or 'refcounting' illegal: "
-                              "return value must not use a descriptor");
+            CTIerror (loc, "Pragma 'linksign' or 'refcounting' illegal: "
+                           "return value must not use a descriptor");
         }
     }
 
@@ -254,19 +254,19 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
 
     /* Check for illegal index values. */
     if (idx >= argtab->size) {
-        CTIerrorLoc (loc,
-                     "Pragma 'linksign' illegal: "
-                     "entry contains illegal value %zu",
-                     idx);
+        CTIerror (loc,
+                  "Pragma 'linksign' illegal: "
+                  "entry contains illegal value %zu",
+                  idx);
         DBUG_RETURN (argtab);
     }
 
     /* Check whether this parameter was already given. */
     if (argtab->ptr_out[idx] != NULL) {
-        CTIerrorLoc (loc,
-                     "Pragma 'linksign' illegal: "
-                     "out-parameter at position %zu found twice in function %s",
-                     idx, FUNDEF_NAME (fundef));
+        CTIerror (loc,
+                  "Pragma 'linksign' illegal: "
+                  "out-parameter at position %zu found twice in function %s",
+                  idx, FUNDEF_NAME (fundef));
         DBUG_RETURN (argtab);
     }
 
@@ -283,7 +283,7 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
      * message.
      */
     if (argtab->tag[idx] != ATG_notag) {
-        CTIerrorLoc (loc, "Pragma 'linksign' illegal: return value found twice");
+        CTIerror (loc, "Pragma 'linksign' illegal: return value found twice");
         DBUG_RETURN (argtab);
     }
 
@@ -353,26 +353,25 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
 
     /* Check for illegal index values. */
     if (idx >= argtab->size) {
-        CTIerrorLoc (loc,
-                     "Pragma 'linksign' illegal: "
-                     "entry contains illegal value %zu",
-                     idx);
+        CTIerror (loc,
+                  "Pragma 'linksign' illegal: entry contains illegal value %zu",
+                  idx);
         DBUG_RETURN (argtab);
     }
 
     /* Index 0 is reserved for return positions. */
     if (idx == 0) {
-        CTIerrorLoc (loc, "Pragma 'linksign' illegal: "
-                          "in-parameter cannot be used as return value");
+        CTIerror (loc, "Pragma 'linksign' illegal: "
+                       "in-parameter cannot be used as return value");
         DBUG_RETURN (argtab);
     }
 
     /* Check whether this parameter was already given. */
     if (argtab->ptr_in[idx] != NULL) {
-        CTIerrorLoc (loc,
-                     "Pragma 'linksign' illegal: "
-                     "in-parameter at position %zu found twice in function %s",
-                     idx, FUNDEF_NAME (fundef));
+        CTIerror (loc,
+                  "Pragma 'linksign' illegal: "
+                  "in-parameter at position %zu found twice in function %s",
+                  idx, FUNDEF_NAME (fundef));
         DBUG_RETURN (argtab);
     }
 
@@ -407,17 +406,17 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
         if (!(FUNDEF_ISSPMDFUN (fundef)) && !(FUNDEF_ISCUDAGLOBALFUN (fundef))
             && !(FUNDEF_ISCUDASTGLOBALFUN (fundef))
             && !(argtab->tag[idx] == ATG_out_nodesc && argtag == ATG_in_nodesc)) {
-            CTIerrorLoc (loc, "Pragma 'linksign' illegal: "
-                              "mappings allowed exclusively between parameters"
-                              " without descriptor");
+            CTIerror (loc, "Pragma 'linksign' illegal: "
+                           "mappings allowed exclusively between parameters "
+                           "without descriptor");
             DBUG_RETURN (argtab);
         }
 
         /* Check that both parameters have equal types. */
         if (!TYeqTypes (RET_TYPE (argtab->ptr_out[idx]), ARG_NTYPE (arg))) {
-            CTIerrorLoc (loc, "Pragma 'linksign' illegal: "
-                              "mappings allowed exclusively between parameters"
-                              " with identical types");
+            CTIerror (loc, "Pragma 'linksign' illegal: "
+                           "mappings allowed exclusively between parameters "
+                           "with identical types");
         }
 
         /*

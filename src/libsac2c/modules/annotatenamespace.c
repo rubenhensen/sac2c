@@ -140,7 +140,7 @@ CheckLocalNameClash (const char *symbol, sttable_t *table, struct location loc)
     DBUG_ENTER ();
 
     if (STcontains (symbol, table)) {
-        CTIerrorLoc (loc, "Symbol `%s' used and locally defined", symbol);
+        CTIerror (loc, "Symbol `%s' used and locally defined", symbol);
     }
 
     DBUG_RETURN ();
