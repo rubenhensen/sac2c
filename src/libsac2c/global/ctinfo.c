@@ -63,8 +63,6 @@
 #include "stringset.h"
 #include "new_types.h" /* for TYtype2String */
 
-#define LINE_TO_LOC (line) ((location) {.fname = global.filename, .line = line, .col = NULL})
-
 #include "cppcompat.h"
 #undef exit
 
@@ -319,7 +317,7 @@ STRcatMessageBuffer (char *first)
 
 /** <!--********************************************************************-->
  *
- * @fn void loc2str( const struct location *loc)
+ * @fn void loc2str( const struct location loc)
  *
  *   @brief  Produces a GNU format string representing the location.
  *           When NULL is given or the location is invalid, an empty string is returned.
@@ -330,22 +328,22 @@ STRcatMessageBuffer (char *first)
  ******************************************************************************/
 
 char *
-loc2str (const struct location *loc) 
+loc2str (const struct location loc) 
 {
     DBUG_ENTER ();
 
-    if (loc == NULL || loc->fname == NULL) {
+    if (loc.fname == NULL) {
         DBUG_RETURN (STRcpy(""));
     }
 
-    if (loc->fname != 0 && loc->line != 0) {
-        if (loc->col != 0) {
-            Format2BufferDynamic ("%s:%zu:%zu: ", loc->fname, loc->line, loc->col);
+    if (loc.line != 0) {
+        if (loc.col != 0) {
+            Format2BufferDynamic ("%s:%zu:%zu: ", loc.fname, loc.line, loc.col);
         } else {
-            Format2BufferDynamic ("%s:%zu: ", loc->fname, loc->line);
+            Format2BufferDynamic ("%s:%zu: ", loc.fname, loc.line);
         }
     } else {
-        Format2BufferDynamic("%s: ", loc->fname);
+        Format2BufferDynamic("%s: ", loc.fname);
     }
     DBUG_RETURN (STRcpy (message_buffer));
 }
@@ -846,14 +844,11 @@ char *
 CTIcreateMessage (const char *message_header, const char *format, va_list arg_p)
 {
     char *ret;
-    char *tmp;
 
     DBUG_ENTER ();
 
-    tmp = STRcpy("");
-    ret = CTIfinalizeMessage (tmp, message_header, format, arg_p);
+    ret = CTIfinalizeMessage (STRcpy(""), message_header, format, arg_p);
 
-    MEMfree (tmp);
     DBUG_RETURN (ret);
 }
 
@@ -876,15 +871,12 @@ char *
 CTIcreateMessageLine (const char *message_header, size_t line, const char *format, va_list arg_p)
 {
     char *ret;
-    char *tmp;
     DBUG_ENTER ();
 
     Format2BufferDynamic("%s:%zu: ", global.filename, line); // GNU format location
-    tmp = STRcpy (message_buffer);
 
-    ret = CTIfinalizeMessage (tmp, message_header, format, arg_p);
+    ret = CTIfinalizeMessage (STRcpy (message_buffer), message_header, format, arg_p);
 
-    MEMfree (tmp);
     DBUG_RETURN (ret);
 }
 
@@ -906,21 +898,18 @@ char *
 CTIcreateMessageLoc (const char *message_header, const struct location loc, const char *format, va_list arg_p)
 {
     char *ret;
-    char *tmp;
 
     DBUG_ENTER ();
 
     Format2BufferDynamic("%s:%zu:%zu: ", loc.fname, loc.line, loc.col); // GNU format location
-    tmp = STRcpy (message_buffer);
 
-    ret = CTIfinalizeMessage (tmp, message_header, format, arg_p);
+    ret = CTIfinalizeMessage (STRcpy (message_buffer), message_header, format, arg_p);
 
-    MEMfree (tmp);
     DBUG_RETURN (ret);
 }
 
 void
-CTIerrorBasic(const struct location *loc, const char *format, ...)
+CTIerrorBasic(const struct location loc, const char *format, ...)
 {
     char *error_msg;
     va_list arg_p;

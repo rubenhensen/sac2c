@@ -1,6 +1,9 @@
 #ifndef _SAC_CTINFO_H_
 #define _SAC_CTINFO_H_
 
+#define LINE_TO_LOC(line_nr) ((struct location) {.fname = global.filename, .line = line_nr, .col = 0})
+#define EMPTY_LOC ((struct location) {.fname = NULL, .line = 0, .col = 0})
+
 #include "types.h"
 #include "fun-attrs.h"
 #include <stdarg.h>
@@ -25,6 +28,7 @@ extern void set_message_line_length (size_t l);
 /**
  * verbosity level >= 0:
  */
+extern void CTIerrorBasic (const struct location loc, const char *format, ...);
 extern void CTIerror (const char *format, ...) PRINTF_FORMAT (1, 2);
 extern void CTIerrorLoc (struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIerrorLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
