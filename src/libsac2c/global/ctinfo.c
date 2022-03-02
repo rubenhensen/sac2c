@@ -119,28 +119,57 @@ CTIget_stderr ()
 
 /** <!--********************************************************************-->
  *
- * @fn void ProcessMessage( char *buffer, int line_length)
+ * @fn void ProcessMessage( char *buffer, size_t first_header_length, 
+ *                          size_t multiline_header_length)
  *
- *   @brief  Formats message according to the line length.
+ *   @brief  Formats message according to the global message length, taking into
+ *           account the length of the headers.
+ *           If the global message length is set to 0, no line wrapping is performed.
+ *           
+ *           Otherwise, the effective header length for each type is set to 
+ *           min(header length + 20, cti-message-length)
+ *          
+ *           Tab characters are replaced with spaces.
+ *           Line wrapping is done by replacing the last known space with an '@' 
+ *           character (representing a newline) at the last known position of a space
+ *           when the line gets too long.
+ *           When no space is available to line wrap, line wrapping is delayed until
+ *           a space is found or the end of the string is reached.
  *
- *           '@' characters are inserted into the buffer to represent line
- *           breaks.
- *
- *   @param buffer       message buffer
- *   @param line_length  maximum line length
+ *           NOTE: This function does not care about the global.cti-single-line setting.
+ *                 Account for it by replacing newlines with spaces on the final string.
+ * 
+ *   @param buffer                   message buffer
+ *   @param first_header_length      the length of the header used for the first line
+ *   @param multiline_header_length  the length of the header for all other lines
  *
  ******************************************************************************/
 
 static void
-ProcessMessage (char *buffer, size_t line_length)
+ProcessMessage (char *buffer, size_t first_header_length, size_t multiline_header_length)
 {
-    size_t index, column, last_space;
+    size_t first_line_length, multiline_length, line_length, index, column, last_space;
+    bool space_found;
 
     DBUG_ENTER ();
+
+
+    if (global.cti_message_length == 0) {
+        first_line_length = 0; // We don't return here because we still 
+        multiline_length = 0;  // replace @ with \n and \t with space in this function.
+    } else {
+        // Just computes the max but I can't find a max function for size_t
+        first_line_length = first_header_length + 20 <= (size_t) global.cti_message_length
+                            ? (size_t) global.cti_message_length : first_header_length + 20;
+        multiline_length = multiline_header_length + 20 <= (size_t) global.cti_message_length
+                            ? (size_t) global.cti_message_length : multiline_header_length + 20;
+    } 
 
     index = 0;
     last_space = 0;
     column = 0;
+    line_length = first_line_length;
+    space_found = false;
 
     while (buffer[index] != '\0') {
         if (buffer[index] == '\t') {
@@ -149,20 +178,21 @@ ProcessMessage (char *buffer, size_t line_length)
 
         if (buffer[index] == ' ') {
             last_space = index;
+            space_found = true;
         }
 
-        if (buffer[index] == '\n') {
+        if (buffer[index] == '@' || buffer[index] == '\n') {
             buffer[index] = '@';
             column = 0;
-        } else {
-            if (column == line_length) {
-                if (buffer[last_space] == ' ') {
-                    buffer[last_space] = '@';
-                    column = index - last_space;
-                } else {
-                    break;
-                }
-            }
+            space_found = false;
+            line_length = multiline_length; // Swap to multiline lengths
+        } else if (line_length != 0 // line_length 0 disables insertion of newlines
+                   && column >= line_length // line length is exceeded
+                   && space_found) { // we have a space in the line to convert
+            buffer[last_space] = '@';
+            column = index - last_space;
+            space_found = false;
+            line_length = multiline_length; // Swap to multiline lengths
         }
 
         index++;
@@ -311,7 +341,7 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
     DBUG_ENTER ();
 
     Format2Buffer (format, arg_p);
-    ProcessMessage (message_buffer, message_line_length - STRlen (header));
+    ProcessMessage (message_buffer, STRlen (header), STRlen (header));
     line = strtok (message_buffer, "@");
 
     while (line != NULL) {
@@ -636,13 +666,34 @@ CTIinstallInterruptHandlers ()
     DBUG_RETURN ();
 }
 
+char *
+CTIfinalizeFirstLine (const char *location_buffer, const char *message_header)
+{
+    // Goal:
+    // Do ProcessMessage for location_buffer + message header, but don't continue after the first newline is found/made.
+    // return result
+    return NULL;
+}
+
+char *
+CTIfinalizeMultiline (char *first_line_overflow, const char *format, va_list arg_p)
+{
+    // Goal:
+    // Construct message content with format and arg_p
+    // Add that to first_line_overflow
+    // Do ProcessMessage with the result (so far) and multiline header
+    // return result
+    return NULL;
+}
+
 /** <!--********************************************************************-->
  *
- * @fn void CTIfinalizeMessage( const char *location_buffer, const char *message_header, 
- *                              const char *format, va_list arg_p)
+ * @fn void CTIfinalizeMessageBegin( const char *location_buffer, const char *message_header, 
+ *                                   const char *format, va_list arg_p)
  *
  *   @brief  Finalizes all processing required to display the message such that 
  *           it can later be printed with `fprintf(cti_stderr, "%s", ret)`
+ *           Does not include a trailing newline.
  *
  *   @param location_buffer  The buffer that contains the possible location header 
  *                           associated with the type of message of the forms:
@@ -657,15 +708,16 @@ CTIinstallInterruptHandlers ()
  ******************************************************************************/
 
 char *
-CTIfinalizeMessage(const char *location_buffer, const char *message_header, 
-                   const char *format, va_list arg_p)
+CTIfinalizeMessageBegin (const char *location_buffer, const char *message_header,
+                         const char *format, va_list arg_p)
 {
     char *ret;
     char *accumulator;
     char *message_header_base;
     char *message_header_first_line;
     char *message_header_multiline;
-    char *message_header_multiline_with_newline;
+    size_t message_header_first_line_length;
+    size_t message_header_multiline_length;
 
     DBUG_ENTER ();
 
@@ -677,26 +729,63 @@ CTIfinalizeMessage(const char *location_buffer, const char *message_header,
     // "<message_header_base>" applied to the format string from cti_header_format
     Format2BufferDynamic (global.cti_header_format, message_header_base);
     message_header_first_line = STRcpy (message_buffer);
+    message_header_first_line_length = STRlen (message_header_first_line);
 
+    // "<message_header_base>" applied to the format string from cti-multi-line-format
     Format2BufferDynamic (global.cti_multi_line_format, message_header_base);
-    message_header_multiline = STRcpy (message_buffer);
+    message_header_multiline = STRcat ("\n", message_buffer);  // \n has to be added
+    message_header_multiline_length = STRlen (message_buffer); // but is not counted towards the length
 
     // CONSTRUCTING MESSAGE CONTENT
 
     Format2Buffer (format, arg_p);
     accumulator = STRcatMessageBuffer (message_header_first_line); // frees message_header_first_line
-    ProcessMessage (accumulator, message_line_length - STRlen (message_header_multiline));
 
-    // REPLACING '@' WITH STRcat("\n", message_header_multiline)
-    
-    message_header_multiline_with_newline = STRcat("\n", message_header_multiline);
-    accumulator = STRsubstTokend (accumulator, "@", message_header_multiline_with_newline);
-    ret = STRcat (accumulator, "\n");
-    
+    ProcessMessage (accumulator, message_header_first_line_length, message_header_multiline_length);
+
+    if (global.cti_single_line) {
+        ret = STRsubstTokend (accumulator, "@", " "); // No need to insert the multiline header
+        ret = STRsubstTokend (ret, "\n", " ");        // if there are no multilines
+    } else {
+        ret = STRsubstTokend (accumulator, "@", message_header_multiline);
+    }
+
     MEMfree (message_header_base);
     MEMfree (message_header_multiline);
-    MEMfree (message_header_multiline_with_newline);
-    MEMfree (accumulator);
+    DBUG_RETURN (ret);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIfinalizeMessage( const char *location_buffer, const char *message_header, 
+ *                              const char *format, va_list arg_p)
+ *
+ *   @brief  Returns CTIfinalizeMessage but with a trailing newline.
+ *
+ *   @param location_buffer  The buffer that contains the possible location header 
+ *                           associated with the type of message of the forms:
+ *                           "" (empty but not null) for generic messages
+ *                           "<filepath>:line: " for messages with line info
+ *                           "<filepath:line:column: " for messages with location info
+ *   @param message_header   The header associated with the type of message, 
+ *                           e.g. error_message_header for errors.
+ *   @param format           format string like in printf
+ *   @param arg_p            arguments for the format string
+ *
+ ******************************************************************************/
+
+char *
+CTIfinalizeMessage (const char *location_buffer, const char *message_header, 
+                    const char *format, va_list arg_p)
+{
+    char *tmp;
+    char *ret;
+    
+    DBUG_ENTER ();
+    tmp = CTIfinalizeMessageBegin (location_buffer, message_header, format, arg_p);
+    ret = STRcat (tmp, "\n");
+
+    MEMfree (tmp);
     DBUG_RETURN (ret);
 }
 
@@ -717,14 +806,17 @@ CTIfinalizeMessage(const char *location_buffer, const char *message_header,
  * ****************************************************************************/
 
 char *
-CTIcreateMessage( const char *message_header, const char *format, va_list arg_p)
+CTIcreateMessage (const char *message_header, const char *format, va_list arg_p)
 {
     char *ret;
+    char *tmp;
 
     DBUG_ENTER ();
 
-    ret = CTIfinalizeMessage (STRcpy(""), message_header, format, arg_p);
+    tmp = STRcpy("");
+    ret = CTIfinalizeMessage (tmp, message_header, format, arg_p);
 
+    MEMfree (tmp);
     DBUG_RETURN (ret);
 }
 
@@ -747,13 +839,15 @@ char *
 CTIcreateMessageLine (const char *message_header, size_t line, const char *format, va_list arg_p)
 {
     char *ret;
+    char *tmp;
     DBUG_ENTER ();
 
     Format2BufferDynamic("%s:%zu: ", global.filename, line); // GNU format location
-    ret = STRcpy (message_buffer);
+    tmp = STRcpy (message_buffer);
 
-    ret = CTIfinalizeMessage (ret, message_header, format, arg_p);
+    ret = CTIfinalizeMessage (tmp, message_header, format, arg_p);
 
+    MEMfree (tmp);
     DBUG_RETURN (ret);
 }
 
@@ -775,14 +869,16 @@ char *
 CTIcreateMessageLoc (const char *message_header, const struct location loc, const char *format, va_list arg_p)
 {
     char *ret;
+    char *tmp;
 
     DBUG_ENTER ();
 
     Format2BufferDynamic("%s:%zu:%zu: ", loc.fname, loc.line, loc.col); // GNU format location
-    ret = STRcpy (message_buffer);
+    tmp = STRcpy (message_buffer);
 
-    ret = CTIfinalizeMessage (ret, message_header, format, arg_p);
+    ret = CTIfinalizeMessage (tmp, message_header, format, arg_p);
 
+    MEMfree (tmp);
     DBUG_RETURN (ret);
 }
 
@@ -920,6 +1016,31 @@ CTIerrorLoc (struct location loc, const char *format, ...)
     DBUG_RETURN ();
 }
 
+char *
+CTIerrorBegin (const char *format, ...)
+{
+    if (global.cti_single_line) {
+
+    }
+    // Goal:
+    // If cti-single-line is active:
+    // • Same as CTIerror but without a trailing newline
+    // If cti-single-line is inactive:
+    // • Same as CTIerror
+    return NULL;
+}
+
+char *
+CTIerrorLineBegin (size_t line, const char *format, ...)
+{
+    // Goal:
+    // If cti-single-line is active:
+    // • Same as CTIerrorLine but without a trailing newline
+    // If cti-single-line is inactive:
+    // • Same as CTIerrorLine
+    return NULL;
+}
+
 /** <!--********************************************************************-->
  *
  * @fn void CTIerrorContinued( const char *format, ...)
@@ -930,7 +1051,7 @@ CTIerrorLoc (struct location loc, const char *format, ...)
  *
  ******************************************************************************/
 
-void
+void //TODO: change to char *
 CTIerrorContinued (const char *format, ...)
 {
     va_list arg_p;
@@ -939,12 +1060,29 @@ CTIerrorContinued (const char *format, ...)
 
     va_start (arg_p, format);
 
-
+    // Goal:
+    // If cti-single-line is active:
+    // • Don't print a header
+    // • Don't print a trailing newline, but print a trailing space
+    // If cti-single-line is inactive:
+    // • Do print a multiline header
+    // • Do print a trailing newline
     PrintMessage (indent_message_header, format, arg_p);
 
     va_end (arg_p);
 
     DBUG_RETURN ();
+}
+
+char *
+CTIerrorEnd (void) 
+{
+    // Goal:
+    // If cti-single-line is active:
+    // • Return a newline
+    // If cti-single-line is inactive:
+    // • Return an empty string
+    return NULL;
 }
 
 /** <!--********************************************************************-->

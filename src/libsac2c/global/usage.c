@@ -1050,7 +1050,7 @@ PrintCompiletimeMessagingOptions (void)
       "    -cti-message-length <n>\n"
       "                    Insert extra line breaks for messages with lines that are longer\n"
       "                    than <n> characters. The value 0 implies no extra line breaks.\n"
-      "                    (default: 80 or terminal-width if available) == %d)\n"
+      "                    (default: max(40, terminal-width) = %d)\n"
       "    -cti-no-color   Disables all color output.\n"
       "    -cti-single-line\n"
       "                    Omits all line breaks within messages and sets -cti-message-length 0.\n"
