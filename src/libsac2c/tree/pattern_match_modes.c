@@ -112,7 +112,7 @@ findCorrespondingArg (node *avis, node *ids, node *exprs)
         exprs = EXPRS_NEXT (exprs);
     }
 
-    if ((avis == IDS_AVIS (ids)) && (exprs != NULL)) {
+    if ((ids != NULL) && (avis == IDS_AVIS (ids)) && (exprs != NULL)) {
         expr = EXPRS_EXPR (exprs);
     } else {
         expr = NULL;
@@ -188,14 +188,41 @@ PMMskipPrf (intptr_t param, node *expr)
     prf_match_fun_t *prfInspectFun = (prf_match_fun_t *)param;
     node *let;
     node *rhs;
+    node *ids, *avis;
 
     if (NODE_TYPE (expr) == N_id) {
         if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
             let = ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (expr)));
+            ids = LET_IDS (let);
+            avis = ID_AVIS (expr);
             rhs = LET_EXPR (let);
             if ((NODE_TYPE (rhs) == N_prf) && (prfInspectFun (PRF_PRF (rhs)))) {
-                expr
-                  = findCorrespondingArg (ID_AVIS (expr), LET_IDS (let), PRF_ARGS (rhs));
+                switch (PRF_PRF(rhs)) {
+                    case F_guard:            // X1', ... = guard (X1, ..., p)
+                    case F_afterguard:       // X' = afterguard (X, p1, ...)
+                    case F_same_shape_AxA:   // X', Y', p = same_shape (X, Y)
+                    case F_non_neg_val_S:    // X', p = non_neg (X)
+                    case F_non_neg_val_V:    // X', p = non_neg (X)
+                    case F_noteminval:       // iv'  = noteminval(iv, bound)
+                    case F_notemaxval:       // iv'  = notemaxval(iv, bound)
+                    case F_noteintersect:    // iv'  = noteintersect(iv, bound)
+                        expr = findCorrespondingArg (avis, ids, PRF_ARGS (rhs));
+                        break;
+                    case F_type_constraint:  // X' = type_constraint (type, X')
+                        expr = (avis == IDS_AVIS (ids) ? PRF_ARG2 (rhs) : expr);
+                        break;
+                    case F_shape_matches_dim_VxA:  // idx', p = shp_m_dim (idx, a)
+                    case F_val_lt_shape_VxA:       // idx', p = val_lt_shape (idx, a)
+                    case F_val_le_val_VxV:         // v1', p = val_le_val (v1, v2)
+                    case F_val_le_val_SxS:         // v1', p = val_le_val (v1, v2)
+                    case F_val_lt_val_SxS:         // v1', p = val_lt_val (v1, v2)
+                    case F_prod_matches_prod_shape_VxA: // s, p = p_m_p_s (s, a)
+                        expr = (avis == IDS_AVIS (ids) ? PRF_ARG1 (rhs) : expr);
+                        break;
+                    default:
+                        break;
+                    
+                }
             }
         }
     }
