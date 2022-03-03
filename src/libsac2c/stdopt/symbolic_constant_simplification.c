@@ -588,6 +588,58 @@ SCSisConstantOne (node *prfarg)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool SCSisConstantTrue( node *prfarg)
+ * Predicate for PRF_ARG being an array of constant true.
+ * E.g., true or  [true,true] or  genarray([2,3], true)
+ *
+ *****************************************************************************/
+bool
+SCSisConstantTrue (node *arg_node)
+{
+    constant *argconst = NULL;
+    pattern *pat;
+    bool res = FALSE;
+
+    DBUG_ENTER ();
+
+    pat = PMconst (1, PMAgetVal (&argconst));
+    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+        res = !COisTrue (argconst, TRUE);
+        argconst = COfreeConstant (argconst);
+    }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool SCSisConstantFlase( node *prfarg)
+ * Predicate for PRF_ARG being an array of constant false.
+ * E.g., false or  [false,false] or  genarray([2,3], false)
+ *
+ *****************************************************************************/
+bool
+SCSisConstantFalse (node *prfarg)
+{
+    constant *argconst = NULL;
+    pattern *pat;
+    bool res = FALSE;
+
+    DBUG_ENTER ();
+
+    pat = PMconst (1, PMAgetVal (&argconst));
+    if (PMmatchFlatSkipExtremaAndGuards (pat, prfarg)) {
+        res = COisFalse (argconst, TRUE);
+        argconst = COfreeConstant (argconst);
+    }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool isGenwidth1Partition(node *arg, info *arg_info)
  *
  * @brief: This predicate is intended to determine if arg represents
@@ -1907,11 +1959,11 @@ SCSprf_not (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_or_SxS( node *arg_node, info *arg_info)
- * X | 0  -> X
- * 0 | X  -> X
- * X | 1  -> 1 of shape(X)
- * 1 | X  -> 1 of shape(X)
- * X | Z  -> X
+ * X     | false -> X
+ * false | X     -> X
+ * X     | true  -> true of shape(X)
+ * true  | X     -> true of shape(X)
+ * X     | Z     -> X
  *
  *****************************************************************************/
 node *
@@ -1920,16 +1972,16 @@ SCSprf_or_SxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (SCSisConstantOne (PRF_ARG2 (arg_node))) { /* X | 1 */
+    if (SCSisConstantTrue (PRF_ARG2 (arg_node))) { /* X | true */
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
 
-    } else if (SCSisConstantOne (PRF_ARG1 (arg_node))) { /* 1 | X */
+    } else if (SCSisConstantTrue (PRF_ARG1 (arg_node))) { /* true | X */
         res = SCSmakeTrue (PRF_ARG2 (arg_node));
 
-    } else if (SCSisConstantZero (PRF_ARG2 (arg_node))) { /* X | 0 */
+    } else if (SCSisConstantFalse (PRF_ARG2 (arg_node))) { /* X | false */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
 
-    } else if (SCSisConstantZero (PRF_ARG1 (arg_node))) { /* 0 | X */
+    } else if (SCSisConstantFalse (PRF_ARG1 (arg_node))) { /* false | X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
 
         /* S | S */
@@ -1943,8 +1995,8 @@ SCSprf_or_SxS (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_or_SxV( node *arg_node, info *arg_info)
- * 0 | X  -> X
- * 1 | X  -> 1 of shape(X)
+ * false | X  -> X
+ * true  | X  -> true of shape(X)
  *
  *****************************************************************************/
 node *
@@ -1953,9 +2005,9 @@ SCSprf_or_SxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (SCSisConstantOne (PRF_ARG1 (arg_node))) { /* 1 | X */
+    if (SCSisConstantTrue (PRF_ARG1 (arg_node))) { /* true | X */
         res = SCSmakeTrue (PRF_ARG2 (arg_node));
-    } else if (SCSisConstantZero (PRF_ARG1 (arg_node))) { /* 0 | X */
+    } else if (SCSisConstantFalse (PRF_ARG1 (arg_node))) { /* false | X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
 
@@ -1965,8 +2017,8 @@ SCSprf_or_SxV (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_or_VxS( node *arg_node, info *arg_info)
- * X | 0  -> X
- * X | 1  -> 1 of shape(X)
+ * X | false  -> X
+ * X | true   -> true of shape(X)
  *
  *****************************************************************************/
 node *
@@ -1975,9 +2027,9 @@ SCSprf_or_VxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (SCSisConstantOne (PRF_ARG2 (arg_node))) { /* X | 1 */
+    if (SCSisConstantTrue (PRF_ARG2 (arg_node))) { /* X | true */
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
-    } else if (SCSisConstantZero (PRF_ARG2 (arg_node))) { /* X | 0 */
+    } else if (SCSisConstantFalse (PRF_ARG2 (arg_node))) { /* X | false */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -2012,11 +2064,11 @@ SCSprf_or_VxV (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_and_SxS( node *arg_node, info *arg_info)
- * X & 1  -> X
- * 1 & X  -> X
- * X & 0  -> 0 of shape(X)
- * 0 & X  -> 0 of shape(X)
- * X & X  -> X
+ * X     & true  -> X
+ * true  & X     -> X
+ * X     & false -> false of shape(X)
+ * false & X     -> false of shape(X)
+ * X     & X     -> X
  *
  *****************************************************************************/
 node *
@@ -2025,19 +2077,19 @@ SCSprf_and_SxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (SCSisConstantOne (PRF_ARG2 (arg_node))) { /* X & 1 */
+    if (SCSisConstantTrue (PRF_ARG2 (arg_node))) { /* X & true */
         DBUG_PRINT ("found _and_SxS_ (x, true)");
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
 
-    } else if (SCSisConstantOne (PRF_ARG1 (arg_node))) { /* 1 & X */
+    } else if (SCSisConstantTrue (PRF_ARG1 (arg_node))) { /* true & X */
         DBUG_PRINT ("found _and_SxS_ (true, x)");
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
 
-    } else if (SCSisConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
+    } else if (SCSisConstantFalse (PRF_ARG2 (arg_node))) { /* X & false */
         DBUG_PRINT ("found _and_SxS_ (x, false)");
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
 
-    } else if (SCSisConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
+    } else if (SCSisConstantFalse (PRF_ARG1 (arg_node))) { /* false & X */
         DBUG_PRINT ("found _and_SxS_ (false, x)");
         res = SCSmakeFalse (PRF_ARG2 (arg_node));
 
@@ -2052,8 +2104,8 @@ SCSprf_and_SxS (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_and_SxV( node *arg_node, info *arg_info)
- * 1 & X  -> X
- * 0 & X  -> 0 of shape(X)
+ * true  & X  -> X
+ * false & X  -> false of shape(X)
  *
  *****************************************************************************/
 node *
@@ -2062,9 +2114,9 @@ SCSprf_and_SxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (SCSisConstantOne (PRF_ARG1 (arg_node))) { /* 1 & X */
+    if (SCSisConstantTrue (PRF_ARG1 (arg_node))) { /* true & X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
-    } else if (SCSisConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
+    } else if (SCSisConstantFalse (PRF_ARG1 (arg_node))) { /* false & X */
         res = SCSmakeFalse (PRF_ARG2 (arg_node));
     }
 
@@ -2074,8 +2126,8 @@ SCSprf_and_SxV (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_and_VxS( node *arg_node, info *arg_info)
- * X & 1  -> X
- * X & 0  -> 0 of shape(X)
+ * X & true  -> X
+ * X & false -> false of shape(X)
  *
  *****************************************************************************/
 node *
@@ -2084,9 +2136,9 @@ SCSprf_and_VxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (SCSisConstantOne (PRF_ARG2 (arg_node))) { /* X & 1 */
+    if (SCSisConstantTrue (PRF_ARG2 (arg_node))) { /* X & true */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-    } else if (SCSisConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
+    } else if (SCSisConstantFalse (PRF_ARG2 (arg_node))) { /* X & false */
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
     }
 
