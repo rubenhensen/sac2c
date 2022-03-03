@@ -1,0 +1,26 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>./$<
+
+inline
+int[3] ++( int[2] arr_a, int[1] arr_b)
+{
+  res = [2,3,0];
+  res = with {
+          ( [2] <= iv < [3] ) : _sel_VxA_( _sub_VxV_( iv, [2]), arr_b);
+        } : modarray( res );
+  return( res);
+}            
+
+noinline
+int consume( int x, int[*] a)
+{
+   return _eq_SxS_(x, 0) ? 0 : 1;
+}
+
+int main()
+{ 
+  z = with {} : genarray([2,3]++[0],0);
+  return consume( 0, z);
+}
+
