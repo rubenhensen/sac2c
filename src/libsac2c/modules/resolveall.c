@@ -120,7 +120,7 @@ CheckSymbolExistsRec (const char *mod, const sttable_t *table, node *symbols,
                 && ((!(STsymbolVisibility (symbol) == SVT_provided)) || exportedonly))) {
             node *tmp;
 
-            CTIwarnLoc (NODE_LOCATION (symbols),
+            CTIwarn (NODE_LOCATION (symbols),
                         "Symbol `%s::%s' is undefined. Ignoring...", mod,
                         SYMBOL_ID (symbols));
 
@@ -224,7 +224,7 @@ RSAuse (node *arg_node, info *arg_info)
         if (USE_SYMBOL (arg_node) == NULL) {
             node *tmp;
 
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "Use statement has empty set of symbols. Ignoring...");
 
             tmp = USE_NEXT (arg_node);
@@ -267,7 +267,7 @@ RSAimport (node *arg_node, info *arg_info)
         if (IMPORT_SYMBOL (arg_node) == NULL) {
             node *tmp;
 
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "Import statement has empty set of symbols. Ignoring...");
 
             tmp = IMPORT_NEXT (arg_node);

@@ -68,7 +68,6 @@
 
 static char *message_buffer = NULL;
 static size_t message_buffer_size = 0;
-static size_t message_line_length = 80;
 
 static const char *abort_message_header = "Abort";
 static const char *error_message_header = "Error";
@@ -85,12 +84,6 @@ static FILE * cti_stderr;
 
 
 #define MAX_ITEM_NAME_LENGTH 255
-
-void
-set_message_line_length (size_t l)
-{
-    message_line_length = l;
-}
 
 int
 CTIgetErrorCount (void)
@@ -1118,24 +1111,6 @@ CTIerrorInternal (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn size_t CTIgetErrorMessageLineLength( )
- *
- *   @brief  Yields useful line length for error messages.
- *
- *   @return line length
- *
- ******************************************************************************/
-
-size_t
-CTIgetErrorMessageLineLength ()
-{
-    DBUG_ENTER ();
-
-    DBUG_RETURN (message_line_length - STRlen (error_message_header));
-}
-
-/** <!--********************************************************************-->
- *
  * @fn void CTIabortOnBottom( const char *err_msg)
  *
  *   @brief   Prints a preprocessed error message obtained from CTIgetErrorMessageVA
@@ -1248,39 +1223,6 @@ CTIabortOnError ()
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIwarnLoc( ,struct location loc, const char *format, ...)
- *
- *   @brief   Produces a warning message preceded by location info.
- *
- *   @param loc     location info
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-void
-CTIwarnLoc (struct location loc, const char *format, ...)
-{
-    char *warn_msg;
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    if (global.verbose_level >= 1) {
-        va_start (arg_p, format);
-
-        warn_msg = CTIcreateMessageLoc (warn_message_header, loc, format, arg_p);
-        fprintf (cti_stderr, "%s", warn_msg);
-        MEMfree (warn_msg);
-
-        va_end (arg_p);
-
-        warnings++;
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
  * @fn void CTIwarn( const struct location loc, const char *format, ...)
  * 
  *   @brief   Produces a warning message with the file name, line number and
@@ -1347,27 +1289,6 @@ CTIwarnContinued (const char *format, ...)
 
     DBUG_RETURN ();
 }
-
-
-/** <!--********************************************************************-->
- *
- * @fn size_t CTIgetWarnMessageLineLength( )
- *
- *   @brief  Yields useful line length for warning messages.
- *
- *   @return line length
- *
- ******************************************************************************/
-
-size_t
-CTIgetWarnMessageLineLength ()
-{
-    DBUG_ENTER ();
-
-    DBUG_RETURN (message_line_length - STRlen (warn_message_header));
-}
-
-
 
 /*******************************************************************************
  *******************************************************************************

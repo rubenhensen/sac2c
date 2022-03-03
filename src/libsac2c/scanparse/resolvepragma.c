@@ -370,19 +370,19 @@ RSPfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("number of arguments: %d", PRAGMA_NUMPARAMS (pragma));
 
         if (PRAGMA_COPYFUN (pragma) != NULL) {
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "Pragma 'copyfun` has no effect on function");
             PRAGMA_COPYFUN (pragma) = MEMfree (PRAGMA_COPYFUN (pragma));
         }
 
         if (PRAGMA_FREEFUN (pragma) != NULL) {
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "Pragma 'freefun` has no effect on function");
             PRAGMA_FREEFUN (pragma) = MEMfree (PRAGMA_FREEFUN (pragma));
         }
 
         if (PRAGMA_INITFUN (pragma) != NULL) {
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "Pragma 'initfun` has no effect on function");
             PRAGMA_INITFUN (pragma) = MEMfree (PRAGMA_INITFUN (pragma));
         }
@@ -411,7 +411,7 @@ RSPfundef (node *arg_node, info *arg_info)
             if (FUNDEF_HASDOTARGS (arg_node) || FUNDEF_HASDOTRETS (arg_node)) {
                 FUNDEF_REFCOUNTDOTS (arg_node) = PRAGMA_REFCOUNTDOTS (pragma);
             } else {
-                CTIwarnLoc (NODE_LOCATION (arg_node),
+                CTIwarn (NODE_LOCATION (arg_node),
                             "Pragma 'refcountdots' has no effect on function");
             }
         }
@@ -468,7 +468,7 @@ RSPfundef (node *arg_node, info *arg_info)
 
         if (PRAGMA_CUDALINKNAME (pragma) != NULL) {
             if (FUNDEF_LINKNAME (arg_node) == NULL) {
-                CTIwarnLoc (NODE_LOCATION (arg_node),
+                CTIwarn (NODE_LOCATION (arg_node),
                             "Implicit declaration of 'C' version of external function"
                             " use linkname to explicitly declare 'C' version");
             }

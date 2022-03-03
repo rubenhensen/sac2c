@@ -22,8 +22,6 @@ extern void CTIterminateCompilation (node *syntax_tree);
 extern const char *CTIitemName (node *item);
 extern const char *CTIitemNameDivider (node *item, const char *divider);
 extern const char *CTIfunParams (node *fundef);
-extern void set_message_line_length (size_t l);
-
 
 /**
  * verbosity level >= 0:
@@ -34,9 +32,8 @@ extern void CTIerrorInternal (const char *format, ...) PRINTF_FORMAT (1, 2);
 /* helpers: */
 extern char *CTIgetErrorMessageVA (size_t line, const char *file, const char *format,
                                    va_list arg_p);
-extern size_t CTIgetErrorMessageLineLength (void);
-extern void CTIabortOnBottom (char *err_msg);
 extern void CTIabort (const struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3) FUN_ATTR_NORETURN;
+extern void CTIabortOnBottom (char *err_msg);
 extern void CTIabortOutOfMemory (size_t request) FUN_ATTR_NORETURN;
 extern void CTIabortOnError (void);
 
@@ -44,11 +41,7 @@ extern void CTIabortOnError (void);
  * verbosity level >= 1:
  */
 extern void CTIwarn (const struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
-extern void CTIwarnLoc (struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
-extern void CTIwarnLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIwarnContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
-/* helpers: */
-extern size_t CTIgetWarnMessageLineLength (void);
 
 /**
  * verbosity level >= 2:

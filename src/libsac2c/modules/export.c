@@ -160,7 +160,7 @@ EXPprovide (node *arg_node, info *arg_info)
                 INFO_PROVIDED (arg_info) = TRUE;
             }
         } else {
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "The provide directive is only allowed in modules and "
                         "classes. Ignoring...");
 
@@ -188,7 +188,7 @@ EXPexport (node *arg_node, info *arg_info)
                 INFO_EXPORTED (arg_info) = TRUE;
             }
         } else {
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "The export directive is only allowed in modules and classes. "
                         "Ignoring...");
 
