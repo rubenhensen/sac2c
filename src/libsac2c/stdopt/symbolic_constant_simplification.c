@@ -604,7 +604,7 @@ SCSisConstantTrue (node *arg_node)
 
     pat = PMconst (1, PMAgetVal (&argconst));
     if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
-        res = !COisTrue (argconst, TRUE);
+        res = COisTrue (argconst, TRUE);
         argconst = COfreeConstant (argconst);
     }
     pat = PMfree (pat);
