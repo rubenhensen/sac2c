@@ -25,7 +25,7 @@
  *        } : fold (op, n);
  *
  * Multi-generator WLs are not supported.
- * In case of multi-operator fold-with-loops, accu needs to return 
+ * In case of multi-operator fold-with-loops, accu needs to return
  * as many values as we have fold-operators and we need folding function
  * applications for all folding operations, e.g.:
  *
@@ -47,11 +47,11 @@
  * arguments are needed in order to allow type inference to predict
  * the number of return values.
  *
- * Besides this basic transformation, we need to support two special 
+ * Besides this basic transformation, we need to support two special
  * cases:
  *
  * I) partial fold function applications:
- * 
+ *
  * If the fold operation <op> actually is a partial application, e.g.
  *
  * <op> == foo (a, b), then we generate
@@ -109,17 +109,17 @@
  *       InjectAccuIds (lhs, arg_info)    for every fold operator.
  * It creates a new accu variable and injects it into INFO_FOLD_ACCU_ASSIGN,
  * relying on INFO_FUNDEF for the insertion of the variable declaration.
- * It also relies on INFO_FOLD to inject the neutral element as additional 
+ * It also relies on INFO_FOLD to inject the neutral element as additional
  * argument to _accu_.
  *
- * The construction of INFO_FOLD_ASSIGNS happens through 
+ * The construction of INFO_FOLD_ASSIGNS happens through
  *       InjectFoldFunAssign (avis, cexpr, arg_info)    for every fold operator.
  * Given the accu variable's avis and the body's result in cexpr (N_id node),
  * this function constructs the explicit fold function call. While doing so, it
  * relies on INFO_FUNDEF for the insertion of the variable declaration, on
  * INFO_FOLD for checking whether we have a partial application
- * (FOLD_ARGS != NULL) and for potentially dealing with a foldfix 
- * (FOLD_GUARD != NULL). 
+ * (FOLD_ARGS != NULL) and for potentially dealing with a foldfix
+ * (FOLD_GUARD != NULL).
  *
  * The required adjustments of the cexprs are done in EAfold as well!
  */
@@ -241,13 +241,13 @@ InjectAccuIds (node *ids, info *arg_info)
     node *avis, *lhs, *neutral;
 
     DBUG_ENTER ();
-    DBUG_PRINT ("   injecting netral argument into INFO_FOLD_ACCU_ASSIGN");
     neutral = FOLD_NEUTRAL (INFO_FOLD (arg_info));
+    DBUG_PRINT ("   injecting neutral argument into INFO_FOLD_ACCU_ASSIGN: %s", ID_NAME (neutral));
     PRF_ARGS (LET_EXPR (ASSIGN_STMT (INFO_FOLD_ACCU_ASSIGN (arg_info))))
         = TCappendExprs (
               PRF_ARGS (LET_EXPR (ASSIGN_STMT (INFO_FOLD_ACCU_ASSIGN (arg_info)))),
               TBmakeExprs (DUPdoDupTree (neutral), NULL));
-    
+
     DBUG_PRINT ("   injecting new ids into INFO_FOLD_ACCU_ASSIGN");
     avis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (ids)),
                        TYeliminateAKV (AVIS_TYPE (IDS_AVIS (ids))));
@@ -297,7 +297,7 @@ InjectFoldFunAssign (node *acc_avis, node *cexpr_id, info *arg_info)
     /* create <avis> = <fun>( <accu>, cexpr_id); */
     args = TBmakeExprs (TBmakeId (acc_avis), TBmakeExprs (cexpr_id, NULL));
     if (FOLD_ARGS (INFO_FOLD (arg_info))) {
-        /* Partial ap! Duplicate the partial args exprs from FOLD_ARGS 
+        /* Partial ap! Duplicate the partial args exprs from FOLD_ARGS
          * and prepand them to the args:
          */
         DBUG_PRINT ("   injecting args from partial fold-fun ap");
@@ -424,7 +424,7 @@ EAassign (node *arg_node, info *arg_info)
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-    
+
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     } else {
@@ -545,12 +545,6 @@ EAfold (node *arg_node, info *arg_info)
     lhs = INFO_LHS_IDS (arg_info);
     cexprs = INFO_CEXPRS (arg_info);
 
-    if (FOLD_NEXT (arg_node) != NULL) {
-        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
-        INFO_LHS_IDS (arg_info) = IDS_NEXT (INFO_LHS_IDS (arg_info));
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-    }
-
     if (INFO_FOLD_ACCU_ASSIGN (arg_info) == NULL) {
         DBUG_PRINT ("   generating empty accu assign");
         INFO_FOLD_ACCU_ASSIGN (arg_info)
@@ -603,6 +597,12 @@ EAfold (node *arg_node, info *arg_info)
         InjectVardec (avis, arg_info);
         AVIS_SSAASSIGN (avis) = AVIS_SSAASSIGN (IDS_AVIS (lhs));
         IDS_NEXT (lhs) = TBmakeIds (avis, IDS_NEXT (lhs));
+    }
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+        INFO_LHS_IDS (arg_info) = IDS_NEXT (INFO_LHS_IDS (arg_info));
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
