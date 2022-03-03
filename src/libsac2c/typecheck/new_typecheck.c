@@ -1115,7 +1115,7 @@ NTClet (node *arg_node, info *arg_info)
                         principle
                          * would be the better way to go for anyways....
                          *
-                        CTIwarnLine( global.linenum,
+                        CTIwarn (LINE_TO_LOC (global.linenum),
                                      "Cannot infer type of \"%s\" as it corresponds to
                         \"...\" " "return type -- relying on type declaration", IDS_NAME(
                         lhs));
