@@ -520,7 +520,11 @@ NTCCTprf_guardhold (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_afterguard( te_info *info, ntype *elems)
  *
- * description:
+ * description: X' = afterguard( X, p1, p2, ...);
+ *             p1,... are Boolean scalar
+ *             X can be anything.
+ *             If( p1 && ...), X' = X;
+ *             else error.
  *
  ******************************************************************************/
 
@@ -670,7 +674,7 @@ NTCCTprf_noteintersect (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_type_constraint( te_info *info, ntype *elems)
  *
- * description:
+ * description: type_constraint (type, X)
  *
  ******************************************************************************/
 
@@ -713,7 +717,7 @@ NTCCTprf_type_constraint (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_same_shape( te_info *info, ntype *elems)
  *
- * description:
+ * description:    X', Y', pred = same_shape (X, Y)
  *
  ******************************************************************************/
 
@@ -764,7 +768,7 @@ NTCCTprf_same_shape (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_shape_matches_dim_VxA( te_info *info, ntype *args)
  *
- * description:
+ * description: idx', pred = shape_matches_dim (idx, array)
  *
  ******************************************************************************/
 
@@ -813,7 +817,7 @@ NTCCTprf_shape_matches_dim_VxA (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_non_neg_S)( te_info *info, ntype *args)
  *
- * description:
+ * description:  X', p = non_neg (X);
  *
  ******************************************************************************/
 
@@ -850,7 +854,7 @@ NTCCTprf_non_neg_S (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_non_neg_V)( te_info *info, ntype *args)
  *
- * description:
+ * description: X', p = non_neg (X);
  *
  ******************************************************************************/
 
@@ -887,7 +891,7 @@ NTCCTprf_non_neg_V (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_val_shape_S( te_info *info, ntype *args)
  *
- * description:
+ * description: idx', p = val_lt_shape (idx, array);
  *
  ******************************************************************************/
 
@@ -944,7 +948,7 @@ NTCCTprf_val_shape_S (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_val_shape_V( te_info *info, ntype *args)
  *
- * description:
+ * description: idx', p = val_lt_shape (idx, array);
  *
  ******************************************************************************/
 
@@ -1005,7 +1009,7 @@ NTCCTprf_val_shape_V (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_val_lt_val_SxS( te_info *info, ntype *args)
  *
- * description:
+ * description: v1', p = val_lt_val (v1, v2);
  *
  ******************************************************************************/
 
@@ -1054,7 +1058,7 @@ NTCCTprf_val_lt_val_SxS (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_val_le_val_SxS( te_info *info, ntype *args)
  *
- * description:
+ * description: v1', p = val_lt_val (v1, v2);
  *
  ******************************************************************************/
 
@@ -1103,7 +1107,7 @@ NTCCTprf_val_le_val_SxS (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_val_le_val_VxV( te_info *info, ntype *args)
  *
- * description:
+ * description: v1', p = val_lt_val (v1, v2);
  *
  ******************************************************************************/
 
@@ -1162,7 +1166,7 @@ NTCCTprf_val_le_val_VxV (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_prod_shape( te_info *info, ntype *args)
  *
- * description:
+ * description:  new_shp', p = prod_matches_shape (new_shp, array);
  *
  ******************************************************************************/
 
