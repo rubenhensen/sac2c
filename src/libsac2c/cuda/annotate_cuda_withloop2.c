@@ -290,7 +290,7 @@ ACUWLwith (node *arg_node, info *arg_info)
         if (WITH_PRAGMA (arg_node) != NULL
             && PRAGMA_NOCUDA (WITH_PRAGMA (arg_node))) { // checking (3)
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum, "Cudarization of with-loop blocked "
+            CTIwarn (LINE_TO_LOC (global.linenum), "Cudarization of with-loop blocked "
                          "by pragma!");
         }
         DBUG_PRINT ("  %s!",
@@ -575,7 +575,7 @@ ACUWLid (node *arg_node, info *arg_info)
                          ID_NAME (arg_node));
         } else if (!CUisSupportedHostSimpletype (TYgetSimpleType (TYgetScalar (type)))) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum,
+            CTIwarn (LINE_TO_LOC (global.linenum),
                          "Cannot cudarize with-loop due to missing base type "
                          "implementation! "
                          "Missing type: \"%s\" for relatively free variable \"%s\"!",

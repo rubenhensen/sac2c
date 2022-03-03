@@ -462,7 +462,7 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, size_t 
     if ((parms != NULL) && (seg != NULL)) {
         while (seg != NULL) {
             if (WLSEG_ISDYNAMIC (seg)) {
-                CTIwarnLine (line,
+                CTIwarn (LINE_TO_LOC (line),
                              "wlcomp-pragma function %s() ignored"
                              " because generator is not constant",
                              fun_name);
@@ -616,7 +616,7 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, size_t line)
     DBUG_ENTER ();
 
     if (NODE_TYPE (cubes) != N_wlstride) {
-        CTIwarnLine (line, "wlcomp-pragma function ConstSeg() ignored"
+        CTIwarn (LINE_TO_LOC (line), "wlcomp-pragma function ConstSeg() ignored"
                            " because generator is not constant");
     } else {
         if (segs != NULL) {
@@ -831,7 +831,7 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, size_t line)
     DBUG_ENTER ();
 
     if (global.mtmode == MT_none) {
-        CTIwarnLine (line, "wlcomp-pragma function Scheduling() ignored"
+        CTIwarn (LINE_TO_LOC (line), "wlcomp-pragma function Scheduling() ignored"
                            " because multi-threading is inactive");
     } else {
         while (seg != NULL) {
@@ -904,7 +904,7 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, size_t line)
     DBUG_ENTER ();
 
     if (global.mtmode == MT_none) {
-        CTIwarnLine (line, "wlcomp-pragma function Tasksel() ignored"
+        CTIwarn (LINE_TO_LOC (line), "wlcomp-pragma function Tasksel() ignored"
                            " because multi-threading is inactive");
     } else {
         while (seg != NULL) {

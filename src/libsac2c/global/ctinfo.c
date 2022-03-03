@@ -1281,41 +1281,6 @@ CTIwarnLoc (struct location loc, const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIwarnLine( int line, const char *format, ...)
- *
- *   @brief   Produces a warning message preceded by file name and line number.
- *
- *   @param line    line number
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIwarnLine (size_t line, const char *format, ...)
-{
-    char *warn_msg;
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    if (global.verbose_level >= 1) {
-        va_start (arg_p, format);
-
-        warn_msg = CTIcreateMessageLine (warn_message_header, line, format, arg_p);
-        fprintf (cti_stderr, "%s", warn_msg);
-        MEMfree (warn_msg);
-
-        va_end (arg_p);
-
-        warnings++;
-    }
-
-    DBUG_RETURN ();
-}
-
-
-/** <!--********************************************************************-->
- *
  * @fn void CTIwarn( const struct location loc, const char *format, ...)
  * 
  *   @brief   Produces a warning message with the file name, line number and

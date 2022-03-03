@@ -3962,7 +3962,7 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
             segs = fun (segs, SPAP_ARGS (EXPRS_EXPR (aps)), cubes, iter_dims,            \
                         global.linenum);                                                 \
         } else {                                                                         \
-            CTIwarnLine (global.linenum,                                                 \
+            CTIwarn (LINE_TO_LOC (global.linenum),                                                 \
                          "Function %s of wlcomp-pragma ignored in order"                 \
                          " to meet the IEEE-754 standard",                               \
                          SPAP_NAME (EXPRS_EXPR (aps)));                                  \
@@ -3977,7 +3977,7 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
 #undef WLP
                   ;
 
-                CTIwarnLine (global.linenum,
+                CTIwarn (LINE_TO_LOC (global.linenum),
                              "Illegal function name %s in wlcomp-pragma found."
                              " Currently supported functions are: %s",
                              SPAP_NAME (EXPRS_EXPR (aps)), fun_names);
@@ -5425,7 +5425,7 @@ AdjustBlockSize (int old_bv, int unroll, bool warn)
     }
 
     if (warn && (old_bv != new_bv)) {
-        CTIwarnLine (global.linenum, "Block size adjusted: %i instead of %i", new_bv,
+        CTIwarn (LINE_TO_LOC (global.linenum), "Block size adjusted: %i instead of %i", new_bv,
                      old_bv);
     }
 

@@ -1333,7 +1333,7 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                          * Max. numbers of new generators is exceeded.
                          * Remove all new generators.
                          */
-                        CTIwarnLine (global.linenum,
+                        CTIwarn (LINE_TO_LOC (global.linenum),
                                      "WLFS: number of new generators exceeds max_newgens"
                                      " -> roll back");
 
@@ -1377,7 +1377,7 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                  * Max. numbers of new generators is exceeded.
                  * Remove all new generators.
                  */
-                CTIwarnLine (global.linenum,
+                CTIwarn (LINE_TO_LOC (global.linenum),
                              "WLFS: number of new generators exceeds max_newgens"
                              " -> roll back");
 
