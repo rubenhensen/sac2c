@@ -133,7 +133,7 @@ AddObjDependency (const char *lib, strstype_t kind, void *buf)
                 rpath = MEMfree (rpath);
                 rpath = STRcatn (3, global.target_modlibdir, "/", lib);
                 if (FMGRcheckExistFile (rpath)) {
-                    CTInote (EMPTY_LOC, 
+                    CTInote (EMPTY_LOC,
                       "External object %s picked from module target directory (%s)", lib,
                       rpath);
                     SBUFprintf (sbuf, " %s", rpath);
@@ -357,9 +357,9 @@ CCTperformTask (ccm_task_t task)
     do {                                                                                 \
         const char *path_subst = "";                                                     \
         char *source_subst                                                               \
-          = STRcatn (4, SourceDir, "/", Source, global.config.Kind##cext);               \
+          = STRcatn (6, "'", SourceDir, "/", Source, global.config.Kind##cext, "'");     \
         char *target_subst                                                               \
-          = STRcatn (4, SourceDir, "/", Source, global.config.Kind##objext);             \
+          = STRcatn (6, "'", SourceDir, "/", Source, global.config.Kind##objext, "'");   \
         SBUFprintf (Kind##objs_buf, " %s", target_subst);                                \
         const char *objects_subst = "";                                                  \
         char *compile_cmd = DO_SUBST (CompileString);                                    \
@@ -368,7 +368,7 @@ CCTperformTask (ccm_task_t task)
                                                                                          \
         CTInote (EMPTY_LOC, "Preprocessing C source \"%s%s\"",                           \
                  Source, global.config.Kind##cext);                                      \
-        DBUG_PRINT ("compile command: %s", compile_cmd);                                 \
+        DBUG_PRINT ("preprocess command: %s", compile_cmd);                              \
         SYScall ("%s", compile_cmd);                                                     \
         compile_cmd = MEMfree (compile_cmd);                                             \
     } while (0)
@@ -377,9 +377,9 @@ CCTperformTask (ccm_task_t task)
     do {                                                                                 \
         const char *path_subst = global.tmp_dirname;                                     \
         char *source_subst                                                               \
-          = STRcatn (4, SourceDir, "/", Source, global.config.Kind##cext);               \
+          = STRcatn (6, "'", SourceDir, "/", Source, global.config.Kind##cext, "'");     \
         char *target_subst                                                               \
-          = STRcatn (4, path_subst, "/", Source, global.config.Kind##objext);            \
+          = STRcatn (6, "'", path_subst, "/", Source, global.config.Kind##objext, "'");  \
         SBUFprintf (Kind##objs_buf, " %s", target_subst);                                \
         const char *objects_subst = "";                                                  \
         char *compile_cmd = DO_SUBST (CompileString);                                    \
@@ -502,14 +502,16 @@ CCTperformTask (ccm_task_t task)
         char *tree_objects = SBUF2strAndFree (&tree_objs_buf);
 
         if (global.filetype == FT_prog) {
-            const char *path_subst = global.targetdir;
-            char *target_subst = STRcat (global.outfilename, global.config.exeext);
+            char *path_subst = STRcatn (3, "'", global.targetdir, "'");
+            char *target_subst = STRcatn (4, "'", global.outfilename, global.config.exeext, "'");
 
             DO_LINK (global.config.link_prog, objects);
 
+            MEMfree (path_subst);
             MEMfree (target_subst);
         } else {
             char *path_subst;
+            char *tmp;
 
             str_buf *path_buf = SBUFcreate (1);
 
@@ -526,14 +528,16 @@ CCTperformTask (ccm_task_t task)
             if (STRlen (global.config.variant) > 0)
                 SBUFprintf (path_buf, "/%s", global.config.variant);
 
-            path_subst = SBUF2strAndFree (&path_buf);
+            tmp = SBUF2strAndFree (&path_buf);
+            path_subst = STRcatn (3, "'", tmp, "'");
+            MEMfree (tmp);
 
             // The destination directory may not exist at this point,
             // so invoke mkdir just in case.
             SYScall ("%s %s", global.config.mkdir, path_subst);
 
             char *target_subst
-              = STRcatn (4, path_subst, "/", libname_subst, global.config.modext);
+              = STRcatn (5, path_subst, "/'", libname_subst, global.config.modext, "'");
 
             DO_LINK (global.config.link_mod, objects);
 
@@ -543,14 +547,14 @@ CCTperformTask (ccm_task_t task)
                 MEMfree (target_subst);
 
                 path_subst
-                  = STRcatn (3, global.targetdir, "/tree/", global.config.target_env);
+                  = STRcatn (5, "'", global.targetdir, "/tree/", global.config.target_env, "'");
 
                 // The destination directory may not exist at this point,
                 // so invoke mkdir just in case.
                 SYScall ("%s %s", global.config.mkdir, path_subst);
 
-                target_subst = STRcatn (5, path_subst, "/lib", global.modulename, "Tree",
-                                        global.config.tree_dllext);
+                target_subst = STRcatn (6, path_subst, "/'lib", global.modulename, "Tree",
+                                        global.config.tree_dllext, "'");
 
                 DO_LINK (global.config.link_tree, tree_objects);
             }

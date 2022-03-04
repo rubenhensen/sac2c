@@ -66,12 +66,12 @@ SPdoRunPreProcessor (node *syntax_tree)
     /* The sed command is needed to remove a pragma that is inserted by the
        Apple GCC 3.3 on Panther   */
 
-    SYScall ("%s %s %s %s %s >'%s'/source.tmp && sed '/^#pragma GCC set_debug_pwd/d' < "
+    SYScall ("%s %s %s %s '%s' >'%s'/source.tmp && sed '/^#pragma GCC set_debug_pwd/d' < "
              "'%s'/source.tmp > '%s'/source",
              (pathname == NULL) ? global.config.cpp_stdin : global.config.cpp_file,
-             define, global.config_macros, 
+             define, global.config_macros,
              (global.cpp_options == NULL) ? " " : global.cpp_options,
-             (pathname == NULL) ? " " : pathname, global.tmp_dirname, global.tmp_dirname,
+             (pathname == NULL) ? "" : pathname, global.tmp_dirname, global.tmp_dirname,
              global.tmp_dirname);
 
     DBUG_RETURN (syntax_tree);
