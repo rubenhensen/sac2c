@@ -4938,6 +4938,8 @@ PRTcode (node *arg_node, info *arg_info)
     if (CODE_CEXPRS (arg_node) != NULL) {
         fprintf (global.outfile, " : ");
         TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+    } else {
+        fprintf (global.outfile, " : void");
     }
 
     fprintf (global.outfile, " ; ");

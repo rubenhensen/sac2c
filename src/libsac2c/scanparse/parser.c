@@ -3089,6 +3089,7 @@ node *
 handle_npart (struct parser *parser)
 {
     struct token *tok;
+    struct location loc;
     node *generator = error_mark_node;
     node *block = error_mark_node;
     node *exprs = NULL;
@@ -3120,30 +3121,40 @@ handle_npart (struct parser *parser)
 
     tok = parser_get_token (parser);
     if (token_is_operator (tok, tv_colon)) {
-        /* We share `in_return' parser flag to avoid creating N_exprs
-           for a single expr.  However, as with-loop can be inside the
-           return expression, we cannot turn off the `in_return' flag.
-           Instead we save its state, and restore it after the expression
-           list was handled.  */
-        bool old_return_state = parser->in_return;
 
-        parser->in_return = true;
-        exprs = handle_expr (parser);
-        parser->in_return = old_return_state;
+        tok = parser_get_token (parser);
+        loc = token_location (tok);
 
-        if (!exprs) {
-            error_loc (token_location (tok), "expression expected");
-            parser_get_until_tval (parser, tv_semicolon);
-            goto error;
+        if (token_is_keyword (tok, TYPE_VOID)) {
+            exprs = NULL;
+        } else {
+            parser_unget (parser);
+            /* We share `in_return' parser flag to avoid creating N_exprs
+               for a single expr.  However, as with-loop can be inside the
+               return expression, we cannot turn off the `in_return' flag.
+               Instead we save its state, and restore it after the expression
+               list was handled.  */
+            bool old_return_state = parser->in_return;
+
+            parser->in_return = true;
+            exprs = handle_expr (parser);
+            parser->in_return = old_return_state;
+
+            if (!exprs) {
+                error_loc (token_location (tok), "`void' or expression expected");
+                parser_get_until_tval (parser, tv_semicolon);
+                goto error;
+            }
+
+            if (exprs == error_mark_node) {
+                parser_get_until_tval (parser, tv_semicolon);
+                goto error;
+            }
+
+            if (NODE_TYPE (exprs) != N_exprs)
+                exprs = expr_constructor (exprs, NULL);
         }
 
-        if (exprs == error_mark_node) {
-            parser_get_until_tval (parser, tv_semicolon);
-            goto error;
-        }
-
-        if (NODE_TYPE (exprs) != N_exprs)
-            exprs = expr_constructor (exprs, NULL);
 
     } else
         parser_unget (parser);
@@ -3479,7 +3490,9 @@ handle_with (struct parser *parser)
 
     tok = parser_get_token (parser);
     /* Handle a list of withops.  */
-    if (token_is_operator (tok, tv_lparen)) {
+    if (token_is_keyword (tok, TYPE_VOID)) {
+        withop = NULL;
+    } else if (token_is_operator (tok, tv_lparen)) {
         bool withop_error = false;
         node *withop_end = NULL;
 
