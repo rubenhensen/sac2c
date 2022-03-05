@@ -413,7 +413,7 @@ moveAssign (node *assign, node *assigns, info *arg_info)
             assigns = TRAVopt (assigns, stack_info);
             TRAVpop ();
             if (INFO_ASSIGN (stack_info) != NULL) {
-                CTInote ("Did not find use of lhs placing assign at end of block");
+                CTInote (EMPTY_LOC, "Did not find use of lhs placing assign at end of block");
                 DBUG_PRINT ("LHS %s ...",
                             AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (assign)))));
                 assigns = TCappendAssign (assigns, INFO_ASSIGN (stack_info));

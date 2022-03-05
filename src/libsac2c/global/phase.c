@@ -156,7 +156,7 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
     CheckEnableDbug (phase);
 #endif
 
-    CTInote (" ");
+    CTInote (EMPTY_LOC, " ");
 
     if (cond) {
         CTIstate ("** %2d: %s ...", global.phase_num, PHIphaseText (phase));
@@ -238,7 +238,7 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 
     if (cond) {
         if (PHIphaseType (subphase) != PHT_cycle) {
-            CTInote ("**** %s ...", PHIphaseText (subphase));
+            CTInote (EMPTY_LOC, "**** %s ...", PHIphaseText (subphase));
         }
 
         TIMEbegin (subphase);
@@ -324,8 +324,8 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
 
         global.cycle_counter = 1;
         do {
-            CTInote (" ");
-            CTInote ("**** %s pass: %i", PHIphaseText (cycle), global.cycle_counter);
+            CTInote (EMPTY_LOC, " ");
+            CTInote (EMPTY_LOC, "**** %s pass: %i", PHIphaseText (cycle), global.cycle_counter);
             STATclearCounters (&oc_pass);
 
             TIMEbegin (cycle);
@@ -352,7 +352,7 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
                 STATaddCounters (&oc_global, &oc_pass);
             } else {
                 go_on = FALSE;
-                CTInote (" ");
+                CTInote (EMPTY_LOC, " ");
             }
 
             /*
@@ -430,7 +430,7 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
     if (cond
         && ((cyclephase <= global.break_after_cyclephase)
             || (global.cycle_counter < global.break_cycle_specifier))) {
-        CTInote ("****** %s ...", PHIphaseText (cyclephase));
+        CTInote (EMPTY_LOC, "****** %s ...", PHIphaseText (cyclephase));
 
         TIMEbegin (cyclephase);
         syntax_tree = PHIphaseFun (cyclephase) (syntax_tree);
@@ -504,14 +504,14 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
             CTItell (4, " ");
 
             if (FUNDEF_ISLOOPFUN (fundef)) {
-                CTInote ("****** Optimizing loop function:");
+                CTInote (EMPTY_LOC, "****** Optimizing loop function:");
             } else if (FUNDEF_ISCONDFUN (fundef)) {
-                CTInote ("****** Optimizing conditional function:");
+                CTInote (EMPTY_LOC, "****** Optimizing conditional function:");
             } else {
-                CTInote ("****** Optimizing regular function:");
+                CTInote (EMPTY_LOC, "****** Optimizing regular function:");
             }
 
-            CTInote ("******  %s( %s): ...", CTIitemName (fundef), CTIfunParams (fundef));
+            CTInote (EMPTY_LOC, "******  %s( %s): ...", CTIitemName (fundef), CTIfunParams (fundef));
 
             FUNDEF_ISINLINECOMPLETED (fundef) = FALSE;
 

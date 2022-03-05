@@ -277,11 +277,11 @@ ACUWLwith (node *arg_node, info *arg_info)
         DBUG_PRINT ("  checking base type!");
         if (!is_ok_basetype) {          // checking condition  (2)
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum,
-                         "Cannot cudarize with-loop due to missing base type "
-                         "implementation! "
-                         "Missing type: \"%s\" for the result!",
-                         global.type_string[base_ty]);
+            CTIwarn (LINE_TO_LOC (global.linenum),
+                     "Cannot cudarize with-loop due to missing base type "
+                     "implementation!\n"
+                     "Missing type: \"%s\" for the result!",
+                     global.type_string[base_ty]);
         }
         DBUG_PRINT ("  %s!",
                     (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
@@ -325,7 +325,7 @@ ACUWLwith (node *arg_node, info *arg_info)
          */
         DBUG_PRINT ("  inner WL => NO candidate!");
         WITH_CUDARIZABLE (arg_node) = FALSE;
-        CTInoteLine (NODE_LINE (arg_node), "Inner With-loop => no cudarization!");
+        CTInote (NODE_LOCATION (arg_node), "Inner With-loop => no cudarization!");
 
         DBUG_PRINT ("  checking body of inner WL!");
         WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
@@ -389,25 +389,25 @@ ACUWLfold (node *arg_node, info *arg_info)
             FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
             if (FOLD_NEXT (arg_node) != NULL) {
                 INFO_CUDARIZABLE (arg_info) = FALSE;
-                CTIwarnLine (global.linenum,
-                             "Cannot cudarize with-loop due to"
-                             " multiple operators!");
+                CTIwarn (LINE_TO_LOC (global.linenum),
+                         "Cannot cudarize with-loop due to"
+                         " multiple operators!");
             }
             if (!TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
                 INFO_CUDARIZABLE (arg_info) = FALSE;
-                CTIwarnLine (global.linenum,
-                             "Cannot cudarize with-loop as partial folds"
-                             " require statically known result shapes!");
+                CTIwarn (LINE_TO_LOC (global.linenum),
+                         "Cannot cudarize with-loop as partial folds"
+                         " require statically known result shapes!");
             }
             if (INFO_CUDARIZABLE (arg_info)) {
                 FOLD_ISPARTIALFOLD (arg_node) = TRUE;
             }
         } else {
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum,
-                         "Cannot cudarize with-loop as partial"
-                         " folds are turned off! Use -doPFD to enable"
-                         " partial folds.");
+            CTIwarn (LINE_TO_LOC (global.linenum),
+                     "Cannot cudarize with-loop as partial"
+                     " folds are turned off! Use -doPFD to enable"
+                     " partial folds.");
         }
     } else {
         /* Inner with-loops themselves are dismissed in ACUWLwith; here we
@@ -437,9 +437,8 @@ ACUWLgenarray (node *arg_node, info *arg_info)
         DBUG_PRINT ("      checking single operator!");
         if (GENARRAY_NEXT (arg_node) != NULL) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum,
-                         "Cannot cudarize with-loop due to"
-                         " multiple operators!");
+            CTIwarn (LINE_TO_LOC (global.linenum),
+                     "Cannot cudarize with-loop due to multiple operators!");
         }
         DBUG_PRINT ("      %s!",
                     (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
@@ -447,9 +446,9 @@ ACUWLgenarray (node *arg_node, info *arg_info)
         DBUG_PRINT ("      checking AKD!");
         if (!TUdimKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum,
-                         "Cannot cudarize genarray-with-loop as genarray-"
-                         "with-loops require statically known result dimensions!");
+            CTIwarn (LINE_TO_LOC (global.linenum),
+                     "Cannot cudarize genarray-with-loop as genarray-"
+                     "with-loops require statically known result dimensions!");
         }
         DBUG_PRINT ("      %s!",
                     (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
@@ -457,10 +456,9 @@ ACUWLgenarray (node *arg_node, info *arg_info)
         if (IDS_AVIS (INFO_LETIDS (arg_info))
              != ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (INFO_CODE (arg_info))))) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum,
-                         "Cannot cudarize with-loop as inner"
-                         " genarray-with-loop is not in perfect nesting"
-                         " position!");
+            CTIwarn (LINE_TO_LOC (global.linenum),
+                     "Cannot cudarize with-loop as inner genarray-with-loop "
+                     "is not in perfect nesting position!");
         }
     }
     DBUG_PRINT ("    %s!", (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
@@ -485,24 +483,23 @@ ACUWLmodarray (node *arg_node, info *arg_info)
     if (!INFO_INWL (arg_info)) {
         if (MODARRAY_NEXT (arg_node) != NULL) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum,
-                         "Cannot cudarize with-loop due to"
-                         " multiple operators!");
+            CTIwarn (LINE_TO_LOC (global.linenum),
+                     "Cannot cudarize with-loop due to multiple operators!");
         }
         if (!TUdimKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum,
-                         "Cannot cudarize modarray-with-loop as modarray-"
-                         "with-loops require statically known result dimensions!");
+            CTIwarn (LINE_TO_LOC (global.linenum),
+                     "Cannot cudarize modarray-with-loop as modarray-"
+                     "with-loops require statically known result dimensions!");
         }
     } else {
         if (IDS_AVIS (INFO_LETIDS (arg_info))
              != ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (INFO_CODE (arg_info))))) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum,
-                         "Cannot cudarize with-loop as inner"
-                         " modarray-with-loop is not in perfect nesting"
-                         " position!");
+            CTIwarn (LINE_TO_LOC (global.linenum),
+                     "Cannot cudarize with-loop as inner"
+                     " modarray-with-loop is not in perfect nesting"
+                     " position!");
         }
     }
 
@@ -523,8 +520,7 @@ ACUWLbreak (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_CUDARIZABLE (arg_info) = FALSE;
-    CTIwarnLine (global.linenum,
-                 "Cannot cudarize break-with-loop!");
+    CTIwarn (LINE_TO_LOC (global.linenum), "Cannot cudarize break-with-loop!");
 
     DBUG_RETURN (arg_node);
 }
@@ -543,8 +539,7 @@ ACUWLpropagate (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_CUDARIZABLE (arg_info) = FALSE;
-    CTIwarnLine (global.linenum,
-                 "Cannot cudarize propagate-with-loop!");
+    CTIwarn (LINE_TO_LOC (global.linenum), "Cannot cudarize propagate-with-loop!");
 
     DBUG_RETURN (arg_node);
 }
@@ -569,10 +564,10 @@ ACUWLid (node *arg_node, info *arg_info)
     if (INFO_INWL (arg_info)) {
         if (!TUdimKnown( type)) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarnLine (global.linenum,
-                         "Cannot cudarize with-loop as the variable \"%s\""
-                         "is of statically unknown dimensionality.",
-                         ID_NAME (arg_node));
+            CTIwarn (LINE_TO_LOC (global.linenum),
+                     "Cannot cudarize with-loop as the variable \"%s\""
+                     "is of statically unknown dimensionality.",
+                     ID_NAME (arg_node));
         } else if (!CUisSupportedHostSimpletype (TYgetSimpleType (TYgetScalar (type)))) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
             CTIwarn (LINE_TO_LOC (global.linenum),

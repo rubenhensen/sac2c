@@ -2384,7 +2384,7 @@ LURfundef (node *arg_node, info *arg_info)
                         FUNDEF_NAME (arg_node), unrolling, global.unrnum);
 
             if (unrolling <= 32) {
-                CTInote ("LUR: -maxlur %ld would unroll loop", unrolling);
+                CTInote (EMPTY_LOC, "LUR: -maxlur %ld would unroll loop", unrolling);
                 /*
                  * We use the hard-wired constant 32 here because otherwise
                  * we become annoyed by messages like "-maxlur 1000000000

@@ -107,7 +107,7 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
          */
         last_fundef = TagPreludeAsSticky (last_fundef);
     } else {
-        CTInote ("The prelude library `%s' has not been loaded.", global.preludename);
+        CTInote (EMPTY_LOC, "The prelude library `%s' has not been loaded.", global.preludename);
     }
 
     DBUG_RETURN (syntaxtree);

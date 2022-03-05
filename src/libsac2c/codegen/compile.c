@@ -10615,8 +10615,8 @@ COMPwith (node *arg_node, info *arg_info)
 
     if (isfull) {
         if (CODE_NEXT (WITH_CODE (arg_node)) == NULL) {
-                CTIabortLine (NODE_LINE (arg_node),
-                              "cannot infer default element for with-loop");
+                CTIabort (NODE_LOCATION (arg_node),
+                          "Cannot infer default element for with-loop.");
         }
         default_icms
           = DUPdoDupTree (BLOCK_ASSIGNS (CODE_CBLOCK (CODE_NEXT (WITH_CODE (arg_node)))));

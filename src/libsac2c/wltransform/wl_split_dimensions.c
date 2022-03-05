@@ -2765,7 +2765,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (NotImplemented (arg_node, arg_info)) {
-        CTInote ("Cannot transform with-loop due to unsupported operation");
+        CTInote (EMPTY_LOC, "Cannot transform with-loop due to unsupported operation");
     } else if ((global.backend == BE_mutc)
                || ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
                    && INFO_INCUDAWL (arg_info))) {

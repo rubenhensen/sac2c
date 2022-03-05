@@ -22,7 +22,7 @@ SPdoLocateSource (node *syntax_tree)
 
     if (global.sacfilename == NULL) {
         pathname = NULL;
-        CTInote ("Reading from stdin ...");
+        CTInote (EMPTY_LOC, "Reading from stdin ...");
     } else {
         pathname = FMGRfindFile (PK_path, global.sacfilename);
 
@@ -30,7 +30,7 @@ SPdoLocateSource (node *syntax_tree)
             CTIabort (EMPTY_LOC, "Unable to open file \"%s\"", global.sacfilename);
         }
 
-        CTInote ("Reading from file \"%s\" ...", pathname);
+        CTInote (EMPTY_LOC, "Reading from file \"%s\" ...", pathname);
     }
 
     DBUG_RETURN (syntax_tree);
@@ -83,7 +83,7 @@ SPdoScanParse (node *syntax_tree)
     cppfile = STRcat (global.tmp_dirname, "/source");
 
     if (global.show_syscall) {
-        CTInote ("yyin = fopen( \"%s\", \"r\")", cppfile);
+        CTInote (EMPTY_LOC, "yyin = fopen( \"%s\", \"r\")", cppfile);
     }
 
     yyin = fopen (cppfile, "r");
@@ -97,7 +97,7 @@ SPdoScanParse (node *syntax_tree)
     SPmyYyparse ();
 
     if (global.show_syscall) {
-        CTInote ("err = fclose( yyin)");
+        CTInote (EMPTY_LOC, "err = fclose( yyin)");
     }
 
     err = fclose (yyin);
@@ -106,7 +106,7 @@ SPdoScanParse (node *syntax_tree)
     }
 
     if (global.show_syscall) {
-        CTInote ("err = remove( \"%s\")", cppfile);
+        CTInote (EMPTY_LOC, "err = remove( \"%s\")", cppfile);
     }
 
     err = remove (cppfile);

@@ -769,7 +769,7 @@ CheckUnrollModarray (node *wln, node *lhs, info *arg_info)
     if (ok && (elts > global.wlunrnum)) {
         ok = FALSE;
         if (elts <= 32) {
-            CTInote ("WLUR: -maxwlur %d would unroll modarray with-loop", elts);
+            CTInote (EMPTY_LOC, "WLUR: -maxwlur %d would unroll modarray with-loop", elts);
         }
     }
 
@@ -841,7 +841,7 @@ CheckUnrollGenarray (node *wln, node *lhs, info *arg_info)
         if (length > global.wlunrnum) {
             ok = FALSE;
             if (length <= 32) {
-                CTInote ("WLUR: -maxwlur %lld would unroll genarray with-loop", length);
+                CTInote (EMPTY_LOC, "WLUR: -maxwlur %lld would unroll genarray with-loop", length);
             }
         }
     } else {
@@ -1070,7 +1070,7 @@ CheckUnrollFold (node *wln)
     if (elements > global.wlunrnum) {
         ok = FALSE;
         if (elements <= 32) {
-            CTInote ("WLUR: -maxwlur %d would unroll fold with-loop", elements);
+            CTInote (EMPTY_LOC, "WLUR: -maxwlur %d would unroll fold with-loop", elements);
         }
     }
 
@@ -1114,7 +1114,7 @@ CheckUnrollPropagate (node *wln)
     if (elements > global.wlunrnum) {
         ok = FALSE;
         if (elements <= 32) {
-            CTInote ("WLUR: -maxwlur %d would unroll propagate with-loop", elements);
+            CTInote (EMPTY_LOC, "WLUR: -maxwlur %d would unroll propagate with-loop", elements);
         }
     }
 

@@ -3877,12 +3877,12 @@ BuildCubes (node *strides, int iter_dims, shape *iter_shp, bool *do_naive_comp)
 
     all_const = WLTRAallStridesAreConstant (strides, TRUE, TRUE);
     DBUG_EXECUTE (
-      CTInote (all_const ? "  constant-bounds with-loop: TRUE"
+      CTInote (EMPTY_LOC, all_const ? "  constant-bounds with-loop: TRUE"
                          : "  constant-bounds with-loop: FALSE");
-      CTInote ((iter_shp != NULL) ? "  known-shape with-loop: TRUE"
+      CTInote (EMPTY_LOC, (iter_shp != NULL) ? "  known-shape with-loop: TRUE"
                                   : "  known-shape with-loop: FALSE (dim = %d)",
                iter_dims);
-      CTInote ((WLSTRIDE_NEXT (strides) != NULL) ? "  multi-generator with-loop: TRUE"
+      CTInote (EMPTY_LOC, (WLSTRIDE_NEXT (strides) != NULL) ? "  multi-generator with-loop: TRUE"
                                                  : "  multi-generator with-loop: FALSE"));
 
     if (!all_const) {
@@ -3891,7 +3891,7 @@ BuildCubes (node *strides, int iter_dims, shape *iter_shp, bool *do_naive_comp)
          *  -> just naive compilation possible for the time being :-(
          */
         *do_naive_comp = TRUE;
-        CTInote ("Naive compilation of multi-generator with-loop activated");
+        CTInote (EMPTY_LOC, "Naive compilation of multi-generator with-loop activated");
 
         cubes = strides;
     } else {
@@ -6512,7 +6512,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
     seg = segs;
     while (seg != NULL) {
-        DBUG_EXECUTE (CTInote (">>> entering segment"));
+        DBUG_EXECUTE (CTInote (EMPTY_LOC, ">>> entering segment"));
 
         DBUG_ASSERT (NODE_TYPE (seg) == N_wlseg, "segment expected");
 
@@ -6523,7 +6523,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * splitting
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE (CTInote ("step 5: split"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 5: split"));
             WLSEG_CONTENTS (seg) = SplitWl (WLSEG_CONTENTS (seg));
         }
 
@@ -6547,10 +6547,10 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
             unsigned int b;
-            DBUG_EXECUTE (CTInote ("step 6: hierarchical blocking"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 6: hierarchical blocking"));
             for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
                 DBUG_EXECUTE (
-                  CTInote ("step 6.%d: hierarchical blocking (level %d)", b + 1, b));
+                  CTInote (EMPTY_LOC, "step 6.%d: hierarchical blocking (level %d)", b + 1, b));
                 WLSEG_CONTENTS (seg)
                   = BlockWl (WLSEG_CONTENTS (seg), iter_dims,
                              TCgetNthExprsExpr (b, WLSEG_BV (seg)), FALSE);
@@ -6576,7 +6576,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * unrolling-blocking
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE (CTInote ("step 7: unrolling-blocking"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 7: unrolling-blocking"));
             WLSEG_CONTENTS (seg)
               = BlockWl (WLSEG_CONTENTS (seg), iter_dims, WLSEG_UBV (seg), TRUE);
         }
@@ -6600,7 +6600,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * merging
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE (CTInote ("step 8: merge"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 8: merge"));
             WLSEG_CONTENTS (seg) = MergeWl (WLSEG_CONTENTS (seg));
         }
 
@@ -6623,7 +6623,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * optimization
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE (CTInote ("step 9: optimize"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 9: optimize"));
             WLSEG_CONTENTS (seg) = OptWl (WLSEG_CONTENTS (seg));
         }
 
@@ -6646,7 +6646,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * fitting
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE (CTInote ("step 10: fit"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 10: fit"));
             WLSEG_CONTENTS (seg) = FitWl (WLSEG_CONTENTS (seg));
         }
 
@@ -6669,7 +6669,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * normalization
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE (CTInote ("step 11: normalize"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 11: normalize"));
             WLSEG_CONTENTS (seg)
               = NormWl (iter_dims, iter_shp, WLSEG_IDXSUP (seg), WLSEG_CONTENTS (seg));
         }
@@ -6692,7 +6692,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         /*
          * fill all gaps
          */
-        DBUG_EXECUTE (CTInote ("step 12: fill gaps (all)"));
+        DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 12: fill gaps (all)"));
         InsertNoopNodes (WLSEG_CONTENTS (seg));
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
@@ -6718,7 +6718,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         /* compute GRIDX_FITTED */
         WLSEG_CONTENTS (seg) = InferFitted (WLSEG_CONTENTS (seg));
 
-        DBUG_EXECUTE (CTInote ("<<< leaving segment"));
+        DBUG_EXECUTE (CTInote (EMPTY_LOC, "<<< leaving segment"));
 
         seg = WLSEG_NEXT (seg);
     }
@@ -6903,7 +6903,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_EXECUTE (CTInote (">>> >>> entering with-loop"));
+    DBUG_EXECUTE (CTInote (EMPTY_LOC, ">>> >>> entering with-loop"));
 
     /* stack arg_info */
     info_tmp = arg_info;
@@ -6923,11 +6923,11 @@ WLTRAwith (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_EXECUTE (
-          CTInote ("found With-loop s without full partition (line %zu)", global.linenum));
+          CTInote (EMPTY_LOC, "found With-loop s without full partition (line %zu)", global.linenum));
         new_node = arg_node;
     } else if (WITH_CUDARIZABLE (arg_node)) {
         DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
-        DBUG_EXECUTE (CTInote ("Cudarizable with-loop found (line %zu). Won't touch.",
+        DBUG_EXECUTE (CTInote (EMPTY_LOC, "Cudarizable with-loop found (line %zu). Won't touch.",
                                global.linenum));
         new_node = arg_node;
     } else {
@@ -6941,7 +6941,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_EXECUTE (
-          CTInote ("with-loop with AKS withid found (line %zu)", global.linenum));
+          CTInote (EMPTY_LOC, "with-loop with AKS withid found (line %zu)", global.linenum));
 
 #if 0
     DBUG_ASSERT ( WITH_PARTS( arg_node) > 0, "With-loop with AKS index vector is not fully partitioned!");
@@ -6976,14 +6976,14 @@ WLTRAwith (node *arg_node, info *arg_info)
             /*
              * convert parts of with-loop into new format
              */
-            DBUG_EXECUTE (CTInote ("step 1.1: convert parts into strides"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 1.1: convert parts into strides"));
             strides = Parts2Strides (WITH_PART (arg_node), iter_dims, iter_shp);
 
             /*
              * consistence check: ensures that the strides are pairwise disjoint
              */
             DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
-            DBUG_EXECUTE (CTInote ("step 1.2: check disjointness of strides"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 1.2: check disjointness of strides"));
             DBUG_ASSERT (CheckDisjointness (strides),
                          "Consistence check failed:"
                          " Not all strides are pairwise disjoint!\n"
@@ -7016,7 +7016,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             /*
              * build the cubes
              */
-            DBUG_EXECUTE (CTInote ("step 2: build cubes"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 2: build cubes"));
 
             cubes = BuildCubes (strides, iter_dims, iter_shp, &do_naive_comp);
 
@@ -7036,13 +7036,13 @@ WLTRAwith (node *arg_node, info *arg_info)
 #endif
 
             DBUG_EXECUTE (if (do_naive_comp) {
-                CTInote ("  naive compilation active");
-            } else { CTInote ("  naive compilation inactive"); });
+                CTInote (EMPTY_LOC, "  naive compilation active");
+            } else { CTInote (EMPTY_LOC, "  naive compilation inactive"); });
 
             /*
              * normalize grids and fill gaps
              */
-            DBUG_EXECUTE (CTInote ("step 3: fill gaps (grids)"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 3: fill gaps (grids)"));
             cubes = InsertNoopGrids (cubes);
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
@@ -7060,7 +7060,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 #endif
 #endif
 
-            DBUG_EXECUTE (CTInote ("step 4: choose segments"));
+            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 4: choose segments"));
             if (do_naive_comp) {
                 /* naive compilation  ->  put each stride in a separate segment */
                 segs = WLCOMP_Cubes (NULL, NULL, cubes, iter_dims, global.linenum);
@@ -7128,7 +7128,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
     idx_type = TYfreeType (idx_type);
 
-    DBUG_EXECUTE (CTInote ("<<< <<< leaving with-loop"));
+    DBUG_EXECUTE (CTInote (EMPTY_LOC, "<<< <<< leaving with-loop"));
 
     DBUG_RETURN (new_node);
 }

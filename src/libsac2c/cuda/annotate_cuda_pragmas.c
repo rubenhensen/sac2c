@@ -537,14 +537,14 @@ ACPjingGeneratePragma (bool ext, info *inner)
         } else
             // If the dimensionality is too high and extended mode is disabled, throw an
             // error.
-            CTIerrorLoc (NODE_LOCATION (INFO_WITH (inner)),
-                         "Dimensionality of with loop (%zu) too high for gpu mapping "
-                         "strategy \"Jing's method\""
-                         "(-gpu_mapping_strategy jings_method) can be at most 5. For "
-                         "higher dimensionalities, "
-                         "use the extended Jing's method (-gpu_mapping_strategy "
-                         "jings_method_ext).",
-                         INFO_DIMS (inner));
+            CTIerror (NODE_LOCATION (INFO_WITH (inner)),
+                      "Dimensionality of with loop (%zu) too high for gpu mapping "
+                      "strategy \"Jing's method\""
+                      "(-gpu_mapping_strategy jings_method) can be at most 5. For "
+                      "higher dimensionalities, "
+                      "use the extended Jing's method (-gpu_mapping_strategy "
+                      "jings_method_ext).",
+                      INFO_DIMS (inner));
         break;
     }
 

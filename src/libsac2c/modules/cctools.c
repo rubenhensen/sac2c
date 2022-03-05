@@ -114,7 +114,7 @@ AddObjDependency (const char *lib, strstype_t kind, void *buf)
     case STRS_objfile:
 
         if (FMGRcheckExistFile (lib)) {
-            CTInote ("External object %s picked from current directory.", lib);
+            CTInote (EMPTY_LOC, "External object %s picked from current directory.", lib);
             SBUFprintf (sbuf, " %s", lib);
             break;
         }
@@ -123,7 +123,7 @@ AddObjDependency (const char *lib, strstype_t kind, void *buf)
             rpath = STRcatn (3, global.targetdir, "/", lib);
 
             if (FMGRcheckExistFile (rpath)) {
-                CTInote ("External object %s picked from build target directory (%s)",
+                CTInote (EMPTY_LOC, "External object %s picked from build target directory (%s)",
                          lib, rpath);
                 SBUFprintf (sbuf, " %s", rpath);
                 break;
@@ -133,7 +133,7 @@ AddObjDependency (const char *lib, strstype_t kind, void *buf)
                 rpath = MEMfree (rpath);
                 rpath = STRcatn (3, global.target_modlibdir, "/", lib);
                 if (FMGRcheckExistFile (rpath)) {
-                    CTInote (
+                    CTInote (EMPTY_LOC, 
                       "External object %s picked from module target directory (%s)", lib,
                       rpath);
                     SBUFprintf (sbuf, " %s", rpath);
@@ -145,7 +145,7 @@ AddObjDependency (const char *lib, strstype_t kind, void *buf)
             rpath = MEMfree (rpath);
             rpath = STRcatn (3, src_dirname, "/", lib);
             if (FMGRcheckExistFile (rpath)) {
-                CTInote ("External object %s picked from source directory (%s)", lib,
+                CTInote (EMPTY_LOC, "External object %s picked from source directory (%s)", lib,
                          rpath);
                 SBUFprintf (sbuf, " %s", rpath);
                 break;
@@ -364,7 +364,7 @@ CCTperformTask (ccm_task_t task)
         source_subst = MEMfree (source_subst);                                           \
         target_subst = MEMfree (target_subst);                                           \
                                                                                          \
-        CTInote ("Preprocessing C source \"%s%s\"", Source, global.config.Kind##cext);   \
+        CTInote (EMPTY_LOC, "Preprocessing C source \"%s%s\"", Source, global.config.Kind##cext);   \
         DBUG_PRINT ("compile command: %s", compile_cmd);                                 \
         SYScall ("%s", compile_cmd);                                                     \
         compile_cmd = MEMfree (compile_cmd);                                             \
@@ -383,7 +383,7 @@ CCTperformTask (ccm_task_t task)
         source_subst = MEMfree (source_subst);                                           \
         target_subst = MEMfree (target_subst);                                           \
                                                                                          \
-        CTInote ("Compiling C source \"%s%s\"", Source, global.config.Kind##cext);       \
+        CTInote (EMPTY_LOC, "Compiling C source \"%s%s\"", Source, global.config.Kind##cext);       \
         DBUG_PRINT ("compile command: %s", compile_cmd);                                 \
         SYScall ("%s", compile_cmd);                                                     \
         compile_cmd = MEMfree (compile_cmd);                                             \
@@ -395,7 +395,7 @@ CCTperformTask (ccm_task_t task)
         const char *objects_subst = Objects;                                             \
         char *link_cmd = DO_SUBST (LinkString);                                          \
                                                                                          \
-        CTInote ("Linking \"%s\"", target_subst);                                        \
+        CTInote (EMPTY_LOC, "Linking \"%s\"", target_subst);                                        \
         DBUG_PRINT ("link command: %s", link_cmd);                                       \
         SYScall ("%s", link_cmd);                                                        \
         link_cmd = MEMfree (link_cmd);                                                   \
@@ -425,14 +425,14 @@ CCTperformTask (ccm_task_t task)
             cmd = global.do_ccompile == DO_C_rmod ? global.config.compile_rmod :
                   global.do_ccompile == DO_C_mod ? global.config.compile_mod
                                                  : global.config.compile_prog;
-            CTInote ("Compiling C source \"%s\"", source_subst);
+            CTInote (EMPTY_LOC, "Compiling C source \"%s\"", source_subst);
         } else { // task == CCT_clinkonly
             source_subst = "";
             objects_subst = global.sacfilename;
             cmd = global.do_clink == DO_C_rmod ? global.config.link_rmod :
                   global.do_clink == DO_C_mod ? global.config.link_mod
                                               : global.config.link_prog;
-            CTInote ("Linking C objects \"%s\"", objects_subst);
+            CTInote (EMPTY_LOC, "Linking C objects \"%s\"", objects_subst);
         }
         cmd = DO_SUBST (cmd);
         DBUG_PRINT (" command: %s", cmd);

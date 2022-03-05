@@ -76,10 +76,10 @@ checkNumArg (node *args, const char *name)
 
     arg = EXPRS_EXPR (args);
     if (NODE_TYPE (arg) != N_num) {
-        CTIabortLoc (NODE_LOCATION (arg),
-                     "wrong first argument to %s;"
-                     " should be `%s ( <num>, <inner>)'",
-                     name, name);
+        CTIabort (NODE_LOCATION (arg),
+                  "Wrong first argument to %s; "
+                  "should be `%s ( <num>, <inner>)'",
+                  name, name);
     }
 
     args = EXPRS_NEXT (args);
@@ -94,19 +94,19 @@ checkNumsArg (node *args, const char *name)
 
     arg = EXPRS_EXPR (args);
     if (NODE_TYPE (arg) != N_array) {
-        CTIabortLoc (NODE_LOCATION (arg),
-                     "wrong first argument to %s;"
-                     " should be `%s ( [<nums>], <inner>)'",
-                     name, name);
+        CTIabort (NODE_LOCATION (arg),
+                  "Wrong first argument to %s; "
+                  "should be `%s ( [<nums>], <inner>)'",
+                  name, name);
     } else {
         exprs = ARRAY_AELEMS (arg);
         while (exprs != NULL) {
             arg = EXPRS_EXPR (exprs);
             if (NODE_TYPE (arg) != N_num) {
-                CTIabortLoc (NODE_LOCATION (arg),
-                             "wrong first argument to %s;"
-                             " should be `%s ( [<nums>], <inner>)'",
-                             name, name);
+                CTIabort (NODE_LOCATION (arg),
+                          "Wrong first argument to %s; "
+                          "should be `%s ( [<nums>], <inner>)'",
+                          name, name);
             }
             exprs = EXPRS_NEXT (exprs);
         }
@@ -141,10 +141,10 @@ checkPermutationArg (node *args, const char *name)
         arg = EXPRS_EXPR (exprs);
         int point_dim = NUM_VAL (arg);
         if (point_dim < 0 || point_dim >= (int)length || perm_hits[point_dim])
-            CTIabortLoc (NODE_LOCATION (arg),
-                         "wrong first argument to %s;"
-                         " should be `%s ( [<permutation>], <inner>)'",
-                         name, name);
+            CTIabort (NODE_LOCATION (arg),
+                      "Wrong first argument to %s; "
+                      "should be `%s ( [<permutation>], <inner>)'",
+                      name, name);
         perm_hits[point_dim] = true;
         exprs = EXPRS_NEXT (exprs);
     }
@@ -163,20 +163,20 @@ checkZONumsArg (node *args, const char *name)
 
     arg = EXPRS_EXPR (args);
     if (NODE_TYPE (arg) != N_array) {
-        CTIabortLoc (NODE_LOCATION (arg),
-                     "wrong first argument to %s;"
-                     " should be `%s ( [0/1, ..., 0/1], <inner>)'",
-                     name, name);
+        CTIabort (NODE_LOCATION (arg),
+                  "Wrong first argument to %s; "
+                  "should be `%s ( [0/1, ..., 0/1], <inner>)'",
+                  name, name);
     } else {
         exprs = ARRAY_AELEMS (arg);
         while (exprs != NULL) {
             arg = EXPRS_EXPR (exprs);
             if ((NODE_TYPE (arg) != N_num)
                 || ((NUM_VAL (arg) != 0) && (NUM_VAL (arg) != 1))) {
-                CTIabortLoc (NODE_LOCATION (arg),
-                             "wrong first argument to %s;"
-                             " should be `%s ( [0/1, ..., 0/1], <inner>)'",
-                             name, name);
+                CTIabort (NODE_LOCATION (arg),
+                          "Wrong first argument to %s; "
+                          "should be `%s ( [0/1, ..., 0/1], <inner>)'",
+                          name, name);
             }
             exprs = EXPRS_NEXT (exprs);
         }
@@ -200,16 +200,16 @@ checkArgsLength (node *arg, const size_t length, const char *name)
     }
 
     if (computedlen < length)
-        CTIabortLoc (NODE_LOCATION (arg),
-                     "wrong first argument to %s: too short (%zu); "
-                     "The list should be of length %zu",
-                     name, computedlen, length);
+        CTIabort (NODE_LOCATION (arg),
+                  "Wrong first argument to %s: too short (%zu); "
+                  "The list should be of length %zu",
+                  name, computedlen, length);
 
     if (computedlen > length)
-        CTIabortLoc (NODE_LOCATION (arg),
-                     "wrong first argument to %s: too long (%zu); "
-                     "The list should be of length %zu",
-                     name, computedlen, length);
+        CTIabort (NODE_LOCATION (arg),
+                  "Wrong first argument to %s: too long (%zu); "
+                  "The list should be of length %zu",
+                  name, computedlen, length);
 
     DBUG_RETURN ();
 }
@@ -224,15 +224,15 @@ checkDimensionSettings (node *gridDims_node, size_t dims)
 
     // < 0 check is not necessary, as we have unsigned numbers
     if (gridDims > (size_t)global.config.cuda_dim_grid)
-        CTIabortLoc (NODE_LOCATION (gridDims_node),
-                     "Number of grid dimensions too high! Should be 0-%i, currently %zu",
-                     global.config.cuda_dim_grid, gridDims);
+        CTIabort (NODE_LOCATION (gridDims_node),
+                  "Number of grid dimensions too high! Should be 0-%i, currently %zu",
+                  global.config.cuda_dim_grid, gridDims);
     // < 0 check is not necessary, as we have unsigned numbers
     if (blockDims > (size_t)global.config.cuda_dim_block)
-        CTIabortLoc (NODE_LOCATION (gridDims_node),
-                     "Number of block dimensions too high! Should be 0-%i, currently %zu "
-                     "(%zu - %zu)",
-                     global.config.cuda_dim_block, blockDims, dims, gridDims);
+        CTIabort (NODE_LOCATION (gridDims_node),
+                  "Number of block dimensions too high! Should be 0-%i, currently %zu "
+                  "(%zu - %zu)",
+                  global.config.cuda_dim_block, blockDims, dims, gridDims);
 
     DBUG_RETURN ();
 }
@@ -261,17 +261,16 @@ GKCHcheckGpuKernelPragma (node *spap, struct location loc)
     DBUG_ASSERT (NODE_TYPE (spap) == N_spap, "non N_spap funcall in gpukernel pragma!");
 
     if (!STReq (SPAP_NAME (spap), "GridBlock")) {
-        CTIabortLoc (NODE_LOCATION (spap), "expected `GridBlock' found `%s'",
-                     SPAP_NAME (spap));
+        CTIabort (NODE_LOCATION (spap), "Expected `GridBlock' but found `%s'",
+                  SPAP_NAME (spap));
     }
 
     while (spap != NULL) {
         if (NODE_TYPE (spap) == N_spid) {
             if (!STReq (SPID_NAME (spap), "Gen")) {
-                CTIabortLoc (NODE_LOCATION (spap),
-                             "expected 'Gen`"
-                             " found `%s'",
-                             SPID_NAME (spap));
+                CTIabort (NODE_LOCATION (spap),
+                          "Expected 'Gen` but found `%s'",
+                          SPID_NAME (spap));
             }
             spap = NULL;
 #define WLP(fun, args, checkfun)                                                         \
@@ -279,23 +278,22 @@ GKCHcheckGpuKernelPragma (node *spap, struct location loc)
     else if (STReq (SPAP_NAME (spap), #fun))                                             \
     {                                                                                    \
         if (SPAP_ARGS (spap) == NULL) {                                                  \
-            CTIabortLoc (loc, "missing argument in `%s' ()", #fun);                      \
+            CTIabort (loc, "Missing argument in `%s' ()", #fun);                         \
             spap = NULL;                                                                 \
         } else {                                                                         \
             spap = GKCHcheck##fun (SPAP_ARGS (spap));                                    \
             if (spap == NULL) {                                                          \
-                CTIabortLoc (loc, "missing inner gpukernel within `%s'", #fun);          \
+                CTIabort (loc, "Missing inner gpukernel within `%s'", #fun);             \
             } else {                                                                     \
                 if (EXPRS_NEXT (spap) != NULL) {                                         \
-                    CTIabortLoc (NODE_LOCATION (EXPRS_EXPR (EXPRS_NEXT (spap))),         \
-                                 "superfluous argument within `%s'", #fun);              \
+                    CTIabort (NODE_LOCATION (EXPRS_EXPR (EXPRS_NEXT (spap))),            \
+                              "Superfluous argument within `%s'", #fun);                 \
                 }                                                                        \
                 spap = EXPRS_EXPR (spap);                                                \
                 if ((NODE_TYPE (spap) != N_spap) && (NODE_TYPE (spap) != N_spid)) {      \
-                    CTIabortLoc (NODE_LOCATION (spap),                                   \
-                                 "missing inner gpukernel"                               \
-                                 " within `%s'",                                         \
-                                 #fun);                                                  \
+                    CTIabort (NODE_LOCATION (spap),                                      \
+                              "Missing inner gpukernel within `%s'",                     \
+                              #fun);                                                     \
                 }                                                                        \
             }                                                                            \
         }
@@ -303,10 +301,9 @@ GKCHcheckGpuKernelPragma (node *spap, struct location loc)
 #include "gpukernel_funs.mac"
 #undef WLP
         } else {
-            CTIabortLoc (NODE_LOCATION (spap),
-                         "expected gpukernel function,"
-                         " found `%s'",
-                         SPAP_NAME (spap));
+            CTIabort (NODE_LOCATION (spap),
+                      "Expected gpukernel function but found `%s'",
+                      SPAP_NAME (spap));
             spap = NULL;
         }
     }

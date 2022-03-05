@@ -6117,7 +6117,7 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
              */
             global.outfile = FMGRwriteOpen ("%s/%s%s", global.targetdir,
                                             global.outfilename, global.config.ccp_cext);
-            CTInote ("Writing file \"%s/%s%s\"", global.targetdir, global.outfilename,
+            CTInote (EMPTY_LOC, "Writing file \"%s/%s%s\"", global.targetdir, global.outfilename,
                      global.config.ccp_cext);
 
             GSCprintFileHeader (syntax_tree);

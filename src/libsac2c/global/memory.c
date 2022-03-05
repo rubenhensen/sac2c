@@ -140,7 +140,7 @@ foldmallocreport (void *init, void *key, void *value)
     mallocinfo_t *iterator;
     bool ispresent = FALSE;
     if (info->phase > PH_final + 1) {
-        CTInote ("corrupted mallocinfo, ignoring ...");
+        CTInote (EMPTY_LOC, "corrupted mallocinfo, ignoring ...");
     } else {
 
         iterator = phasetable[info->phase].notfreed;

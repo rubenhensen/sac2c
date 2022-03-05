@@ -692,29 +692,9 @@ CTIinstallInterruptHandlers ()
     DBUG_RETURN ();
 }
 
-char *
-CTIfinalizeFirstLine (const char *location_buffer, const char *message_header)
-{
-    // Goal:
-    // Do ProcessMessage for location_buffer + message header, but don't continue after the first newline is found/made.
-    // return result
-    return NULL;
-}
-
-char *
-CTIfinalizeMultiline (char *first_line_overflow, const char *format, va_list arg_p)
-{
-    // Goal:
-    // Construct message content with format and arg_p
-    // Add that to first_line_overflow
-    // Do ProcessMessage with the result (so far) and multiline header
-    // return result
-    return NULL;
-}
-
 /** <!--********************************************************************-->
  *
- * @fn void CTIfinalizeMessageBegin( const char *location_buffer, const char *message_header, 
+ * @fn void FinalizeMessageBegin( const char *location_buffer, const char *message_header, 
  *                                   const char *format, va_list arg_p)
  *
  *   @brief  Finalizes all processing required to display the message such that 
@@ -735,7 +715,7 @@ CTIfinalizeMultiline (char *first_line_overflow, const char *format, va_list arg
  ******************************************************************************/
 
 char *
-CTIfinalizeMessageBegin (char *location_buffer, const char *message_header,
+FinalizeMessageBegin (char *location_buffer, const char *message_header,
                          const char *format, va_list arg_p)
 {
     char *ret;
@@ -785,10 +765,10 @@ CTIfinalizeMessageBegin (char *location_buffer, const char *message_header,
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIfinalizeMessage( const char *location_buffer, const char *message_header, 
+ * @fn void FinalizeMessage( const char *location_buffer, const char *message_header, 
  *                              const char *format, va_list arg_p)
  *
- *   @brief  Returns CTIfinalizeMessage but with a trailing newline.
+ *   @brief  Returns FinalizeMessage but with a trailing newline.
  *
  *   @param location_buffer  The buffer that contains the possible location header 
  *                           associated with the type of message of the forms:
@@ -804,100 +784,17 @@ CTIfinalizeMessageBegin (char *location_buffer, const char *message_header,
  ******************************************************************************/
 
 char *
-CTIfinalizeMessage (char *location_buffer, const char *message_header, 
+FinalizeMessage (char *location_buffer, const char *message_header, 
                     const char *format, va_list arg_p)
 {
     char *tmp;
     char *ret;
     
     DBUG_ENTER ();
-    tmp = CTIfinalizeMessageBegin (location_buffer, message_header, format, arg_p);
+    tmp = FinalizeMessageBegin (location_buffer, message_header, format, arg_p);
     ret = STRcat (tmp, "\n");
 
     MEMfree (tmp);
-    DBUG_RETURN (ret);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIcreateMessage( const char *message_header, const char *format,
- *                            va_list arg_p)
- * 
- *   @brief  Takes care of creating the message without file name, 
- *           line number or location.
- * 
- *   @param message_header  The header associated with the type of message, 
- *                          i.e. error_message_header for errors.
- *   @param format          format string like in printf
- *   @param arg_p           arguments for the format string
- * 
- * ****************************************************************************/
-
-char *
-CTIcreateMessage (const char *message_header, const char *format, va_list arg_p)
-{
-    char *ret;
-
-    DBUG_ENTER ();
-
-    ret = CTIfinalizeMessage (STRcpy(""), message_header, format, arg_p);
-
-    DBUG_RETURN (ret);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIcreateMessageLine( const char *message_header, size_t line, 
- *                                const char *format, va_list arg_p)
- *
- *   @brief  Takes care of creating the message with a file name and line number.
- *
- *   @param message_header  The header associated with the type of message, 
- *                          e.g. error_message_header for errors.
- *   @param line            line number
- *   @param format          format string like in printf
- *   @param arg_p           arguments for the format string
- *
- ******************************************************************************/
-
-char *
-CTIcreateMessageLine (const char *message_header, size_t line, const char *format, va_list arg_p)
-{
-    char *ret;
-    DBUG_ENTER ();
-
-    Format2BufferDynamic("%s:%zu: ", global.filename, line); // GNU format location
-
-    ret = CTIfinalizeMessage (STRcpy (message_buffer), message_header, format, arg_p);
-
-    DBUG_RETURN (ret);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIcreateMessageLoc( const char *message_header, const struct location loc, 
- *                               const char *format, va_list arg_p)
- *
- *   @brief  Take care of creating the message with a file name, line number and column.
- *
- *   @param message_header  The header associated with the type of message, 
- *                          e.g. error_message_header for errors.
- *   @param loc             location info
- *   @param format          format string like in printf
- *   @param arg_p           arguments for the format string
- *
- ******************************************************************************/
-char *
-CTIcreateMessageLoc (const char *message_header, const struct location loc, const char *format, va_list arg_p)
-{
-    char *ret;
-
-    DBUG_ENTER ();
-
-    Format2BufferDynamic("%s:%zu:%zu: ", loc.fname, loc.line, loc.col); // GNU format location
-
-    ret = CTIfinalizeMessage (STRcpy (message_buffer), message_header, format, arg_p);
-
     DBUG_RETURN (ret);
 }
 
@@ -927,7 +824,7 @@ CTIerror(const struct location loc, const char *format, ...)
 
     va_start (arg_p, format);
 
-    error_msg = CTIfinalizeMessage (loc2str (loc), error_message_header, format, arg_p);
+    error_msg = FinalizeMessage (loc2str (loc), error_message_header, format, arg_p);
     fprintf (cti_stderr, "%s", error_msg);
     MEMfree (error_msg);
 
@@ -937,37 +834,6 @@ CTIerror(const struct location loc, const char *format, ...)
 
     DBUG_RETURN ();
 }
-
-// /** <!--********************************************************************-->
-//  *
-//  * @fn void CTIerror( const char *format, ...)
-//  *
-//  *   @brief  Produces an error message without file name and line number.
-//  *
-//  *   @param format  format string like in printf
-//  *
-//  ******************************************************************************/
-
-// void
-// CTIerror (const char *format, ...)
-// {
-//     char *error_msg;
-//     va_list arg_p;
-
-//     DBUG_ENTER ();
-
-//     va_start (arg_p, format);
-
-//     error_msg = CTIcreateMessage (error_message_header, format, arg_p);
-//     fprintf (cti_stderr, "%s", error_msg);
-//     MEMfree (error_msg);
-
-//     va_end (arg_p);
-
-//     errors++;
-
-//     DBUG_RETURN ();
-// }
 
 /** <!--********************************************************************-->
  *
@@ -1003,7 +869,7 @@ CTIgetErrorMessageVA (size_t line, const char *file, const char *format, va_list
     Format2BufferDynamic("%s:%zu: ", file, line); // GNU format location
     ret = STRcpy (message_buffer);
 
-    ret = CTIfinalizeMessage (ret, error_message_header, format, arg_p);
+    ret = FinalizeMessage (ret, error_message_header, format, arg_p);
 
     DBUG_RETURN (ret);
 }
@@ -1154,7 +1020,7 @@ CTIabort (const struct location loc, const char *format, ...)
 
     va_start (arg_p, format);
 
-    abort_msg = CTIfinalizeMessage (loc2str (loc), abort_message_header, format, arg_p);
+    abort_msg = FinalizeMessage (loc2str (loc), abort_message_header, format, arg_p);
     fprintf (cti_stderr, "%s", abort_msg);
     MEMfree (abort_msg);
 
@@ -1249,7 +1115,7 @@ CTIwarn (const struct location loc, const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        warn_msg = CTIfinalizeMessage (loc2str (loc), warn_message_header, format, arg_p);
+        warn_msg = FinalizeMessage (loc2str (loc), warn_message_header, format, arg_p);
         fprintf (cti_stderr, "%s", warn_msg);
         MEMfree (warn_msg);
 
@@ -1334,50 +1200,25 @@ CTIstate (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTInote( const char *format, ...)
+ * @fn void CTInote( const struct location loc, const char *format, ...)
  *
  *   @brief  Produces full compile time information output (verbosity level 3)
+ *           If EMPTY_LOC is provided, the messages are indented with two spaces.
+ *           If location information is provided, the messages have a header with
+ *           `note:', similar to CTIerror/Abort/Warn.
  *
+ *   @param loc     If no location is available or relevant, you can provide
+ *                  the macro EMPTY_LOC.
+ *                  If the file name and line numbers are available, but the
+ *                  column is unknown, use the macro LINE_TO_LOC (line).
+ *                  If all information is available, just provide a location
+ *                  struct as normal.
  *   @param format  format string like in printf
  *
  ******************************************************************************/
 
 void
-CTInote (const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    if (global.verbose_level >= 3) {
-        va_start (arg_p, format);
-
-        // Note (pun not intended) that we should not use CTIfinalizeMessage or
-        // note_message_header here because 17 years worth of code is specifically
-        // formatted to only be prefixed with 2 spaces.
-        // TODO: Check if it can be done now with an indent header twice or something
-        PrintMessage (indent_message_header, format, arg_p);
-
-        va_end (arg_p);
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTInoteLine( int line, const char *format, ...)
- *
- *   @brief  Produces full compile time information output, preceded by 
- *           file name and line number at verbosity level 3.
- *
- *   @param line    line number
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTInoteLine (size_t line, const char *format, ...)
+CTInote (const struct location loc, const char *format, ...)
 {
     char *note_msg;
     va_list arg_p;
@@ -1387,17 +1228,22 @@ CTInoteLine (size_t line, const char *format, ...)
     if (global.verbose_level >= 3) {
         va_start (arg_p, format);
 
-        note_msg = CTIcreateMessageLine (note_message_header, line, format, arg_p);
-        fprintf (cti_stderr, "%s", note_msg);
-        MEMfree (note_msg);
+        // Note (pun not intended) that we should not use FinalizeMessage for the
+        // note_message_header here because 17 years worth of code is specifically
+        // formatted to only be prefixed with 2 spaces (indent header).
+        if (loc.fname == NULL || loc.line == 0) { // 
+            PrintMessage (indent_message_header, format, arg_p);
+        } else {
+            note_msg = FinalizeMessage (loc2str (loc), note_message_header, format, arg_p);
+            fprintf (cti_stderr, "%s", note_msg);
+            MEMfree (note_msg);
+        }        
 
         va_end (arg_p);
     }
 
     DBUG_RETURN ();
 }
-
-
 
 /*******************************************************************************
  *******************************************************************************
