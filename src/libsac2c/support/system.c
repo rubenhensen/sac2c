@@ -83,6 +83,24 @@ SYSstopTracking (void)
     DBUG_RETURN ();
 }
 
+char *
+SYSsanitizePath (const char *p)
+{
+    char *tmp, *res = NULL;
+    DBUG_ENTER ();
+
+    if (p != NULL)
+    {
+        // escape all spaces
+        tmp = STRcpy (p);
+        tmp = STRstrip (tmp);
+        res = STRsubstToken (tmp, " ", "\\ ");
+        MEMfree (tmp);
+    }
+
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * Function:
