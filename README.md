@@ -9,7 +9,7 @@ Building
 --------
 
 To get you started, you will need a recent version of [CMake][cmake] (at least version
-3.10), a C99-compatible C compiler (`gcc` or `clang`), and the libUUID library (either
+3.19), a C99-compatible C compiler (`gcc` or `clang`), and the libUUID library (either
 packaged as `libuuid-dev` *or* as part of util-linux).
 
 To build (_quick and dirty_):
@@ -21,9 +21,6 @@ $ make
 This will create two directories, `build_r` and `build_p`, in which the _sac2c_ compiler
 will be compiled using the default configuration. Once this is done, you can run _sac2c_
 from each directory directly, no install is needed.
-
-**NOTE:** _You will need to create the `~/.sac2crc` directory in your home directory_
-**before** _compiling!_
 
 ### The long way
 
@@ -47,7 +44,7 @@ In order to test different parts of _sac2c_ we use [CTest][ctest] together with 
 testing framework.  We test two parts of the compiler, its internals and its operations.
 
 By default we have tests configured to tests its operations, you can call `make check` to
-run these tests.
+run these tests. (Running `make test` is *discouraged*!)
 
 ### Testing the internals
 
@@ -85,10 +82,11 @@ For further details on test setup, see the documentation in `tests/` and `src/te
 License
 -------
 
-The compiler source codes are proprietary, and are subject to the license
-agreement in `LICENSE.txt`. For further details, contact one of the project
-members.
+The compiler is OSS, please have a look at [LICENSE.md][license] and [THIRDPARTY.md][trdprty]
+for more details.
 
 [cmake]: https://cmake.org/
 [ctest]: https://cmake.org/cmake/help/latest/manual/ctest.1.html
 [googt]: https://github.com/google/googletest
+[license]: https://gitlab.sac-home.org/sac-group/sac2c/-/blob/develop/LICENSE.md
+[trdprty]: https://gitlab.sac-home.org/sac-group/sac2c/-/blob/develop/THIRDPARTY.md
