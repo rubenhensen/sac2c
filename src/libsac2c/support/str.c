@@ -1325,9 +1325,12 @@ STRsubstToken (const char *str, const char *token, const char *subst)
 char *
 STRsubstTokend (char *str, const char *token, const char *subst)
 {
+    DBUG_ENTER ();
+
     char *nstr = STRsubstToken (str, token, subst);
     MEMfree (str);
-    return nstr;
+
+    DBUG_RETURN (nstr);
 }
 
 /**
