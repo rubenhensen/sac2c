@@ -76,7 +76,8 @@ SYSstopTracking (void)
 }
 
 /**
- * @brief Santize path of special characters including space
+ * @brief Santize path, removing blanks characters front and back, and
+ *        escaping spaces.
  *
  * @param p path
  * @return new string
@@ -84,24 +85,16 @@ SYSstopTracking (void)
 char *
 SYSsanitizePath (const char *p)
 {
-    char *tmp, *isescaped, *res = NULL;
+    char *tmp, *res = NULL;
     DBUG_ENTER ();
 
     if (p != NULL)
     {
         tmp = STRcpy (p);
         tmp = STRstrip (tmp);
-        isescaped = strchr (tmp, '\\');
 
-        if (isescaped != NULL)
-        {
-            // string contains some escape sequence,
-            // so we put it into quotes
-            res = STRcatn (3, "'", tmp, "'");
-        } else {
-            // escape all spaces
-            res = STRsubstToken (tmp, " ", "\\ ");
-        }
+        // escape all spaces
+        res = STRsubstToken (tmp, " ", "\\ ");
         MEMfree (tmp);
     }
 

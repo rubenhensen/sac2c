@@ -29,12 +29,6 @@ TEST (SystemCalls, SanitizePath)
 
     ASSERT_STREQ (spath, "some\\ new\\ path/sac/24g\\ ga23");
     spath = MEMfree (spath);
-
-    const char *path4 = "    some new\\ path/sac/24g ga23    ";
-    spath = SYSsanitizePath (path4);
-
-    ASSERT_STREQ (spath, "'some new\\ path/sac/24g ga23'");
-    spath = MEMfree (spath);
 }
 
 #undef DBUG_PREFIX

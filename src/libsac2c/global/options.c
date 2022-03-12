@@ -1,19 +1,16 @@
-/*****************************************************************************
+/**
+ * @file
  *
- * file:   options.c
- *
- * prefix: OPT
- *
- * description:
+ * @brief
  *  This file provides means for the analysis of sac2c command line arguments.
  *  It uses the set macro definitions from getoptions.h
  *
- *****************************************************************************/
-
+ */
 #include <sys/param.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <signal.h>
 
@@ -42,12 +39,8 @@
 #include "runtime_compiler.h"
 #include "str_buffer.h"
 
-/******************************************************************************
- *
- * function:
- *   node *OPTcheckPreSetupOptions( int argc, char *argv[])
- *
- * description:
+/**
+ * @brief
  *   Some options require processing as early as possible in the compilation
  *   process. For example, memory checks must be initiated BEFORE any
  *   allocations are done. This requires the corresponding option to be
@@ -57,8 +50,9 @@
  *   complain about illegal options and because the compile time information
  *   system has not yet been set up properly.
  *
- ******************************************************************************/
-
+ * @param argc number of arguments given
+ * @param argv argument array
+ */
 void
 OPTcheckPreSetupOptions (int argc, char *argv[])
 {
@@ -83,8 +77,15 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
     DBUG_RETURN ();
 }
 
+
+/**
+ * @brief Ensure integer is a ^2
+ *
+ * @param arg integer to check
+ * @return True if ^2, otherwise false
+ */
 static bool
-powOf2 (int arg)
+OPTpowOf2 (int arg)
 {
     int exp = 0;
     int orgArg = arg;
@@ -98,18 +99,12 @@ powOf2 (int arg)
     DBUG_RETURN ((1 << (exp - 1)) == orgArg);
 }
 
-/******************************************************************************
- *
- * function:
- *   void OPTcheckPostSetupOptions(void)
- *
- * description:
+/**
+ * @brief
  *   This function is called after command line arguments have been
  *   analysed and sac2crc has been read. It propagates SBI-defined
  *   defaults and then prints the help text if requested by the user.
- *
- ******************************************************************************/
-
+ */
 void
 OPTcheckPostSetupOptions (void)
 {
@@ -136,23 +131,60 @@ OPTcheckPostSetupOptions (void)
     DBUG_RETURN ();
 }
 
-/******************************************************************************
+/**
+ * @brief Check that given name only contains alpha-numeric,
+ *        space, and ~.-_/ characters.
  *
- * function:
- *   void OPTcheckOptionConsistency(void)
- *
- * description:
+ * @param name file (or lib) name
+ * @return True if valid name, otherwise false
+ */
+static bool
+OPTisValidName (const char *name)
+{
+    const char *tmp;
+    bool res = true;
+
+    DBUG_ENTER ();
+
+    if (name != NULL)
+    {
+        tmp = name;
+        while (*tmp != '\0')
+        {
+            if (!(isalnum (*tmp) || isblank (*tmp) || *tmp == '.'
+                  || *tmp == '~' || *tmp == '/' || *tmp == '-'
+                  || *tmp == '_'))
+            {
+                res = false;
+                break;
+            }
+            tmp++;
+        }
+    } else
+        res = false;
+
+    DBUG_RETURN (res);
+}
+
+/**
+ * @brief
  *   This function is called right after command line arguments
  *   have been analysed. Errors and warnings are produced whenever the user
  *   has selected an incompatible combination of options.
- *
- ******************************************************************************/
-
+ */
 void
 OPTcheckOptionConsistency (void)
 {
 
     DBUG_ENTER ();
+
+    if (global.sacfilename && !OPTisValidName (global.sacfilename)) {
+        CTIerror (EMPTY_LOC, "Input filename can only contain alpha-numeric and space characters!");
+    }
+
+    if (global.outfilename && !OPTisValidName (global.outfilename)) {
+        CTIerror (EMPTY_LOC, "Argument to `-o' flag can only contain alpha-numeric and space characters!");
+    }
 
     if (global.optimize.dophm && !global.config.use_phm_api) {
         CTIerror (EMPTY_LOC, "Private heap management disabled for this SBI.");
@@ -197,7 +229,7 @@ OPTcheckOptionConsistency (void)
             CTIerror (EMPTY_LOC, "Can only use one method of setting the block size at a time");
         }
 
-        if (!powOf2 (global.mutc_rc_places)) {
+        if (!OPTpowOf2 (global.mutc_rc_places)) {
             CTIerror (EMPTY_LOC, "-mutc_rc_places must be a power of 2");
         }
 
@@ -285,7 +317,7 @@ OPTcheckOptionConsistency (void)
 #endif
 
             if (global.distmem_cache_outside_dsm) {
-                CTIwarn (EMPTY_LOC, 
+                CTIwarn (EMPTY_LOC,
                          "When MPI is used as a communication library, the cache is "
                          "always allocated "
                          "outside of the DSM segment. dsm_cache_outside_seg does not "
@@ -410,7 +442,7 @@ OPTcheckOptionConsistency (void)
     }
 
     if (global.optimize.dosaa && !global.optimize.dodcr) {
-        CTIwarn (EMPTY_LOC, 
+        CTIwarn (EMPTY_LOC,
                  "Symbolic array attributes (SAA) require dead coderemoval (DCR).\n"
                  "Symbolic array attributes disabled.");
         global.optimize.dosaa = FALSE;
@@ -472,7 +504,7 @@ OPTcheckOptionConsistency (void)
 #endif
 
     if ((global.mt_smart_mode > 0) && (global.min_parallel_size != 0)) {
-        CTIwarn (EMPTY_LOC, 
+        CTIwarn (EMPTY_LOC,
                  "Cannot use both -minmtsize and -mt_smart_mode simultaniously, "
                  "setting -minmtsize to 0.");
         global.min_parallel_size = 0;
@@ -502,32 +534,32 @@ OPTcheckOptionConsistency (void)
     } else if (STReq (global.config.rc_method, "async")) {
     } else if (STReq (global.config.rc_method, "local_norc_desc")) {
         if (global.backend != BE_mutc) {
-            CTIerror (EMPTY_LOC, 
+            CTIerror (EMPTY_LOC,
                       "Specified reference counting method %s is currently only "
                       "supported for the backend BE_mutc!",
                       global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "local_norc_ptr")) {
         if (global.backend != BE_mutc) {
-            CTIerror (EMPTY_LOC, 
+            CTIerror (EMPTY_LOC,
                       "Specified reference counting method %s is currently only "
                       "supported for the backend BE_mutc!",
                       global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "async_norc_copy_desc")) {
         if (global.backend != BE_mutc) {
-            CTIerror (EMPTY_LOC, 
+            CTIerror (EMPTY_LOC,
                       "Specified reference counting method %s is currently only "
                       "supported for the backend BE_mutc!",
                       global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "async_norc_two_descs")) {
-        CTIerror (EMPTY_LOC, 
+        CTIerror (EMPTY_LOC,
                   "Specified reference counting method %s is currently not supported!",
                   global.config.rc_method);
     } else if (STReq (global.config.rc_method, "async_norc_ptr")) {
         if (global.backend != BE_mutc) {
-            CTIerror (EMPTY_LOC, 
+            CTIerror (EMPTY_LOC,
                       "Specified reference counting method %s is currently only "
                       "supported for the backend BE_mutc!",
                       global.config.rc_method);
@@ -556,18 +588,14 @@ OPTcheckOptionConsistency (void)
     DBUG_RETURN ();
 }
 
-/******************************************************************************
+/**
+ * @brief
+ *  This function is called after the compiler knows whether
+ *  it is compiling a module or a plain program, but before
+ *  it starts searching for dependent modules.
  *
- * function:
- *   node *OPTcheckOptionConsistencyForTarget(  bool in_module)
- *
- * description:
- *   This function is called after the compiler knows whether
- *   it is compiling a module or a plain program, but before
- *   it starts searching for dependent modules.
- *
- ******************************************************************************/
-
+ *  @param in_module indicate whether we're compiling a module
+ */
 void
 OPTcheckOptionConsistencyForTarget (bool in_module)
 {
@@ -595,17 +623,17 @@ OPTcheckOptionConsistencyForTarget (bool in_module)
     DBUG_RETURN ();
 }
 
-/******************************************************************************
+/**
+ * @fn node *OPTanalyseCommandline(  int argc, char *argv[])
  *
- * function:
- *   node *OPTanalyseCommandline(  int argc, char *argv[])
- *
- * description:
+ * @brief
  *   This function analyses the commandline options given to sac2c.
  *   Usually selections made are stored in global variables for later
  *   reference.
  *
- ******************************************************************************/
+ * @param argc number of arguments given
+ * @param argv argument array
+ */
 
 #undef ARGS_ERROR
 #define ARGS_ERROR(msg)                                                                  \
@@ -1225,7 +1253,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_BEGIN ();
 
         ARG_CHOICE ("simple", if (global.config.rtspec == FALSE) {
-                                  CTIwarn (EMPTY_LOC, 
+                                  CTIwarn (EMPTY_LOC,
                                            "RTSPEC in sac2c is not set; "
                                            "`-rtspec_mode simple` will be ignored");
                               } else {
@@ -1247,7 +1275,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
 #if ENABLE_UUID
         ARG_CHOICE ("uuid", if (global.config.rtspec == FALSE) {
-                                CTIwarn (EMPTY_LOC, 
+                                CTIwarn (EMPTY_LOC,
                                          "RTSPEC in sac2c is not set; "
                                          "`-rtspec_mode uuid` will be ignored");
                             } else {
@@ -1462,7 +1490,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_FLAG ("ccflags", global.printccflags = TRUE;);
 
     ARGS_OPTION ("ccflag",
-                 CTIwarn (EMPTY_LOC, 
+                 CTIwarn (EMPTY_LOC,
                           "Option -ccflag is deprecated, consider using -Xc instead.");
                  SBUFprintf (cflags_buf, " %s", ARG));
 
