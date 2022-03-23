@@ -82,8 +82,17 @@ ADD_EXECUTABLE (icmt  src/maketools/icmt/icmt.c)
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/saccc.in" "${PROJECT_BINARY_DIR}/saccc" @ONLY)
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/fake-cc.in" "${PROJECT_BINARY_DIR}/fake-cc" @ONLY)
 
+# read in author and license information
+FILE (STRINGS "${PROJECT_SOURCE_DIR}/LICENSE.md" LICENSETXT ENCODING UTF-8)
+STRING (REPLACE ";" "\\n" LICENSETXT "${LICENSETXT}")
+STRING (REPLACE "\"" "\\\"" LICENSETXT "${LICENSETXT}")
+FILE (STRINGS "${PROJECT_SOURCE_DIR}/CONTRIBUTORS.md" AUTHORTXT ENCODING UTF-8)
+STRING (REPLACE ";" "\\n" AUTHORTXT "${AUTHORTXT}")
+STRING (REPLACE "\"" "\\\"" AUTHORTXT "${AUTHORTXT}")
+STRING (REGEX REPLACE "\\\\n([A-Za-z])" "\\\\n    \\1" AUTHORTXT "${AUTHORTXT}")
+
 # generate files necessary to compile sac2c
-CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in" "${PROJECT_BINARY_DIR}/include/config.h")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/config.h.in" "${PROJECT_BINARY_DIR}/include/config.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/fun-attrs.h.in" "${PROJECT_BINARY_DIR}/include/fun-attrs.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in" "${PROJECT_BINARY_DIR}/include/sacdirs.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in" "${PROJECT_BINARY_DIR}/src/build.c")

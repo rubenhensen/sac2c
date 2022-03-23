@@ -1280,47 +1280,7 @@ PrintAuthors (void)
 {
     DBUG_ENTER ();
 
-    printf ("\n\nAUTHORS:\n\n"
-
-            "    The following people contributed their time and mind to create the\n"
-            "    SAC compiler suite (roughly in order of entering the project):\n"
-            "\n"
-            "      Sven-Bodo Scholz\n"
-            "      Henning Wolf\n"
-            "      Arne Sievers\n"
-            "      Clemens Grelck\n"
-            "      Dietmar Kreye\n"
-            "      Soeren Schwartz\n"
-            "      Bjoern Schierau\n"
-            "      Helge Ernst\n"
-            "      Jan-Hendrik Schoeler\n"
-            "      Nico Marcussen-Wulff\n"
-            "      Markus Bradtke\n"
-            "      Borg Enders\n"
-            "      Kai Trojahner\n"
-            "      Michael Werner\n"
-            "      Stephan Herhut\n"
-            "      Karsten Hinckfuss\n"
-            "      Steffen Kuthe\n"
-            "      Jan-Henrik Baumgarten\n"
-            "      Robert Bernecky\n"
-            "      Theo van Klaveren\n"
-            "      Florian Buether\n"
-            "      Torben Gerhards\n"
-            "      Carl A Joslin\n"
-            "      Jing Guo\n"
-            "      Hraban Luyat\n"
-            "      Zheng Zhangzheng\n"
-            "      Aram Visser\n"
-            "      Tim van Deurzen\n"
-            "      Roeland Douma\n"
-            "      Oscar Leijendekker\n"
-            "      Miguel Diogo\n"
-            "      Artem Shinkarov\n"
-            "      Jaroslav Sykora\n"
-            "      Edward Michniak\n"
-            "      Martin Hawes\n"
-            "      Hans-Nikolai Viessmann\n");
+    printf ("\n%s\n", build_author);
 
     DBUG_RETURN ();
 }
@@ -1477,53 +1437,7 @@ USGprintCopyright ()
 {
     DBUG_ENTER ();
 
-    printf (
-      "\n"
-      "---------------------------------------------------------------------------\n"
-      " SAC - Single Assignment C\n"
-      "---------------------------------------------------------------------------\n"
-      "\n"
-      "COPYRIGHT NOTICE, LICENSE AND DISCLAIMER\n"
-      "\n"
-      "(c) Copyright 1994 - 2022 by\n"
-      "\n"
-      "  SAC Development Team\n"
-      "\n"
-      "    web: https://www.sac-home.org\n"
-      "  email: info@sac-home.org\n"
-      "\n"
-      "---------------------------------------------------------------------------\n"
-      "\n");
-
-    printf (
-      "The SAC compiler, the SAC standard library and all accompanying\n"
-      "software and documentation (in the following named this software)\n"
-      "is developed by the SAC Development Team (in the following named\n"
-      "the developer) which reserves all rights on this software.\n"
-      "\n"
-      "Permission to use this software is hereby granted free of charge\n"
-      "for any non-profit purpose in a non-commercial environment, i.e. for\n"
-      "educational or research purposes in a non-profit institute or for\n"
-      "personal, non-commercial use. For this kind of use it is allowed to\n"
-      "copy or redistribute this software under the condition that the\n"
-      "complete distribution for a certain platform is copied or\n"
-      "redistributed and this copyright notice, license agreement, and\n"
-      "warranty disclaimer appears in each copy. ANY use of this software with\n"
-      "a commercial purpose or in a commercial environment is not granted by\n"
-      "this license.\n"
-      "\n"
-      "The developer disclaims all warranties with regard to this software,\n"
-      "including all implied warranties of merchantability and fitness.  In no\n"
-      "event shall the developer be liable for any special, indirect or\n"
-      "consequential damages or any damages whatsoever resulting from loss of\n"
-      "use, data, or profits, whether in an action of contract, negligence, or\n"
-      "other tortuous action, arising out of or in connection with the use or\n"
-      "performance of this software. The entire risk as to the quality and\n"
-      "performance of this software is with you. Should this software prove\n"
-      "defective, you assume the cost of all servicing, repair, or correction.\n"
-      "\n"
-      "---------------------------------------------------------------------------\n"
-      "\n");
+    printf ("\n%s\n", build_lic);
 
     DBUG_RETURN ();
 }
