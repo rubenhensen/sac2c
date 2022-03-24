@@ -1,12 +1,20 @@
 // This test is based off of LivermoreLoop 8 (APL variant), which creates a
 // sequences of loops, each of which gets a lifted variable (via the EMRL
 // optimisation).
+//
+// We first test that we can create lifted avis for each loop call, we use
+// id() to avoid var name propogation; this though leads to code with a
+// race condition (see MR #189 for detials). For the second test we see
+// that we can avoid the above race condition, and thus *only* create a
+// lifted avis for the last loop.
 
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -doemrci -doemrcic -bopt:emrl -printfun main
 // SAC_TEST|all: <file-name>
 // SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "emr_lifted" 6
 // SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "emr_lifted = _noop_();" 2
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -DALT $< | $(GREP_COMMAND_OUTPUT) "emr_lifted" 3
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -DALT $< | $(GREP_COMMAND_OUTPUT) "emr_lifted = _noop_();" 1
 
 #include "mini-stdlib.sac"
 
@@ -21,6 +29,9 @@
 #ifndef SIZE2
 #define SIZE2 5
 #endif
+
+noinline int[*]
+id (int[*] a) { return a; }
 
 inline int[+]
 - (int[+] a, int[+] b)
@@ -49,7 +60,12 @@ int main ()
 
   c = [23, 22, 42];
   u1 = reshape ([SIZE0,SIZE1,SIZE2], 1+iota (SIZE0*SIZE1*SIZE2));
-  u2 = something([0,-1,0], u1) - something([0,1,0], u1);
+#ifndef ALT
+  u2 = id (u1);
+#else
+  u2 = u1;
+#endif
+  u3 = something([0,-1,0], u1) - something([0,1,0], u2);
 
-  return u2[1,1,1];
+  return u3[1,1,1];
 }
