@@ -402,10 +402,10 @@ EMRLap (node * arg_node, info * arg_info)
                 /* for each (wl, erc_avis) in the stack, find a suitable var in function
                  * free variables and replace it. if none can be found, drop/free
                  * erc_avis. We pop the stack on each iteration.                        */
-                DBUG_EXECUTE (if (rec_filt != NULL) { PRTdoPrint (rec_filt); });
+                DBUG_EXECUTE (if (rec_filt != NULL) { PRTdoPrintFile (stderr, rec_filt); });
                 while (INFO_STACK (arg_info) != NULL) {
                     find = isSameShapeAvis (INFO_STACK (arg_info)->avis, rec_filt);
-                    DBUG_EXECUTE (if (find != NULL) { PRTdoPrint (find);});
+                    DBUG_EXECUTE (if (find != NULL) { PRTdoPrintFile (stderr, find);});
                     if (find == NULL) {
                         DBUG_PRINT ("  no suitable free variable found for %s, dropping "
                                     "it",

@@ -45,6 +45,7 @@
 
 #include "print.h"
 #include "DataFlowMask.h"
+#include "emr_utils.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -69,6 +70,7 @@ struct INFO {
     dfmask_t *thenmask;
     dfmask_t *elsemask;
     node *condargs;
+    node *fundef;
     trav_mode_t mode;
     bool is_erc;
 };
@@ -78,6 +80,7 @@ struct INFO {
 #define INFO_THENMASK(n) (n->thenmask)
 #define INFO_ELSEMASK(n) (n->elsemask)
 #define INFO_CONDARGS(n) (n->condargs)
+#define INFO_FUNDEF(n) (n->fundef)
 #define INFO_TRAV_MODE(n) (n->mode)
 #define INFO_IS_ERC(n) (n->is_erc)
 
@@ -92,9 +95,10 @@ MakeInfo (void)
 
     INFO_USEMASK (result) = NULL;
     INFO_OLDMASK (result) = NULL;
-    INFO_CONDARGS (result) = NULL;
     INFO_THENMASK (result) = NULL;
     INFO_ELSEMASK (result) = NULL;
+    INFO_CONDARGS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
     INFO_TRAV_MODE (result) = FRC_unknown;
     INFO_IS_ERC (result) = FALSE;
 
@@ -320,6 +324,54 @@ FRCap (node *arg_node, info *arg_info)
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     }
 
+    /* We need to also filter out ERCs from loop functions, we do this
+     * in two ways: application and definition. The first is needed to
+     * prevent EMRL from making a bad choice due to aliasing, the second
+     * helps when selecting ERCs for WLs.
+     *
+     * XXX we use FRC_wl as we want this check to only be run iff immediately
+     * after EMRCI (in opt phase).
+     */
+    if (INFO_TRAV_MODE (arg_info) == FRC_wl
+        && FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))) {
+        if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)
+            && FUNDEF_ERC (AP_FUNDEF (arg_node)) != NULL) {
+            // recursive loop call
+            DBUG_PRINT ("checking recursive loop call...");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, FUNDEF_ERC (AP_FUNDEF (arg_node))););
+            INFO_IS_ERC (arg_info) = TRUE;
+            FUNDEF_ERC (AP_FUNDEF (arg_node)) = FilterTrav (FUNDEF_ERC (AP_FUNDEF (arg_node)), arg_info);
+            INFO_IS_ERC (arg_info) = FALSE;
+        } else if (FUNDEF_ERC (AP_FUNDEF (arg_node)) != NULL) {
+            // initial call site
+
+            DBUG_PRINT ("checking initial loop call...");
+            node *args = AP_ARGS (arg_node);
+            node *fargs = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+
+            /* we scan through the application arguments and check that these aren't
+             * referenced later. If so, we make sure to remove that the function ERCs
+             * are filter of any signature arguments.
+             */
+            while (args != NULL)
+            {
+                if (DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL,
+                                      ID_AVIS (EXPRS_EXPR (args)))) {
+                    DBUG_PRINT ("Invalid function reuse candidate removed: %s <ap-fundef> %s",
+                                ID_NAME (EXPRS_EXPR (args)),
+                                AVIS_NAME (ARG_AVIS (fargs)));
+
+                    FUNDEF_ERC (AP_FUNDEF (arg_node))
+                      = ElimDupesOfAvis (ARG_AVIS (fargs), FUNDEF_ERC (AP_FUNDEF (arg_node)));
+                }
+
+                args = EXPRS_NEXT (args);
+                fargs = ARG_NEXT (fargs);
+            }
+
+        }
+    }
+
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
@@ -487,6 +539,7 @@ FRCfundef (node *arg_node, info *arg_info)
                 INFO_OLDMASK (arg_info) = NULL;
             }
 
+            INFO_FUNDEF (arg_info) = arg_node;
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
             INFO_USEMASK (arg_info) = DFMremoveMask (INFO_USEMASK (arg_info));
