@@ -78,6 +78,8 @@ ElimDupesOfAvis (node *avis, node *exprs)
 {
     DBUG_ENTER ();
 
+    DBUG_ASSERT (NODE_TYPE (avis) == N_avis, "First arg is not N_avis!");
+
     if (exprs != NULL) {
         if (EXPRS_NEXT (exprs) != NULL) {
             EXPRS_NEXT (exprs) = ElimDupesOfAvis (avis, EXPRS_NEXT (exprs));
@@ -145,11 +147,13 @@ filterDuplicateId (node *fexprs, node **exprs)
  * @return the N_id node that matches, or NULL
  */
 node *
-isSameShapeAvis (node * avis, node * exprs)
+isSameShapeAvis (node *avis, node *exprs)
 {
     node * ret = NULL;
 
     DBUG_ENTER ();
+
+    DBUG_ASSERT (NODE_TYPE (avis) == N_avis, "First arg is not N_avis!");
 
     if (exprs != NULL) {
         if ((ShapeMatch (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs)))
