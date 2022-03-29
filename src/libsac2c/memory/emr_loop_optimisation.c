@@ -423,6 +423,9 @@ EMRLap (node * arg_node, info * arg_info)
                         AP_ARGS (arg_node)
                           = TCappendExprs (AP_ARGS (arg_node),
                                            TBmakeExprs (DUPdoDupNode (find), NULL));
+
+                        // remove found N_avis from pool of free variables
+                        rec_filt = ElimDupesOfAvis (ID_AVIS (find), rec_filt);
                     }
                     INFO_STACK (arg_info) = stack_drop (INFO_STACK (arg_info));
                 }
