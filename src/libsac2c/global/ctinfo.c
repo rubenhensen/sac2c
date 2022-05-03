@@ -795,7 +795,11 @@ CTIerrorContinued (const char *format, ...)
  *
  * @fn void CTIerrorInternal( const char *format, ...)
  *
- *   @brief  produces an error message without file name and line number.
+ *   @brief  Produces an error message without file name and line number, but
+ *           specifies the phase where the compiler failed.
+ *           This function does not respect all cti command-line arguments
+ *           to avoid potential crashes or hangs during error handling.
+ *           
  *
  *   @param format  format string like in printf
  *
@@ -810,10 +814,6 @@ CTIerrorInternal (const char *format, ...)
 
     fprintf (cti_stderr, "%sInternal %s failure\n", error_message_header, global.toolname);
 
-    va_start (arg_p, format);
-    PrintMessage (error_message_header, format, arg_p);
-    va_end (arg_p);
-
     fprintf (cti_stderr,
              "%sCompiler phase:    %s\n"
              "%s                   %s\n"
@@ -823,6 +823,12 @@ CTIerrorInternal (const char *format, ...)
              error_message_header, PHIphaseText (global.compiler_anyphase),
              error_message_header, TRAVgetName (), error_message_header,
              CTIitemName (global.current_fundef), CTIfunParams (global.current_fundef));
+
+    va_start (arg_p, format);
+    fprintf (cti_stderr, "%s", error_message_header);
+    fprintf (cti_stderr, format, arg_p);
+    va_end (arg_p);
+
 
     errors++;
 
