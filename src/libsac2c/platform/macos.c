@@ -90,7 +90,7 @@ MACOScheckSDKVer (const char *v)
     if (STReq (MACOSSDKVER, v))
         match = true;
 #else
-    CTIwarn ("MacOS SDK version used to build sac2c is not set!");
+    CTIwarn (EMPTY_LOC, "MacOS SDK version used to build sac2c is not set!");
 #endif // MACOSSDKVER
 
     DBUG_RETURN (match);
