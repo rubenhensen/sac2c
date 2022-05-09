@@ -66,9 +66,6 @@
 #include "cppcompat.h"
 #undef exit
 
-static char *message_buffer = NULL;
-static size_t message_buffer_size = 0;
-
 static const char *abort_message_header = "Abort";
 static const char *error_message_header = "Error";
 static const char *warn_message_header = "Warning";
@@ -197,148 +194,42 @@ ProcessMessage (char *buffer, size_t first_header_length, size_t multiline_heade
 
 /** <!--********************************************************************-->
  *
- * @fn void Format2Buffer( const char *format, va_list arg_p)
- *
- *   @brief The message specified by format string and variable number
- *          of arguments is "printed" into the global message buffer.
- *          It takes care of buffer overflows.
- *
- *   @param format  format string like in printf family of functions
- *
- ******************************************************************************/
-
-static void
-Format2Buffer (const char *format, va_list arg_p)
-{
-    int len;
-    size_t len_p;
-    va_list arg_p_copy;
-
-    DBUG_ENTER ();
-
-    va_copy (arg_p_copy, arg_p);
-    len_p = (size_t)(len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
-    va_end (arg_p_copy);
-
-    if (len < 0) {
-        DBUG_ASSERT (message_buffer_size == 0, "message buffer corruption");
-        /*
-         * Output error due to non-existing message buffer
-         */
-
-        len_p = 120;
-
-        message_buffer = (char *)MEMmalloc (len_p + 2);
-        CHKMdoNotReport (message_buffer);
-        message_buffer_size = len_p + 2;
-
-        va_copy (arg_p_copy, arg_p);
-        len_p = (size_t)(len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
-        va_end (arg_p_copy);
-        DBUG_ASSERT (len >= 0, "message buffer corruption");
-    }
-
-    if (len_p >= message_buffer_size) {
-        /* buffer too small  */
-
-        MEMfree (message_buffer);
-        message_buffer = (char *)MEMmalloc (len_p + 2);
-        CHKMdoNotReport (message_buffer);
-        message_buffer_size = len_p + 2;
-
-        va_copy (arg_p_copy, arg_p);
-        len_p = (size_t)(len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
-        va_end (arg_p_copy);
-
-
-        DBUG_ASSERT (len >= 0 || len_p < message_buffer_size, "message buffer corruption");
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void Format2Buffer( const char *format, ...)
- *
- *   @brief The message specified by format string and variable number
- *          of arguments is "printed" into the global message buffer.
- *          It takes care of buffer overflows.
- *
- *   @param format  format string like in printf family of functions
- *
- ******************************************************************************/
-
-static void
-Format2BufferDynamic (const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    va_start (arg_p, format);
-
-    Format2Buffer (format, arg_p);
-
-    va_end (arg_p);
-
-    DBUG_RETURN ();
-}
-
-/*******************************************************************************
- *
- * Description: Concatenate message_buffer to first, allocating memory for the
- *              new string and deallocating first.
- *              
- *
- * Parameters: - first, first string
- *
- * Return: - new concatenated string
- *
- *******************************************************************************/
-
-char *
-STRcatMessageBuffer (char *first)
-{
-    DBUG_ENTER ();
-
-    char *ret = STRcat (first, message_buffer);
-    MEMfree (first);
-
-    DBUG_RETURN (ret);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void loc2str( const struct location loc)
+ * @fn str_buf loc2buf( const struct location loc)
  *
  *   @brief  Produces a GNU format string representing the location.
- *           When NULL is given or the location is invalid, an empty string is returned.
+ *           When NULL is given or the location is invalid, the buffer will be empty.
  *
  *   @param loc  A node representing the location of the error.
  *               If no location is available or appropriate, NULL should be supplied.
+ * 
+ *   @return A str_buf containing a string representation of the location.
  *
  ******************************************************************************/
 
-char *
-loc2str (const struct location loc) 
+static str_buf *
+loc2buf (const struct location loc) 
 {
+    str_buf *buf;
+    
     DBUG_ENTER ();
 
+    buf = SBUFcreate (0);
+
     if (loc.fname == NULL) {
-        DBUG_RETURN (STRcpy(""));
+        DBUG_RETURN (buf);
     }
 
+    buf = SBUFcreate (0);
     if (loc.line != 0) {
         if (loc.col != 0) {
-            Format2BufferDynamic ("%s:%zu:%zu: ", loc.fname, loc.line, loc.col);
+            SBUFprintf (buf, "%s:%zu:%zu: ", loc.fname, loc.line, loc.col);
         } else {
-            Format2BufferDynamic ("%s:%zu: ", loc.fname, loc.line);
+            SBUFprintf (buf, "%s:%zu: ", loc.fname, loc.line);
         }
     } else {
-        Format2BufferDynamic("%s: ", loc.fname);
+        SBUFprintf (buf, "%s: ", loc.fname);
     }
-    DBUG_RETURN (STRcpy (message_buffer));
+    DBUG_RETURN (buf);
 }
 
 /** <!--********************************************************************-->
@@ -363,18 +254,23 @@ static void
 PrintMessage (const char *header, const char *format, va_list arg_p)
 {
     char *line;
+    str_buf *buf;
 
     DBUG_ENTER ();
 
-    Format2Buffer (format, arg_p);
-    ProcessMessage (message_buffer, STRlen (header), STRlen (header));
-    line = strtok (message_buffer, "@");
+    buf = SBUFcreate (0);
+    SBUFvprintf (buf, format, arg_p);
+    // Processmessage doesn't affect the length, so we can pass the internal buffer
+    ProcessMessage (SBUFgetBuffer (buf), STRlen (header), STRlen (header));
+    line = strtok (SBUFgetBuffer (buf), "@"); // Destroys buf contents, which is fine
 
     while (line != NULL) {
         fprintf (cti_stderr, "%s%s\n", header, line);
         line = strtok (NULL, "@");
     }
     fflush (cti_stderr);
+
+    SBUFfree (buf);
 
     DBUG_RETURN ();
 }
@@ -694,35 +590,29 @@ CTIinstallInterruptHandlers ()
 
 /** <!--********************************************************************-->
  *
- * @fn void FinalizeMessageBegin( const char *location_buffer, const char *message_header, 
- *                                   const char *format, va_list arg_p)
+ * @fn str_buf *FinalizeMessageBegin( const struct location loc, 
+ *                                    const char *message_header, 
+ *                                    const char *format, va_list arg_p)
  *
  *   @brief  Finalizes all processing required to display the message such that 
  *           it can later be printed with `fprintf(cti_stderr, "%s", ret)`
  *           Does not include a trailing newline.
  *
- *   @param location_buffer  The buffer that contains the possible location header 
- *                           associated with the type of message of the forms:
- *                           "" (empty but not null) for generic messages
- *                           "<filepath>:line: " for messages with line info
- *                           "<filepath:line:column: " for messages with location info
- *                           Location_buffer is deallocated during execution.
- *   @param message_header   The header associated with the type of message, 
- *                           e.g. error_message_header for errors.
- *   @param format           format string like in printf
- *   @param arg_p            arguments for the format string
+ *   @param loc             The location of the message.
+ *   @param message_header  The header associated with the type of message, 
+ *                          e.g. error_message_header for errors.
+ *   @param format          format string like in printf
+ *   @param arg_p           arguments for the format string
  *
  ******************************************************************************/
 
-char *
-FinalizeMessageBegin (char *location_buffer, const char *message_header,
-                         const char *format, va_list arg_p)
+static str_buf *
+FinalizeMessageBegin (const struct location loc, const char *message_header,
+                      const char *format, va_list arg_p)
 {
-    char *ret;
-    char *accumulator;
-    char *message_header_base;
-    char *message_header_first_line;
-    char *message_header_multiline;
+    str_buf *message;
+    str_buf *message_header_base;
+    str_buf *message_header_multiline;
     size_t message_header_first_line_length;
     size_t message_header_multiline_length;
 
@@ -731,51 +621,52 @@ FinalizeMessageBegin (char *location_buffer, const char *message_header,
     // PREPARING HEADERS
     
     // "<filepath>:<line>:<column>: <MessageType>"
-    message_header_base = STRcat (location_buffer, message_header);
+    message_header_base = loc2buf (loc);
+    message_header_base = SBUFprint (message_header_base, message_header);
 
-    // "<message_header_base>" applied to the format string from cti_header_format
-    Format2BufferDynamic (global.cti_header_format, message_header_base);
-    message_header_first_line = STRcpy (message_buffer);
-    message_header_first_line_length = STRlen (message_header_first_line);
-
-    // "<message_header_base>" applied to the format string from cti-multi-line-format
-    Format2BufferDynamic (global.cti_multi_line_format, message_header_base);
-    message_header_multiline = STRcat ("\n", message_buffer);  // \n has to be added
-    message_header_multiline_length = STRlen (message_buffer); // but is not counted towards the length
+    // Apply the base message header to the format string from cti-multi-line-format
+    // The user has control over the format through cli arguments: they can use a
+    // single %s or %0.s to (not) display the base header each time on subsequent lines.
+    message_header_multiline = SBUFcreate (1);
+    SBUFprint (message_header_multiline, "\n");
+    SBUFprintf (message_header_multiline, global.cti_multi_line_format, SBUFgetBuffer (message_header_base));
+    message_header_multiline_length = SBUFlen (message_header_multiline) - 1; // Don't count the '\n'
 
     // CONSTRUCTING MESSAGE CONTENT
 
-    Format2Buffer (format, arg_p);
-    accumulator = STRcatMessageBuffer (message_header_first_line); // frees message_header_first_line
+    // Generate the header for the first line and store the length
+    message = SBUFcreate (0);
+    SBUFprintf (message, global.cti_header_format, SBUFgetBuffer (message_header_base));
+    message_header_first_line_length = SBUFlen (message);
 
-    ProcessMessage (accumulator, message_header_first_line_length, message_header_multiline_length);
+    // Append the format string
+    SBUFvprintf (message, format, arg_p);
 
-    if (global.cti_single_line) {
-        ret = STRsubstTokend (accumulator, "@", " "); // No need to insert the multiline header
-        ret = STRsubstTokend (ret, "\n", " ");        // if there are no multilines
-    } else {
-        ret = STRsubstTokend (accumulator, "@", message_header_multiline);
+    // Insert line wraps, modifications are done in place.
+    ProcessMessage (SBUFgetBuffer (message), 
+                    message_header_first_line_length, message_header_multiline_length);
+    
+    if (global.cti_single_line) { // Kill newlines
+        SBUFsubstToken (message, "@", " ");
+        SBUFsubstToken (message, "\n", " ");
+    } else { // Generate newlines
+        SBUFsubstToken (message, "@", SBUFgetBuffer (message_header_multiline));
     }
 
-    MEMfree (location_buffer);
-    MEMfree (message_header_base);
-    MEMfree (message_header_multiline);
-    DBUG_RETURN (ret);
+    SBUFfree (message_header_base);
+    SBUFfree (message_header_multiline);
+    DBUG_RETURN (message);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn void FinalizeMessage( const char *location_buffer, const char *message_header, 
- *                              const char *format, va_list arg_p)
+ * @fn str_buf *FinalizeMessage( const struct location loc, 
+ *                               const char *message_header, 
+ *                               const char *format, va_list arg_p)
  *
  *   @brief  Returns FinalizeMessage but with a trailing newline.
  *
- *   @param location_buffer  The buffer that contains the possible location header 
- *                           associated with the type of message of the forms:
- *                           "" (empty but not null) for generic messages
- *                           "<filepath>:line: " for messages with line info
- *                           "<filepath:line:column: " for messages with location info
- *                           Location_buffer is deallocated during execution.
+ *   @param loc              The location of the message.
  *   @param message_header   The header associated with the type of message, 
  *                           e.g. error_message_header for errors.
  *   @param format           format string like in printf
@@ -783,19 +674,17 @@ FinalizeMessageBegin (char *location_buffer, const char *message_header,
  *
  ******************************************************************************/
 
-char *
-FinalizeMessage (char *location_buffer, const char *message_header, 
-                    const char *format, va_list arg_p)
+static str_buf *
+FinalizeMessage (const struct location loc, const char *message_header, 
+                 const char *format, va_list arg_p)
 {
-    char *tmp;
-    char *ret;
+    str_buf *message;
     
     DBUG_ENTER ();
-    tmp = FinalizeMessageBegin (location_buffer, message_header, format, arg_p);
-    ret = STRcat (tmp, "\n");
+    message = FinalizeMessageBegin (loc, message_header, format, arg_p);
+    SBUFprint (message, "\n");
 
-    MEMfree (tmp);
-    DBUG_RETURN (ret);
+    DBUG_RETURN (message);
 }
 
 /** <!--********************************************************************-->
@@ -817,16 +706,16 @@ FinalizeMessage (char *location_buffer, const char *message_header,
 void
 CTIerror(const struct location loc, const char *format, ...)
 {
-    char *error_msg;
+    str_buf *error_msg;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     va_start (arg_p, format);
 
-    error_msg = FinalizeMessage (loc2str (loc), error_message_header, format, arg_p);
-    fprintf (cti_stderr, "%s", error_msg);
-    MEMfree (error_msg);
+    error_msg = FinalizeMessage (loc, error_message_header, format, arg_p);
+    fprintf (cti_stderr, "%s", SBUFgetBuffer (error_msg));
+    SBUFfree (error_msg);
 
     va_end (arg_p);
 
@@ -863,15 +752,13 @@ CTIerror(const struct location loc, const char *format, ...)
 char *
 CTIgetErrorMessageVA (size_t line, const char *file, const char *format, va_list arg_p)
 {
-    char *ret;
+    str_buf *message;
     DBUG_ENTER ();
 
-    Format2BufferDynamic("%s:%zu: ", file, line); // GNU format location
-    ret = STRcpy (message_buffer);
+    message = FinalizeMessage ((struct location) {.fname = file, .line = line, .col = 0},
+                               error_message_header, format, arg_p);
 
-    ret = FinalizeMessage (ret, error_message_header, format, arg_p);
-
-    DBUG_RETURN (ret);
+    DBUG_RETURN (SBUF2strAndFree (&message));
 }
 
 char *
@@ -1013,18 +900,18 @@ CTIabortOnBottom (char *err_msg)
 void
 CTIabort (const struct location loc, const char *format, ...)
 {
-    char *abort_msg;
+    str_buf *abort_msg;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     va_start (arg_p, format);
-
-    abort_msg = FinalizeMessage (loc2str (loc), abort_message_header, format, arg_p);
-    fprintf (cti_stderr, "%s", abort_msg);
-    MEMfree (abort_msg);
-
+    abort_msg = FinalizeMessage (loc, abort_message_header, format, arg_p);
     va_end (arg_p);
+
+    fprintf (cti_stderr, "%s", SBUFgetBuffer (abort_msg));
+    SBUFfree (abort_msg);
+
 
     AbortCompilation ();
 }
@@ -1107,19 +994,18 @@ CTIabortOnError ()
 void
 CTIwarn (const struct location loc, const char *format, ...)
 {
-    char *warn_msg;
+    str_buf *warn_msg;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
-
-        warn_msg = FinalizeMessage (loc2str (loc), warn_message_header, format, arg_p);
-        fprintf (cti_stderr, "%s", warn_msg);
-        MEMfree (warn_msg);
-
+        warn_msg = FinalizeMessage (loc, warn_message_header, format, arg_p);
         va_end (arg_p);
+
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (warn_msg));
+        SBUFfree (warn_msg);
 
         warnings++;
     }
@@ -1220,7 +1106,7 @@ CTIstate (const char *format, ...)
 void
 CTInote (const struct location loc, const char *format, ...)
 {
-    char *note_msg;
+    str_buf *note_msg;
     va_list arg_p;
 
     DBUG_ENTER ();
@@ -1234,9 +1120,9 @@ CTInote (const struct location loc, const char *format, ...)
         if (loc.fname == NULL || loc.line == 0) { // 
             PrintMessage (indent_message_header, format, arg_p);
         } else {
-            note_msg = FinalizeMessage (loc2str (loc), note_message_header, format, arg_p);
-            fprintf (cti_stderr, "%s", note_msg);
-            MEMfree (note_msg);
+            note_msg = FinalizeMessage (loc, note_message_header, format, arg_p);
+            fprintf (cti_stderr, "%s", SBUFgetBuffer (note_msg));
+            SBUFfree (note_msg);
         }        
 
         va_end (arg_p);
