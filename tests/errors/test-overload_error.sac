@@ -1,10 +1,10 @@
-// This test asserts that overloaded errors are printed as `filename:line Abort:`
+// This test asserts that overloaded errors are printed as `filename:line: Abort:`
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -check tc -b 5:cwf
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>$(CALL_SAC2C) $< 2>&1 | grep -Pi "^.*:\d+ Abort:$$" | $(GREP_COMMAND_OUTPUT) "" 1
+// SAC_TEST|<tab>$(CALL_SAC2C) $< 2>&1 | grep -Pi "^.*:\d+: Abort:$$" | $(GREP_COMMAND_OUTPUT) "" 1
 
 int main ()
 {
