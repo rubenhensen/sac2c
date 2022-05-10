@@ -1209,17 +1209,32 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     {
         ARG_CHOICE_BEGIN ();
 
-        ARG_CHOICE ("simple", global.rtspec_mode = RTSPEC_MODE_SIMPLE);
+        ARG_CHOICE ("simple", if (global.config.rtspec == FALSE) {
+                                  CTIwarn ("RTSPEC in sac2c is not set;"
+                                           " `-rtspec_mode simple` will be ignored");
+                              } else {
+                                  global.rtspec_mode = RTSPEC_MODE_SIMPLE;
+                              });
 
 #if ENABLE_HASH
-        ARG_CHOICE ("hash", global.rtspec_mode = RTSPEC_MODE_HASH);
+        ARG_CHOICE ("hash", if (global.config.rtspec == FALSE) {
+                                  CTIwarn ("RTSPEC in sac2c is not set;"
+                                           " `-rtspec_mode hash` will be ignored");
+                              } else {
+                                  global.rtspec_mode = RTSPEC_MODE_HASH;
+                              });
 #else
         ARG_CHOICE ("hash",
                     CTIabort ("hash support not available in the current build."));
 #endif /* ENABLE_HASH */
 
 #if ENABLE_UUID
-        ARG_CHOICE ("uuid", global.rtspec_mode = RTSPEC_MODE_UUID);
+        ARG_CHOICE ("uuid", if (global.config.rtspec == FALSE) {
+                                CTIwarn ("RTSPEC in sac2c is not set;"
+                                         " `-rtspec_mode uuid` will be ignored");
+                            } else {
+                                global.rtspec_mode = RTSPEC_MODE_UUID;
+                            });
 #else
         ARG_CHOICE ("uuid",
                     CTIabort ("uuid support not available in the current build."));
