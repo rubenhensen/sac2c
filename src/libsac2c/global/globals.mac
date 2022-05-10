@@ -274,18 +274,12 @@ GLOBAL (bool, enable_structs, FALSE, xfree_dummy, )
 
 /* -- Runtime Specialization -- */
 
-/*
- * Runtime specialization flag for generating runtime optimization
- * functionality.
- */
-
-GLOBAL (bool, rtspec, FALSE, xfree_dummy, )
-/*
- * Runtime specialization is disabled by default.
- */
 
 /*
- * Runtime specialization mode.
+ * Runtime specialization mode. Only relevant in case rtspec is 
+ * enabled which happens through sac2crc's RTSPEC.
+ * Like all sac2crc values, it is available in global.config as
+ * global.config.rtspec
  */
 #if ENABLE_UUID
 GLOBAL (int, rtspec_mode, 2, xfree_dummy, )

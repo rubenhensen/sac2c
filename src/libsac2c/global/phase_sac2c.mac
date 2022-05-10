@@ -174,8 +174,9 @@ SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optim
           exp)
 
 SUBPHASE (uid, "Set unique ids for generic functions", UIDdoSetFunctionIDs,
-          global.rtspec_mode == RTSPEC_MODE_HASH
-            || global.rtspec_mode == RTSPEC_MODE_UUID,
+          (global.config.rtspec == TRUE)
+            && (global.rtspec_mode == RTSPEC_MODE_HASH
+                || global.rtspec_mode == RTSPEC_MODE_UUID),
           exp)
 
 SUBPHASE (ser, "Serializing syntax tree", SERdoSerialize,
@@ -1491,7 +1492,9 @@ SUBPHASE (cfp, "MUTC create function pairs", CFPdoCreateFunctionPairs,
 
 /* TVD: Runtime Specialization */
 SUBPHASE (rtspec, "Runtime Specialization create wrapper entry functions",
-          RTSPECdoCreateWrapperEntries, global.rtspec_mode == RTSPEC_MODE_SIMPLE, pc)
+          RTSPECdoCreateWrapperEntries, 
+          (global.config.rtspec == TRUE) && (global.rtspec_mode == RTSPEC_MODE_SIMPLE),
+          pc)
 
 SUBPHASE (msc, "Make Slow Clones", MSCdoMakeSlowClones, global.fp, pc)
 /*
