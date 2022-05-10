@@ -353,8 +353,6 @@ CleanUp (void)
 static void
 CleanUpInterrupted (void)
 {
-    int status;
-
     // DBUG_ENTER ();
     // We do not want to use the DBUG macros here to keep the code as simple
     // as possible. Note that this is the interrupt handler that is only run
@@ -364,9 +362,9 @@ CleanUpInterrupted (void)
         global.cleanup = FALSE;
 
         if (global.system_cleanup != NULL) {
-            status = system (global.system_cleanup);
+            system (global.system_cleanup);
             /*
-             * We ignore the status here nevertheless as we are already in
+             * We ignore the return value here as we are already in
              * failure mode.
              */
         }

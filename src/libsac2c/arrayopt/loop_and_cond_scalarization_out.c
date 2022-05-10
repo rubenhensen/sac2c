@@ -708,7 +708,6 @@ LACSOid (node *arg_node, info *arg_info)
 {
     shape *shp;
     shape *ravelshp;
-    node *lacfundef;
     node *avis;
     node *funcond;
     node *newexprsthen;
@@ -722,8 +721,6 @@ LACSOid (node *arg_node, info *arg_info)
     if (NULL != INFO_AP (arg_info) && (INFO_FINDINGRETURNIDS (arg_info))) {
         avis = ID_AVIS (arg_node);
         DBUG_PRINT ("inspecting return value: %s", AVIS_NAME (avis));
-
-        lacfundef = (NULL != INFO_AP (arg_info)) ? AP_FUNDEF (INFO_AP (arg_info)) : NULL;
 
         /* Does this LACFUN result meet our criteria for LACS? */
         if ((TUshapeKnown (AVIS_TYPE (avis)) && (!AVIS_ISSCALARIZED (avis))

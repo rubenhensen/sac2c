@@ -170,12 +170,10 @@ static void
 CreatePreAssignments (node *expr, info *arg_info, node *pred_avis)
 {
     node *res;
-    simpletype st;
 
     DBUG_ENTER ();
 
     /* create predicate avises */
-    st = TYgetSimpleType (TYgetScalar (AVIS_TYPE (pred_avis)));
     INFO_PREDAVIS (arg_info) = pred_avis;
 
     /* add new avises to variable declarations */

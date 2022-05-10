@@ -980,7 +980,6 @@ AWLFassign (node *arg_node, info *arg_info)
 node *
 AWLFwith (node *arg_node, info *arg_info)
 {
-    node *nextop;
     node *genop;
     node *consumerop;
     node *producershape;
@@ -1033,7 +1032,7 @@ AWLFwith (node *arg_node, info *arg_info)
         producershape = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop)));
         genop = TBmakeGenarray (DUPdoDupTree (producershape), NULL);
         GENARRAY_NEXT (genop) = MODARRAY_NEXT (consumerop);
-        nextop = FREEdoFreeNode (consumerop);
+        consumerop = FREEdoFreeNode (consumerop);
         WITH_WITHOP (arg_node) = genop;
         DBUG_PRINT ("Replacing modarray by genarray");
     }

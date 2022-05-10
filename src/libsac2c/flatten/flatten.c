@@ -338,14 +338,14 @@ FLATassign (node *arg_node, info *arg_info)
 node *
 FLATcast (node *arg_node, info *arg_info)
 {
-    node *expr, *expr2;
+    node *expr;
 
     DBUG_ENTER ();
 
     expr = CAST_EXPR (arg_node);
     if (NODE_TYPE (expr) != N_spid) {
         CAST_EXPR (arg_node) = Abstract (expr, arg_info);
-        expr2 = TRAVdo (expr, arg_info);
+        expr = TRAVdo (expr, arg_info);
     }
 
     DBUG_RETURN (arg_node);

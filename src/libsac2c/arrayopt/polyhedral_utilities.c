@@ -481,12 +481,11 @@ ClearAvisIslAttributesOne (void *rest, void *fundef, void *avis)
 void
 PHUTpolyEpilogOne (lut_t *varlut)
 {
-    node *z;
     node *head = NULL;
 
     DBUG_ENTER ();
 
-    z = (node *)LUTfoldLutP (varlut, head, ClearAvisIslAttributesOne);
+    head = (node *)LUTfoldLutP (varlut, head, ClearAvisIslAttributesOne);
 
     DBUG_PRINT ("Removing content from VARLUT");
     LUTremoveContentLut (varlut);
@@ -965,7 +964,6 @@ WriteSetVariables (FILE *handle, node *idlist, lut_t *varlut)
     size_t n;
     int inclass;
     int numleft;
-    char *funname;
 
     DBUG_ENTER ();
     // Append ISL versions of set variables:  [i,j,k...]
@@ -977,7 +975,6 @@ WriteSetVariables (FILE *handle, node *idlist, lut_t *varlut)
     numleft = inclass;
 
     for (i = 0; i < n; i = i + 2) {
-        funname = STR_STRING (TCgetNthExprsExpr (i, idlist));
         avis = ID_AVIS (TCgetNthExprsExpr (i + 1, idlist));
         if (AVIS_ISLCLASSSETVARIABLE == AVIS_ISLCLASS (avis)) {
             // Print SAC set variable info
@@ -1020,19 +1017,15 @@ static bool
 WriteExistsSetVariables (FILE *handle, node *idlist, lut_t *varlut)
 {
     node *avis;
-    char *funname;
     size_t i;
     size_t n;
-    bool z;
 
     DBUG_ENTER ();
     n = TCcountExprs (idlist);
-    z = 0 != n;
 
     for (i = 0; i < n; i = i + 2) {
         avis = ID_AVIS (TCgetNthExprsExpr (i + 1, idlist));
         if (AVIS_ISLCLASSEXISTENTIAL == AVIS_ISLCLASS (avis)) {
-            funname = STR_STRING (TCgetNthExprsExpr (i, idlist));
             fprintf (handle, " exists ");
             printIslName (handle, avis, varlut);
             fprintf (handle, " :\n");
@@ -1150,7 +1143,6 @@ EmitOneConstraint (FILE *handle, size_t mone, node *exprsone, lut_t *varlut)
 { // Bog-standard constraints
     node *expr;
     size_t k;
-    bool wasor;
 
     DBUG_ENTER ();
 
@@ -1174,7 +1166,6 @@ EmitOneConstraint (FILE *handle, size_t mone, node *exprsone, lut_t *varlut)
                 break;
             case F_or_SxS:
                 fprintf (handle, "\n  or \n ");
-                wasor = TRUE;
                 break;
             case F_min_SxS:
             case F_max_SxS:
@@ -1186,7 +1177,6 @@ EmitOneConstraint (FILE *handle, size_t mone, node *exprsone, lut_t *varlut)
 
         case N_char: // Support for disjunction: ISL does not support !=
             DBUG_ASSERT ('|' == CHAR_VAL (expr), "Expected disjunction |");
-            wasor = TRUE;
             break;
         }
         fprintf (handle, " ");
@@ -2739,7 +2729,6 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
     node *arg2 = NULL;
     node *arg4rcv = NULL;
     node *setvar = NULL;
-    node *lhsavis;
     int stridesignum = 0;
 
     DBUG_ENTER ();
@@ -2753,7 +2742,6 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
         if ((N_prf == NODE_TYPE (condprf))
             && (PHUTisCompatibleAffinePrf (PRF_PRF (condprf)))
             && (PHUTisCompatibleAffineTypes (condprf))) {
-            lhsavis = IDS_AVIS (LET_IDS (condass));
 
             // Find the loop-dependent variable to use as the set variable
             arg1 = PRF_ARG1 (condprf);

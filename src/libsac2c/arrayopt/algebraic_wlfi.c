@@ -934,7 +934,6 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, size_t i
     node *ids;
     node *assgn;
     node *idx = NULL;
-    node *rhs;
     node *withidids;
     node *ipavis;
     size_t tcindex;
@@ -981,7 +980,6 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, size_t i
                     z = FlattenLbubel (lbub, ivindx, arg_info);
                 } else {
                     /* Vanilla variable */
-                    rhs = AVIS_SSAASSIGN (ID_AVIS (idx));
                     DBUG_PRINT ("We lost the trail.");
                     z = NULL;
                 }
@@ -2263,7 +2261,6 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivavis)
 {
     node *ivpavis;
     node *ivassign;
-    int ivshape;
     node *intersectcalc = NULL;
     node *args;
     ntype *ztype;
@@ -2293,7 +2290,6 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivavis)
         args = TCappendExprs (args, intersectcalc);
 
         ztype = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
-        ivshape = SHgetUnrLen (TYgetShape (ztype));
         ivpavis
           = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ivavis)), TYeliminateAKV (ztype));
 

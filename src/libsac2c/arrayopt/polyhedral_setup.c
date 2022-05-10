@@ -375,7 +375,6 @@ node *
 POLYSsetClearAvisPart (node *arg_node, node *val)
 {
     node *ids;
-    node *partn;
 
     DBUG_ENTER ();
 
@@ -385,14 +384,12 @@ POLYSsetClearAvisPart (node *arg_node, node *val)
 
     ids = WITHID_IDS (PART_WITHID (arg_node));
     while (NULL != ids) {
-        partn = AVIS_NPART (IDS_AVIS (ids));
         AVIS_NPART (IDS_AVIS (ids)) = val;
         ids = IDS_NEXT (ids);
     }
 
     ids = WITHID_IDXS (PART_WITHID (arg_node));
     while (NULL != ids) {
-        partn = AVIS_NPART (IDS_AVIS (ids));
         AVIS_NPART (IDS_AVIS (ids)) = val;
         ids = IDS_NEXT (ids);
     }
