@@ -112,6 +112,7 @@ ADD_FUNC_TEST (test-lut test-lut.cpp)
 ADD_FUNC_TEST (test-dataflowmask test-dataflowmask.cpp)
 ADD_FUNC_TEST (test-jupyter-interface test-jupyter-interface.cpp)
 ADD_FUNC_TEST (test-str-buffer test-str-buffer.cpp)
+ADD_FUNC_TEST (test-compile-time-formatting test-compile-time-formatting.cpp)
 
 # libsac + runtime tests
 # XXX (hans) we can only create one test suite, *not* per-target, due to name-clashes

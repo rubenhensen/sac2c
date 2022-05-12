@@ -77,6 +77,7 @@ EnsureStrBufSpace (str_buf *s, size_t len)
     char *new_buf;
 
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
 
     // s->size - (s->len + 1) is equivalent to allocated space minus used space, i.e. available space
     if (len > (s->size - (s->len + 1))) {
@@ -116,6 +117,8 @@ SBUFprint (str_buf *s, const char *string)
     size_t len;
 
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
+    DBUG_ASSERT (string != NULL, "Expected the string to be non-null");
 
     len = STRlen (string);
     s = EnsureStrBufSpace (s, len);
@@ -145,6 +148,8 @@ SBUFprintf (str_buf *s, const char *format, ...)
     va_list arg_p;
 
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
+    DBUG_ASSERT (format != NULL, "Expected the format to be non-null");
 
     va_start (arg_p, format);
     s = SBUFvprintf (s, format, arg_p);
@@ -176,6 +181,8 @@ SBUFvprintf (str_buf *s, const char *format, va_list arg_list)
     bool ok = false;
 
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
+    DBUG_ASSERT (format != NULL, "Expected the format to be non-null");
 
     do {
         available_space = s->size - s->len;
@@ -227,6 +234,9 @@ str_buf *
 SBUFsubstToken(str_buf *s, const char *token, const char *subst)
 {
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
+    DBUG_ASSERT (token != NULL, "Expected the token to be non-null");
+    DBUG_ASSERT (subst != NULL, "Expected the subst parameter to be non-null");
 
     // STRsubstTokend deallocates s->buf, so s->buf is not leaked.
     s->buf = STRsubstTokend (s->buf, token, subst); 
@@ -235,6 +245,38 @@ SBUFsubstToken(str_buf *s, const char *token, const char *subst)
 
     DBUG_RETURN (s);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn str_buf *SBUFinsertAfterToken( str_buf *s, const char *token, const char *insert)
+ *
+ *   @brief  Inserts insert after all occurrences of token in the string buffer.
+ *
+ *   @param  s      The buffer.
+ *   @param  token  The string after which to insert.
+ *   @param  insert The string to insert after each occurrence of token
+ * 
+ *   @return The given string buffer.
+ *
+ ******************************************************************************/
+str_buf *
+SBUFinsertAfterToken(str_buf *s, const char *token, const char *insert)
+{
+    char *subst;
+    
+    DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
+    DBUG_ASSERT (token != NULL, "Expected the token to be non-null");
+    DBUG_ASSERT (insert != NULL, "Expected the insert parameter to be non-null");
+
+    subst = STRcat (token, insert);
+    SBUFsubstToken (s, token, subst);
+
+    MEMfree (subst);
+    DBUG_RETURN (s);
+}
+
+
 
 /** <!--********************************************************************-->
  *
@@ -251,6 +293,7 @@ char *
 SBUF2str (str_buf *s)
 {
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
 
     DBUG_RETURN (STRcpy (s->buf));
 }
@@ -270,6 +313,7 @@ size_t
 SBUFlen (str_buf *s)
 {
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
 
     DBUG_RETURN (s->len);
 }
@@ -290,10 +334,42 @@ void
 SBUFflush (str_buf *s)
 {
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
 
     s->len = 0;
     s->buf[0] = '\0';
     DBUG_PRINT ("len of buffer %p reset to %zu", (void *)s, s->len);
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void *SBUFtruncate( str_buf *s, size_t length)
+ *
+ *   @brief  Truncates the string in the buffer to be a maximum of length 
+ *           characters long.
+ * 
+ *           If the provided length is larger than the current length, 
+ *           no action is taken.
+ *
+ *   @param  s      The buffer.
+ *   @param  length The length of the string in the buffer after this function. 
+ * 
+ ******************************************************************************/
+void
+SBUFtruncate (str_buf *s, size_t length)
+{
+    DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
+
+    if (length >= s->len) {
+        DBUG_RETURN ();
+    }
+
+    s->len = length;
+    s->buf[length] = '\0';
+    DBUG_PRINT ("len of buffer %p truncated to %zu", (void *)s, s->len);
 
     DBUG_RETURN ();
 }
@@ -313,6 +389,7 @@ bool
 SBUFisEmpty (str_buf *s)
 {
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
 
     DBUG_RETURN (s->len == 0);
 }
@@ -332,6 +409,7 @@ char *
 SBUFgetBuffer (str_buf *s)
 {
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
 
     DBUG_RETURN (s->buf);
 }
@@ -352,6 +430,8 @@ char *
 SBUF2strAndFree (str_buf **s)
 {
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the pointer to the buffer to be non-null");
+    DBUG_ASSERT (*s != NULL, "Expected the buffer to be non-null");
 
     char *result = (*s)->buf;
     *s = MEMfree (*s);
@@ -375,6 +455,7 @@ str_buf *
 SBUFfree (str_buf *s)
 {
     DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
 
     s->buf = MEMfree (s->buf);
     s = MEMfree (s);

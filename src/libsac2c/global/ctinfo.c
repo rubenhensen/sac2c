@@ -41,7 +41,7 @@
 
 #include "ctinfo.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "CTI"
 #include "debug.h"
 
 #include "filemgr.h"
@@ -62,6 +62,7 @@
 #include "check_mem.h"
 #include "stringset.h"
 #include "new_types.h" /* for TYtype2String */
+#include "math_utils.h"
 
 #include "cppcompat.h"
 #undef exit
@@ -117,7 +118,7 @@ CTIget_stderr ()
  *           If the global message length is set to 0, no line wrapping is performed.
  *           
  *           Otherwise, the effective header length for each type is set to 
- *           min(header length + 20, cti-message-length)
+ *           max(header length + 20, cti-message-length)
  *          
  *           Tab characters are replaced with spaces.
  *           Line wrapping is done by replacing the last known space with an '@' 
@@ -194,20 +195,19 @@ ProcessMessage (char *buffer, size_t first_header_length, size_t multiline_heade
 
 /** <!--********************************************************************-->
  *
- * @fn str_buf loc2buf( const struct location loc)
+ * @fn str_buf *Loc2buf( const struct location loc)
  *
  *   @brief  Produces a GNU format string representing the location.
  *           When NULL is given or the location is invalid, the buffer will be empty.
  *
- *   @param loc  A node representing the location of the error.
+ *   @param  loc A node representing the location of the error.
  *               If no location is available or appropriate, NULL should be supplied.
  * 
  *   @return A str_buf containing a string representation of the location.
  *
  ******************************************************************************/
-
 static str_buf *
-loc2buf (const struct location loc) 
+Loc2buf (const struct location loc) 
 {
     str_buf *buf;
     
@@ -236,13 +236,7 @@ loc2buf (const struct location loc)
  *
  * @fn void PrintMessage( const char *header, const char *format, va_list arg_p)
  *
- *   @brief Prints message.
- *
- *          The message specified by format string and variable number
- *          of arguments is "printed" into the global message buffer.
- *          It takes care of buffer overflows. Afterwards, the message
- *          is formatted to fit a certain line length and is printed to
- *          stderr.
+ *   @brief Formats the message, introduces linewraps, and prints the result to stderr.
  *
  *   @param header  string which precedes each line of the message, e.g.
                     ERROR or WARNING.
@@ -621,7 +615,7 @@ FinalizeMessageBegin (const struct location loc, const char *message_header,
     // PREPARING HEADERS
     
     // "<filepath>:<line>:<column>: <MessageType>"
-    message_header_base = loc2buf (loc);
+    message_header_base = Loc2buf (loc);
     message_header_base = SBUFprint (message_header_base, message_header);
 
     // Apply the base message header to the format string from cti-multi-line-format

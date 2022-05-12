@@ -304,6 +304,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/generics/check_and_simplify_generic_definitions.c
 ${CMAKE_CURRENT_SOURCE_DIR}/generics/generate_generic_type_conversions.c
 ${CMAKE_CURRENT_SOURCE_DIR}/generics/remove_generic_definitions.c
 ${CMAKE_CURRENT_SOURCE_DIR}/global/NameTuplesUtils.c
+${CMAKE_CURRENT_SOURCE_DIR}/global/ctformatting.c
 ${CMAKE_CURRENT_SOURCE_DIR}/global/ctinfo.c
 ${CMAKE_CURRENT_SOURCE_DIR}/global/filemgr.c
 ${CMAKE_CURRENT_SOURCE_DIR}/global/globals.c
