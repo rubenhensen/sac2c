@@ -34,7 +34,7 @@
  *
  *   @brief  Processes the string to replace tabs with spaces, replace spaces with newlines
  *           to wrap at word boundaries if global.cti_line_length != 0.
- 
+ * 
  *           The minimum line length is max (header_length + 20, global.cti_message_length)
  *           to make sure the header and some words can always be displayed.
  *           
@@ -151,7 +151,7 @@ Loc2buf (const struct location loc)
 }
 
 /** <!--********************************************************************-->
- * @fn str_buf *CTFcreateMessageBegin( str_buf *header, const char *format, 
+ * @fn str_buf *CTFvcreateMessageBegin( str_buf *header, const char *format, 
  *                                     va_list arg_p)
  * 
  *   @brief  Creates and formats the first line of the message and separates it 
@@ -166,7 +166,7 @@ Loc2buf (const struct location loc)
  *           the remaining lines as the return value.
  ******************************************************************************/
 str_buf *
-CTFcreateMessageBegin (str_buf *header, const char *format, va_list arg_p)
+CTFvcreateMessageBegin (str_buf *header, const char *format, va_list arg_p)
 {
     str_buf *remaining_lines;
     size_t header_length;
@@ -178,7 +178,8 @@ CTFcreateMessageBegin (str_buf *header, const char *format, va_list arg_p)
     header_length = SBUFlen (header);
     SBUFvprintf (header, format, arg_p);
 
-    InsertWrapLocations (SBUFgetBuffer (header), header_length, true);
+    // Don't pass the header, just the format, message.
+    InsertWrapLocations (&SBUFgetBuffer (header)[header_length], header_length, true);
     
     index_p = strchr (SBUFgetBuffer (header), '\n'); // Get the index of the first newline
     // Underflow if index_p is NULL, but we don't use index if index_p is NULL.
@@ -193,12 +194,41 @@ CTFcreateMessageBegin (str_buf *header, const char *format, va_list arg_p)
         } else {
             // Copy the remaining lines into its own buffer (\n belongs to the first line)
             SBUFprint (remaining_lines, &SBUFgetBuffer (header)[index + 1]);
-            SBUFtruncate (header, index); // Remove the remaining lines from the header
+            SBUFtruncate (header, index + 1); // Remove the remaining lines from the header
         }
     }
 
     // Return the first line through the header parameter
     // Return the remaining lines:
+    DBUG_RETURN (remaining_lines);
+}
+
+/** <!--********************************************************************-->
+ * @fn str_buf *CTFcreateMessageBegin( str_buf *header, const char *format, ...)
+ * 
+ *   @brief  Creates and formats the first line of the message and separates it 
+ *           from the remaining lines.
+ *   
+ *   @param  header The header for the first line. Stores the entire first line
+ *                  after calling this function.
+ *   @param  format The format on which to apply extra arguments to generate 
+ *                  the message.
+ * 
+ *   @return Returns the first line through the header parameter, and a str_buf of 
+ *           the remaining lines as the return value.
+ ******************************************************************************/
+str_buf *
+CTFcreateMessageBegin (str_buf *header, const char *format, ...)
+{
+    va_list arg_p;
+    str_buf *remaining_lines;
+
+    DBUG_ENTER ();
+
+    va_start (arg_p, format);
+    remaining_lines = CTFvcreateMessageBegin (header, format, arg_p);
+    va_end (arg_p);
+
     DBUG_RETURN (remaining_lines);
 }
 
@@ -285,7 +315,7 @@ CTFcreateMessageEnd (void)
 
 /** <!--********************************************************************-->
  * 
- * @fn str_buf *CTFcreateMessage( str_buf *first_line_header, 
+ * @fn str_buf *CTFvcreateMessage( str_buf *first_line_header, 
  *                                const char *multiline_header, 
  *                                const char *format, va_list arg_p)
  * 
@@ -301,7 +331,7 @@ CTFcreateMessageEnd (void)
  * 
  ******************************************************************************/
 str_buf *
-CTFcreateMessage (const char *first_line_header, const char *multiline_header, 
+CTFvcreateMessage (const char *first_line_header, const char *multiline_header, 
                   const char *format, va_list arg_p)
 {
     str_buf *message;
@@ -313,7 +343,7 @@ CTFcreateMessage (const char *first_line_header, const char *multiline_header,
     SBUFprint (message, first_line_header);
 
     // message gets changed to include the entire first line, not just the header
-    remaining_lines = CTFcreateMessageBegin (message, format, arg_p);
+    remaining_lines = CTFvcreateMessageBegin (message, format, arg_p);
     remaining_lines = CTFcreateMessageContinued (multiline_header, remaining_lines);
     SBUFprint (message, SBUFgetBuffer (remaining_lines));
     SBUFprint (message, CTFcreateMessageEnd ());
@@ -324,7 +354,40 @@ CTFcreateMessage (const char *first_line_header, const char *multiline_header,
 
 /** <!--********************************************************************-->
  * 
- * @fn str_buf *CTFcreateMessageLoc ( struct location loc,
+ * @fn str_buf *CTFcreateMessage( str_buf *first_line_header, 
+ *                                const char *multiline_header, 
+ *                                const char *format, ...)
+ * 
+ *   @brief  Creates a message based on the given headers, format string, 
+ *           and list of arguments for the format string.
+ * 
+ *   @param  first_line_header The header for the first line of the message.
+ *   @param  multiline_header  The header for subsequent lines of the message.
+ *   @param  format            The format on which to apply extra arguments to 
+ *                             generate the message.
+ * 
+ *   @return A str_buf containing the finalized message.
+ * 
+ ******************************************************************************/
+str_buf *
+CTFcreateMessage (const char *first_line_header, const char *multiline_header, 
+                  const char *format, ...)
+{
+    va_list arg_p;
+    str_buf *message;
+
+    DBUG_ENTER ();
+    
+    va_start (arg_p, format);
+    message = CTFvcreateMessage (first_line_header, multiline_header, format, arg_p);
+    va_end (arg_p);
+
+    DBUG_RETURN (message);
+}
+
+/** <!--********************************************************************-->
+ * 
+ * @fn str_buf *CTFvcreateMessageLoc ( struct location loc,
  *                                    const char *message_header,
  *                                    const char *format, va_list arg_p)
  * 
@@ -339,7 +402,7 @@ CTFcreateMessage (const char *first_line_header, const char *multiline_header,
  * 
  ******************************************************************************/
 str_buf *
-CTFcreateMessageLoc (struct location loc, const char *message_header,
+CTFvcreateMessageLoc (struct location loc, const char *message_header,
                      const char *format, va_list arg_p)
 {
     str_buf *base_header;
@@ -365,12 +428,44 @@ CTFcreateMessageLoc (struct location loc, const char *message_header,
     multiline_header = SBUFcreate (0);
     SBUFprintf (multiline_header, global.cti_multi_line_format, SBUFgetBuffer (base_header));
 
-    message = CTFcreateMessage (SBUFgetBuffer (first_line_header), SBUFgetBuffer (multiline_header), 
+    message = CTFvcreateMessage (SBUFgetBuffer (first_line_header), SBUFgetBuffer (multiline_header), 
                                 format, arg_p);
 
     SBUFfree (base_header);
     SBUFfree (first_line_header);
     SBUFfree (multiline_header);
+    DBUG_RETURN (message);
+}
+
+/** <!--********************************************************************-->
+ * 
+ * @fn str_buf *CTFcreateMessageLoc ( struct location loc,
+ *                                    const char *message_header,
+ *                                    const char *format, ...)
+ * 
+ *   @brief  Creates a message based on the given location, format string, 
+ *           and list of arguments for the format string.
+ * 
+ *   @param  loc    The location from which to generate headers for the message.
+ *   @param  format The format on which to apply extra arguments to generate
+ *                  the message.
+ * 
+ *   @return a str_buf containing the finalized message.
+ * 
+ ******************************************************************************/
+str_buf *
+CTFcreateMessageLoc (struct location loc, const char *message_header,
+                     const char *format, ...)
+{
+    va_list arg_p;
+    str_buf *message;
+
+    DBUG_ENTER ();
+
+    va_start (arg_p, format);
+    message = CTFvcreateMessageLoc (loc, message_header, format, arg_p);
+    va_end (arg_p);
+
     DBUG_RETURN (message);
 }
 
