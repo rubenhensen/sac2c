@@ -322,3 +322,21 @@ TEST (CTF, testCreateMessageContinuedMultiLineWrapping)
                   SBUFgetBuffer (message));
     SBUFfree (message);
 }
+
+TEST (CTF, testCreateMessageEnd)
+{
+    str_buf *message;
+
+    // Ensure a new line is returned when cti_single_line is enabled.
+    global.cti_single_line = true;
+
+    message = CTFcreateMessageEnd ();
+    EXPECT_STREQ ("\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure an empty string buffer is returned when cti_single_line is disabled.
+    global.cti_single_line = false;
+    message = CTFcreateMessageEnd ();
+    EXPECT_STREQ ("", SBUFgetBuffer (message));
+    SBUFfree (message);
+}

@@ -2,13 +2,13 @@
 #define _SAC_CTFORMATTING_H_
 
 #include <stdarg.h>
-
+#include "fun-attrs.h"
 #include "str_buffer.h"
 
 extern str_buf *CTFvcreateMessageBegin (str_buf *header, const char *format, va_list arg_p);
 extern str_buf *CTFcreateMessageBegin (str_buf *header, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern str_buf *CTFcreateMessageContinued (const char *multiline_header, str_buf *remaining_lines);
-extern char *CTFcreateMessageEnd (void);
+extern str_buf *CTFcreateMessageEnd (void);
 
 extern str_buf *CTFvcreateMessage (const char *first_line_header, const char *multiline_header, 
                                    const char *format, va_list arg_p);

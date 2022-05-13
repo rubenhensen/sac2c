@@ -295,7 +295,7 @@ CTFcreateMessageContinued (const char *multiline_header, str_buf *remaining_line
 
 /** <!--********************************************************************-->
  *
- * @fn char *CTFcreateMessageEnd( void)
+ * @fn str_buf *CTFcreateMessageEnd( void)
  * 
  *   @brief  Formats the remaining lines of a message.
  *           Frees remaining_lines.
@@ -308,16 +308,20 @@ CTFcreateMessageContinued (const char *multiline_header, str_buf *remaining_line
  *   @return A formatted version of the the remaining lines.
  * 
  ******************************************************************************/
-char *
+str_buf *
 CTFcreateMessageEnd (void)
 {
+    str_buf *end;
+
     DBUG_ENTER ();
 
+    end = SBUFcreate (1);
+    
     if (global.cti_single_line) {
-        DBUG_RETURN (STRcpy("\n")); // heap allocated
-    } else {
-        DBUG_RETURN (STRcpy("")); // heap allocated
+        SBUFprint (end, "\n");
     }
+
+    DBUG_RETURN (end);
 }
 
 /** <!--********************************************************************-->
@@ -343,6 +347,7 @@ CTFvcreateMessage (const char *first_line_header, const char *multiline_header,
 {
     str_buf *message;
     str_buf *remaining_lines;
+    str_buf *message_end;
     
     DBUG_ENTER ();
 
@@ -352,10 +357,12 @@ CTFvcreateMessage (const char *first_line_header, const char *multiline_header,
     // message gets changed to include the entire first line, not just the header
     remaining_lines = CTFvcreateMessageBegin (message, format, arg_p);
     remaining_lines = CTFcreateMessageContinued (multiline_header, remaining_lines);
+    message_end = CTFcreateMessageEnd ();
     SBUFprint (message, SBUFgetBuffer (remaining_lines));
-    SBUFprint (message, CTFcreateMessageEnd ());
+    SBUFprint (message, SBUFgetBuffer (message_end));
 
     SBUFfree (remaining_lines);
+    SBUFfree (message_end);
     DBUG_RETURN (message);
 }
 
