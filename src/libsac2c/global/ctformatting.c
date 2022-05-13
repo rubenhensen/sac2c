@@ -67,7 +67,7 @@ InsertWrapLocations (char *buffer, size_t header_length, bool return_at_newline)
     space_found = false;
 
     while (buffer[index] != '\0') {
-        
+
         if (buffer[index] == '\t') {
             buffer[index] = ' ';
         }
@@ -85,13 +85,17 @@ InsertWrapLocations (char *buffer, size_t header_length, bool return_at_newline)
             // Return at a newline if the parameter demands it.
             // Note that continuing after the newline leads to problems if the header for the
             // first line and the header for the second line have different lengths.
-            if (buffer[index] == '\n' && return_at_newline) {
-                DBUG_RETURN ();
-            }
-
-            // If line wrapping is enabled, line length is exceeded, and a space was found,
-            // the most recent space becomes a newline.
-            if (global.cti_message_length != 0 && column >= line_length && space_found ) {
+            if (buffer[index] == '\n') {
+                if (return_at_newline) {
+                    DBUG_RETURN ();
+                } else {    
+                    // Reset the current length to account for the header after the newline
+                    column = header_length - 1;
+                    space_found = false;
+                }
+            } else if (global.cti_message_length != 0 && column >= line_length && space_found ) {
+                // If line wrapping is enabled, line length is exceeded, and a space was found,
+                // the most recent space becomes a newline.
                 buffer[last_space] = '\n';
 
                 if (return_at_newline) {
@@ -101,8 +105,13 @@ InsertWrapLocations (char *buffer, size_t header_length, bool return_at_newline)
                 // Reset the current length to account for the header and the 
                 // characters that have already been traversed since the last space, that have
                 // now become a newline.
-                column = header_length + (index - last_space);
-            } 
+                fprintf (stderr, "\nBefore::\nIndex: %zu\nColumn: %zu\nHeader length: %zu\nLast space: %zu\n",
+                            index, column, header_length, last_space);
+                column = header_length -1 + (index - last_space);
+                fprintf (stderr, "After::\nIndex: %zu\nColumn: %zu\nHeader length: %zu\nLast space: %zu\n\n",
+                            index, column, header_length, last_space);
+                space_found = false;
+            }
         }
         index++;
         column++;
@@ -261,24 +270,22 @@ CTFcreateMessageContinued (const char *multiline_header, str_buf *remaining_line
 
     message = SBUFcreate (SBUFlen (remaining_lines));
 
-    if (!SBUFisEmpty (remaining_lines)) {
-        if (global.cti_single_line) {
-            // Prepend the 'second line' with a space so the end text of the
-            // first and second line have a gap between them.
-            SBUFprint (message, " "); // 
-        } else {
-            // Before we add remaining_lines, we have to manually add the first header
-            // because remaining_lines doesn't start with a newline
-            SBUFprint (message, multiline_header);
+    if (global.cti_single_line) {
+        // Prepend the 'second line' (first line of remaining_lines) with a space so 
+        // the end text of the first and second line have a gap between them.
+        SBUFprint (message, " ");
+    } else {
+        // Before we add remaining_lines, we have to manually add the first header
+        // because remaining_lines doesn't start with a newline
+        SBUFprint (message, multiline_header);
 
-            SBUFinsertAfterToken (remaining_lines, "\n", multiline_header);            
-        }
-        
-        SBUFprint (message, SBUFgetBuffer (remaining_lines));
-
-        if (!global.cti_single_line) {
-            SBUFprint (message, "\n");
-        }
+        SBUFinsertAfterToken (remaining_lines, "\n", multiline_header);
+    }
+    
+    SBUFprint (message, SBUFgetBuffer (remaining_lines));
+    
+    if (!global.cti_single_line) {
+        SBUFprint (message, "\n");
     }
 
     SBUFfree (remaining_lines);

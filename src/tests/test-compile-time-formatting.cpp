@@ -12,6 +12,10 @@ extern "C" {
 #include "ctformatting.h"
 }
 
+/************************
+* CTFcreateMessageBegin *
+************************/
+
 TEST (CTF, testCreateMessageBeginSingleLineNoWrapping)
 {
     str_buf *header;
@@ -98,7 +102,7 @@ TEST (CTF, testCreateMessageBeginSingleLineWrapping)
     char *long_message;
 
     // c++ complains if we use a normal character array, so we use STRcpy to allocate it on the heap
-    long_message = STRcpy ("A pretty long message that is longer than the header and then some.! "
+    long_message = STRcpy ("A pretty long message that is longer than the header and then some! "
                            "If wrapping were enabled, it would surely work on this gigantic string.");
 
     header_no_wrap = SBUFcreate (0);
@@ -185,4 +189,136 @@ TEST (CTF, testCreateMessageBeginMultiLineWrapping)
     SBUFfree (remaining_lines);
 
     SBUFfree (header);
+}
+
+/****************************
+* CTFcreateMessageContinued *
+****************************/
+
+TEST (CTF, testCreateMessageContinuedSingleLineNoWrapping)
+{
+    global.cti_single_line = true;
+    global.cti_message_length = 0;
+
+    str_buf *message;
+    str_buf *remaining_lines;
+
+    // Base case - no contents means we get a space back
+    remaining_lines = SBUFcreate (0);
+    message = CTFcreateMessageContinued ("", remaining_lines);
+    EXPECT_STREQ (" ", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that the header is fully ignored and newlines are converted to spaces.
+    remaining_lines = SBUFcreate (0);
+    SBUFprint (remaining_lines, "Foo\nBar\nBaz");
+    message = CTFcreateMessageContinued ("Header: ", remaining_lines);
+    EXPECT_STREQ (" Foo Bar Baz", SBUFgetBuffer(message));
+    SBUFfree (message);
+}
+
+TEST (CTF, testCreateMessageContinuedMultiLineNoWrapping)
+{
+    global.cti_single_line = false;
+    global.cti_message_length = 0;
+
+    str_buf *message;
+    str_buf *remaining_lines;
+
+    // Base case - no contents means we only get a newline back
+    remaining_lines = SBUFcreate (0);
+    message = CTFcreateMessageContinued ("", remaining_lines);
+    EXPECT_STREQ ("\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that all lines are prefixed with the header, even if they are empty.
+    remaining_lines = SBUFcreate (0);
+    SBUFprint (remaining_lines, "\n\n");
+    message = CTFcreateMessageContinued ("Header: ", remaining_lines);
+    EXPECT_STREQ ("Header: \nHeader: \nHeader: \n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that all lines are prefixed with the header, even if it is the only line.
+    remaining_lines = SBUFcreate (0);
+    SBUFprint (remaining_lines, "String contents");
+    message = CTFcreateMessageContinued ("H: ", remaining_lines);
+    EXPECT_STREQ ("H: String contents\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that all lines are prefixed with the header, even if there are multiple lines of various types.
+    remaining_lines = SBUFcreate (0);
+    SBUFprint (remaining_lines, "Two empty lines after this one.\n\nAnd then a normal line.");
+    message = CTFcreateMessageContinued ("Foo: ", remaining_lines);
+    EXPECT_STREQ ("Foo: Two empty lines after this one.\nFoo: \nFoo: And then a normal line.\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+}
+
+TEST (CTF, testCreateMessageContinuedSingleLineWrapping)
+{
+    global.cti_single_line = true;
+    global.cti_message_length = 0;
+    
+    str_buf *remaining_lines;
+    str_buf *message_no_wrap;
+    str_buf *message_wrap;
+    char *long_message;
+
+    // c++ complains if we use a normal character array, so we use STRcpy to allocate it on the heap
+    long_message = STRcpy ("A pretty long message that is longer than the header and then some! "
+                           "If wrapping were enabled, it would surely work on this gigantic string.");
+
+    remaining_lines = SBUFcreate (0);
+    SBUFprint (remaining_lines, long_message);
+    message_no_wrap = CTFcreateMessageContinued ("Header: ", remaining_lines);
+
+    global.cti_single_line = true;
+    global.cti_message_length = 25;
+
+    // Ensure that line wrapping is ignored when single_line is active:
+    // The output should be equal to the output from single line with wrapping explicitly disabled
+    remaining_lines = SBUFcreate (0);
+    SBUFprint (remaining_lines, long_message);
+    message_wrap = CTFcreateMessageContinued ("Header: ", remaining_lines);
+    EXPECT_STREQ (SBUFgetBuffer (message_no_wrap), SBUFgetBuffer(message_wrap));
+    SBUFfree (message_no_wrap);
+    SBUFfree (message_wrap);
+
+    MEMfree (long_message);
+}
+
+TEST (CTF, testCreateMessageContinuedMultiLineWrapping)
+{
+    global.cti_single_line = false;
+    global.cti_message_length = 30;
+
+    str_buf *remaining_lines;
+    str_buf *message;
+
+    // Ensure that we get a trailing enter in the base case
+    remaining_lines = SBUFcreate (0);
+    message = CTFcreateMessageContinued ("", remaining_lines);
+    EXPECT_STREQ ("\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that message shorter than the message length aren't wrapped
+    remaining_lines = SBUFcreate (0);
+    SBUFprintf (remaining_lines, "A %s.", "string");
+    message = CTFcreateMessageContinued ("Header: ", remaining_lines);
+    EXPECT_STREQ ("Header: A string.\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that newlines reset the wrap location.
+    remaining_lines = SBUFcreate (0);
+    SBUFprintf (remaining_lines, "A few characters\n 123456789 123456789 123456789 Start of line.");
+    message = CTFcreateMessageContinued ("", remaining_lines);
+    EXPECT_STREQ ("A few characters\n 123456789 123456789 123456789\nStart of line.\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that multiple wraps are done correctly, even with headers.
+    remaining_lines = SBUFcreate (0);
+    SBUFprintf (remaining_lines, "56789 123456789 123456789 Start of line.9 123456789 123456789");
+    message = CTFcreateMessageContinued ("012: ", remaining_lines);
+    EXPECT_STREQ ("012: 56789 123456789 123456789\n012: Start of line.9 123456789\n012: 123456789\n", 
+                  SBUFgetBuffer (message));
+    SBUFfree (message);
 }
