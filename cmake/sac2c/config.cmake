@@ -701,7 +701,14 @@ ELSEIF (MACC)
     SET (MACCC_FLAGS "${MACCC_FLAGS} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
     SET (MACLD_FLAGS "${MACLD_FLAGS} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
   ELSE ()
-    MESSAGE (WARNING "No MacOS SDK min-version specified!")
+    # XXX CMAKE_OSX_DEPLOYMENT_TARGET is not always set automatically by CMAKE. Normally if
+    # OSX_DEPLOYMENT_TARGET environment variable is not set, the CMAKE variable should be automatically
+    # determined. Often on systems with multiple SDK versions, this seems not to work. In case it
+    # is not set, we manually set it.
+    SET (_OSX_DEP_MIN_VER 10.14)
+    MESSAGE (NOTICE "No MacOS SDK min-version specified! Setting default to ${_OSX_DEP_MIN_VER}.")
+    SET (MACCC_FLAGS "${MACCC_FLAGS} -mmacosx-version-min=${_OSX_DEP_MIN_VER}")
+    SET (MACLD_FLAGS "${MACLD_FLAGS} -mmacosx-version-min=${_OSX_DEP_MIN_VER}")
   ENDIF ()
   # TODO(artem) Check whether this helps to handle the bracket error!
   IF ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
@@ -720,7 +727,7 @@ ELSEIF (MACC)
   CHECK_CC_FLAG ("-Wno-conversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-missing-prototypes" MACCC_FLAGS)
 
-  # explicit propagates do generate self-assignments (see 
+  # explicit propagates do generate self-assignments (see
   # test-mowl-SE.sac for an example).
   CHECK_CC_FLAG("-Wno-self-assign" MACCC_FLAGS)
 

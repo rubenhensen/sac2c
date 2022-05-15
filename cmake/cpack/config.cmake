@@ -55,7 +55,7 @@ SET (CPACK_PACKAGE_ICON              "${SAC2C_SOURCE_DIR}/cmake/cpack/sac_logo.p
 SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY "This is the compiler for the data-parallel array-based functional language SaC")
 # FIXME(artem) We need to decide on where do we put the stuff on the target system...)
 #SET (CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-SET (CPACK_RESOURCE_FILE_LICENSE "${SAC2C_SOURCE_DIR}/LICENSE.md")
+SET (CPACK_RESOURCE_FILE_LICENSE "${SAC2C_SOURCE_DIR}/cmake/cpack/LICENSE.txt")
 SET (CPACK_RESOURCE_FILE_README "${SAC2C_SOURCE_DIR}/cmake/cpack/README.txt")
 SET (CPACK_RESOURCE_FILE_WELCOME "${SAC2C_SOURCE_DIR}/cmake/cpack/WELCOME.txt")
 
