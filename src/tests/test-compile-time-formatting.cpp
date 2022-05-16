@@ -203,10 +203,10 @@ TEST (CTF, testCreateMessageContinuedSingleLineNoWrapping)
     str_buf *message;
     str_buf *remaining_lines;
 
-    // Base case - no contents means we get a space back
+    // Base case - no contents means we get nothing back.
     remaining_lines = SBUFcreate (0);
     message = CTFcreateMessageContinued ("", remaining_lines);
-    EXPECT_STREQ (" ", SBUFgetBuffer (message));
+    EXPECT_STREQ ("", SBUFgetBuffer (message));
     SBUFfree (message);
 
     // Ensure that the header is fully ignored and newlines are converted to spaces.
@@ -338,5 +338,73 @@ TEST (CTF, testCreateMessageEnd)
     global.cti_single_line = false;
     message = CTFcreateMessageEnd ();
     EXPECT_STREQ ("", SBUFgetBuffer (message));
+    SBUFfree (message);
+}
+
+TEST (CTF, testCreateMessageSingleLineNoWrapping)
+{
+    global.cti_single_line = true;
+    global.cti_message_length = 0;
+
+    str_buf *message;
+
+    // Ensure that all newlines are converted to spaces except the final newline
+    message = CTFcreateMessage ("First header: ", "Unused header!", "All\nnewlines\nbecome\nspaces.");
+    EXPECT_STREQ ("First header: All newlines become spaces.\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+}
+
+TEST (CTF, testCreateMessageMultilineNoWrapping)
+{
+    global.cti_single_line = false;
+    global.cti_message_length = 0;
+
+    str_buf *message;
+
+    // Ensure that the headers are properly printed after each newline
+    message = CTFcreateMessage ("First header: ", "Multiline header!", 
+                                "After each\nnewline, we expect a\nmultiline header.");
+    EXPECT_STREQ ("First header: After each\nMultiline header!newline, we expect a\nMultiline header!multiline header.\n",
+                  SBUFgetBuffer (message));
+    SBUFfree (message);
+}
+
+TEST (CTF, testCreateMessageSingleLineWrapping)
+{
+    global.cti_single_line = true;
+    global.cti_message_length = 30;
+
+    str_buf *message;
+
+    // Ensure that line wrapping is completely ignored while single line is active
+    message = CTFcreateMessage ("Header1: ", "Unused: ",
+                                "0123456789 123456789 123456789 123456789\n123456789");
+    EXPECT_STREQ ("Header1: 0123456789 123456789 123456789 123456789 123456789\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+}
+
+TEST (CTF, testCreateMessageMultiLineWrapping)
+{
+    global.cti_single_line = false;
+    global.cti_message_length = 30;
+    
+    str_buf *message;
+    
+    // Ensure that headers of varying lengths, smaller than cti_message_length - 20, the 
+    // global message length of 30 is still respected
+    message = CTFcreateMessage ("Tiny", "Longer",
+                                " second space wraps ---->   second space wraps -->   Pretty neat.");
+    EXPECT_STREQ ("Tiny second space wraps ----> \nLonger second space wraps --> \nLonger Pretty neat.\n",
+                  SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that if one of the headers is larger than cti_message_length - 20, it
+    // uses a line length of header_length + 20
+    message = CTFcreateMessage ("20 character header:", "thirty character header:::::::",
+                                " 123456789 123456789  123456789 123456789 123456789");
+    EXPECT_STREQ ("20 character header: 123456789 123456789\n"
+                  "thirty character header::::::: 123456789 123456789\n"
+                  "thirty character header:::::::123456789\n",
+                  SBUFgetBuffer (message));
     SBUFfree (message);
 }

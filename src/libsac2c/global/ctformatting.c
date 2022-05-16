@@ -105,11 +105,7 @@ InsertWrapLocations (char *buffer, size_t header_length, bool return_at_newline)
                 // Reset the current length to account for the header and the 
                 // characters that have already been traversed since the last space, that have
                 // now become a newline.
-                fprintf (stderr, "\nBefore::\nIndex: %zu\nColumn: %zu\nHeader length: %zu\nLast space: %zu\n",
-                            index, column, header_length, last_space);
                 column = header_length -1 + (index - last_space);
-                fprintf (stderr, "After::\nIndex: %zu\nColumn: %zu\nHeader length: %zu\nLast space: %zu\n\n",
-                            index, column, header_length, last_space);
                 space_found = false;
             }
         }
@@ -271,9 +267,11 @@ CTFcreateMessageContinued (const char *multiline_header, str_buf *remaining_line
     message = SBUFcreate (SBUFlen (remaining_lines));
 
     if (global.cti_single_line) {
-        // Prepend the 'second line' (first line of remaining_lines) with a space so 
-        // the end text of the first and second line have a gap between them.
-        SBUFprint (message, " ");
+        if (!SBUFisEmpty (remaining_lines)) {
+            // Prepend the 'second line' (first line of remaining_lines) with a space so 
+            // the end text of the first and second line have a gap between them.
+            SBUFprint (message, " ");
+        }
     } else {
         // Before we add remaining_lines, we have to manually add the first header
         // because remaining_lines doesn't start with a newline
