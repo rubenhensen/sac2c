@@ -1840,7 +1840,7 @@ FIXME Do not initialize for the time being, as value 0                          
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
                               * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
-        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_SIZE (var_NT)))    \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))     \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1919,7 +1919,7 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_FREE__DESC( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_DESC (var_NT)))   \
-        SAC_PF_MEM_INC_FREE_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_SIZE (var_NT)))     \
+        SAC_PF_MEM_INC_FREE_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))      \
         SAC_HM_FREE_DESC (SAC_REAL_DESC (SAC_ND_A_DESC (var_NT)))                        \
     }
 
