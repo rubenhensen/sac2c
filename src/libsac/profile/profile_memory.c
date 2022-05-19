@@ -16,6 +16,8 @@
 /* these counter are for all memory operations */
 static size_t SAC_PF_MEM_alloc_memsize = 0; /**< Holds the total size of memory allocated in bytes */
 static size_t SAC_PF_MEM_free_memsize = 0; /**< Holds the total size of memory freed in bytes */
+static size_t SAC_PF_MEM_max_memsize = 0; /**< Holds max memory size in bytes */
+static size_t SAC_PF_MEM_current_memsize = 0; /**< Holds current memory size in bytes */
 static size_t SAC_PF_MEM_max_alloc = 0; /**< Holds max memory allocated size in bytes */
 
 /* these counters deal with arrays */
@@ -37,6 +39,9 @@ SAC_PF_MEM_AllocMemcnt (size_t size)
 {
     SAC_PF_MEM_alloc_memcnt += 1;
     SAC_PF_MEM_alloc_memsize += size;
+    SAC_PF_MEM_current_memsize += size;
+    if (SAC_PF_MEM_current_memsize > SAC_PF_MEM_max_memsize)
+        SAC_PF_MEM_max_memsize = SAC_PF_MEM_current_memsize;
 }
 
 /**
@@ -49,6 +54,7 @@ SAC_PF_MEM_FreeMemcnt (size_t size)
 {
     SAC_PF_MEM_free_memcnt += 1;
     SAC_PF_MEM_free_memsize += size;
+    SAC_PF_MEM_current_memsize -= size;
 }
 
 /**
@@ -61,6 +67,9 @@ SAC_PF_MEM_AllocDescnt (size_t size)
 {
     SAC_PF_MEM_alloc_descnt += 1;
     SAC_PF_MEM_alloc_memsize += size;
+    SAC_PF_MEM_current_memsize += size;
+    if (SAC_PF_MEM_current_memsize > SAC_PF_MEM_max_memsize)
+        SAC_PF_MEM_max_memsize = SAC_PF_MEM_current_memsize;
 }
 
 /**
@@ -73,6 +82,7 @@ SAC_PF_MEM_FreeDescnt (size_t size)
 {
     SAC_PF_MEM_free_descnt += 1;
     SAC_PF_MEM_free_memsize += size;
+    SAC_PF_MEM_current_memsize -= size;
 }
 
 /**
@@ -195,8 +205,10 @@ SAC_PF_MEM_PrintStats ()
                       BYTES_TO_KBYTES (SAC_PF_MEM_alloc_memsize), "Kbytes");
     SAC_PF_PrintSize ("total size of memory freed", "",
                       BYTES_TO_KBYTES (SAC_PF_MEM_free_memsize), "Kbytes");
-    SAC_PF_PrintSize ("size of largest allocation", "",
+    SAC_PF_PrintSize ("size of largest single allocation", "",
                       BYTES_TO_KBYTES (SAC_PF_MEM_max_alloc), "Kbytes");
+    SAC_PF_PrintSize ("size of memory footprint", "",
+                      BYTES_TO_KBYTES (SAC_PF_MEM_max_memsize), "Kbytes");
 
 #ifdef SAC_BACKEND_CUDA
     SAC_PF_MEM_CUDA_PrintStats ();
