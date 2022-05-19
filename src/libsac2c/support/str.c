@@ -282,6 +282,53 @@ STRcatn (int n, ...)
     DBUG_RETURN (result);
 }
 
+/** 
+ * @brief Constructs a format string based on the format and list of arguments.
+ *        Making sure that the number of arguments matches the 
+ *        format string is the responsibility of the caller.
+ *
+ * @param format The format string on which to apply the arguments.
+ * @param arg_list The list of arguments to apply to the format string.
+ *
+ * @return The processed format string.
+ */
+char *
+STRvformat (const char *format, va_list arg_list)
+{
+    str_buf *buf;
+  
+    DBUG_ENTER ();
+  
+    buf = SBUFcreate (0);
+    SBUFvprintf (buf, format, arg_list);
+
+    DBUG_RETURN (SBUF2strAndFree (&buf));
+}
+
+/** 
+ * @brief Constructs a format string based on the format and list of arguments.
+ *        Making sure that the number of arguments matches the 
+ *        format string is the responsibility of the caller.
+ *
+ * @param format The format string on which to apply the arguments.
+ *
+ * @return The processed format string/
+ */
+char *
+STRformat (const char *format, ...)
+{
+    va_list arg_list;
+    char *res;
+
+    DBUG_ENTER();
+
+    va_start (arg_list, format);
+    res = STRvformat (format, arg_list);
+    va_end (arg_list);
+
+    DBUG_RETURN (res);
+}
+
 /**
  * @brief Compare two strings.
  *
