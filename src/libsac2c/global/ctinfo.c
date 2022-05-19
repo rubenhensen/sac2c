@@ -74,6 +74,8 @@ static const char *note_message_header = "Note";
 static const char *indent_message_header = "  ";
 static const char *state_message_header = "";
 
+static const char *default_header_format = "%s:@";
+static const char *default_multi_line_format = "%.0s  ";
 
 static int errors = 0;
 static int warnings = 0;
@@ -82,6 +84,19 @@ static FILE * cti_stderr;
 
 
 #define MAX_ITEM_NAME_LENGTH 255
+
+// TODO: 
+char *
+CTIgetDefaultHeaderFormat (void)
+{
+    return STRcpy (default_header_format);
+}
+
+char *
+CTIgetDefaultMultiLineFormat (void)
+{
+    return STRcpy (default_multi_line_format);
+}
 
 int
 CTIgetErrorCount (void)

@@ -6,10 +6,13 @@ extern "C" {
 #define DBUG_PREFIX "TEST-CTF"
 #include "debug.h"
 #include "globals.h"
+#include "options.h"
 #include "memory.h"
 #include "str.h"
 #include "str_buffer.h"
 #include "ctformatting.h"
+#include "types.h"
+#include "ctinfo.h"
 }
 
 /************************
@@ -408,3 +411,24 @@ TEST (CTF, testCreateMessageMultiLineWrapping)
                   SBUFgetBuffer (message));
     SBUFfree (message);
 }
+
+
+// Test is currently very broken because the default value contains @ for a newline, 
+// which is normally replaced with a space or newline depending on cti_single_line.
+// OPTcheckOptionConsistency does this, but calling it leads to a seg fault.
+// TEST (CTF, testCreateMessageLoc)
+// {
+//     // We need the globals to be initialized for every test after ctinfo
+//     // makes use of ctformatting, otherwise none of the errors will actually
+//     // function in any of the tests.
+//     global.cti_single_line = true;
+//     global.cti_message_length = 0;
+    
+//     GLOBinitializeGlobal (0, NULL, TOOL_sac2c, "");
+
+//     str_buf *message;
+
+//     message = CTFcreateMessageLoc ((struct location) {.fname = NULL, .line = 0, .col = 0}, "Error", "foo %s\nbaz", "bar");
+//     EXPECT_STREQ ("Error: foo bar\n  baz\n", SBUFgetBuffer (message));
+//     SBUFfree (message);
+// }

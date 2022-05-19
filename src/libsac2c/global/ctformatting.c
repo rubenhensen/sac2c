@@ -30,6 +30,82 @@
 
 /** <!--********************************************************************-->
  *
+ * @fn void CTFcheckHeaderConsistency ( char *header)
+ *
+ *   @brief  Checks whether the provided header is valid to be used as the
+ *           global.cti_header_format or global.cti_multiline_format.
+ * 
+ *           If the header is valid, the function returns void.
+ *           If the header is invalid, the program gracefully aborts using the 
+ *           default global header and multiline format.
+ * 
+ *   @param  header The header to check.
+ ******************************************************************************/
+void
+CTFcheckHeaderConsistency (char *header)
+{
+    size_t argument_count;
+    size_t index;
+    char *error_msg;
+
+    DBUG_ENTER ();
+
+    argument_count = 0;
+    index = 0;
+    error_msg = NULL;
+
+    while (header[index] != '\0') {
+        if (header[index] == '%') {
+            if (header[index + 1] == '%') {
+                index += 2;
+                continue;
+            }
+
+            if (header[index + 1] == 's') {
+                index += 2;
+                argument_count += 1;
+                continue;
+            }
+
+            if (STReqn (&header[index +1], ".0s", 3)) {
+                index += 4;
+                argument_count += 1;
+                continue;
+            }
+
+            error_msg = STRformat ("Supplied header format \"%s\" is invalid.\n"
+                                   "A %% must be followed by another '%%', an 's', or '.0s'.",
+                                   header);
+            break;
+        }
+        index++;
+    }
+
+    if (argument_count != 1 && error_msg == NULL) { // Don't override the first message
+        error_msg = STRformat ("Supplied header format \"%s\" is invalid.\n"
+                               "The substring '%%s' or '%%.0s' should occur exactly once but occurred %zu times.",
+                               header, argument_count);
+    }
+
+    if (error_msg != NULL) {
+        // Restore default formats
+        global.cti_header_format = CTIgetDefaultHeaderFormat ();
+        global.cti_multi_line_format = CTIgetDefaultMultiLineFormat ();
+        // Change default formats based on the -cti-single-line option
+        if (global.cti_single_line) {
+            global.cti_header_format = STRsubstTokend (global.cti_header_format, "@", " ");
+            global.cti_multi_line_format = STRsubstTokend (global.cti_multi_line_format, "@", " ");
+        } else {
+            global.cti_header_format = STRsubstTokend (global.cti_header_format, "@", "\n");
+            global.cti_multi_line_format = STRsubstTokend (global.cti_multi_line_format, "@", "\n");
+        }
+        CTIabort (EMPTY_LOC, "%s", error_msg);
+    }
+}
+
+
+/** <!--********************************************************************-->
+ *
  * @fn void InsertWrapLocations( char *string, size_t header_length, bool return_at_newline)
  *
  *   @brief  Processes the string to replace tabs with spaces, replace spaces with newlines
