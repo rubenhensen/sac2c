@@ -20,6 +20,7 @@
 #include "str.h"
 #include "str_buffer.h"
 #include "globals.h"
+#include "memory.h"
 #include "free.h"
 #include "namespaces.h"
 #include "tree_basic.h"
@@ -28,9 +29,51 @@
 #include "cppcompat.h"
 #undef exit
 
+static const char *default_header_format = "%s:@";
+static const char *default_multi_line_format = "%.0s  ";
+
+static char *processed_header_format = NULL;
+static char *processed_multi_line_format = NULL;
+
+static bool initialized = false;
+
+
+const char *
+CTFgetDefaultHeaderFormat (void)
+{
+    return default_header_format;
+}
+
+const char *
+CTFgetDefaultMultiLineFormat (void)
+{
+    return default_multi_line_format;
+}
+
 /** <!--********************************************************************-->
  *
- * @fn void CTFcheckHeaderConsistency ( char *header)
+ * @fn void ProcessHeaders( void)
+ *
+ *   @brief  Copies over the header format globals and substitutes @ and newline 
+ *           characters with newlines or spaces based on global.cti_single_line.
+ ******************************************************************************/
+static void
+ProcessHeaders (void)
+{
+    if (global.cti_single_line) {
+        // We shouldn't encounter \n in the header, but it's not bad to account for it.
+        processed_header_format = STRsubstTokens (global.cti_header_format, 2, "@", " ", "\n", " ");
+        processed_multi_line_format = STRsubstTokens (global.cti_multi_line_format, 2, "@", " ", "\n", " ");
+    } else {
+        processed_header_format = STRsubstToken (global.cti_header_format, "@", " ");
+        processed_multi_line_format = STRsubstToken (global.cti_multi_line_format, "@", " ");
+    }
+}
+
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTFcheckHeaderConsistency( char *header)
  *
  *   @brief  Checks whether the provided header is valid to be used as the
  *           global.cti_header_format or global.cti_multiline_format.
@@ -55,24 +98,25 @@ CTFcheckHeaderConsistency (char *header)
     error_msg = NULL;
 
     while (header[index] != '\0') {
-        if (header[index] == '%') {
+        if (header[index] == '%') { // We allow %% to escape %
             if (header[index + 1] == '%') {
                 index += 2;
                 continue;
             }
 
-            if (header[index + 1] == 's') {
+            if (header[index + 1] == 's') { // We allow a single occurence of %s
                 index += 2;
                 argument_count += 1;
                 continue;
             }
 
-            if (STReqn (&header[index +1], ".0s", 3)) {
+            if (STReqn (&header[index +1], ".0s", 3)) { // We allow an occurrence of %.0s
                 index += 4;
                 argument_count += 1;
                 continue;
             }
 
+            // A % followed by anything else leads to an error
             error_msg = STRformat ("Supplied header format \"%s\" is invalid.\n"
                                    "A %% must be followed by another '%%', an 's', or '.0s'.",
                                    header);
@@ -81,28 +125,70 @@ CTFcheckHeaderConsistency (char *header)
         index++;
     }
 
-    if (argument_count != 1 && error_msg == NULL) { // Don't override the first message
+    // If the previous part didn't lead to errors, we can error here if
+    // %s or %.0s occurred more than once.
+    if (argument_count != 1 && error_msg == NULL) {
         error_msg = STRformat ("Supplied header format \"%s\" is invalid.\n"
                                "The substring '%%s' or '%%.0s' should occur exactly once but occurred %zu times.",
                                header, argument_count);
     }
 
     if (error_msg != NULL) {
-        // Restore default formats
-        global.cti_header_format = CTIgetDefaultHeaderFormat ();
-        global.cti_multi_line_format = CTIgetDefaultMultiLineFormat ();
-        // Change default formats based on the -cti-single-line option
-        if (global.cti_single_line) {
-            global.cti_header_format = STRsubstTokend (global.cti_header_format, "@", " ");
-            global.cti_multi_line_format = STRsubstTokend (global.cti_multi_line_format, "@", " ");
-        } else {
-            global.cti_header_format = STRsubstTokend (global.cti_header_format, "@", "\n");
-            global.cti_multi_line_format = STRsubstTokend (global.cti_multi_line_format, "@", "\n");
-        }
+        // Before we can raise the error, we have to replace the format with something that
+        // we know will work: the default error format.
+        
+        MEMfree (global.cti_header_format);
+        MEMfree (global.cti_multi_line_format);
+        global.cti_header_format = STRcpy (CTFgetDefaultHeaderFormat ());
+        global.cti_multi_line_format = STRcpy (CTFgetDefaultMultiLineFormat ());
+        ProcessHeaders();
+
+        initialized = true; // Avoid initializing again for no reason
         CTIabort (EMPTY_LOC, "%s", error_msg);
     }
 }
 
+void
+CTFinitialize (void)
+{
+    // If the headers don't exist, which can happen during unit-tests, we apply the default formats
+    if (global.cti_header_format == NULL) {
+        global.cti_header_format = STRcpy (CTFgetDefaultHeaderFormat ());
+    }
+    if (global.cti_multi_line_format == NULL) {
+        global.cti_multi_line_format = STRcpy (CTFgetDefaultMultiLineFormat ());
+    }
+
+    // Gracefully aborts if the format is not invalid.
+    CTFcheckHeaderConsistency (global.cti_header_format);
+    CTFcheckHeaderConsistency (global.cti_multi_line_format);
+
+    ProcessHeaders ();
+
+    // Set initialized before potentially raising warnings to avoid infinite loops
+    initialized = true;
+
+    if (global.cti_single_line) {
+        // If either of the headers are not the default format and contain newlines,
+        // then warn that the newlines are replaced with a spaces.
+        if ((!STReq (global.cti_header_format, CTFgetDefaultHeaderFormat ())
+                && strchr (global.cti_header_format, '\n') == NULL)
+                || (!STReq (global.cti_multi_line_format, CTFgetDefaultMultiLineFormat ())
+                && strchr (global.cti_multi_line_format, '\n') == NULL)) {
+            CTIwarn (EMPTY_LOC, "Option -cti-single-line replaces newlines with spaces in the header formats.");
+        }
+
+        if (global.cti_message_length != 0) {
+            CTIwarn (EMPTY_LOC, "Option -cti-single-line implies option -cti-message-length 0.\n"
+                    "Option -cti-message-length will be ignored.");
+            global.cti_message_length = 0;
+        }
+
+        if (!STReq (global.cti_multi_line_format, CTFgetDefaultMultiLineFormat ())) {
+            CTIwarn (EMPTY_LOC, "Option -cti-single-line makes option -cti-multi-line-format redundant.");
+        }
+    }
+}
 
 /** <!--********************************************************************-->
  *
@@ -336,7 +422,7 @@ CTFcreateMessageContinued (const char *multiline_header, str_buf *remaining_line
     size_t header_len;
 
     DBUG_ENTER ();
-
+    
     header_len = STRlen (multiline_header);
     InsertWrapLocations (SBUFgetBuffer (remaining_lines), header_len, false);
 
@@ -430,9 +516,22 @@ CTFvcreateMessage (const char *first_line_header, const char *multiline_header,
 
     // message gets changed to include the entire first line, not just the header
     remaining_lines = CTFvcreateMessageBegin (message, format, arg_p);
-    remaining_lines = CTFcreateMessageContinued (multiline_header, remaining_lines);
+    
+    // We only parse the remaining lines if they are not empty.
+    // There is a nuance here to take into account:
+    // If we manually call CTFcreateMessageContinued with an empty line, we want that
+    // empty line to be printed with a header.
+    // If we call CTFcreateMessage, we want repeating newlines "\n\n" to also be respected.
+    // However, if the call to this function doesn't contain any newline, but would still 
+    // process the remanining lines, the result would be something of the following form:
+    // concat(first_line_header, message, multi_line_header, newline)
+    // Clearly, we don't want the multi_line header there.
+    if (!SBUFisEmpty (remaining_lines)) {
+        remaining_lines = CTFcreateMessageContinued (multiline_header, remaining_lines);
+        SBUFprint (message, SBUFgetBuffer (remaining_lines));
+    }
+
     message_end = CTFcreateMessageEnd ();
-    SBUFprint (message, SBUFgetBuffer (remaining_lines));
     SBUFprint (message, SBUFgetBuffer (message_end));
 
     SBUFfree (remaining_lines);
@@ -500,21 +599,25 @@ CTFvcreateMessageLoc (struct location loc, const char *message_header,
     
     DBUG_ENTER ();
 
-    // First, we construct the 'base' gnu format message header
+    // When running unit-tests, the call to CTFinitialize in options.c is not made, so
+    // we initialize here if it isn't already.
+    // We don't eliminate the call in options.c to fail-fast if there is an issue
+    // with the header formats.
+    if (!initialized) {
+        CTFinitialize ();
+    }
 
+    // First, we construct the 'base' gnu format message header
     base_header = Loc2buf (loc);
     SBUFprint (base_header, message_header);
 
     // The base header is used to construct the header for the first and subsequent
-    // lines using the format string specified in the globals that the user has control over.
-    // Naturally, this could fail with bogus input, but this checked against shortly after the globals
-    // are defined.
-
+    // lines using the processed format string.
     first_line_header = SBUFcreate (0);
-    SBUFprintf (first_line_header, global.cti_header_format, SBUFgetBuffer (base_header));
+    SBUFprintf (first_line_header, processed_header_format, SBUFgetBuffer (base_header));
 
     multiline_header = SBUFcreate (0);
-    SBUFprintf (multiline_header, global.cti_multi_line_format, SBUFgetBuffer (base_header));
+    SBUFprintf (multiline_header, processed_multi_line_format, SBUFgetBuffer (base_header));
 
     message = CTFvcreateMessage (SBUFgetBuffer (first_line_header), SBUFgetBuffer (multiline_header), 
                                 format, arg_p);

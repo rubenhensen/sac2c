@@ -413,22 +413,29 @@ TEST (CTF, testCreateMessageMultiLineWrapping)
 }
 
 
-// Test is currently very broken because the default value contains @ for a newline, 
-// which is normally replaced with a space or newline depending on cti_single_line.
-// OPTcheckOptionConsistency does this, but calling it leads to a seg fault.
-// TEST (CTF, testCreateMessageLoc)
-// {
-//     // We need the globals to be initialized for every test after ctinfo
-//     // makes use of ctformatting, otherwise none of the errors will actually
-//     // function in any of the tests.
-//     global.cti_single_line = true;
-//     global.cti_message_length = 0;
-    
-//     GLOBinitializeGlobal (0, NULL, TOOL_sac2c, "");
+TEST (CTF, testCreateMessageLoc)
+{
+    global.cti_single_line = true;
+    global.cti_message_length = 0;
 
-//     str_buf *message;
+    str_buf *message;
 
-//     message = CTFcreateMessageLoc ((struct location) {.fname = NULL, .line = 0, .col = 0}, "Error", "foo %s\nbaz", "bar");
-//     EXPECT_STREQ ("Error: foo bar\n  baz\n", SBUFgetBuffer (message));
-//     SBUFfree (message);
-// }
+    // Ensure that @'s are converted to spaces.
+    message = CTFcreateMessageLoc (EMPTY_LOC, "Error", "foo %s\nbaz", "bar");
+    EXPECT_STREQ ("Error: foo bar baz\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that @'s are converted to newlines.
+    global.cti_single_line = false;
+    global.cti_message_length = 0;
+
+    message = CTFcreateMessageLoc (EMPTY_LOC, "Error", "foo %s\nbaz", "bar");
+    EXPECT_STREQ ("Error: foo bar\n  baz\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that the location is properly converted into the header
+    message = CTFcreateMessageLoc (((struct location) {.fname = "testfile", .line = 3, .col = 87}),
+                                   "Warning", "%s", "Message.");
+    EXPECT_STREQ ("testfile:3:87: Warning: Message.\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+}

@@ -193,12 +193,12 @@ GLOBAL (bool, cti_single_line, FALSE, xfree_dummy, )
  * suppresses newlines in cti messages
  */
 
-GLOBAL (char *, cti_header_format, CTIgetDefaultHeaderFormat (), xfree_char_ptr, )
+GLOBAL (char *, cti_header_format, STRcpy (CTFgetDefaultHeaderFormat ()), xfree_char_ptr, )
 /*
  * header spec for messages
  */
 
-GLOBAL (char *, cti_multi_line_format, CTIgetDefaultMultiLineFormat (), xfree_char_ptr, )
+GLOBAL (char *, cti_multi_line_format, STRcpy (CTFgetDefaultMultiLineFormat ()), xfree_char_ptr, )
 /*
  *  spec for the beginning of trailing lines of multi-line messages
  */

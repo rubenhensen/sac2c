@@ -8,8 +8,6 @@
 #include "fun-attrs.h"
 #include <stdarg.h>
 
-char *CTIgetDefaultHeaderFormat (void);
-char *CTIgetDefaultMultiLineFormat (void);
 
 FILE *CTIget_stderr (void);
 void CTIset_stderr (FILE * new_stderr);

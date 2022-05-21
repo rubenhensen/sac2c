@@ -150,53 +150,10 @@ void
 OPTcheckOptionConsistency (void)
 {
 
-    char *default_header;
-    char *default_multi_line_header;
-
     DBUG_ENTER ();
 
-    // Gracefully aborts if the format is not invalid.
-    CTFcheckHeaderConsistency (global.cti_header_format);
-    CTFcheckHeaderConsistency (global.cti_multi_line_format);
-
-    // The default we compare with has to have newlines, but when displaying to the default format
-    // to the user in other locations, we want to have it with @ characters, so we cannot change
-    // the default to skip this step.
-    default_header = STRsubstTokend (CTIgetDefaultHeaderFormat (), "@", "\n");
-    default_multi_line_header = STRsubstTokend (CTIgetDefaultMultiLineFormat (), "@", "\n");
-
-    global.cti_header_format = STRsubstTokend (global.cti_header_format, "@", "\n");
-    global.cti_multi_line_format = STRsubstTokend (global.cti_multi_line_format, "@", "\n");
-
-    if (global.cti_single_line) {
-        // If either of the headers are not the default format and contain newlines,
-        // then warn that the newlines are replaced with a spaces.
-        if ((!STReq (global.cti_header_format, default_header)
-                && strchr (global.cti_header_format, '\n') == NULL)
-                || (!STReq (global.cti_multi_line_format, default_multi_line_header)
-                && strchr (global.cti_multi_line_format, '\n') == NULL)) {
-            // Replace the formats *before* we give the warning
-            global.cti_header_format = STRsubstTokend (global.cti_header_format, "\n", " ");
-            global.cti_multi_line_format = STRsubstTokend (global.cti_multi_line_format, "\n", " ");
-            CTIwarn (EMPTY_LOC, "Option -cti-single-line replaces newlines with spaces in the header formats.");
-        } else {
-            // The newlines still have to be replaced even if the format is the default
-            global.cti_header_format = STRsubstTokend (global.cti_header_format, "\n", " ");
-            global.cti_multi_line_format = STRsubstTokend (global.cti_multi_line_format, "\n", " ");
-        }
-
-        if (global.cti_message_length != 0) {
-            CTIwarn (EMPTY_LOC, "Option -cti-single-line implies option -cti-message-length 0.\n"
-                    "Option -cti-message-length will be ignored.");
-            global.cti_message_length = 0;
-        }
-
-        if (!STReq (global.cti_multi_line_format, default_multi_line_header)) {
-            CTIwarn (EMPTY_LOC, "Option -cti-single-line makes option -cti-multi-line-format redundant.");
-        }
-    }
-    MEMfree (default_header);
-    MEMfree (default_multi_line_header);
+    // Handle all the checks for compile time formatting aka error handling
+    CTFinitialize ();
 
     if (global.optimize.dophm && !global.config.use_phm_api) {
         CTIerror (EMPTY_LOC, "Private heap management disabled for this SBI.");
