@@ -5,12 +5,12 @@
 extern "C" {
 #define DBUG_PREFIX "TEST-CTF"
 #include "debug.h"
+#include "ctformatting.h"
 #include "globals.h"
 #include "options.h"
 #include "memory.h"
 #include "str.h"
 #include "str_buffer.h"
-#include "ctformatting.h"
 #include "types.h"
 #include "ctinfo.h"
 }

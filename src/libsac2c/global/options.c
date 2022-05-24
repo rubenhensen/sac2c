@@ -17,6 +17,9 @@
 #include <unistd.h>
 #include <signal.h>
 
+#include "ctformatting.h" // Has to be imported before globals.mac is evaluated
+#include "ctinfo.h"
+
 #include "config.h"
 
 #define DBUG_PREFIX "OPT"
@@ -29,8 +32,7 @@
 #include "globals.h"
 #include "str.h"
 #include "memory.h"
-#include "ctformatting.h"
-#include "ctinfo.h"
+
 #include "libstat.h"
 #include "stringset.h"
 #include "phase_options.h"

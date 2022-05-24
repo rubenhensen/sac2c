@@ -1,7 +1,7 @@
 #ifndef _STR_BUFFER_H_
 #define _STR_BUFFER_H_
 
-#include "types.h" /* for bool */
+#include "types.h"
 
 typedef struct STR_BUF str_buf;
 

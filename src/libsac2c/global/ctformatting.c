@@ -17,6 +17,8 @@
 #define DBUG_PREFIX "CTF"
 #include "debug.h"
 
+#include "ctformatting.h" // To have access to the default header macros
+
 #include "str.h"
 #include "str_buffer.h"
 #include "globals.h"
@@ -29,26 +31,10 @@
 #include "cppcompat.h"
 #undef exit
 
-static const char *default_header_format = "%s:@";
-static const char *default_multi_line_format = "%.0s  ";
-
 static char *processed_header_format = NULL;
 static char *processed_multi_line_format = NULL;
 
 static bool initialized = false;
-
-
-const char *
-CTFgetDefaultHeaderFormat (void)
-{
-    return default_header_format;
-}
-
-const char *
-CTFgetDefaultMultiLineFormat (void)
-{
-    return default_multi_line_format;
-}
 
 /** <!--********************************************************************-->
  *
@@ -139,8 +125,8 @@ CTFcheckHeaderConsistency (char *header)
         
         MEMfree (global.cti_header_format);
         MEMfree (global.cti_multi_line_format);
-        global.cti_header_format = STRcpy (CTFgetDefaultHeaderFormat ());
-        global.cti_multi_line_format = STRcpy (CTFgetDefaultMultiLineFormat ());
+        global.cti_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
+        global.cti_multi_line_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
         ProcessHeaders();
 
         initialized = true; // Avoid initializing again for no reason
@@ -153,10 +139,10 @@ CTFinitialize (void)
 {
     // If the headers don't exist, which can happen during unit-tests, we apply the default formats
     if (global.cti_header_format == NULL) {
-        global.cti_header_format = STRcpy (CTFgetDefaultHeaderFormat ());
+        global.cti_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
     }
     if (global.cti_multi_line_format == NULL) {
-        global.cti_multi_line_format = STRcpy (CTFgetDefaultMultiLineFormat ());
+        global.cti_multi_line_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
     }
 
     // Gracefully aborts if the format is not invalid.
@@ -171,9 +157,9 @@ CTFinitialize (void)
     if (global.cti_single_line) {
         // If either of the headers are not the default format and contain newlines,
         // then warn that the newlines are replaced with a spaces.
-        if ((!STReq (global.cti_header_format, CTFgetDefaultHeaderFormat ())
+        if ((!STReq (global.cti_header_format, CTF_DEFAULT_FIRST_LINE_HEADER)
                 && strchr (global.cti_header_format, '\n') == NULL)
-                || (!STReq (global.cti_multi_line_format, CTFgetDefaultMultiLineFormat ())
+                || (!STReq (global.cti_multi_line_format, CTF_DEFAULT_MULTI_LINE_HEADER)
                 && strchr (global.cti_multi_line_format, '\n') == NULL)) {
             CTIwarn (EMPTY_LOC, "Option -cti-single-line replaces newlines with spaces in the header formats.");
         }
@@ -184,7 +170,7 @@ CTFinitialize (void)
             global.cti_message_length = 0;
         }
 
-        if (!STReq (global.cti_multi_line_format, CTFgetDefaultMultiLineFormat ())) {
+        if (!STReq (global.cti_multi_line_format, CTF_DEFAULT_MULTI_LINE_HEADER)) {
             CTIwarn (EMPTY_LOC, "Option -cti-single-line makes option -cti-multi-line-format redundant.");
         }
     }

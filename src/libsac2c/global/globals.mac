@@ -13,8 +13,14 @@
  *
  */
 
+#define CTF_DEFAULT_HEADERS_ONLY
+#include "ctformatting.h"
+#undef CTF_DEFAULT_HEADERS_ONLY
+
 #include "config.h"
 #include "sacdirs.h"
+
+
 
 /* The source file of sac program can come from various files due to
    recognition of #line directives.  Usually massively used by preprocessor.
@@ -193,12 +199,12 @@ GLOBAL (bool, cti_single_line, FALSE, xfree_dummy, )
  * suppresses newlines in cti messages
  */
 
-GLOBAL (char *, cti_header_format, STRcpy (CTFgetDefaultHeaderFormat ()), xfree_char_ptr, )
+GLOBAL (char *, cti_header_format, STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER), xfree_char_ptr, )
 /*
  * header spec for messages
  */
 
-GLOBAL (char *, cti_multi_line_format, STRcpy (CTFgetDefaultMultiLineFormat ()), xfree_char_ptr, )
+GLOBAL (char *, cti_multi_line_format, STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER), xfree_char_ptr, )
 /*
  *  spec for the beginning of trailing lines of multi-line messages
  */
