@@ -292,8 +292,8 @@ STRcatn (int n, ...)
  *
  * @return The processed format string.
  */
-char *
-STRvformat (const char *format, va_list arg_list)
+static char *
+vformat (const char *format, va_list arg_list)
 {
     str_buf *buf;
   
@@ -323,7 +323,7 @@ STRformat (const char *format, ...)
     DBUG_ENTER();
 
     va_start (arg_list, format);
-    res = STRvformat (format, arg_list);
+    res = vformat (format, arg_list);
     va_end (arg_list);
 
     DBUG_RETURN (res);

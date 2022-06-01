@@ -9,7 +9,6 @@ extern char *STRcpy (const char *source);
 extern char *STRncpy (const char *source, size_t maxlen);
 extern char *STRcat (const char *first, const char *second);
 extern char *STRcatn (int n, ...);
-extern char *STRvformat (const char *format, va_list arg_list) FUN_ATTR_PURE;
 extern char *STRformat (const char *format, ...) FUN_ATTR_PURE;
 extern char *STRtok (const char *str, const char *tok);
 extern bool STReq (const char *first, const char *second) FUN_ATTR_PURE;
