@@ -255,9 +255,9 @@ DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
                                    ? dft_res->partials[0]
                                    : dft_res->deriveable_partials[0];
                     CTIwarn (LINE_TO_LOC (global.linenum),
-                                 "Application of var-arg function %s found which may"
-                                 " cause a type error",
-                                 CTIitemName (new_fundef));
+                             "Application of var-arg function %s found which may"
+                             " cause a type error",
+                             CTIitemName (new_fundef));
                     DBUG_PRINT ("  dispatched statically although only partial"
                                 " has been found (T_dots)!");
                 } else {

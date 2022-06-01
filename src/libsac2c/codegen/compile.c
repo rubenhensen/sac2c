@@ -4146,10 +4146,10 @@ COMPApIds (node *ap, info *arg_info)
                     DBUG_ASSERT (sc != C_unknowns, "illegal data class found!");
                     if ((sc == C_akd) || (sc == C_aud)) {
                         CTIabort (LINE_TO_LOC (global.linenum),
-                                      "Return value with undefined shape/dimension found."
-                                      " Non-AKS return values in external functions are "
-                                      "only allowed when the corresponding refcounting"
-                                      " pragma is set.");
+                                  "Return value with undefined shape/dimension found."
+                                  " Non-AKS return values in external functions are "
+                                  "only allowed when the corresponding refcounting"
+                                  " pragma is set.");
                     }
                 }
 

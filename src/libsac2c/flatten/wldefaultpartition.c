@@ -476,9 +476,9 @@ WLDPgenarray (node *arg_node, info *arg_info)
 
         } else {
             CTIabort (LINE_TO_LOC (global.linenum),
-                          "Genarray with-loop with missing default expression found."
-                          " Unfortunately, a default expression is necessary here"
-                          " to generate code for new partitions");
+                      "Genarray with-loop with missing default expression found."
+                      " Unfortunately, a default expression is necessary here"
+                      " to generate code for new partitions");
         }
 
     } else {

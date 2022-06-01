@@ -528,18 +528,18 @@ CRTWRPfundef (node *arg_node, info *arg_info)
             if ((dot_args != FUNDEF_HASDOTARGS (wrapper))
                 || (dot_rets != FUNDEF_HASDOTRETS (wrapper))) {
                 CTIabort (LINE_TO_LOC (global.linenum),
-                              "Trying to overload function \"%s\" that expects %s %zu "
-                              "argument(s) "
-                              "and %s %zu return value(s) with a version that expects %s "
-                              "%zu argument(s) "
-                              "and %s %zu return value(s)",
-                              CTIitemName (wrapper),
-                              (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""),
-                              TCcountArgsIgnoreArtificials (FUNDEF_ARGS (wrapper)),
-                              (FUNDEF_HASDOTRETS (wrapper) ? ">=" : ""),
-                              TCcountRetsIgnoreArtificials (FUNDEF_RETS (wrapper)),
-                              (dot_args ? ">=" : ""), num_args, (dot_rets ? ">=" : ""),
-                              num_rets);
+                          "Trying to overload function \"%s\" that expects %s %zu "
+                          "argument(s) "
+                          "and %s %zu return value(s) with a version that expects %s "
+                          "%zu argument(s) "
+                          "and %s %zu return value(s)",
+                          CTIitemName (wrapper),
+                          (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""),
+                          TCcountArgsIgnoreArtificials (FUNDEF_ARGS (wrapper)),
+                          (FUNDEF_HASDOTRETS (wrapper) ? ">=" : ""),
+                          TCcountRetsIgnoreArtificials (FUNDEF_RETS (wrapper)),
+                          (dot_args ? ">=" : ""), num_args, (dot_rets ? ">=" : ""),
+                          num_rets);
             }
         }
 

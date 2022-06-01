@@ -3877,13 +3877,16 @@ BuildCubes (node *strides, int iter_dims, shape *iter_shp, bool *do_naive_comp)
 
     all_const = WLTRAallStridesAreConstant (strides, TRUE, TRUE);
     DBUG_EXECUTE (
-      CTInote (EMPTY_LOC, all_const ? "  constant-bounds with-loop: TRUE"
-                         : "  constant-bounds with-loop: FALSE");
-      CTInote (EMPTY_LOC, (iter_shp != NULL) ? "  known-shape with-loop: TRUE"
-                                  : "  known-shape with-loop: FALSE (dim = %d)",
+      CTInote (EMPTY_LOC, all_const 
+                          ? "  constant-bounds with-loop: TRUE"
+                          : "  constant-bounds with-loop: FALSE");
+      CTInote (EMPTY_LOC, (iter_shp != NULL) 
+                          ? "  known-shape with-loop: TRUE"
+                          : "  known-shape with-loop: FALSE (dim = %d)",
                iter_dims);
-      CTInote (EMPTY_LOC, (WLSTRIDE_NEXT (strides) != NULL) ? "  multi-generator with-loop: TRUE"
-                                                 : "  multi-generator with-loop: FALSE"));
+      CTInote (EMPTY_LOC, (WLSTRIDE_NEXT (strides) != NULL) 
+                          ? "  multi-generator with-loop: TRUE"
+                          : "  multi-generator with-loop: FALSE"));
 
     if (!all_const) {
         /*
@@ -3962,10 +3965,10 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
             segs = fun (segs, SPAP_ARGS (EXPRS_EXPR (aps)), cubes, iter_dims,            \
                         global.linenum);                                                 \
         } else {                                                                         \
-            CTIwarn (LINE_TO_LOC (global.linenum),                                                 \
-                         "Function %s of wlcomp-pragma ignored in order"                 \
-                         " to meet the IEEE-754 standard",                               \
-                         SPAP_NAME (EXPRS_EXPR (aps)));                                  \
+            CTIwarn (LINE_TO_LOC (global.linenum),                                       \
+                     "Function %s of wlcomp-pragma ignored in order"                     \
+                     " to meet the IEEE-754 standard",                                   \
+                     SPAP_NAME (EXPRS_EXPR (aps)));                                      \
         }                                                                                \
     } else
 #include "wlpragma_funs.mac"
@@ -3978,9 +3981,9 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
                   ;
 
                 CTIwarn (LINE_TO_LOC (global.linenum),
-                             "Illegal function name %s in wlcomp-pragma found."
-                             " Currently supported functions are: %s",
-                             SPAP_NAME (EXPRS_EXPR (aps)), fun_names);
+                         "Illegal function name %s in wlcomp-pragma found."
+                         " Currently supported functions are: %s",
+                         SPAP_NAME (EXPRS_EXPR (aps)), fun_names);
             }
 
             /* save pointer to scheduler and task selector node */
@@ -4077,11 +4080,11 @@ CheckParams (node *seg)
 
                 if (NUM_VAL (EXPRS_EXPR (last)) < NUM_VAL (EXPRS_EXPR (tmp2))) {
                     CTIabort (LINE_TO_LOC (global.linenum),
-                                  "Inner Blocking step (%i) is smaller than outer one"
-                                  " (%i). Please check parameters of functions in"
-                                  " wlcomp-pragma",
-                                  NUM_VAL (EXPRS_EXPR (last)),
-                                  NUM_VAL (EXPRS_EXPR (tmp2)));
+                              "Inner Blocking step (%i) is smaller than outer one"
+                              " (%i). Please check parameters of functions in"
+                              " wlcomp-pragma",
+                              NUM_VAL (EXPRS_EXPR (last)),
+                              NUM_VAL (EXPRS_EXPR (tmp2)));
                 }
                 last = EXPRS_NEXT (last);
                 tmp2 = EXPRS_NEXT (tmp2);
@@ -4094,10 +4097,10 @@ CheckParams (node *seg)
         while (last != NULL) {
             if (NUM_VAL (EXPRS_EXPR (last)) < 1) {
                 CTIabort (LINE_TO_LOC (global.linenum),
-                              "Blocking step (%i) is smaller than 1."
-                              " Please check parameters of functions in"
-                              " wlcomp-pragma",
-                              NUM_VAL (EXPRS_EXPR (last)));
+                          "Blocking step (%i) is smaller than 1."
+                          " Please check parameters of functions in"
+                          " wlcomp-pragma",
+                          NUM_VAL (EXPRS_EXPR (last)));
             }
 
             last = EXPRS_NEXT (last);
@@ -4108,10 +4111,9 @@ CheckParams (node *seg)
         while (tmp1 != NULL) {
             if (NUM_VAL (EXPRS_EXPR (tmp1)) < 1) {
                 CTIabort (LINE_TO_LOC (global.linenum),
-                              "Unrolling-blocking step (%i) is smaller than 1."
-                              " Please check parameters of functions in"
-                              " wlcomp-pragma",
-                              (NUM_VAL (EXPRS_EXPR (tmp1))));
+                          "Unrolling-blocking step (%i) is smaller than 1."
+                          " Please check parameters of functions in wlcomp-pragma",
+                          (NUM_VAL (EXPRS_EXPR (tmp1))));
             }
             tmp1 = EXPRS_NEXT (tmp1);
         }
@@ -4150,14 +4152,14 @@ CheckParams (node *seg)
                         < MATHmax (NUM_VAL (EXPRS_EXPR (first_sv)),
                                    NUM_VAL (EXPRS_EXPR (first_ubv)))) {
                         CTIabort (LINE_TO_LOC (global.linenum),
-                                      "Blocking step (%i) is greater than 1 but smaller"
-                                      " than stride step (%i) or unrolling-blocking step"
-                                      " (%i) respectively. "
-                                      "Please check parameters of functions in"
-                                      " wlcomp-pragma",
-                                      NUM_VAL (EXPRS_EXPR (first_block)),
-                                      NUM_VAL (EXPRS_EXPR (first_sv)),
-                                      NUM_VAL (EXPRS_EXPR (first_ubv)));
+                                  "Blocking step (%i) is greater than 1 but smaller"
+                                  " than stride step (%i) or unrolling-blocking step"
+                                  " (%i) respectively. "
+                                  "Please check parameters of functions in"
+                                  " wlcomp-pragma",
+                                  NUM_VAL (EXPRS_EXPR (first_block)),
+                                  NUM_VAL (EXPRS_EXPR (first_sv)),
+                                  NUM_VAL (EXPRS_EXPR (first_ubv)));
                     }
                     first_block = EXPRS_NEXT (first_block);
                     first_sv = EXPRS_NEXT (first_sv);
@@ -4193,21 +4195,20 @@ CheckParams (node *seg)
 
         if (inner_block_pos > inner_unr_block_pos) {
             CTIabort (LINE_TO_LOC (global.linenum),
-                          "Unrolling-blocking step (%i) is greater than"
-                          " most inner blocking step (%i). "
-                          "Please check parameters of functions in wlcomp-pragma",
-                          NUM_VAL (EXPRS_EXPR (tmp1)),
-                          NUM_VAL (EXPRS_EXPR (first_block)));
+                      "Unrolling-blocking step (%i) is greater than"
+                      " most inner blocking step (%i). "
+                      "Please check parameters of functions in wlcomp-pragma",
+                      NUM_VAL (EXPRS_EXPR (tmp1)),
+                      NUM_VAL (EXPRS_EXPR (first_block)));
         }
 
         while (tmp1 != NULL) {
             if ((NUM_VAL (EXPRS_EXPR (tmp1)) % NUM_VAL (EXPRS_EXPR (tmp2))) != 0) {
                 CTIabort (LINE_TO_LOC (global.linenum),
-                              "Unrolling-blocking step (%i) is not a multiple of"
-                              " stride step (%i). "
-                              "Please check parameters of functions in"
-                              " wlcomp-pragma",
-                              NUM_VAL (EXPRS_EXPR (tmp1)), NUM_VAL (EXPRS_EXPR (tmp2)));
+                          "Unrolling-blocking step (%i) is not a multiple of"
+                          " stride step (%i). "
+                          "Please check parameters of functions in wlcomp-pragma",
+                          NUM_VAL (EXPRS_EXPR (tmp1)), NUM_VAL (EXPRS_EXPR (tmp2)));
             }
             tmp1 = EXPRS_NEXT (tmp1);
             tmp2 = EXPRS_NEXT (tmp2);
@@ -5425,8 +5426,8 @@ AdjustBlockSize (int old_bv, int unroll, bool warn)
     }
 
     if (warn && (old_bv != new_bv)) {
-        CTIwarn (LINE_TO_LOC (global.linenum), "Block size adjusted: %i instead of %i", new_bv,
-                     old_bv);
+        CTIwarn (LINE_TO_LOC (global.linenum), "Block size adjusted: %i instead of %i",
+                 new_bv, old_bv);
     }
 
     DBUG_RETURN (new_bv);
@@ -6850,9 +6851,9 @@ CheckWith (node *arg_node, node *res_ids)
                 && (!(TYisAKV (cexpr_type) || TYisAKS (cexpr_type)))
                 && (GENARRAY_DEFAULT (withop) == NULL)) {
                 CTIabort (LINE_TO_LOC (global.linenum),
-                              "Genarray with-loop with missing default expression found."
-                              " Unfortunately, a default expression is necessary here"
-                              " to compute the shape of the result");
+                          "Genarray with-loop with missing default expression found."
+                          " Unfortunately, a default expression is necessary here"
+                          " to compute the shape of the result");
             }
             break;
 

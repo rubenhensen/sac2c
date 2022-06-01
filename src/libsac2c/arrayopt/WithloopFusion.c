@@ -1334,8 +1334,8 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                          * Remove all new generators.
                          */
                         CTIwarn (LINE_TO_LOC (global.linenum),
-                                     "WLFS: number of new generators exceeds max_newgens"
-                                     " -> roll back");
+                                 "WLFS: number of new generators exceeds max_newgens"
+                                 " -> roll back");
 
                         nparts_1 = FREEdoFreeTree (nparts_1);
                         nparts_2 = FREEdoFreeTree (nparts_2);
@@ -1378,8 +1378,8 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                  * Remove all new generators.
                  */
                 CTIwarn (LINE_TO_LOC (global.linenum),
-                             "WLFS: number of new generators exceeds max_newgens"
-                             " -> roll back");
+                         "WLFS: number of new generators exceeds max_newgens"
+                         " -> roll back");
 
                 nparts_1 = FREEdoFreeTree (nparts_1);
                 nparts_2 = FREEdoFreeTree (nparts_2);

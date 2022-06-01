@@ -1610,7 +1610,8 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
                      * CheckUdtAndSetBaseType!
                      */
                     if (visited[inner_udt] == 1) {
-                        CTIerror (LINE_TO_LOC (global.linenum), "Type %s:%s recursively defined",
+                        CTIerror (LINE_TO_LOC (global.linenum),
+                                  "Type %s:%s recursively defined",
                                   NSgetName (UTgetNamespace (udt)), UTgetName (udt));
                     } else {
                         visited[udt] = 1;

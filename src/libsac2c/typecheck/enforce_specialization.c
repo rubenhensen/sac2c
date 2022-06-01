@@ -167,8 +167,9 @@ ESPfundef (node *arg_node, info *arg_info)
     DBUG_EXECUTE (MEMfree (tmp_str));
 
     if (disp_res == NULL) {
-        CTIwarn (LINE_TO_LOC (global.linenum), "Specialization of \"%s\" to arguments () ignored",
-                     CTIitemName (arg_node));
+        CTIwarn (LINE_TO_LOC (global.linenum), 
+                 "Specialization of \"%s\" to arguments () ignored",
+                 CTIitemName (arg_node));
     } else {
         /*
          * create specializations (if appropriate), trigger the type

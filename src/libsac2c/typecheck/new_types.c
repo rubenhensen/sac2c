@@ -2111,13 +2111,13 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
                                         SSIgetMax (ALPHA_SSI (fun2)));
                     if (lub == NULL) {
                         CTIabort (LINE_TO_LOC (global.linenum),
-                                      "Cannot overload functions with disjoint result "
-                                      "type;"
-                                      " types found: \"%s\" and \"%s\"",
-                                      TYtype2String (SSIgetMax (ALPHA_SSI (fun1)), FALSE,
-                                                     0),
-                                      TYtype2String (SSIgetMax (ALPHA_SSI (fun2)), FALSE,
-                                                     0));
+                                  "Cannot overload functions with disjoint result "
+                                  "type;"
+                                  " types found: \"%s\" and \"%s\"",
+                                  TYtype2String (SSIgetMax (ALPHA_SSI (fun1)), FALSE,
+                                                 0),
+                                  TYtype2String (SSIgetMax (ALPHA_SSI (fun2)), FALSE,
+                                                 0));
                     } else {
                         res = TYmakeAlphaType (lub);
                         ok = SSInewRel (ALPHA_SSI (fun1), ALPHA_SSI (res));
@@ -3038,11 +3038,11 @@ TYdispatchFunType (ntype *fun, ntype *args)
             if (ires == NULL) {
                 fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (fun, 0)), 0);
                 CTIabort (LINE_TO_LOC (global.linenum),
-                              "No definition found for a function \"%s\" that"
-                              " accepts an argument of type \"%s\" as parameter"
-                              " no %zu. Full argument types are \"%s\".",
-                              CTIitemName (fundef), TYtype2String (arg, FALSE, 0), i + 1,
-                              TYtype2String (args, FALSE, 0));
+                          "No definition found for a function \"%s\" that"
+                          " accepts an argument of type \"%s\" as parameter"
+                          " no %zu. Full argument types are \"%s\".",
+                          CTIitemName (fundef), TYtype2String (arg, FALSE, 0), i + 1,
+                          TYtype2String (args, FALSE, 0));
             }
 
             DBUG_EXECUTE_TAG ("NTDIS", tmp_str = TYtype2String (arg, FALSE, 0));

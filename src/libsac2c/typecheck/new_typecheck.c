@@ -1057,16 +1057,16 @@ NTClet (node *arg_node, info *arg_info)
             if ((PRF_PRF (LET_EXPR (arg_node)) != F_type_error)
                 && (TCcountIds (lhs) != TYgetProductSize (rhs_type))) {
                 CTIabort (LINE_TO_LOC (global.linenum),
-                              "%s yields %zu instead of %zu return value(s)",
-                              global.prf_name[PRF_PRF (LET_EXPR (arg_node))],
-                              TYgetProductSize (rhs_type), TCcountIds (lhs));
+                          "%s yields %zu instead of %zu return value(s)",
+                          global.prf_name[PRF_PRF (LET_EXPR (arg_node))],
+                          TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         } else {
             if (TCcountIds (lhs) != TYgetProductSize (rhs_type)) {
                 CTIabort (LINE_TO_LOC (global.linenum),
-                              "with loop returns %zu value(s)"
-                              " but %zu variable(s) specified on the lhs",
-                              TYgetProductSize (rhs_type), TCcountIds (lhs));
+                          "with loop returns %zu value(s)"
+                          " but %zu variable(s) specified on the lhs",
+                          TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         }
         i = 0;
@@ -1103,10 +1103,10 @@ NTClet (node *arg_node, info *arg_info)
                 if (existing_type == NULL) {
                     if (declared_type == NULL) {
                         CTIabort (LINE_TO_LOC (global.linenum),
-                                      "Cannot infer type of \"%s\" as it corresponds to "
-                                      "\"...\" "
-                                      "return type -- missing type declaration",
-                                      IDS_NAME (lhs));
+                                  "Cannot infer type of \"%s\" as it corresponds to "
+                                  "\"...\" "
+                                  "return type -- missing type declaration",
+                                  IDS_NAME (lhs));
                     } else {
                         /**
                          * ' commented out the following warning as it was issued to often
@@ -1116,7 +1116,7 @@ NTClet (node *arg_node, info *arg_info)
                          * would be the better way to go for anyways....
                          *
                         CTIwarn (LINE_TO_LOC (global.linenum),
-                                     "Cannot infer type of \"%s\" as it corresponds to
+                                 "Cannot infer type of \"%s\" as it corresponds to
                         \"...\" " "return type -- relying on type declaration", IDS_NAME(
                         lhs));
                          */
@@ -1156,8 +1156,8 @@ NTClet (node *arg_node, info *arg_info)
         /* lhs must be one ids only since rhs is not a function application! */
         if (TCcountIds (lhs) != 1) {
             CTIabort (LINE_TO_LOC (global.linenum),
-                          "rhs yields one value, %zu vars specified on the lhs",
-                          TCcountIds (lhs));
+                      "rhs yields one value, %zu vars specified on the lhs",
+                      TCcountIds (lhs));
         }
 
         existing_type = AVIS_TYPE (IDS_AVIS (lhs));
@@ -1820,8 +1820,8 @@ NTCcast (node *arg_node, info *arg_info)
          */
         if (TYgetProductSize (expr_t) != 1) {
             CTIabort (LINE_TO_LOC (global.linenum),
-                          "Cast used for a function application with %zu return values",
-                          TYgetProductSize (expr_t));
+                      "Cast used for a function application with %zu return values",
+                      TYgetProductSize (expr_t));
         } else {
             expr_t = TYgetProductMember (expr_t, 0);
         }
@@ -1925,9 +1925,9 @@ NTCwith (node *arg_node, info *arg_info)
 
     if (TYgetProductSize (body) != TCcountWithops (WITH_WITHOP (arg_node))) {
         CTIabort (LINE_TO_LOC (global.linenum),
-                      "Inconsistent with loop: %zu operator(s) "
-                      "but %zu value(s) specified in the body",
-                      TCcountWithops (WITH_WITHOP (arg_node)), TYgetProductSize (body));
+                  "Inconsistent with loop: %zu operator(s) "
+                  "but %zu value(s) specified in the body",
+                  TCcountWithops (WITH_WITHOP (arg_node)), TYgetProductSize (body));
     }
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
@@ -2354,7 +2354,7 @@ NTCfold (node *arg_node, info *arg_info)
      */
     if (FOLD_NEUTRAL (arg_node) == NULL) {
         CTIabort (LINE_TO_LOC (global.linenum),
-                      "Missing neutral element for user-defined fold function");
+                  "Missing neutral element for user-defined fold function");
     }
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     neutr = INFO_TYPE (arg_info);
@@ -2522,11 +2522,11 @@ NTCpropagate (node *arg_node, info *arg_info)
 
     if (!ok) {
         CTIabort (LINE_TO_LOC (global.linenum),
-                      "Illegal object transformation in propagate with loop"
-                      " body yields %s, but %s is propagated",
-                      TYtype2String (body, FALSE, 0),
-                      TYtype2String (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (arg_node))),
-                                     FALSE, 0));
+                  "Illegal object transformation in propagate with loop"
+                  " body yields %s, but %s is propagated",
+                  TYtype2String (body, FALSE, 0),
+                  TYtype2String (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (arg_node))),
+                                 FALSE, 0));
     }
 
     if (PROPAGATE_NEXT (arg_node) == NULL) {

@@ -153,8 +153,8 @@ LeftAssoc (node *lop, node *rop)
             res = (PREC_ASS (prec1) == Ass_l);
         } else {
             CTIwarn (LINE_TO_LOC (global.linenum),
-                         "Infix function application with non-unique precedence: "
-                         "choosing left associativity");
+                     "Infix function application with non-unique precedence: "
+                     "choosing left associativity");
             res = TRUE;
         }
     } else {
