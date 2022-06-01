@@ -38,6 +38,7 @@
 #include "structural_constant_constant_folding.h"
 #include "saa_constant_folding.h"
 #include "ctinfo.h"
+#include "ctformatting.h"
 #include "free.h"
 #include "namespaces.h"
 #include "resource.h"
@@ -678,6 +679,9 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname)
     global.cwd = getcwd (0, 0);
     if (!global.cwd)
         CTIabort (EMPTY_LOC, "getcwd: %s", strerror (errno));
+    
+    global.cti_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
+    global.cti_multi_line_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
 
     DBUG_RETURN ();
 }
