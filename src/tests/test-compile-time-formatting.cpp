@@ -420,12 +420,12 @@ TEST (CTF, testCreateMessageLoc)
 
     str_buf *message;
 
-    // Ensure that @'s are converted to spaces.
+    // Ensure that newlines are converted to spaces with cti_single_line enabled.
     message = CTFcreateMessageLoc (EMPTY_LOC, "Error", "foo %s\nbaz", "bar");
     EXPECT_STREQ ("Error: foo bar baz\n", SBUFgetBuffer (message));
     SBUFfree (message);
 
-    // Ensure that @'s are converted to newlines.
+    // Ensure that newlines stay newlines when cti_single_line is disabled.
     global.cti_single_line = false;
     global.cti_message_length = 0;
 
@@ -437,5 +437,31 @@ TEST (CTF, testCreateMessageLoc)
     message = CTFcreateMessageLoc (((struct location) {.fname = "testfile", .line = 3, .col = 87}),
                                    "Warning", "%s", "Message.");
     EXPECT_STREQ ("testfile:3:87: Warning: Message.\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that *only* @ symbols in the header are converted 
+    // to spaces if cti_single_line is enabled.
+    global.cti_single_line = true;
+    global.cti_message_length = 0;
+    MEMfree (global.cti_header_format);
+    global.cti_header_format = STRcpy ("%s:@");
+    CTFinitialize ();
+
+    message = CTFcreateMessageLoc (EMPTY_LOC, "Error", "foo\nbar");
+    EXPECT_STREQ ("Error: foo bar\n", SBUFgetBuffer (message));
+    SBUFfree (message);
+
+    // Ensure that *only* @ symbols the first line header are converted to newlines
+    // and ensure that @ symbols in the multiline header remain @ symbols.
+    global.cti_single_line = false;
+    global.cti_message_length = 0;
+    MEMfree (global.cti_header_format);
+    MEMfree (global.cti_multi_line_format);
+    global.cti_header_format = STRcpy ("%s:@First:");
+    global.cti_multi_line_format = STRcpy ("%.0sContinued:@");
+    CTFinitialize ();
+
+    message = CTFcreateMessageLoc (EMPTY_LOC, "Error", "foo\nbar");
+    EXPECT_STREQ ("Error:\nContinued:@First:foo\nContinued:@bar\n", SBUFgetBuffer (message));
     SBUFfree (message);
 }

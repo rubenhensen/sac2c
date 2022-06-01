@@ -46,14 +46,22 @@ static bool initialized = false;
 static void
 ProcessHeaders (void)
 {
-    if (global.cti_single_line) {
-        // We shouldn't encounter \n in the header, but it's not bad to account for it.
-        processed_header_format = STRsubstTokens (global.cti_header_format, 2, "@", " ", "\n", " ");
-        processed_multi_line_format = STRsubstTokens (global.cti_multi_line_format, 2, "@", " ", "\n", " ");
-    } else {
-        processed_header_format = STRsubstToken (global.cti_header_format, "@", " ");
-        processed_multi_line_format = STRsubstToken (global.cti_multi_line_format, "@", " ");
+    if (processed_header_format != NULL) {
+        MEMfree (processed_header_format);
     }
+    if (processed_multi_line_format != NULL) {
+        MEMfree (processed_multi_line_format);
+    }
+
+    if (global.cti_single_line) {
+        // We shouldn't encounter \n in any of the headers, but it's not bad to account for it.
+        processed_header_format = STRsubstTokens (global.cti_header_format, 2, "@", " ", "\n", " ");
+    } else {
+        processed_header_format = STRsubstToken (global.cti_header_format, "@", "\n");
+    }
+    // Newlines in the multi-line header format lead to stupid results, so @ characters are 
+    // never converted to newlines, and newlines are always converted to spaces.
+    processed_multi_line_format = STRsubstToken (global.cti_multi_line_format, "\n", " ");
 }
 
 
