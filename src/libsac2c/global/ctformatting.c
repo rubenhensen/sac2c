@@ -8,6 +8,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <string.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -279,7 +280,7 @@ InsertWrapLocations (char *buffer, size_t header_length, bool return_at_newline)
  *   @brief  Produces a GNU format string representing the location.
  *           When NULL is given or the location is invalid, the buffer will be empty.
  *
- *   @param  loc A node representing the location of the error.
+ *   @param  loc The location.
  *               If no location is available or appropriate, NULL should be supplied.
  * 
  *   @return A str_buf containing a string representation of the location.
@@ -309,6 +310,41 @@ Loc2buf (const struct location loc)
         SBUFprintf (buf, "%s: ", loc.fname);
     }
     DBUG_RETURN (buf);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn str_buf *CreateGNUformatHeader( const struct location loc, 
+ *                                     const char *message_header)
+ *
+ *   @brief  Produces a GNU format header of the location and message header.
+ *
+ *   @param  loc            The location of the message.
+ *                          If no location is available or appropriate, NULL should be supplied.
+ *   @param  message_header The header of the message. Should be of the form "[A-Z][a-z]*".
+ * 
+ *   @return A str_buf containing the header constructed from loc 
+ *           and message_header in the GNU format.
+ *
+ ******************************************************************************/
+static str_buf *
+CreateGNUformatHeader (const struct location loc, const char *message_header)
+{
+    str_buf *result;
+    size_t len;
+
+    DBUG_ENTER ();
+    
+    result = Loc2buf (loc);
+
+    len = SBUFlen (result);
+    SBUFprint (result, message_header);
+    // If the result wasn't empty, the first character of the message header is
+    // made lowercase.
+    if (len != 0) {
+        SBUFgetBuffer (result)[len] = (char) tolower (SBUFgetBuffer (result)[len]);
+    }
+    return result;
 }
 
 /** <!--********************************************************************-->
@@ -568,23 +604,24 @@ CTFcreateMessage (const char *first_line_header, const char *multiline_header,
 
 /** <!--********************************************************************-->
  * 
- * @fn str_buf *CTFvcreateMessageLoc ( struct location loc,
+ * @fn str_buf *CTFvcreateMessageLoc( struct location loc,
  *                                    const char *message_header,
  *                                    const char *format, va_list arg_p)
  * 
  *   @brief  Creates a message based on the given location, format string, 
  *           and list of arguments for the format string.
  * 
- *   @param  loc    The location from which to generate headers for the message.
- *   @param  format The format on which to apply the arguments.
- *   @param  arg_p  The arguments to apply onto the format.
+ *   @param  loc            The location from which to generate headers for the message.
+ *   @param  message_header The header of the message. Should be of the form "[A-Z][a-z]*".
+ *   @param  format         The format on which to apply the arguments.
+ *   @param  arg_p          The arguments to apply onto the format.
  * 
  *   @return a str_buf containing the finalized message.
  * 
  ******************************************************************************/
 str_buf *
 CTFvcreateMessageLoc (struct location loc, const char *message_header,
-                     const char *format, va_list arg_p)
+                      const char *format, va_list arg_p)
 {
     str_buf *base_header;
     str_buf *first_line_header;
@@ -601,9 +638,7 @@ CTFvcreateMessageLoc (struct location loc, const char *message_header,
         CTFinitialize ();
     }
 
-    // First, we construct the 'base' gnu format message header
-    base_header = Loc2buf (loc);
-    SBUFprint (base_header, message_header);
+    base_header = CreateGNUformatHeader (loc, message_header);
 
     // The base header is used to construct the header for the first and subsequent
     // lines using the processed format string.
@@ -624,16 +659,17 @@ CTFvcreateMessageLoc (struct location loc, const char *message_header,
 
 /** <!--********************************************************************-->
  * 
- * @fn str_buf *CTFcreateMessageLoc ( struct location loc,
- *                                    const char *message_header,
- *                                    const char *format, ...)
+ * @fn str_buf *CTFcreateMessageLoc( struct location loc,
+ *                                   const char *message_header,
+ *                                   const char *format, ...)
  * 
  *   @brief  Creates a message based on the given location, format string, 
  *           and list of arguments for the format string.
  * 
- *   @param  loc    The location from which to generate headers for the message.
- *   @param  format The format on which to apply extra arguments to generate
- *                  the message.
+ *   @param  loc            The location from which to generate headers for the message.
+ *   @param  message_header The header of the message. Should be of the form "[A-Z][a-z]*".
+ *   @param  format         The format on which to apply extra arguments to generate
+ *                          the message.
  * 
  *   @return a str_buf containing the finalized message.
  * 

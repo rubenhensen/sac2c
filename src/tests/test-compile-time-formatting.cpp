@@ -434,9 +434,10 @@ TEST (CTF, testCreateMessageLoc)
     SBUFfree (message);
 
     // Ensure that the location is properly converted into the header
+    // Also ensure that "Warning" is decapitalized because there is a location before it
     message = CTFcreateMessageLoc (((struct location) {.fname = "testfile", .line = 3, .col = 87}),
                                    "Warning", "%s", "Message.");
-    EXPECT_STREQ ("testfile:3:87: Warning: Message.\n", SBUFgetBuffer (message));
+    EXPECT_STREQ ("testfile:3:87: warning: Message.\n", SBUFgetBuffer (message));
     SBUFfree (message);
 
     // Ensure that *only* @ symbols in the header are converted 
