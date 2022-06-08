@@ -1,6 +1,10 @@
-#include "gtest/gtest.h"
-#include "config.h"
 #include <cstdio>
+
+#include "gtest/gtest.h"
+#include "base-test-environment.h" // All unit test files need to import this!
+
+#include "config.h"
+
 
 /* we safely ignore these */
 #define DBUG_PRINT(smt, ...)

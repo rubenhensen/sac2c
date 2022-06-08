@@ -1,7 +1,9 @@
-#include "gtest/gtest.h"
-#include "regex.h"
-
 #include <string>
+
+#include "gtest/gtest.h"
+#include "base-test-environment.h" // All unit test files need to import this!
+
+#include "regex.h"
 #include "jupyter.h"
 
 

@@ -1,7 +1,9 @@
-#include "gtest/gtest.h"
-#include "config.h"
-
 #include <cstdlib>
+
+#include "gtest/gtest.h"
+#include "base-test-environment.h" // All unit test files need to import this!
+
+#include "config.h"
 
 #if ENABLE_HWLOC
 

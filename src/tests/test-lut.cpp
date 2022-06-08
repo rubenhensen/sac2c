@@ -1,4 +1,6 @@
 #include "gtest/gtest.h"
+#include "base-test-environment.h" // All unit test files need to import this!
+
 #include "config.h"
 
 extern "C" {

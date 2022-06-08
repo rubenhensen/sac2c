@@ -1,6 +1,8 @@
 #include <sys/types.h>
 #include <dirent.h>
+
 #include "gtest/gtest.h"
+#include "base-test-environment.h" // All unit test files need to import this!
 
 extern "C" {
 #define DBUG_PREFIX "TEST-CTF"

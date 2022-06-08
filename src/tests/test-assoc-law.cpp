@@ -1,5 +1,7 @@
-#include "gtest/gtest.h"
 #include <cstdlib>
+
+#include "gtest/gtest.h"
+#include "base-test-environment.h" // All unit test files need to import this!
 
 extern "C" {
 #include "options.h"

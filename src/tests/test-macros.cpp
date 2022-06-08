@@ -1,4 +1,6 @@
 #include "gtest/gtest.h"
+#include "base-test-environment.h" // All unit test files need to import this!
+
 #include "config.h"
 
 extern "C" {
@@ -11,6 +13,10 @@ extern "C" {
 #define STATIC_ASSERT(cond, ret) cond
 #endif
 
+#define TEMP_TRUE TRUE
+#define TEMP_FALSE FALSE
+#undef TRUE
+#undef FALSE
 #define TRUE 1
 #define FALSE 0
 
@@ -85,3 +91,10 @@ TEST (Macros, VAArgs)
 #undef T_1
 #undef T_2
 }
+
+#undef TRUE
+#undef FALSE
+#define TRUE TEMP_TRUE
+#define FALSE TEMP_FALSE
+#undef TEMP_TRUE
+#undef TEMP_FALSE
