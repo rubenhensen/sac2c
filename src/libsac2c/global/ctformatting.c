@@ -630,14 +630,6 @@ CTFvcreateMessageLoc (struct location loc, const char *message_header,
     
     DBUG_ENTER ();
 
-    // When running unit-tests, the call to CTFinitialize in options.c is not made, so
-    // we initialize here if it isn't already.
-    // We don't eliminate the call in options.c to fail-fast if there is an issue
-    // with the header formats.
-    if (!initialized) {
-        CTFinitialize ();
-    }
-
     base_header = CreateGNUformatHeader (loc, message_header);
 
     // The base header is used to construct the header for the first and subsequent

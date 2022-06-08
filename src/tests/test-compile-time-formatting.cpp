@@ -425,6 +425,11 @@ TEST (CTF, testCreateMessageLoc)
 {
     global.cti_single_line = true;
     global.cti_message_length = 0;
+    MEMfree (global.cti_header_format);
+    MEMfree (global.cti_multi_line_format);
+    global.cti_header_format = STRcpy ("%s: ");
+    global.cti_multi_line_format = STRcpy ("%.0s  ");
+    CTFinitialize ();
 
     str_buf *message;
 
@@ -436,6 +441,7 @@ TEST (CTF, testCreateMessageLoc)
     // Ensure that newlines stay newlines when cti_single_line is disabled.
     global.cti_single_line = false;
     global.cti_message_length = 0;
+    CTFinitialize ();
 
     message = CTFcreateMessageLoc (EMPTY_LOC, "Error", "foo %s\nbaz", "bar");
     EXPECT_STREQ ("Error: foo bar\n  baz\n", SBUFgetBuffer (message));
