@@ -32,7 +32,9 @@ TEST (CTF, testCreateMessageBeginSingleLineNoWrapping)
 
     // Ensure that we don't get a trailing enter in the base case
     header = SBUFcreate (0);
+    #pragma GCC diagnostic ignored "-Wformat-zero-length"
     remaining_lines = CTFcreateMessageBegin (header, "");
+    #pragma GCC diagnostic warning "-Wformat-zero-length"
     EXPECT_TRUE (SBUFisEmpty (header));
     EXPECT_TRUE (SBUFisEmpty (remaining_lines));
     SBUFfree (remaining_lines);
@@ -71,7 +73,9 @@ TEST (CTF, testCreateMessageBeginMultiLineNoWrapping)
 
     // Ensure that we still get a newline if we give empty inputs
     header = SBUFcreate (0);
+    #pragma GCC diagnostic ignored "-Wformat-zero-length"
     remaining_lines = CTFcreateMessageBegin (header, "");
+    #pragma GCC diagnostic warning "-Wformat-zero-length"
     EXPECT_STREQ ("\n", SBUFgetBuffer (header));
     EXPECT_TRUE (SBUFisEmpty (remaining_lines));
     SBUFfree (remaining_lines);
@@ -140,7 +144,9 @@ TEST (CTF, testCreateMessageBeginMultiLineWrapping)
 
     // Ensure that we get a trailing enter in the base case
     header = SBUFcreate (0);
+    #pragma GCC diagnostic ignored "-Wformat-zero-length"
     remaining_lines = CTFcreateMessageBegin (header, "");
+    #pragma GCC diagnostic warning "-Wformat-zero-length"
     EXPECT_STREQ ("\n", SBUFgetBuffer (header));
     EXPECT_TRUE (SBUFisEmpty (remaining_lines));
     SBUFfree (remaining_lines);

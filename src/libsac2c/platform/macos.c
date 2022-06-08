@@ -37,7 +37,7 @@ MACOSgetSysroot ()
     ret = SYSexec_and_read_output ("/usr/bin/xcrun --show-sdk-path", &a);
     if (ret != 0)
     {
-        CTIabort ("xcode-select failed with: %s", a);
+        CTIabort (EMPTY_LOC, "xcode-select failed with: %s", a);
     }
     STRstrip (a);
 #else
@@ -63,7 +63,7 @@ MACOSgetSDKVer ()
     int ret = SYSexec_and_read_output ("/usr/bin/xcrun --show-sdk-version 2>/dev/null", &v);
     if (ret != 0)
     {
-        CTIabort ("xcrun failed with: %s", v);
+        CTIabort (EMPTY_LOC, "xcrun failed with: %s", v);
     }
     STRstrip (v);
 #else
