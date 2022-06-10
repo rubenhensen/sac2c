@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "base-test-environment.h" // All unit test files need to import this!
+testing::Environment* base_test_env = testing::AddGlobalTestEnvironment(new BaseEnvironment);
 
 #include "config.h"
 
@@ -22,9 +23,9 @@ extern "C" {
 
 TEST (Macros, EmptyArgs)
 {
-   ASSERT_TRUE (IS_EMPTY ());
-   ASSERT_FALSE (IS_EMPTY (,));
-   ASSERT_FALSE (IS_EMPTY (1,2));
+    ASSERT_TRUE (IS_EMPTY ());
+    ASSERT_FALSE (IS_EMPTY (,));
+    ASSERT_FALSE (IS_EMPTY (1,2));
 }
 
 TEST (Macros, HasCommas)

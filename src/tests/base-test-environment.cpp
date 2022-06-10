@@ -5,21 +5,21 @@
  * functions are run before and after every test.
  */
 
-#ifndef _SAC_BASE_TEST_ENVIRONMENT_H_
-#define _SAC_BASE_TEST_ENVIRONMENT_H_
-
-#include "gtest/gtest.h"
+#include "base-test-environment.h"
 
 extern "C" {
 #include "ctformatting.h"
 #include "ctinfo.h"
 }
 
-class BaseEnvironment : public ::testing::Environment {
-    public:
+void BaseEnvironment::SetUp()
+{
+    // Compile time formatting must be initialized to properly throw errors.
+    CTIset_stderr (stderr);
+    CTFinitialize ();
+}
 
-    void SetUp();
-    void TearDown();
-};
-
-#endif /* _SAC_BASE_TEST_ENVIRONMENT_H_ */
+void BaseEnvironment::TearDown()
+{
+    // Empty for now
+}

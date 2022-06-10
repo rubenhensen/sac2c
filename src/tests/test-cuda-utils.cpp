@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "base-test-environment.h" // All unit test files need to import this!
+testing::Environment* base_test_env = testing::AddGlobalTestEnvironment(new BaseEnvironment);
 
 #include "config.h"
 
