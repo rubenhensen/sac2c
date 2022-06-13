@@ -1,3 +1,5 @@
+// REQFEATURES|ENABLE_CUDA
+
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -t cuda -check g -gpukernel
 // SAC_TEST|all: <file-name>
