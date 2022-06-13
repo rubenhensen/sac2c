@@ -734,20 +734,31 @@ CUKNLfundef (node *arg_node, info *arg_info)
 node *
 CUKNLassign (node *arg_node, info *arg_info)
 {
+    node *replacement = NULL;
     DBUG_ENTER ();
 
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-
+    /* We do need to traverse top-down as out local/rel-free variable
+     * detection for identifying the kernel arguments relies on it!
+     * However, in case we replace the entire RHS, we need to make sure
+     * that we continue with the correct node! Therefore, we delay
+     * the actual replacement until *after* traversing the remainder.
+     * surely, we could stack INFO_REPLACE_ASSIGNS instead, but that
+     * seems to be even more overhead.
+     */
     ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
     if (INFO_REPLACE_ASSIGNS (arg_info) != NULL) {
         DBUG_PRINT ("=> WL replacement code:");
         DBUG_EXECUTE ( PRTdoPrintFile (stderr,
                                        INFO_REPLACE_ASSIGNS (arg_info)););
         
-        arg_node = TCappendAssign (INFO_REPLACE_ASSIGNS (arg_info),
-                                   FREEdoFreeNode (arg_node));
+        replacement = INFO_REPLACE_ASSIGNS (arg_info);
         INFO_REPLACE_ASSIGNS (arg_info) = NULL;
     }
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    if (replacement != NULL)
+        arg_node = TCappendAssign (replacement, FREEdoFreeNode (arg_node));
 
     DBUG_RETURN (arg_node);
 }
