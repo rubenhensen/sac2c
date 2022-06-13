@@ -2239,9 +2239,8 @@ ATravPart (node *arg_node, info *arg_info)
                   = TBmakeArray (TYmakeSimpleType (T_int),
                                  SHcreateShape (1, TCcountIds (PART_IDS (arg_node))),
                                  TBmakeExprs (TBmakeNum (
-                                                global.cuda_options.cuda_2d_block_y),
-                                              TBmakeExprs (TBmakeNum (global.cuda_options
-                                                                        .cuda_2d_block_x),
+                                                global.config.cuda_2d_block_y),
+                                              TBmakeExprs (TBmakeNum (global.config.cuda_2d_block_x),
                                                            NULL)));
             }
             INFO_AT_RESDEF (arg_info) = def_withloop;

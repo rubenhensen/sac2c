@@ -201,6 +201,7 @@ static node *last_assignment_icm = NULL;
 #define ICM_ALL
 #define ICM_DEF(prf, trf) extern void Print##prf (node *exprs, info *arg_info);
 #define ICM_ANY(name)
+#define ICM_PRAGMA_FUNS(name)
 #define ICM_ICM(name)
 #define ICM_NT(name)
 #define ICM_ID(name)
@@ -216,6 +217,7 @@ static node *last_assignment_icm = NULL;
 #include "icm.data"
 #undef ICM_DEF
 #undef ICM_ANY
+#undef ICM_PRAGMA_FUNS
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID
@@ -1829,6 +1831,12 @@ PRTret (node *arg_node, info *arg_info)
             fprintf (global.outfile, " *");
         }
 
+        DBUG_EXECUTE_TAG ("PRINT_LINKSIGN",
+            if (RET_HASLINKSIGNINFO (arg_node)) {
+                fprintf (global.outfile, "/* linksign %d */",
+                                         RET_LINKSIGN (arg_node));
+            });
+
         if (RET_NEXT (arg_node) != NULL) {
             fprintf (global.outfile, ", ");
             RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
@@ -2485,6 +2493,12 @@ PRTarg (node *arg_node, info *arg_info)
     if (ARG_ISCUDADEFINED (arg_node)) {
         fprintf (global.outfile, "[CD]");
     }
+
+    DBUG_EXECUTE_TAG ("PRINT_LINKSIGN",
+        if (ARG_HASLINKSIGNINFO (arg_node)) {
+            fprintf (global.outfile, "/* linksign %d */",
+                                     ARG_LINKSIGN (arg_node));
+        });
 
     if ((global.tool != TOOL_sac2tex) && (global.compiler_phase > PH_scp)) {
 
@@ -4263,6 +4277,7 @@ PRTicm (node *arg_node, info *arg_info)
         compiled_icm = TRUE;                                                             \
     } else
 #define ICM_ANY(name)
+#define ICM_PRAGMA_FUNS(name)
 #define ICM_ICM(name)
 #define ICM_NT(name)
 #define ICM_ID(name)
@@ -4279,6 +4294,7 @@ PRTicm (node *arg_node, info *arg_info)
 #undef ICM_ALL
 #undef ICM_DEF
 #undef ICM_ANY
+#undef ICM_PRAGMA_FUNS
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID
@@ -4435,6 +4451,12 @@ PRTpragma (node *arg_node, info *arg_info)
     if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
         fprintf (global.outfile, "#pragma wlcomp ");
         TRAVdo (PRAGMA_WLCOMP_APS (arg_node), arg_info);
+        fprintf (global.outfile, "\n");
+    }
+
+    if (PRAGMA_GPUKERNEL_APS (arg_node) != NULL) {
+        fprintf (global.outfile, "#pragma gpukernel ");
+        TRAVdo (PRAGMA_GPUKERNEL_APS (arg_node), arg_info);
         fprintf (global.outfile, "\n");
     }
 
@@ -5002,6 +5024,11 @@ PRTpart (node *arg_node, info *arg_info)
     /* print generator */
     INDENT; /* each gen in a new line. */
     TRAVdo (PART_GENERATOR (arg_node), arg_info);
+
+    if (PART_PRAGMA (arg_node) != NULL) {
+        INDENT;
+        TRAVdo (PART_PRAGMA (arg_node), arg_info);
+    }
 
     DBUG_ASSERT (PART_CODE (arg_node) != NULL,
                  "part within WL without pointer to N_code");

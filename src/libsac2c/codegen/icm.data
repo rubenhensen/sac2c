@@ -1280,17 +1280,6 @@ ICM_DEF( CUDA_GLOBALFUN_DEF_END, ICM_TRACE_NONE)
 ICM_END( CUDA_GLOBALFUN_DEF_END, (funname, vararg_cnt, vararg))
 #endif
 
-#if defined(CUDA_WLIDS) || defined(ICM_ALL)
-ICM_DEF( CUDA_WLIDS, ICM_TRACE_NONE)
-  ICM_NT( wlids_NT)
-  ICM_INT( wlids_NT_dim)
-  ICM_INT( array_dim)
-  ICM_INT( wlids_dim_pos)
-  ICM_NT( iv_NT)
-  ICM_ANY( hasstepwidth)
-ICM_END( CUDA_WLIDS, (wlids_NT, wlids_NT_dim, array_dim, wlids_dim_pos, iv_NT, hasstepwidth))
-#endif
-
 #if defined(CUDA_THREADIDX) || defined(ICM_ALL)
 ICM_DEF( CUDA_THREADIDX, ICM_TRACE_NONE)
   ICM_NT( to_NT)
@@ -1305,16 +1294,6 @@ ICM_DEF( CUDA_BLOCKDIM, ICM_TRACE_NONE)
   ICM_INT( dim)
   ICM_INT( dim_pos)
 ICM_END( CUDA_BLOCKDIM, ( to_NT, dim, dim_pos))
-#endif
-
-#if defined(CUDA_WLIDXS) || defined(ICM_ALL)
-ICM_DEF( CUDA_WLIDXS, ICM_TRACE_NONE)
-  ICM_NT( wlidxs_NT)
-  ICM_INT( wlidxs_NT_dim)
-  ICM_NT( array_NT)
-  ICM_INT( array_dim)
-  ICM_VARANY( (array_dim), var_ANY)
-ICM_END( CUDA_WLIDXS, (wlidxs_NT, wlidxs_NT_dim, array_NT, array_dim, var_ANY))
 #endif
 
 #if defined(CUDA_WL_ASSIGN) || defined(ICM_ALL)
@@ -1360,11 +1339,20 @@ ICM_DEF( CUDA_MEM_TRANSFER_END, ICM_TRACE_NONE)
 ICM_END( CUDA_MEM_TRANSFER_END, (var_NT))
 #endif
 
-#if defined( CUDA_GRID_BLOCK) || defined(ICM_ALL)
-ICM_DEF( CUDA_GRID_BLOCK, ICM_TRACE_NONE)
+#if defined( CUDA_THREAD_SPACE) || defined(ICM_ALL)
+ICM_DEF( CUDA_THREAD_SPACE, ICM_TRACE_NONE)
+  ICM_PRAGMA_FUNS( pragma)
   ICM_UINT( bounds_count)
   ICM_VARANY( (bounds_count), var_ANY)
-ICM_END( CUDA_GRID_BLOCK, (bounds_count, var_ANY))
+ICM_END( CUDA_THREAD_SPACE, (pragma, bounds_count, var_ANY))
+#endif
+
+#if defined( CUDA_INDEX_SPACE) || defined(ICM_ALL)
+ICM_DEF( CUDA_INDEX_SPACE, ICM_TRACE_NONE)
+  ICM_PRAGMA_FUNS( pragma)
+  ICM_UINT( bounds_count)
+  ICM_VARANY( (bounds_count), var_ANY)
+ICM_END( CUDA_INDEX_SPACE, (pragma, bounds_count, var_ANY))
 #endif
 
 #if defined(CUDA_WL_SUBALLOC) || defined(ICM_ALL)

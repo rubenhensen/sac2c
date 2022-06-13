@@ -845,6 +845,12 @@ GLOBAL (int, profile_funapmax, 1, xfree_dummy, )
  * Compile time options
  */
 
+GLOBAL (bool, gpukernel, FALSE, xfree_dummy, )
+/*
+ * relevant for debugging CUDA code only! Extensive checks whether the
+ * index-space to thread-space mapping works correctly.
+ */
+
 GLOBAL (bool, treecheck, FALSE, xfree_dummy, )
 /*
  * check syntax tree for consistency with xml specification
@@ -1340,11 +1346,11 @@ GLOBAL (bool, mutc_seq_data_parallel, FALSE, xfree_dummy, )
 /*
  * CUDA backend options
  */
-GLOBAL (cuda_options_t, cuda_options, cuda_options_init, xfree_dummy, )
-GLOBAL (cuda_arch_t, cuda_arch, CUDA_SM35, xfree_dummy, )
 GLOBAL (cuda_async_mode_t, cuda_async_mode, CUDA_SYNC_DEVICE, xfree_dummy, )
-GLOBAL (const char **, cuda_arch_names, cuda_arch_names_init, xfree_dummy, )
-GLOBAL (char *, cuda_block_spec, (char *)MEMmalloc (1024), xfree_char_ptr, )
+GLOBAL (size_t, cuda_gpu_branching, 0, xfree_dummy, )
+GLOBAL (enum gpu_mapping_strategy_t, gpu_mapping_strategy, Foldall, xfree_dummy, )
+GLOBAL (bool, gpu_mapping_compress, TRUE, xfree_dummy, )
+GLOBAL (bool, gpu_measure_kernel_time, FALSE, xfree_dummy, )
 
 /*
  * DistMem backend options

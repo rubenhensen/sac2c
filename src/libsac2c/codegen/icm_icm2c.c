@@ -17,6 +17,8 @@
     {                                                                                    \
         DBUG_ENTER ();
 
+#define ICM_PRAGMA_FUNS(name) exprs = GetNextPragmaFuns (&name, exprs);
+
 #define ICM_ANY(name) exprs = GetNextAny (&name, exprs);
 
 #define ICM_ICM(name) exprs = GetNextIcm (&name, exprs);
@@ -297,6 +299,30 @@ GetNextShort (short *ret, node *exprs)
     (*ret) = NUMSHORT_VAL (expr);
 
     DBUG_PRINT ("icm-arg found: %d", (*ret));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+GetNextPragmaFuns (node **ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (ret != NULL, "no return value found!");
+
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_pragma),
+                 "wrong icm-arg: N_pragma expected");
+    (*ret) = EXPRS_EXPR (PRAGMA_GPUKERNEL_APS (expr));
+
+    DBUG_PRINT ("icm-arg found: %p", (void *)(*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -624,6 +650,7 @@ GetNextAny (char **ret, node *exprs)
     floatvec fvval;
     double dval;
     node *expr;
+    node *spap;
 
     DBUG_ENTER ();
 
@@ -645,6 +672,11 @@ GetNextAny (char **ret, node *exprs)
         } else {
             exprs = GetNextId (ret, exprs);
         }
+        break;
+    case N_pragma:
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
+        exprs = GetNextPragmaFuns (&spap, exprs);
+        sprintf ((*ret), "%p", (void *)spap);
         break;
     case N_globobj:
         exprs = GetNextGlobobj (ret, exprs);

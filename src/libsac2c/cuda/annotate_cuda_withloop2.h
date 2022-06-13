@@ -16,5 +16,6 @@ extern node *ACUWLfold (node *arg_node, info *arg_info);
 extern node *ACUWLbreak (node *arg_node, info *arg_info);
 extern node *ACUWLpropagate (node *arg_node, info *arg_info);
 extern node *ACUWLgenarray (node *arg_node, info *arg_info);
+extern node *ACUWLmodarray (node *arg_node, info *arg_info);
 
 #endif

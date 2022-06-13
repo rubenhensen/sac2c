@@ -10,6 +10,9 @@ a.out
 a.out.c
 Session.vim
 
+# Clion IDE
+/.idea
+
 # ide/clangd
 /.project
 /.clangd
@@ -19,6 +22,7 @@ Session.vim
 # cmake
 build*/
 compile_commands.json
+cmake-build-debug
 
 # SaC generated files.
 src/doc/ast.html

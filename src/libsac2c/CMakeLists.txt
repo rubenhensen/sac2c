@@ -208,6 +208,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/async_delay.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/async_delay_expand.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cond_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cuda_partition.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cuda_pragmas.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cuda_withloop2.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_memory_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/create_cond_fun.c
@@ -221,6 +222,8 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cuda_tag_executionmode.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cuda_utils.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/data_access_analysis.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/expand_shmem_boundary_load.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/gpukernel_check_funs.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/gpukernel_comp_funs.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/infer_reusable_arrays.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/insert_cudast_memtran.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/insert_withloop_memtran.c
@@ -496,6 +499,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/support/math_utils.c
 ${CMAKE_CURRENT_SOURCE_DIR}/support/ptr_buffer.c
 ${CMAKE_CURRENT_SOURCE_DIR}/support/str.c
 ${CMAKE_CURRENT_SOURCE_DIR}/support/str_buffer.c
+${CMAKE_CURRENT_SOURCE_DIR}/support/str_vec.c
 ${CMAKE_CURRENT_SOURCE_DIR}/support/system.c
 ${CMAKE_CURRENT_SOURCE_DIR}/tree/DataFlowMask.c
 ${CMAKE_CURRENT_SOURCE_DIR}/tree/DataFlowMaskUtils.c

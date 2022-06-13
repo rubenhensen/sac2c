@@ -133,7 +133,7 @@ STRsubStr (const char *string, size_t start, ssize_t len)
         l = strlen < start ? 0 : strlen - start;
     }
 
-    if (start > l) {
+    if (l == 0) {
         ret = STRnull ();
     } else {
         ret = memcpy (MEMmalloc (sizeof (char) * (l + 1)),
@@ -1354,6 +1354,44 @@ STRstrip (char *s)
     }
 
     DBUG_RETURN (s);
+}
+
+/**
+ * Check if the string represents an int. It may only contain numeric characters (0-9),
+ * optionally with a leading sign (-).
+ *
+ * @param str The string to be checked
+ * @return true if the string represents a number, false otherwise
+ */
+bool
+STRisInt (const char* str) {
+    DBUG_ENTER ();
+
+    bool isint = true;
+
+    for (size_t i = 0; str[i] != '\0'; i++) {
+        const char c = str[i];
+        bool charIsint = (c >= '0' && c <= '9') || (i == 0 && (c == '-' || c == '+'));
+        isint = isint && charIsint;
+    }
+
+    DBUG_RETURN (isint);
+}
+
+/**
+ * Convert the string value to an integer value. Note that this function is designed to work on strings that follow the
+ * conditions posed in STRisInt. For all other strings the behaviour of this function is undefined.
+ *
+ * @param str The string to be converted
+ * @return The integer value this string represents
+ */
+int
+STRatoi (const char* str){
+    DBUG_ENTER ();
+
+    int result = atoi(str);
+
+    DBUG_RETURN (result);
 }
 
 #undef DBUG_PREFIX

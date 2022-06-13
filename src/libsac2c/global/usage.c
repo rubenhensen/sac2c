@@ -311,7 +311,7 @@ PrintBreakoptionSpecifierSac2c (void)
     DBUG_ENTER ();
 
     printf ("\n\nBREAK OPTION SPECIFIERS: %s\n", (global.verbose_help ?
-                                                  "(all, including disabled phases)" :
+                                                  "(all, * indicates enabled phases)" :
                                                   "(only enabled phases)"));
 
     PHOprintPhasesSac2c ();
@@ -417,7 +417,7 @@ PrintOptimisationOptions (void)
 #else
 #define OPTIMIZE(str, abbr, devl, prod, name)                                            \
     printf ("      %s%s %-8s%s\n", global.optimize.do ## abbr ? "*" : " ",               \
-                                   devl ? "*" : " ", str, name);
+                                   devl ? "|*" : "  ", str, name);
 #endif
 #include "optimize.mac"
 
@@ -748,6 +748,53 @@ PrintMultithreadOptions (void)
 }
 
 static void
+PrintCudaOptions (void)
+{
+    DBUG_ENTER ();
+
+    printf ("\n\nCUDA OPTIONS:\n"
+            "\n"
+            "    -cuda_async_mode <mode>\n"
+            "                    Specify synchronisation mode between host thread and CUDA:\n"
+            "                        nosync: do not synchronise at all\n"
+            "                        device: synchronise the entire device\n"
+            "                        stream: synchronise the stream\n"
+            "                      callback: synchronise the stream using callback\n"
+            "                    (default: device)\n"
+            "\n"
+            "    -cuda_gpu_branching\n"
+            "                    Switch to branching implementation of the CUDA kernel mappings.\n"
+            "                    Branchless implementations should be faster in 99%% of the cases,\n"
+            "                    but in some complex cases where many kernels can be discarded\n"
+            "                    early on in the process, the branching implementation may be faster. \n"
+            "                    (default: branchless implementation)\n"
+            "\n"
+            "    -gpu_mapping_strategy <strategy>\n"
+            "                    Choose the strategy with which index spaces are mapped onto the GPU \n"
+            "                    kernels. Options are: \n"
+            "                      jings_method         : Use the original heuristics Jing used in his\n"
+            "                                             implementation of mappings with-loops to the\n"
+            "                                             GPU. Note that -gpu_mapping_nocompress should\n"
+            "                                             be set manually to have exactly Jing's method.\n"
+            "                      jings_method_ext     : Similar to Jing's method, but also works for\n"
+            "                                             higher dimensionalities. \n"
+            "                      foldall              : First fold all dimensions together, and then\n"
+            "                                             unfold them all again onto a pre-determined \n"
+            "                                             shape and a \"rest\" dimension. \n"
+            "                    (default: foldall)\n"
+            "\n"
+            "    -gpu_mapping_nocompress\n"
+            "                    Disable index space compression for mapping with-loops onto the GPU. \n"
+            "\n"
+            "    -gpu_measure_kernel_time\n"
+            "                    Measure the time spent in cuda kernels. Every kernel gets measured\n"
+            "                    separately, and the time is printed in microseconds on it's own line. \n"
+            "\n");
+
+    DBUG_RETURN ();
+}
+
+static void
 PrintBackendOptions (void)
 {
     DBUG_ENTER ();
@@ -764,35 +811,6 @@ PrintBackendOptions (void)
             "\n"
             "    -force_desc_size <n>\n"
             "                    Force the size of the descriptor to n bytes\n"
-            "\n"
-            "    -cuda_arch <sm>\n"
-            "                    Specify which CUDA architecture to generate code for:\n"
-            "                      sm10: for Tesla architecture\n"
-            "                      sm11: same as above\n"
-            "                      sm12: same as above\n"
-            "                      sm13: same as above\n"
-            "                      sm20: for Fermi architecture\n"
-            "                      sm35: for Kepler architecture\n"
-            "                      sm50: for Maxwell architecture\n"
-            "                      sm60: for Pascal architecture\n"
-            "                      sm61: same as above\n"
-            "                      sm70: for Volta architecture\n"
-            "                    (default: sm35)\n"
-            "\n"
-            "    -cuda_async_mode <mode>\n"
-            "                    Specify synchronisation mode between host thread and CUDA:\n"
-            "                        nosync: do not synchronise at all\n"
-            "                        device: synchronise the entire device\n"
-            "                        stream: synchronise the stream\n"
-            "                      callback: synchronise the stream using callback\n"
-            "                    (default: device)\n"
-            "\n"
-            "    -cuda_shape <1d>,<2d_x>,<2d_y>\n"
-            "                    Override the grid/block specification, given as:\n"
-            "                        1d: 1-dim block size\n"
-            "                      2d_x: 2-dim block size for the x-dim\n"
-            "                      2d_y: 2-dim block size for the y-dim\n"
-            "                    (default: depends on <cuda_arch> value)\n"
             "\n");
 
     DBUG_RETURN ();
@@ -838,6 +856,8 @@ PrintDebugOptions (void)
             "    -d treecheck    Check syntax tree for consistency with xml "
             "specification.\n"
             "    -d memcheck     Check syntax tree for memory consistency.\n"
+            "    -d gpukernel    Check CUDA index-space to thread-space mapping "
+            "and back.\n"
             "    -d nofree       Don't free any memory.\n"
             "    -d noclean      Don't initialize or clean memory before freeing.\n"
             "    -d sancheck     Check syntax tree for structural consistency.\n"
@@ -1339,11 +1359,13 @@ USGprintUsage ()
         if (global.verbose_help)
             PrintTypeInferenceOptions ();
         PrintOptimisationOptions ();
-        if (global.verbose_help)
+        if (global.verbose_help || (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
             PrintMultithreadOptions ();
-        if (global.verbose_help)
+        if (global.verbose_help || (global.backend == BE_cuda) || (global.backend == BE_cudahybrid))
+            PrintCudaOptions ();
+        if (global.verbose_help||(global.backend == BE_distmem))
             PrintDistMemOptions ();
-        if (global.verbose_help)
+        if (global.verbose_help||(global.backend == BE_mutc))
             PrintMutcOptions ();
         if (global.verbose_help)
             PrintBackendOptions ();

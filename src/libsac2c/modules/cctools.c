@@ -244,7 +244,7 @@ CCTperformTask (ccm_task_t task)
 
     // %cuda_arch%
     char *cuda_arch_subst
-      = STRcat ("-arch=", global.cuda_arch_names[global.cuda_arch]);
+      = STRcat ("-arch=", global.config.cuda_arch);
 
     /******************* link flags ***********************/
 

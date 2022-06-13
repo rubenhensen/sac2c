@@ -297,14 +297,6 @@ SUBPHASE (dfr2, "Removing dead functions", DFRdoDeadFunctionRemoval,
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, opt)
 
-SUBPHASE (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
-          FALSE, // global.optimize.dodlir,
-          opt)
-
-SUBPHASE (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
-          FALSE, // global.optimize.dowlir,
-          opt)
-
 SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, ALWAYS, opt)
 
 SUBPHASE (linl, "Inlining degenerated LaC functions", LINLdoLACInlining, global.lacinline,
@@ -836,7 +828,7 @@ SUBPHASE (dcr4, "Removing dead code", DCRdoDeadCodeRemoval,
  */
 
 CYCLE (scyc, "Type stabilization cycle",
-       global.run_stabilization_cycle &&global.optimize.doscyc, opt, !RESET)
+       global.optimize.doscyc, opt, !RESET)
 
 FUNBEGIN (scyc, opt, scyc)
 
@@ -1026,7 +1018,7 @@ PHASE (cuda, "Automatic parallelisation for GPUs",
 
 SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL, ALWAYS, cuda)
 
-SUBPHASE (cucm, "CUDA cost model", CUCMdoCUDACostModel, global.backend == BE_cudahybrid,
+SUBPHASE (cucm, "CUDA cost model (hybrid only)", CUCMdoCUDACostModel, global.backend == BE_cudahybrid,
           cuda)
 
 SUBPHASE (pfd, "CUDA Partial folding", PFDdoPartialFold, global.optimize.dopfd, cuda)
@@ -1049,13 +1041,13 @@ SUBPHASE( scuwl,
           cuda)
 #endif
 
-SUBPHASE (cadt, "Change arrays to distributed type", CADTdoChangeArraysToDistributedType,
+SUBPHASE (cadt, "Change arrays to distributed type (hybrid only)", CADTdoChangeArraysToDistributedType,
           global.backend == BE_cudahybrid, cuda)
 
-SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops",
+SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops (non-hybrid only)",
           IWLMEMdoInsertWithloopMemtran, global.backend == BE_cuda, cuda)
 
-SUBPHASE (icsmem, "CUDA Insert CUDA memory transfer primitives for cudasts",
+SUBPHASE (icsmem, "CUDA Insert CUDA memory transfer primitives for cudasts (non-hybrid only)",
           ICSMEMdoInsertCudastMemtran,
           (global.optimize.doexpar && global.backend == BE_cuda), cuda)
 
@@ -1086,9 +1078,64 @@ SUBPHASE (sptn, "CUDA Split partitions", SPTNdoSplitPartitions,
 SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition, ALWAYS,
           cuda)
 
-SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers",
+SUBPHASE (acp, "CUDA Annotate CUDA partitions with pragmas", ACPdoAnnotateCUDAPragmas, ALWAYS,
+          cuda)
+
+#if 1
+CYCLE (mtranexp, "Optimise memory transfers for expar cycle (non-hybrid only)",
+       global.optimize.doexpar && global.optimize.domemopt && (global.backend == BE_cuda),
+       cuda, RESET)
+
+CYCLEPHASE (mbtran, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
+            ALWAYS, cuda, mtranexp)
+
+CYCLEPHASE (actran, "Annotate Cond Funs", ACTRANdoAnnotateCondTransfers,
+            ALWAYS, cuda, mtranexp)
+
+CYCLEPHASE (mctran, "Lift transfers out of Cond funs", MCTRANdoMinimizeCondTransfers,
+            ALWAYS, cuda, mtranexp)
+
+CYCLEPHASE (dcr, "Dead Code Removal", DCRdoDeadCodeRemoval, ALWAYS, cuda, mtranexp)
+
+ENDCYCLE (mtranexp)
+
+CYCLE (mtran, "Optimise memory transfers cycle (non-hybrid only)",
+       global.optimize.domemopt && (global.backend == BE_cuda), cuda, RESET) 
+
+CYCLEPHASE (mcstran, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (mbtran, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (actran, "Annotate Cond Funs", ACTRANdoAnnotateCondTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (mctran, "Lift transfers out of Cond funs", MCTRANdoMinimizeCondTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (dcr, "Dead Code Removal", DCRdoDeadCodeRemoval, ALWAYS, cuda, mtran)
+
+CYCLEPHASE (mbtran2, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (amtran, "Annotate Memory Transfers", AMTRANdoAnnotateMemoryTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (mltran, "Lift transfers out of Loop funs", MLTRANdoMinimizeLoopTransfers,
+            ALWAYS, cuda, mtran)
+
+ENDCYCLE (mtran)
+
+SUBPHASE (memrt, "Lift emr allocations out of Loop funs", MEMRTdoMinimizeEMRTransfers,
+          global.optimize.doemrci && global.optimize.domemrt && global.optimize.domemopt
+          && (global.backend == BE_cuda), cuda)
+
+#else
+SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers (non-hybrid only)",
           MTRANdoMinimizeTransfers, global.optimize.domemopt &&global.backend == BE_cuda,
           cuda)
+#endif
 
 SUBPHASE (daa, "CUDA Data access analysis", DAAdoDataAccessAnalysis,
           global.optimize.doshr, cuda)
@@ -1263,8 +1310,24 @@ SUBPHASE (ufiv, "Unshare index vectors in WL-folds", UFIVdoUnshareFoldIV,
 
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, mem)
 
+#if 0
 SUBPHASE (cnstass, "CUDA Flatten generators", CNSTASSdoCUDAconstantAssignment,
           (global.backend == BE_cuda), mem)
+For now (2021) I (sbs) leave this in uncommented form here. This phase does
+two things: (1) It makes sure that all gen-vars are structural constants 
+        and (2) It lifts all N_num into N_id nodes.
+It seems that (1) is redundant and even broken(!).
+(2) inhibits known constants to make their way to pc:cuknl! The problem is 
+    that SSAASSIGN is gone after ussa and AKV types disappear until pc:cuknl :
+    mem:alloc introduces explicit memory, and, in doing so elides all AKV types.
+    This makes conceptual sense as we switch to a stateful representation here.
+    pc:mmv later replaces the value variables by their (AKV-less) memory.
+    Consequently, the AKV info is gone in pc:cuknl. Even if we were to make 
+    the AKVs survive mem, theuy surely must not survive ussa, since we can 
+    not guarantee that there is not more than one assignment per variable.
+
+For now, we try whether we can safely leave out this phase....
+#endif
 
 SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, mem)
 

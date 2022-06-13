@@ -1,4 +1,5 @@
 #define ICM_DEF(prf, trf)
+#define ICM_PRAGMA_FUNS(name) static node *name;
 #define ICM_ANY(name) static char *name;
 #define ICM_ICM(name) ICM_ANY (name)
 #define ICM_NT(name) ICM_ANY (name)
@@ -16,6 +17,7 @@
 #include "icm.data"
 
 #undef ICM_DEF
+#undef ICM_PRAGMA_FUNS
 #undef ICM_ANY
 #undef ICM_ICM
 #undef ICM_NT

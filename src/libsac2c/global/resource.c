@@ -705,7 +705,7 @@ EvaluateDefaultTarget (target_list_t *target)
     target = FindTarget ("default", target);
 
     if (target == NULL) {
-        CTIabort ("Configuration files do not contain default target specification");
+        CTIabort ("The configuration files do not contain default target specification");
     }
 
     if (target->super_targets != NULL) {
@@ -728,7 +728,7 @@ EvaluateDefaultTarget (target_list_t *target)
     // Now we check for uniqueness of the default target:
     if (FindTarget ("default", target->next) != NULL) {
         CTIabort (
-          "Configuration files contain more than one default target specification");
+          "The configuration files contain more than one default target specification");
     }
     DBUG_RETURN ();
 }
@@ -761,6 +761,7 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
     resource_list_t *resource;
     int i;
     inheritence_list_t *super_target;
+    char *suffix;
 
     DBUG_ENTER ();
 
@@ -769,9 +770,35 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
     if (tmp == NULL) {
         // This is only an error if we started with the whole list!
         if (remaining_list == target_list) {
-            CTIabort ("Configuration files do not contain specification of "
-                      "target '%s`",
-                      target);
+            if (STReq (target, "arch_")) {
+                CTIerror ("During the configuation of sac2c no CUDA architecture "
+                          "was identified. Please use target 'cuda_<arch>` instead "
+                          "of target 'cuda`; for example 'cuda_sm_60`.");
+                CTIerrorContinued ("Alternatively, you can provide a default "
+                                   "CUDA architecture by changing the definition "
+                                   "of 'target cuda` from "
+                                   "'target cuda :: cuda_core :: arch_:` to e.g. "
+                                   "'target cuda :: cuda_core :: arch_sm_60` or "
+                                   "by adding a target definition for 'target arch_`.");
+            } else if (STRprefix ("cuda_", target)
+                       || STRprefix ("arch_", target)) {
+                suffix = STRsubStr (target, (size_t)5, (ssize_t)STRlen (target)-5);
+                CTIerror ("You are trying to compile for the CUDA architecture '%s`. "
+                          "The configuration files do not contain "
+                          "target '%s`.", suffix, target);
+            } else {
+                CTIerror ("The configuration files do not contain a specification of "
+                          "target '%s`.", target);
+            }
+            CTIerrorContinued ("You may choose a different target from the "
+                               "compiler-specific configuration file '%s` or "
+                               "your local ones in '~/.sac2crc/`. You may also add a new "
+                               "target in a file in that folder, e.g. "
+                               "in '~/.sac2crc/sac2crc.mine`.",
+                               ( global.build_sac2crc_location != NULL ?
+                                 global.build_sac2crc_location :
+                                 global.global_sac2crc_location ));
+            CTIabortOnError ();
         }
         DBUG_PRINT ("                   none found.");
     } else {

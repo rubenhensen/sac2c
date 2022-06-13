@@ -6362,62 +6362,6 @@ COMPprfCondWLAssign (node *arg_node, info *arg_info)
 }
 
 static node *
-COMPprfCUDAWLIdxs (node *arg_node, info *arg_info)
-{
-    node *ret_node = NULL;
-    int array_dim;
-
-    DBUG_ENTER ();
-
-    array_dim = NUM_VAL (PRF_ARG3 (arg_node));
-    DBUG_ASSERT (array_dim > 0, "Dimension of result CUDA array must be > 0");
-
-    ret_node
-      = TCmakeAssignIcm4 ("CUDA_WLIDXS",
-                          MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
-                                        ID_NTYPE (PRF_ARG1 (arg_node)), FALSE, TRUE, FALSE,
-                                        NULL),
-                          MakeTypeArgs (ID_NAME (PRF_ARG2 (arg_node)),
-                                        ID_NTYPE (PRF_ARG2 (arg_node)), FALSE, FALSE,
-                                        FALSE, NULL),
-                          TBmakeNum (array_dim),
-                          DupExprs_NT_AddReadIcms (EXPRS_EXPRS4 (PRF_ARGS (arg_node))),
-                          NULL);
-
-    DBUG_RETURN (ret_node);
-}
-
-static node *
-COMPprfCUDAWLIds (node *arg_node, info *arg_info)
-{
-    node *ret_node = NULL;
-    int array_dim, dim_pos;
-    node *let_ids;
-    node *iv;
-
-    DBUG_ENTER ();
-
-    let_ids = INFO_LASTIDS (arg_info);
-
-    array_dim = NUM_VAL (PRF_ARG2 (arg_node));
-    DBUG_ASSERT (array_dim > 0, "Dimension of result CUDA array must be > 0");
-
-    iv = PRF_ARG3 (arg_node);
-    dim_pos = NUM_VAL (PRF_ARG1 (arg_node));
-    ret_node
-      = TCmakeAssignIcm5 ("CUDA_WLIDS",
-                          MakeTypeArgs (IDS_NAME (let_ids), IDS_NTYPE (let_ids), FALSE,
-                                        TRUE, FALSE, NULL),
-                          TBmakeNum (array_dim), TBmakeNum (dim_pos),
-                          MakeTypeArgs (ID_NAME (iv), ID_NTYPE (iv), FALSE, FALSE, FALSE,
-                                        NULL),
-                          TBmakeBool (FUNDEF_HASSTEPWIDTHARGS (INFO_FUNDEF (arg_info))),
-                          NULL);
-
-    DBUG_RETURN (ret_node);
-}
-
-static node *
 COMPprfCUDAGridBlock (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
@@ -6427,6 +6371,36 @@ COMPprfCUDAGridBlock (node *arg_node, info *arg_info)
     ret_node = TCmakeAssignIcm2 ("CUDA_GRID_BLOCK",
                                  TBmakeNumuint (TCcountExprs (PRF_ARGS (arg_node))),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPprfCUDAThreadSpace (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ();
+
+    ret_node = TCmakeAssignIcm3 ("CUDA_THREAD_SPACE",
+                                 DUPdoDupTree( PRF_ARG1 (arg_node)),
+                                 TBmakeNumuint (TCcountExprs (EXPRS_NEXT (PRF_ARGS (arg_node)))),
+                                 DupExprs_NT_AddReadIcms (EXPRS_NEXT (PRF_ARGS (arg_node))), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPprfCUDAIndexSpace (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ();
+
+    ret_node = TCmakeAssignIcm3 ("CUDA_INDEX_SPACE",
+                                 DUPdoDupTree( PRF_ARG1 (arg_node)),
+                                 TBmakeNumuint (TCcountExprs (EXPRS_NEXT (PRF_ARGS (arg_node)))),
+                                 DupExprs_NT_AddReadIcms (EXPRS_NEXT (PRF_ARGS (arg_node))), NULL);
 
     DBUG_RETURN (ret_node);
 }

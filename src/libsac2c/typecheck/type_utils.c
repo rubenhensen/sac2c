@@ -1759,6 +1759,24 @@ TUakvScalInt2Int (ntype *ty)
 
 /** <!-- ****************************************************************** -->
  *
+ * @fn node *TUint2akv( int val)
+ *
+ * @brief: generate an AKV type for the integer value val
+ *
+ * @param: val: value
+ *
+ * @return the AKV type
+ *
+ ******************************************************************************/
+ntype* TUint2akv (int val)
+{
+    DBUG_ENTER ();
+    DBUG_RETURN (TYmakeAKV (TYmakeSimpleType (T_int),
+                            COmakeConstantFromInt (val)));
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * @fn int TUgetFullDimEncoding( ntype *type)
  *
  * @brief: produces the array info encoding needed by the backend:

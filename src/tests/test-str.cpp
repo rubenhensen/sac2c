@@ -127,3 +127,27 @@ TEST (StringOperations, testStrip)
     EXPECT_STREQ ("", t);
     MEMfree (t);
 }
+
+TEST (StringOperations, testIsIntFalse)
+{
+    bool t = STRisInt ("3a");
+    EXPECT_FALSE (t);
+}
+
+TEST (StringOperations, testIsIntTrue)
+{
+    bool t = STRisInt ("3");
+    EXPECT_TRUE (t);
+}
+
+TEST (StringOperations, testIsIntPlusSign)
+{
+    bool t = STRisInt ("+3");
+    EXPECT_TRUE (t);
+}
+
+TEST (StringOperations, testIsIntDash)
+{
+    bool t = STRisInt ("-3");
+    EXPECT_TRUE (t);
+}

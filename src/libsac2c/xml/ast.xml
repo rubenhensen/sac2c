@@ -449,6 +449,13 @@
           <node name="Generator" />
         </travuser>
       </traversal>
+      <traversal id="ACP" name="Annotate CUDA partitions with pragmas" default="sons" include="annotate_cuda_pragmas.h" >
+        <travuser>
+          <node name="With" />
+          <node name="Part" />
+          <node name="Generator" />
+        </travuser>
+      </traversal>
       <traversal id="ACTRAN" name="Annoate memory transfers in conditional function" default="sons" include="annotate_cond_transfers.h" >
         <travuser>
           <node name="Assign" />
@@ -603,6 +610,7 @@
           <node name="Break" />
           <node name="Propagate" />
           <node name="Genarray" />
+          <node name="Modarray" />
           <node name="Id" />
           <node name="Let" />
         </travuser>
@@ -3935,6 +3943,7 @@
         <node name="Type" />
         <node name="Globobj" />
         <node name="Nested_init" />
+        <node name="Pragma" />
       </target>
     </nodeset>
 
@@ -8379,6 +8388,18 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="GpuKernel_APS" default="NULL" inconstructor="no" >
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Exprs" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="APL" default="NULL" inconstructor="no" >
           <type name="Link">
             <targets>
@@ -9862,6 +9883,18 @@ N_tfarg :
                 <any />
                 <phases>
                   <range from="cuda_acuwl" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Pragma" inconstructor="no" >
+          <type name="Node">
+            <targets>
+              <target mandatory="no">
+                <node name="Pragma" />
+                <phases>
+                  <range from="scp_prs" to="final" />
                 </phases>
               </target>
             </targets>

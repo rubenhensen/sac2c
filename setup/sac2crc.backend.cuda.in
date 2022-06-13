@@ -11,11 +11,97 @@
  *       has been dropped (as CUDA no longer develops this).
  */
 
-target cuda :: default_sbi:
+target cuda_sm_10 :: cuda_core :: arch_sm_10:
+target arch_sm_10 :: arch_sm_super:
+CUDA_ARCH        := "sm_10"
+CUDA_OPT_THREADS := 256
+CUDA_OPT_BLOCKS  := 3
+CUDA_1D_BLOCK_LG := 256
+CUDA_2D_BLOCK_X  := 16
+CUDA_2D_BLOCK_Y  := 16
+CUDA_MAX_X_GRID  := 65535
+CUDA_MAX_X_BLOCK := 512
+CUDA_MAX_Y_BLOCK := 512
+CUDA_MAX_BLOCK   := 512
+
+target cuda_sm_11 :: cuda_core :: arch_sm_11:
+target arch_sm_11 :: arch_sm_10:
+CUDA_ARCH        := "sm_11"
+
+target cuda_sm_12 :: cuda_core :: arch_sm_12:
+target arch_sm_12 :: arch_sm_10:
+CUDA_ARCH        := "sm_12"
+CUDA_OPT_BLOCKS  := 4
+
+target cuda_sm_13 :: cuda_core :: arch_sm_13:
+target arch_sm_13 :: arch_sm_10:
+CUDA_ARCH        := "sm_13"
+CUDA_OPT_BLOCKS  := 4
+
+target cuda_sm_20 :: cuda_core :: arch_sm_20:
+target arch_sm_20 :: arch_sm_super:
+CUDA_ARCH        := "sm_20"
+CUDA_OPT_THREADS := 256
+CUDA_OPT_BLOCKS  := 6
+CUDA_1D_BLOCK_LG := 256
+CUDA_2D_BLOCK_X  := 16
+CUDA_2D_BLOCK_Y  := 16
+CUDA_MAX_X_GRID  := 65535
+
+target cuda_sm_35 :: cuda_core :: arch_sm_35:
+target arch_sm_35 :: arch_sm_super:
+CUDA_ARCH        := "sm_35"
+CUDA_2D_BLOCK_X  := 16
+CUDA_2D_BLOCK_Y  := 16
+
+target cuda_sm_50 :: cuda_core :: arch_sm_50:
+target arch_sm_50 :: arch_sm_super:
+CUDA_ARCH        := "sm_50"
+
+target cuda_sm_60 :: cuda_core :: arch_sm_60:
+target arch_sm_60 :: arch_sm_super:
+CUDA_ARCH        := "sm_60"
+
+target cuda_sm_61 :: cuda_core :: arch_sm_61:
+target arch_sm_61 :: arch_sm_super:
+CUDA_ARCH        := "sm_61"
+CUDA_OPT_THREADS := 1024
+
+target cuda_sm_70 :: cuda_core :: arch_sm_70:
+target arch_sm_70 :: arch_sm_super:
+CUDA_ARCH        := "sm_70"
+
+target cuda_sm_75 :: cuda_core :: arch_sm_75:
+target arch_sm_75 :: arch_sm_super:
+CUDA_ARCH        := "sm_75"
+
+target cuda_sm_86 :: cuda_core :: arch_sm_86:
+target arch_sm_86 :: arch_sm_super:
+CUDA_ARCH        := "sm_86"
+
+target arch_sm_super:
+CUDA_OPT_THREADS := 512
+CUDA_OPT_BLOCKS  := 3
+CUDA_1D_BLOCK_SM := 64
+CUDA_1D_BLOCK_LG := 1024
+CUDA_2D_BLOCK_X  := 32
+CUDA_2D_BLOCK_Y  := 32
+CUDA_3D_THREAD_Y := 2048
+CUDA_MAX_X_GRID  := 2147483647
+CUDA_MAX_Y_GRID  := 65535
+CUDA_MAX_Z_GRID  := 65535
+CUDA_MAX_X_BLOCK := 1024
+CUDA_MAX_Y_BLOCK := 1024
+CUDA_MAX_Z_BLOCK := 64
+CUDA_MAX_BLOCK   := 1024
+CUDA_DIM_GRID    := 3
+CUDA_DIM_BLOCK   := 3
+
+target cuda :: cuda_core :: arch_@CUDA_ARCH@:
+
+target cuda_core :: default_sbi :
 SBI              :=  "cuda"
 BACKEND          :=  "Cuda"
-
-CUDA_ARCH        :=  "@CUDA_ARCH@"
 
 USE_PHM_API      :=  0
 CCP_CEXT         :=  ".cu"
@@ -38,7 +124,6 @@ LINK_MOD         :=  "%cc% %cuda_arch% -Xcompiler -fPIC -dlink -o dlink.o %objec
                      "&& %ld% %objects% dlink.o %linkflags% -shared -Wl,--allow-multiple-definition "
                      "-Wl,-allow-shlib-undefined -O3 -L%path% -Wl,-rpath,%path% -o %target%"
 LINK_RMOD        :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
-
 
 /*
  * These targets expose the CUDA host memory allocators

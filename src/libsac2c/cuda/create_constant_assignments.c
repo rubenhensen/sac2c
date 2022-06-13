@@ -143,8 +143,10 @@ UnflattenGeneratorComponent (node *id)
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT (TYisAKS (AVIS_TYPE (ID_AVIS (id))),
+                 "Non-AKS N_with generator component found!");
     if (NODE_TYPE (AVIS_DECL (ID_AVIS (id))) == N_arg) {
-        DBUG_ASSERT (TYisAKV (AVIS_TYPE (ID_AVIS (id))), "Non-AKS CUDA N_with found!");
+        DBUG_ASSERT (FALSE,"N_id bound through argument not supported yet");
         res = COconstant2AST (TYgetValue (AVIS_TYPE (ID_AVIS (id))));
         id = FREEdoFreeNode (id);
     } else {
@@ -178,8 +180,9 @@ FlattenBoundStepWidthElements (node *exprs, char *suffix, info *arg_info)
     while (exprs != NULL) {
         if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_num) {
             avis = TBmakeAvis (TRAVtmpVarName (suffix),
-                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+                               TUint2akv (NUM_VAL (EXPRS_EXPR (exprs))));
             vardec = TBmakeVardec (avis, NULL);
+            AVIS_DECL (avis) = vardec;
 
             FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
               = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardec);

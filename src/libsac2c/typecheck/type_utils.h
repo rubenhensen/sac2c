@@ -21,6 +21,7 @@ extern simpletype TUgetBaseSimpleType (ntype *type);
  * AKV types:
  */
 extern int TUakvScalInt2Int (ntype *ty);
+extern ntype *TUint2akv (int val);
 
 /**
  * dispatch-wrapper related:

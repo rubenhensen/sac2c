@@ -42,6 +42,9 @@ extern char *STRsubstTokend (char *str, const char *token, const char *subst);
 extern char *STRsubstTokens (const char *str, size_t n, ...);
 extern char *STRstrip (char *);
 
+extern bool STRisInt (const char* str);
+extern int STRatoi (const char* str);
+
 /*********************************
  * macro definitions
  *********************************/

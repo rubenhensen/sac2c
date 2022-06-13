@@ -345,6 +345,22 @@
 
 #define SAC_GET_CUDA_UNPIN_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU UNPINNING")
 
+#define SAC_PRAGMA_GRID_CHECK(max_x, max_y, max_z, max_total)                                               \
+    if (grid.x > max_x || grid.y > max_y || grid.z > max_z)                                                 \
+        SAC_RuntimeError("CUDA XYZ grid dimension of %u x %u x %u exceeds "                                 \
+                         "the compute capability's max value of %u x %u x %u",                              \
+                         grid.x, grid.y, grid.z, max_x, max_y, max_z);
+
+#define SAC_PRAGMA_BLOCK_CHECK(max_x, max_y, max_z, max_total)                                              \
+    if (block.x > max_x || block.y > max_y || block.z > max_z)                                              \
+        SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u exceeds "                                \
+                         "the compute capability's max value of %u x %u x %u",                              \
+                         block.x, block.y, block.z, max_x, max_y, max_z);                                   \
+    if (block.x * block.y * block.z > max_total)                                                            \
+        SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u = %u exceeds compute capability's "      \
+                         "max number of threads per block: %u",                                             \
+                         block.x, block.y, block.z, block.x * block.y * block.z, max_total);
+
 #else
 
 #define SAC_CUDA_GET_LAST_ERROR_COND(ERROR_MSG, cu_status)
@@ -355,7 +371,49 @@
 #define SAC_GET_CUDA_FREE_ERROR()
 #define SAC_GET_CUDA_PIN_ERROR()
 #define SAC_GET_CUDA_UNPIN_ERROR()
+#define SAC_PRAGMA_GRID_CHECK(max_x, max_y, max_z, max_total)
+#define SAC_PRAGMA_BLOCK_CHECK(max_x, max_y, max_z, max_total)
 
 #endif /* SAC_DO_CHECK_GPU */
+
+#if SAC_DO_TRACE_GPU
+#define SAC_PRAGMA_BITMASK_CHECK(krnl, is, ig, val, bitmask, flat, fmt, ...)                                \
+    val = bitmask[flat];                                                                                    \
+    fprintf(stderr, "%u ", val);
+#define SAC_PRAGMA_BITMASK_CHECK_NL fprintf(stderr, "\n");
+#else
+#define SAC_PRAGMA_BITMASK_CHECK(krnl, is, ig, val, bitmask, flat, fmt, ...)                                \
+    val = bitmask[flat];                                                                                    \
+    if (is && ig) {                                                                                         \
+        if (val == 0)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") inside grid was not hit inside kernel %u!",                   \
+                             __VA_ARGS__, krnl);                                                            \
+        if (val >= 2)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") inside grid was hit %u times inside kernel %u!",              \
+                             __VA_ARGS__, val, krnl);                                                       \
+    }                                                                                                       \
+    else if (is) {                                                                                          \
+        if (val == 1)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") outside the grid was hit inside kernel %u!",                  \
+                             __VA_ARGS__, krnl);                                                            \
+        if (val >= 2)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") outside the grid was hit %u times inside kernel %u!",         \
+                             __VA_ARGS__, val, krnl);                                                       \
+    }                                                                                                       \
+    else {                                                                                                  \
+        if (val == 1)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") below lowerbound was hit inside kernel %u!",                  \
+                             __VA_ARGS__, krnl);                                                            \
+        if (val >= 2)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") below lowerbound was hit %u times inside kernel %u!",         \
+                             __VA_ARGS__, val, krnl);                                                       \
+    }
+#define SAC_PRAGMA_BITMASK_CHECK_NL
+#endif
+
+#define SAC_PRAGMA_BITMASK_UB_CHECK(krnl, val, bitmask, size)                                               \
+    val = bitmask[size];                                                                                    \
+    if (val >= 1)                                                                                           \
+        SAC_RuntimeError("%u indexes above upperbound have been hit inside kernel %u!", val, krnl);
 
 #endif /* _SAC_RUNTIMECHECK_H_ */

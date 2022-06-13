@@ -2662,12 +2662,12 @@ PHUTgenerateAffineExprsForPwlfIntersect (node *pwliv, node *cwliv, lut_t *varlut
  *         int Loop( II)
  *           II'  = II + 1
  *           II'' = II' - lim
- *           ZERO = 0;
- *           if( II'' != ZERO) ...Loop( II')
+ *           CONST_ZERO = 0;
+ *           if( II'' != CONST_ZERO) ...Loop( II')
  *
  *         Here, given II'', we want to return II
  *
- * @param arg_node: An N_id from condprf, e.g., II'' or ZERO
+ * @param arg_node: An N_id from condprf, e.g., II'' or CONST_ZERO
  * @param aft: An Affine Function Tree (AFT), as stored in
  *        AVIS_ISLTREE
  * @param fundef: The Loopfun's N_fundef node

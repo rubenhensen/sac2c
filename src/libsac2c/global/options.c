@@ -396,18 +396,9 @@ OPTcheckOptionConsistency (void)
         CTIerror ("Functional Parallelism only works when MT is enabled");
     }
 
-    if (STReq (global.config.cuda_alloc, "cumanp") && global.cuda_arch < CUDA_SM60) {
+    if (STReq (global.config.cuda_alloc, "cumanp") && STRgt("SM_60", global.config.cuda_arch)) {
         CTIwarn ("Compiling for CC < 6.0 (Pascal), CUDA prefetching is not available. Disabling...");
        global.optimize.docuprf = FALSE;
-    }
-
-    if (global.cuda_block_spec[0] != '\0') {
-        unsigned count, i;
-        for (i = 0, count = 0; global.cuda_block_spec[i]; i++)
-            count += (global.cuda_block_spec[i] == ',');
-        if (count != 2)
-            CTIerror ("CUDA block shape is incorrectly given, format "
-                      "must be `1d,2d_x,2d_y`");
     }
 
     if (global.optimize.dosaa && !global.optimize.dodcr) {
@@ -722,24 +713,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("cc");
 
-    ARGS_OPTION_BEGIN ("cuda_arch")
-    {
-        ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("sm10", global.cuda_arch = CUDA_SM10);
-        ARG_CHOICE ("sm11", global.cuda_arch = CUDA_SM11);
-        ARG_CHOICE ("sm12", global.cuda_arch = CUDA_SM12);
-        ARG_CHOICE ("sm13", global.cuda_arch = CUDA_SM13);
-        ARG_CHOICE ("sm20", global.cuda_arch = CUDA_SM20);
-        ARG_CHOICE ("sm35", global.cuda_arch = CUDA_SM35);
-        ARG_CHOICE ("sm50", global.cuda_arch = CUDA_SM50);
-        ARG_CHOICE ("sm60", global.cuda_arch = CUDA_SM60);
-        ARG_CHOICE ("sm61", global.cuda_arch = CUDA_SM61);
-        ARG_CHOICE ("sm70", global.cuda_arch = CUDA_SM70);
-        ARG_CHOICE ("sm75", global.cuda_arch = CUDA_SM75);
-        ARG_CHOICE_END ();
-    }
-    ARGS_OPTION_END ("cuda_arch");
-
     ARGS_OPTION_BEGIN ("cuda_async_mode")
     {
         ARG_CHOICE_BEGIN ();
@@ -751,7 +724,21 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("cuda_async_mode");
 
-    ARGS_OPTION ("cuda_shape", strncpy (global.cuda_block_spec, ARG, 1023));
+    ARGS_FLAG("cuda_gpu_branching", global.cuda_gpu_branching = 1);
+
+    ARGS_OPTION_BEGIN("gpu_mapping_strategy")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("jings_method", global.gpu_mapping_strategy = Jings_method);
+        ARG_CHOICE ("jings_method_ext", global.gpu_mapping_strategy = Jings_method_ext);
+        ARG_CHOICE ("foldall", global.gpu_mapping_strategy = Foldall);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("gpu_mapping_strategy");
+
+    ARGS_FLAG("gpu_mapping_nocompress", global.gpu_mapping_compress = FALSE);
+
+    ARGS_FLAG("gpu_measure_kernel_time", global.gpu_measure_kernel_time = TRUE);
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
@@ -809,6 +796,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE ("lacfuncheck", global.lacfuncheck = TRUE);
         ARG_CHOICE ("sancheck", global.sancheck = TRUE);
         ARG_CHOICE ("memcheck", global.memcheck = TRUE);
+        ARG_CHOICE ("gpukernel", global.gpukernel = TRUE);
         ARG_CHOICE ("nofree", global.nofree = TRUE);
         ARG_CHOICE ("noclean", global.memclean = FALSE);
         ARG_CHOICE ("nolacinline", global.lacinline = FALSE);

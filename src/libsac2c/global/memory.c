@@ -103,6 +103,10 @@ _MEMrealloc (void *ptr, size_t size)
         newptr = realloc (ptr, size);
     }
 
+    if (!newptr) {
+        CTIabortOutOfMemory (sizeof (mallocinfo_t));
+    }
+
     return newptr;
 #else
     return realloc (ptr, size);

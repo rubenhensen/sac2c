@@ -11,6 +11,11 @@
         INDENT;                                                                          \
         fprintf (global.outfile, " * %s( ", #prf);
 
+#define ICM_PRAGMA_FUNS(name)                                                            \
+    SEP;                                                                                 \
+    fprintf (global.outfile, "%p", name);                                                \
+    sep = 1;
+
 #define ICM_ANY(name)                                                                    \
     SEP;                                                                                 \
     fprintf (global.outfile, "%s", name);                                                \
@@ -84,6 +89,7 @@
 
 #undef ICM_DEF
 #undef ICM_ANY
+#undef ICM_PRAGMA_FUNS
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID

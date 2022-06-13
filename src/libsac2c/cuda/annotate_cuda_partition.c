@@ -2,7 +2,16 @@
  *
  * @defgroup
  *
+ * description:
+ *   This seems to be some half-done support for WLs where some partitions 
+ *   actually do not require kernels....
+ *   However, in its current form, it annotates ALL partitions as 
+ *   cudarizable is the WL has been marked cudarizable.
  *
+ *   In case code generation does support the cudarization of individual 
+ *   partittions only, then this requires some reverse engineering and fixing!
+ *
+ *   sbs, April 2021
  *
  *****************************************************************************/
 

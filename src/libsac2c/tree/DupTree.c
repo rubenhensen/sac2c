@@ -2265,6 +2265,7 @@ DUPpragma (node *arg_node, info *arg_info)
 
     PRAGMA_INITFUN (new_node) = STRcpy (PRAGMA_INITFUN (arg_node));
     PRAGMA_WLCOMP_APS (new_node) = DUPTRAV (PRAGMA_WLCOMP_APS (arg_node));
+    PRAGMA_GPUKERNEL_APS (new_node) = DUPTRAV (PRAGMA_GPUKERNEL_APS (arg_node));
 
     PRAGMA_COPYFUN (new_node) = STRcpy (PRAGMA_COPYFUN (arg_node));
     PRAGMA_FREEFUN (new_node) = STRcpy (PRAGMA_FREEFUN (arg_node));
@@ -2571,6 +2572,8 @@ DUPpart (node *arg_node, info *arg_info)
         PART_THREADBLOCKSHAPE (new_node)
           = DUParray (PART_THREADBLOCKSHAPE (arg_node), arg_info);
     }
+
+    PART_PRAGMA (new_node) = DUPTRAV (PART_PRAGMA (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 

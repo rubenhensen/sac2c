@@ -396,8 +396,8 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
     int i, coefficient, shmem_size, dim;
     cuda_index_t *index;
     int DIMS[2][2]
-      = {{1, global.cuda_options.cuda_1d_block_large},
-         {global.cuda_options.cuda_2d_block_y, global.cuda_options.cuda_2d_block_x}};
+      = {{1, global.config.cuda_1d_block_lg},
+         {global.config.cuda_2d_block_y, global.config.cuda_2d_block_x}};
     node *sharray_shp = NULL;
 
     DBUG_ENTER ();
@@ -455,7 +455,7 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
                 if (dim == 2) { /* X dimension */
                     shmem_size = DIMS[dim - 1][i];
                 } else if (dim == 1) { /* Y dimension */
-                    shmem_size = global.cuda_options.cuda_2d_block_y;
+                    shmem_size = global.config.cuda_2d_block_y;
                 }
             }
 
@@ -506,8 +506,8 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
     size_t cuwl_dim;
     cuda_index_t *index;
     int block_sizes_2d[2]
-      = {global.cuda_options.cuda_2d_block_y, global.cuda_options.cuda_2d_block_x};
-    int blocking_factor = global.cuda_options.cuda_2d_block_x;
+      = {global.config.cuda_2d_block_y, global.config.cuda_2d_block_x};
+    int blocking_factor = global.config.cuda_2d_block_x;
     node *sharray_shp_log = NULL, *sharray_shp_phy = NULL;
 
     DBUG_ENTER ();
@@ -568,13 +568,12 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
                      * of the thread block to make sure that we have enough
                      * space to accomodate the shared memory allocated.
                      */
-                    shmem_size += (coefficient * global.cuda_options.cuda_1d_block_small);
+                    shmem_size += (coefficient * global.config.cuda_1d_block_sm);
                     PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info))
                       = FREEdoFreeNode (PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info)));
                     PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info))
                       = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim),
-                                     TBmakeExprs (TBmakeNum (global.cuda_options
-                                                               .cuda_1d_block_small),
+                                     TBmakeExprs (TBmakeNum (global.config.cuda_1d_block_sm),
                                                   NULL));
                 } else if (cuwl_dim == 2) {
                     shmem_size += (coefficient * block_sizes_2d[1]);

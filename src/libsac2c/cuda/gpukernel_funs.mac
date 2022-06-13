@@ -1,0 +1,52 @@
+/** <!--********************************************************************-->
+ *
+ * This table lists all currently supported gpukernel pragma functions.
+ *
+ *  IF a function <myfun> needs to be added, this requires
+ *    1) an additional entry in this file of the form:
+ *
+ *       WLP (<myfun>, n, <checkArgFun> )
+ *
+ *       where n is the number of arguments that are expected before
+ *       the inner function call / symbol and <checkArgFun> is a static
+ *       function in gpukernel_check_funs.c which checks the AST validity
+ *       of those args.
+ *
+ *    2) a new checking function <checkArgFun> might be needed in case there
+ *       is any not-yet seen constraint. A checking function of type
+ *
+ *       node *GKCHcheck<myfun>( node *args)
+ *
+ *       in gpukernel_check_funs.c will be auto-generated from this file :-)
+ *       It calls the checking function and it will be called from the 
+ *       parser to ensure apropriate construction of the gpukernel
+ *       pragma from the perspective of the scanner / parser.
+ *
+ *    3) a function definition in gpukernel_comp_funs.c is needed with
+ *       the following signature (the header file expands itself by virtue
+ *       of this file :-)
+ *
+ *       in case of n==0:
+ *       gpukernelres_t *GKCOcomp<myfun>( gpukernelres_t *inner);
+ *
+ *       in case of n==1:
+ *       gpukernelres_t *GKCOcomp<myfun>( node *arg, gpukernelres_t *inner);
+ *
+ *       which takes an index space description provided in inner and computes
+ *       a new one as a result.
+ *
+ */
+
+
+/*
+ *   fun  num_args
+ */
+
+WLP (GridBlock,    1, checkNumArg )
+WLP (ShiftLB,      0, checkNone )
+WLP (CompressGrid, 1, checkZONumsArg )
+WLP (PruneGrid,    0, checkNone )
+WLP (Permute,      1, checkPermutationArg )
+WLP (FoldLast2,    0, checkNone )
+WLP (SplitLast,    1, checkNumArg )
+WLP (PadLast,      1, checkNumArg )

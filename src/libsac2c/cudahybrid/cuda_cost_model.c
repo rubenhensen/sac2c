@@ -197,7 +197,7 @@ ApplySizeCriterion (ntype *array_type)
         size = SHgetUnrLen (TYgetShape (array_type));
 
         /* minimum size taken from optimal CUDA thread and block counts*/
-        if (size >= global.cuda_options.optimal_threads) {
+        if (size >= global.config.cuda_opt_threads) {
             DBUG_PRINT ("With-loop big enough, allowing cudarization.");
             result = TRUE;
         } else {

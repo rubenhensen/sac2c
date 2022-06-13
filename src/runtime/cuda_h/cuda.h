@@ -103,7 +103,7 @@ extern "C" {
 
 // Allocate on the device
 #if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system                    \
-  || SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+ || SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_CUDA_ALLOC(var_NT, basetype)                                                 \
     SAC_TR_GPU_PRINT ("Allocating CUDA device memory: %s", NT_STR (var_NT));             \
     SAC_PF_MEM_CUDA_INC_ALLOC (sizeof (basetype) * SAC_ND_A_SIZE (var_NT));              \
@@ -353,6 +353,7 @@ extern "C" {
  */
 #define BLOCKIDX_X blockIdx.x
 #define BLOCKIDX_Y blockIdx.y
+#define BLOCKIDX_Z blockIdx.z
 
 #define BLOCKDIM_X blockDim.x
 #define BLOCKDIM_Y blockDim.y
@@ -391,142 +392,123 @@ extern "C" {
 
 /*****************************************************************************
  *
- * ICMs for CUDA bound computation and checking
+ * ICMs for CUDA kernel mappings on the host
+ * Note that OPD (once per dimension) ICM's operate on a single dimension, and
+ * multiple of them may be generated per pragma. OPM (once per mapping) ICM's
+ * operate at multiple dimensions at once, and generally only one of them will
+ * be generated per pragma.
  * =================
  *
  *****************************************************************************/
 
-/*********************** 1D case (Without Step/Width) ***********************/
-#define SAC_CUDA_WLIDS_1D_0(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim)                                                \
-      = BLOCKIDX_X * BLOCKDIM_X + THREADIDX_X + lb_var;                                  \
-    if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
-        return;
+#define TERNARY_BL(expr, tt, ff) (expr * tt + (!expr) * ff)
 
-/*********************** 1D case (With Step/Width) ***********************/
-#define SAC_CUDA_WLIDS_1D_SW_0(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
-                               ub_var)                                                   \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X * BLOCKDIM_X + THREADIDX_X;       \
-    if (step_var > 1                                                                     \
-        && (SAC_ND_READ (wlids_NT, wlids_NT_dim) % step_var > (width_var - 1)))          \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) += lb_var;                                     \
-    if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
-        return;
+#define SAC_GKCO_OPD_DECLARE(var)                                                                           \
+    int var;
 
-/*********************** 2D case (Without Step/Width) ***********************/
-#define SAC_CUDA_WLIDS_2D_0(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim)                                                \
-      = BLOCKIDX_Y * BLOCKDIM_Y + THREADIDX_Y + lb_var;                                  \
-    if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
-        return;
+#define SAC_GKCO_OPD_REDEFINE(from, to)                                                                     \
+    to = from;
 
-#define SAC_CUDA_WLIDS_2D_1(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim)                                                \
-      = BLOCKIDX_X * BLOCKDIM_X + THREADIDX_X + lb_var;                                  \
-    if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
-        return;
+#define SAC_GKCO_OPM_RETURN_COL_INIT(ret_col)                                                               \
+    ret_col = 0;
 
-/*********************** 2D case (With Step/Width) ***********************/
-#define SAC_CUDA_WLIDS_2D_SW_0(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
-                               ub_var)                                                   \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_Y * BLOCKDIM_Y + THREADIDX_Y;       \
-    if (step_var > 1                                                                     \
-        && (SAC_ND_READ (wlids_NT, wlids_NT_dim) % step_var > (width_var - 1)))          \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) += lb_var;                                     \
-    if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
-        return;
+#define SAC_GKCO_HOST_OPD_PAD(ub_r, ub_w, divisibility)                                                     \
+    ub_w = ub_r + (divisibility - ub_r % divisibility) % divisibility;
 
-#define SAC_CUDA_WLIDS_2D_SW_1(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
-                               ub_var)                                                   \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X * BLOCKDIM_X + THREADIDX_X;       \
-    if (step_var > 1                                                                     \
-        && (SAC_ND_READ (wlids_NT, wlids_NT_dim) % step_var > (width_var - 1)))          \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) += lb_var;                                     \
-    if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
-        return;
+#define SAC_GKCO_HOST_OPD_SHIFT_LB(lb, ub_r, ub_w)                                                          \
+    ub_w = ub_r - lb;
 
-/*********************** ND case (Without Step/Width) ***********************/
-#define SAC_CUDA_WLIDS_ND_0(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_Y + lb_var;
+#define SAC_GKCO_HOST_OPD_COMPRESS_S(ub_r, ub_w, st)                                                        \
+    ub_w = (ub_r + st - 1) / st;                                                                            \
 
-#define SAC_CUDA_WLIDS_ND_1(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X + lb_var;
+// The last ternary if exists because of the following situation:
+// st    wi    st    wi ub  st
+// |     |     |     |  |   |
+// ABCDEFGHIJKLMNOPQRSTUVWXYZ
+// In this case, (ub / st * wi) should result in enough space to house
+// all data until M. Now we should only add enough space to house the
+// data in M - S. This is exactly (wi). If we simply add (ub % st), our
+// upperbound is too high, hence the (ub % st < wi ? ub % st ? wi).
+#define SAC_GKCO_HOST_OPD_COMPRESS_SW(ub_r, ub_w, st, wi, tmp)                                              \
+    tmp = ub_r % st;                                                                                        \
+    ub_w = ub_r / st * wi + (tmp < wi ? tmp : wi);
 
-#define SAC_CUDA_WLIDS_ND_2(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_X + lb_var;
+#define SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(ub_r, ub_w, st, wi, tmp_a, tmp_b)                                  \
+    tmp_a = ub_r % st;                                                                                      \
+    tmp_b = tmp_a < wi;                                                                                     \
+    ub_w = ub_r / st * wi                                                                                   \
+            + TERNARY_BL(tmp_b, tmp_a, wi);
 
-#define SAC_CUDA_WLIDS_ND_3(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_Y + lb_var;
+#define SAC_GKCO_HOST_OPM_FOLD_LAST(ub_maj_r, ub_maj_w, ub_min)                                             \
+    ub_maj_w = ub_maj_r * ub_min;
 
-#define SAC_CUDA_WLIDS_ND_4(wlids_NT, wlids_NT_dim, lb_var, ub_var)                      \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_Z + lb_var;
+#define SAC_GKCO_HOST_OPM_SPLIT_LAST(ub_maj_r, ub_maj_w, ub_min, len_min)                                   \
+    ub_min = len_min;                                                                                       \
+    ub_maj_w = ub_maj_r / len_min;
 
-/*********************** ND case (With Step/Width) ***********************/
-#define SAC_CUDA_WLIDS_ND_SW_0(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
-                               ub_var)                                                   \
-    if (step_var > 1 && (BLOCKIDX_Y % step_var > (width_var - 1)))                       \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_Y + lb_var;
+#define SAC_GKCO_HOST_OPM_SET_GRID(max_x, max_y, max_z, max_total, ...)                                     \
+    dim3 grid (__VA_ARGS__);                                                                                \
+    SAC_TR_GPU_PRINT("    CUDA XYZ grid dimension of %u x %u x %u", grid.x, grid.y, grid.z);                \
+    SAC_PRAGMA_GRID_CHECK(max_x, max_y, max_z, max_total)
 
-#define SAC_CUDA_WLIDS_ND_SW_1(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
-                               ub_var)                                                   \
-    if (step_var > 1 && (BLOCKIDX_X % step_var > (width_var - 1)))                       \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X + lb_var;
-
-#define SAC_CUDA_WLIDS_ND_SW_2(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
-                               ub_var)                                                   \
-    if (step_var > 1 && (THREADIDX_X % step_var > (width_var - 1)))                      \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_X + lb_var;
-
-#define SAC_CUDA_WLIDS_ND_SW_3(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
-                               ub_var)                                                   \
-    if (step_var > 1 && (THREADIDX_Y % step_var > (width_var - 1)))                      \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_Y + lb_var;
-
-#define SAC_CUDA_WLIDS_ND_SW_4(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
-                               ub_var)                                                   \
-    if (step_var > 1 && (THREADIDX_Z % step_var > (width_var - 1)))                      \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_Z + lb_var;
+#define SAC_GKCO_HOST_OPM_SET_BLOCK(max_x, max_y, max_z, max_total, ...)                                    \
+    dim3 block (__VA_ARGS__);                                                                               \
+    SAC_TR_GPU_PRINT("    CUDA XYZ block dimension of %u x %u x %u", block.x, block.y, block.z);            \
+    SAC_PRAGMA_BLOCK_CHECK(max_x, max_y, max_z, max_total)
 
 /*****************************************************************************
  *
- * NEW ICMs for WLIDS
+ * ICMs for CUDA kernel mappings on the device
  * =================
  *
  *****************************************************************************/
 
-#define SAC_CUDA_WLIDS(wlids_NT, wlids_NT_dim, blockidx, blockdim, threadidx, step_var,  \
-                       width_var, lb_var, ub_var)                                        \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = blockidx * blockdim + threadidx + lb_var;    \
-    if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
+#define SAC_GKCO_GPUD_OPD_UNLB(lb, idx)                                                                     \
+    if (!(idx >= lb))                                                                                       \
         return;
 
-#define SAC_CUDA_WLIDS_SW(wlids_NT, wlids_NT_dim, blockidx, blockdim, threadidx,         \
-                          step_var, width_var, lb_var, ub_var)                           \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = blockidx * blockdim + threadidx;             \
-    if (step_var > 1                                                                     \
-        && (SAC_ND_READ (wlids_NT, wlids_NT_dim) % step_var > (width_var - 1)))          \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) += lb_var;                                     \
-    if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
+#define SAC_GKCO_GPUD_OPD_UNLB_BL(lb, idx, ret_col)                                                         \
+    ret_col |= !(idx >= lb);
+
+#define SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(lb, st, wi, idx)                                                      \
+    if (!(idx % st < wi))                                                                                   \
         return;
 
-#define SAC_CUDA_WLIDS_HD(wlids_NT, wlids_NT_dim, index, step_var, width_var, lb_var,    \
-                          ub_var)                                                        \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = index + lb_var;
+#define SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(lb, st, wi, idx, ret_col)                                          \
+    ret_col |= !(idx % st < wi);
 
-#define SAC_CUDA_WLIDS_HD_SW(wlids_NT, wlids_NT_dim, index, step_var, width_var, lb_var, \
-                             ub_var)                                                     \
-    if (step_var > 1 && (index % step_var > (width_var - 1)))                            \
-        return;                                                                          \
-    SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = index + lb_var;
+#define SAC_GKCO_GPUD_OPD_UNPAD(ub, idx)                                                                    \
+    if (idx >= ub)                                                                                          \
+        return;
+
+#define SAC_GKCO_GPUD_OPD_UNPAD_BL(ub, idx, ret_col)                                                        \
+    ret_col |= idx >= ub;
+
+#define SAC_GKCO_GPUD_OPD_UNSHIFT_LB(lb, idx)                                                               \
+    idx = idx + lb;
+
+#define SAC_GKCO_GPUD_OPD_UNCOMPRESS_S(st, idx)                                                             \
+    idx = idx * st;
+
+#define SAC_GKCO_GPUD_OPD_UNCOMPRESS_SW(st, wi, idx)                                                        \
+    idx = idx / wi * st + idx % wi;
+
+#define SAC_GKCO_GPUD_OPM_UNFOLD_LAST(idx_maj, idx_min, ub_min)                                             \
+    idx_min = idx_maj % ub_min;                                                                             \
+    idx_maj = idx_maj / ub_min;
+
+#define SAC_GKCO_GPUD_OPM_UNSPLIT_LAST(idx_maj, idx_min, len_min)                                           \
+    idx_maj = idx_maj * len_min + idx_min;
+
+#define SAC_GKCO_GPUD_OPM_RETURN_IF_COLLECTED(ret_col)                                                      \
+    if (ret_col)                                                                                            \
+        return;
+
+#define SAC_GKCO_GPUD_OPM_DECLARE_IV(iv_var, iv_length)                                                     \
+    int iv_var[iv_length];
+
+#define SAC_GKCO_GPUD_OPD_DEF_IV(iv_var, dim, id)                                                           \
+    SAC_ND_WRITE(iv_var, dim) = id;
 
 /*****************************************************************************
  *
@@ -542,6 +524,28 @@ extern "C" {
 #define SAC_CUDA_FORLOOP_BEGIN(iterator, upper_bound) for (; iterator < upper_bound;) {
 
 #define SAC_CUDA_FORLOOP_END() }
+
+/*****************************************************************************
+ *
+ * ICMs for CUDA kernel time measurements
+ * =================
+ *
+ *****************************************************************************/
+
+#define SAC_CUDA_MEASURE_KERNEL_TIME_GETTIME(var)                                                           \
+    cudaDeviceSynchronize();                                                                                \
+    timespec var;                                                                                           \
+    clock_gettime(CLOCK_MONOTONIC, &var);
+
+#define SAC_CUDA_MEASURE_KERNEL_TIME_START                                                                  \
+    SAC_CUDA_MEASURE_KERNEL_TIME_GETTIME(time_start)
+
+#define SAC_CUDA_MEASURE_KERNEL_TIME_END                                                                    \
+    SAC_CUDA_MEASURE_KERNEL_TIME_GETTIME(time_end)                                                          \
+    signed long long time_passed_ms =                                                                       \
+            (signed long) time_end.tv_nsec / 1000 - (signed long) time_start.tv_nsec / 1000;                \
+    time_passed_ms += (signed long) ((time_end.tv_sec - time_start.tv_sec) * 1000000);                      \
+    fprintf(stderr, "%ld\n", time_passed_ms);
 
 #ifdef __cplusplus
 }

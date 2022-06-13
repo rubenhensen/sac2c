@@ -1,0 +1,31 @@
+// REQFEATURES|ENABLE_CUDA
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -t cuda -check g -gpukernel
+// SAC_TEST|all: <file-name>
+
+#include "mini-stdlib.sac"
+
+noinline
+int[16,16] hiding( int[2] shp, int[2] lb, int[2] ub, int[2] s, int[2] w )
+{
+    a = with {
+#pragma gpukernel
+        GridBlock ( 2,
+        PadLast(32,
+        FoldLast2(
+        Permute([1, 0, 2],
+        SplitLast(2,
+        CompressGrid([1,1],
+        ShiftLB(
+        Gen )))))))
+        (lb <= iv < ub step s width w): 42;
+    } : genarray( shp, 0);
+    return a;
+}
+
+int main()
+{
+    a = hiding([16,16], [2,2], [12,12], [4,4], [2,3]);
+    return a[[10, 10]];
+}

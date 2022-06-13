@@ -29,6 +29,7 @@
 #include "print.h"
 #include "modulemanager.h"
 #include "symboltable.h"
+#include "gpukernel_check_funs.h"
 
 #include "uthash.h"
 #include "lex.h"
@@ -3093,6 +3094,7 @@ handle_npart (struct parser *parser)
     node *generator = error_mark_node;
     node *block = error_mark_node;
     node *exprs = NULL;
+    node *pragma_expr = NULL;
     node *ret = error_mark_node;
 
     /* eat '(' and save its location.  */
@@ -3114,6 +3116,36 @@ handle_npart (struct parser *parser)
     else
         goto error;
 
+    /* check for '#' 'pragma' 'gpukernel'   */
+    tok = parser_get_token (parser);
+    if (token_is_operator (tok, tv_hash)) {
+        node *t = error_mark_node;
+        struct location pragma_loc;
+
+        if (parser_expect_tval (parser, PRAGMA))
+            pragma_loc = token_location (parser_get_token (parser));
+        else
+            goto error;
+
+        tok = parser_get_token (parser);
+        if (token_is_keyword (tok, GPUKERNEL)) {
+            pragma_expr = handle_function_call (parser);
+            if (pragma_expr == error_mark_node)
+                goto error;
+            GKCHcheckGpuKernelPragma (pragma_expr, token_location (tok));
+
+            t = loc_annotated (pragma_loc, TBmakePragma ());
+            PRAGMA_GPUKERNEL_APS (t) = expr_constructor (pragma_expr, NULL);
+            pragma_expr = t;
+        } else {
+            error_loc (token_location (tok), "valid generator pragma expected, `#pragma %s' found",
+                                             token_as_string (tok));
+            goto error;
+        }
+    } else
+        parser_unget (parser);
+
+    PART_PRAGMA (generator) = pragma_expr;
 
     block = handle_wl_assign_block (parser);
     if (block == error_mark_node)
@@ -3461,8 +3493,11 @@ handle_with (struct parser *parser)
             t = loc_annotated (pragma_loc, TBmakePragma ());
             PRAGMA_NOCUDA (t) = TRUE;
             pragma_expr = t;
-        } else
+        } else {
+            error_loc (token_location (tok), "valid with-loop pragma expected, `#pragma %s' found",
+                                             token_as_string (tok));
             goto error;
+        }
     } else
         parser_unget (parser);
 
