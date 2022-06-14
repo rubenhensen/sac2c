@@ -1498,13 +1498,9 @@ INFDFMSarg (node *arg_node, info *arg_info)
 node *
 INFDFMSassign (node *arg_node, info *arg_info)
 {
-    node *assign_next;
-
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        assign_next = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 

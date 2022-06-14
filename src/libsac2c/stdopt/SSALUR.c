@@ -521,7 +521,6 @@ set_extrema (node *predicate, node *modifier, struct idx_vector_queue *ivs, node
     if (make_additions (modifier, ivptr->var, &var_found, ivptr->loopvar, &loopvar_found,
                         &var_or_loopvar_sign, arg_plus, &addq)) {
         node *expr = NULL;
-        node *t = NULL;
 
         DBUG_PRINT ("extrema from the comparison is extracted");
 
@@ -568,13 +567,13 @@ set_extrema (node *predicate, node *modifier, struct idx_vector_queue *ivs, node
                i + expr >  t  ===>  i >  -expr + t;  extrema_min = -expr + t;
                i + expr >= t  ===>  i >= -expr + t;  extrema_min = -expr + t - 1;  */
 
-        t = PRF_ARG1 (predicate);
 
 #if 0
       /* This is a case when we set an extrema using
 	 information from the loop modifier.  */
       if (ivptr->mfunc.b > 0)
 	{
+          node *t = PRF_ARG1 (predicate);
 	  /* Stride is positive.  */
 	  if (var_or_loopvar_sign == arg_minus)
 	    {

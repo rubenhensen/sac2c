@@ -4180,7 +4180,6 @@ COMPApArgs (node *ap, info *arg_info)
 {
     argtab_t *argtab;
     argtag_t tag;
-    node *arg;
     size_t i;
     node *ret_node = NULL;
 
@@ -4196,7 +4195,6 @@ COMPApArgs (node *ap, info *arg_info)
         if (argtab->ptr_in[i] != NULL) {
             DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_exprs,
                          "no N_exprs node found in argtab");
-            arg = EXPRS_EXPR (argtab->ptr_in[i]);
             tag = argtab->tag[i];
 
             DBUG_ASSERT ((global.argtag_is_in[tag] || global.argtag_is_inout[tag]),
@@ -4549,7 +4547,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
 node *
 COMPap (node *arg_node, info *arg_info)
 {
-    node *let_ids, *icm, *icm_conf = NULL, *icm_args, *icm_pre = NULL, *icm_post = NULL;
+    node *icm, *icm_conf = NULL, *icm_args, *icm_pre = NULL, *icm_post = NULL;
     node *fundef, *with2, *cond, *seg, *array_inf, *array_sup;
     node *assigns, *assigns1 = NULL, *assigns2 = NULL, *assigns4 = NULL;
 
@@ -4563,7 +4561,6 @@ COMPap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    let_ids = INFO_LASTIDS (arg_info);
     fundef = AP_FUNDEF (arg_node);
 
     fundef_in_current_namespace
@@ -7386,7 +7383,7 @@ COMPsimd_prfSel (node *arg_node, info *arg_info)
 static node *
 COMPsimd_sel_SxS (node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2;
+    node *arg2;
     node *let_ids;
     node *ret_node;
 
@@ -7400,7 +7397,6 @@ COMPsimd_sel_SxS (node *arg_node, info *arg_info)
     //             "Wrong number of arguments found");
 
     let_ids = INFO_LASTIDS (arg_info);
-    arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
     base_type = GetBaseTypeFromExpr (arg2);
@@ -7419,7 +7415,7 @@ COMPsimd_sel_SxS (node *arg_node, info *arg_info)
 static node *
 COMPsimd_modarray (node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2, *arg3;
+    node *arg1;
     node *let_ids;
     node *ret_node;
 
@@ -7434,8 +7430,6 @@ COMPsimd_modarray (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
-    arg2 = PRF_ARG2 (arg_node);
-    arg3 = PRF_ARG3 (arg_node);
 
     base_type = GetBaseTypeFromExpr (arg1);
     id_wrapper = TBmakeSpid (NULL, STRcpy (base_type));
@@ -7659,15 +7653,9 @@ COMPprfModarray_AxVxA (node *arg_node, info *arg_info)
 static node *
 COMPprfGenarray (node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2;
-    node *let_ids;
     node *ret_node;
 
     DBUG_ENTER ();
-
-    let_ids = INFO_LASTIDS (arg_info);
-    arg1 = PRF_ARG1 (arg_node);
-    arg2 = PRF_ARG2 (arg_node);
 
     DBUG_UNREACHABLE ("prf F_genarray not implemented yet!");
 
@@ -7882,14 +7870,12 @@ COMPprfOp_S (node *arg_node, info *arg_info)
 static node *
 COMPprfOp_V (node *arg_node, info *arg_info)
 {
-    node *arg;
     node *let_ids;
     node *ret_node;
 
     DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
-    arg = PRF_ARG1 (arg_node);
 
     /* assure that the prf has exactly one argument */
     DBUG_ASSERT (PRF_EXPRS2 (arg_node) == NULL, "more than a single argument found!");
@@ -8041,7 +8027,7 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
 static node *
 COMPprfOp_SxV (node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2;
+    node *arg1;
     node *let_ids;
     node *ret_node;
 
@@ -8054,7 +8040,6 @@ COMPprfOp_SxV (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
-    arg2 = PRF_ARG2 (arg_node);
 
     DBUG_ASSERT (((NODE_TYPE (arg1) != N_id)
                   || (TUgetFullDimEncoding (ID_NTYPE (arg1)) == SCALAR)),
@@ -8084,7 +8069,7 @@ COMPprfOp_SxV (node *arg_node, info *arg_info)
 static node *
 COMPprfOp_VxS (node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2;
+    node *arg2;
     node *let_ids;
     node *ret_node;
 
@@ -8096,7 +8081,6 @@ COMPprfOp_VxS (node *arg_node, info *arg_info)
                  "illegal number of args found!");
 
     let_ids = INFO_LASTIDS (arg_info);
-    arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
     DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
@@ -8126,7 +8110,6 @@ COMPprfOp_VxS (node *arg_node, info *arg_info)
 static node *
 COMPprfOp_VxV (node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2;
     node *let_ids;
     node *ret_node;
 
@@ -8138,8 +8121,6 @@ COMPprfOp_VxV (node *arg_node, info *arg_info)
                  "illegal number of args found!");
 
     let_ids = INFO_LASTIDS (arg_info);
-    arg1 = PRF_ARG1 (arg_node);
-    arg2 = PRF_ARG2 (arg_node);
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_VxV__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
@@ -8168,7 +8149,7 @@ prf_arg_number_correct (node *arg_node, size_t num_args)
 static node *
 COMPprfOp_SMxSM (node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2, *arg3;
+    node *arg2;
     node *let_ids;
     node *ret_node;
 
@@ -8181,9 +8162,7 @@ COMPprfOp_SMxSM (node *arg_node, info *arg_info)
     DBUG_ASSERT (prf_arg_number_correct (arg_node, 3), "Wrong number of arguments found");
 
     let_ids = INFO_LASTIDS (arg_info);
-    arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
-    arg3 = PRF_ARG3 (arg_node);
 
     base_type = GetBaseTypeFromExpr (arg2);
     id_wrapper = TBmakeSpid (NULL, STRcpy (base_type));
@@ -11508,7 +11487,7 @@ COMPwlseg (node *arg_node, info *arg_info)
 static node *
 COMPwlxblock (node *arg_node, info *arg_info)
 {
-    int level, dim;
+    int level;
     bool is_block, mt_active, offset_needed;
     node *ret_node;
     char *icm_name_begin = NULL;
@@ -11521,7 +11500,6 @@ COMPwlxblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     level = WLXBLOCK_LEVEL (arg_node);
-    dim = WLXBLOCK_DIM (arg_node);
 
     is_block = (NODE_TYPE (arg_node) == N_wlblock);
     mt_active = WITH2_PARALLELIZE (wlnode);
@@ -11715,7 +11693,7 @@ node *
 COMPwlstride (node *arg_node, info *arg_info)
 {
     node *old_wlstride;
-    int level, dim;
+    int level;
     bool mt_active, offset_needed;
     node *ret_node;
     const char *icm_name_begin = NULL;
@@ -11735,7 +11713,6 @@ COMPwlstride (node *arg_node, info *arg_info)
     wlstride = arg_node;
 
     level = WLSTRIDE_LEVEL (arg_node);
-    dim = WLSTRIDE_DIM (arg_node);
 
     mt_active = WITH2_PARALLELIZE (wlnode);
     offset_needed = WITH2_NEEDSOFFSET (wlnode);
@@ -11876,7 +11853,6 @@ COMPwlstride (node *arg_node, info *arg_info)
 node *
 COMPwlgrid (node *arg_node, info *arg_info)
 {
-    int dim;
     bool mt_active, is_fitted;
     node *ret_node;
     char *icm_name_begin = NULL;
@@ -11887,8 +11863,6 @@ COMPwlgrid (node *arg_node, info *arg_info)
     node *next_icms = NULL;
 
     DBUG_ENTER ();
-
-    dim = WLGRID_DIM (arg_node);
 
     mt_active = WITH2_PARALLELIZE (wlnode);
     is_fitted = WLGRID_ISFITTED (arg_node);

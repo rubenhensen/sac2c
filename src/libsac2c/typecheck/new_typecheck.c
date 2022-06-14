@@ -1330,7 +1330,6 @@ NTCprf (node *arg_node, info *arg_info)
     prf prf;
     te_info *info;
     ntype *alpha, *def_obj;
-    bool ok;
 
     DBUG_ENTER ();
 
@@ -1372,7 +1371,7 @@ NTCprf (node *arg_node, info *arg_info)
             while (argexprs != NULL) {
                 alpha = TYmakeAlphaType (NULL);
                 def_obj = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (argexprs)));
-                ok = SSInewTypeRel (def_obj, alpha);
+                SSInewTypeRel (def_obj, alpha);
                 res = TYsetProductMember (res, pos, alpha);
                 pos++;
                 argexprs = EXPRS_NEXT (argexprs);

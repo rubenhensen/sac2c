@@ -603,7 +603,6 @@ static node *
 AddFundefObjectsToObjectSet (node *set, node *fundef_objects)
 {
     node *avis;
-    ntype *type;
 
     DBUG_ENTER ();
 
@@ -611,7 +610,6 @@ AddFundefObjectsToObjectSet (node *set, node *fundef_objects)
         set = AddFundefObjectsToObjectSet (set, SET_NEXT (fundef_objects));
 
         avis = OBJDEF_ARGAVIS (SET_MEMBER (fundef_objects));
-        type = AVIS_TYPE (avis);
 
         DBUG_PRINT (">>> adding unique object to with-loop:"
                     "%s",

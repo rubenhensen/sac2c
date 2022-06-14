@@ -993,7 +993,6 @@ DESvardec (node *arg_node, info *arg_info)
     ntype *type;
     node *orig_td;
     node *sd;
-    node *oldvd;
 
     DBUG_ENTER ();
 
@@ -1008,7 +1007,7 @@ DESvardec (node *arg_node, info *arg_info)
         sd = TYPEDEF_STRUCTDEF (orig_td);
         if (sd != NULL) {
             DBUG_PRINT ("Removing struct vardec %s", VARDEC_NAME (arg_node));
-            oldvd = arg_node;
+            // oldvd = arg_node;
             arg_node = VARDEC_NEXT (arg_node);
             /* TODO: Check if it is safe to free this node (hint: it's not). */
             /* FREEdoFreeNode( oldvd); */

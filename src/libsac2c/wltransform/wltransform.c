@@ -6431,7 +6431,7 @@ static node *
 InferFitted (node *wlnode)
 {
     node *grids;
-    node *bnd1, *bnd2, *step, *g_bnd1, *g_bnd2;
+    node *bnd1, *bnd2, *step, *g_bnd2;
     int width, remain = 0;
 
     DBUG_ENTER ();
@@ -6463,7 +6463,6 @@ InferFitted (node *wlnode)
 
             grids = WLSTRIDE_CONTENTS (wlnode);
             while (grids != NULL) {
-                g_bnd1 = WLGRID_BOUND1 (grids);
                 g_bnd2 = WLGRID_BOUND2 (grids);
 
                 if (((NODE_TYPE (g_bnd2) == N_num) && (NUM_VAL (g_bnd2) == 1))

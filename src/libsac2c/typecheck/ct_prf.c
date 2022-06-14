@@ -1337,15 +1337,12 @@ NTCCTprf_dim_A (te_info *info, ntype *args)
 ntype *
 NTCCTprf_isDist_A (te_info *info, ntype *args)
 {
-    ntype *array;
     ntype *res;
     char *err_msg;
 
     DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "isDist called with incorrect number of arguments");
-
-    array = TYgetProductMember (args, 0);
 
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
@@ -1373,15 +1370,12 @@ NTCCTprf_isDist_A (te_info *info, ntype *args)
 ntype *
 NTCCTprf_firstElems_A (te_info *info, ntype *args)
 {
-    ntype *array;
     ntype *res;
     char *err_msg;
 
     DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "firstElems called with incorrect number of arguments");
-
-    array = TYgetProductMember (args, 0);
 
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
@@ -1408,15 +1402,12 @@ NTCCTprf_firstElems_A (te_info *info, ntype *args)
 ntype *
 NTCCTprf_localFrom_A (te_info *info, ntype *args)
 {
-    ntype *array;
     ntype *res;
     char *err_msg;
 
     DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "localFrom called with incorrect number of arguments");
-
-    array = TYgetProductMember (args, 0);
 
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
@@ -1443,15 +1434,12 @@ NTCCTprf_localFrom_A (te_info *info, ntype *args)
 ntype *
 NTCCTprf_localCount_A (te_info *info, ntype *args)
 {
-    ntype *array;
     ntype *res;
     char *err_msg;
 
     DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "localCount called with incorrect number of arguments");
-
-    array = TYgetProductMember (args, 0);
 
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
@@ -1477,15 +1465,12 @@ NTCCTprf_localCount_A (te_info *info, ntype *args)
 ntype *
 NTCCTprf_offs_A (te_info *info, ntype *args)
 {
-    ntype *array;
     ntype *res;
     char *err_msg;
 
     DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "offs called with incorrect number of arguments");
-
-    array = TYgetProductMember (args, 0);
 
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {

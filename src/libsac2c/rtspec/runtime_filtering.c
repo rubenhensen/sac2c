@@ -205,7 +205,6 @@ node *
 RTFILTERfundef (node *arg_node, info *arg_info)
 {
     node *funspec = NULL;
-    node *funargs = NULL;
 
     DBUG_ENTER ();
     DBUG_PRINT (">>>> Checking function %s ...", FUNDEF_NAME (arg_node));
@@ -214,8 +213,6 @@ RTFILTERfundef (node *arg_node, info *arg_info)
     if (!FUNDEF_ISWRAPPERFUN (arg_node)
         && STReq (FUNDEF_NAME (arg_node), global.rt_fun_name)) {
         DBUG_PRINT (">>>> Function found ...");
-
-        funargs = DUPdoDupTree (FUNDEF_ARGS (arg_node));
 
         INFO_ARGS (arg_info) = global.rt_args;
         INFO_NEWRETS (arg_info) = NULL;

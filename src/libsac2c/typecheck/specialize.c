@@ -709,7 +709,6 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
 dft_res *
 SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args, ntype *rets)
 {
-    node *new_fundef;
     ntype *new_args;
     int i;
 
@@ -718,10 +717,9 @@ SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args, ntype *rets
     while (dft->deriveable != NULL) {
         new_args = SpecializationOracle (wrapper, dft->deriveable, args, dft);
         if (new_args == NULL) {
-            new_fundef = DoSpecialize (wrapper, dft->deriveable, args, rets);
+            DoSpecialize (wrapper, dft->deriveable, args, rets);
             for (i = 0; i < dft->num_deriveable_partials; i++) {
-                new_fundef
-                  = DoSpecialize (wrapper, dft->deriveable_partials[i], args, rets);
+                DoSpecialize (wrapper, dft->deriveable_partials[i], args, rets);
             }
         } else {
             args = new_args;
@@ -733,8 +731,7 @@ SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args, ntype *rets
         new_args = SpecializationOracle (wrapper, dft->deriveable_partials[0], args, dft);
         if (new_args == NULL) {
             for (i = 0; i < dft->num_deriveable_partials; i++) {
-                new_fundef
-                  = DoSpecialize (wrapper, dft->deriveable_partials[i], args, rets);
+                DoSpecialize (wrapper, dft->deriveable_partials[i], args, rets);
             }
         } else {
             args = new_args;

@@ -198,7 +198,7 @@ updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own, bool inferr
     void **lut_pointer;
     offset_t *offset;
     char *avis_name;
-    int *extents, block_dim, block_offset, i;
+    int *extents, block_dim, block_offset;
     shape *src_shape;
 
     DBUG_ENTER ();

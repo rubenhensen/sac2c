@@ -326,7 +326,9 @@ RWOprf (node *arg_node, info *arg_info)
     node *arg1 = NULL;
     node *arg2 = NULL;
     prf selop;
+#ifdef UNFINISHED
     node *other = NULL;
+#endif
     node *rhs = NULL;
     node *gwelem = NULL;
     node *elem = NULL;
@@ -376,6 +378,7 @@ RWOprf (node *arg_node, info *arg_info)
             }
         }
 
+#ifdef UNFINISHED
         // match on N_prf.
         if ((PMmatchFlatSkipExtremaAndGuards (pat2, iv))
             && ((F_add_SxS == selop) || (F_sub_SxS == selop))) {
@@ -389,6 +392,7 @@ RWOprf (node *arg_node, info *arg_info)
             }
             // FIXME: how interesting. This code now does nothing more with other.
         }
+#endif
 
         // This block of code handles a scalarized index vector, stored
         // as an N_array. GENWIDTH must be constant:

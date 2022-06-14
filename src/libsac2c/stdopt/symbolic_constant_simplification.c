@@ -843,7 +843,6 @@ isNotEqual (node *arg1, node *arg2, info *arg_info)
     constant *con2 = NULL;
     constant *conrel = NULL;
     node *avis1;
-    node *avis2;
     bool res = FALSE;
 
     DBUG_ENTER ();
@@ -854,7 +853,6 @@ isNotEqual (node *arg1, node *arg2, info *arg_info)
     pat1maxcon = PMconst (1, PMAgetVal (&con1max), 0);
     pat2con = PMconst (1, PMAgetVal (&con2), 0);
     avis1 = ID_AVIS (arg1);
-    avis2 = ID_AVIS (arg2);
 
     // Case 1: If maxval( arg1) == arg2, then x<y  --> Not equal
     if (IVEXPisAvisHasMax (avis1)) { // Case 1
@@ -3404,7 +3402,6 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
     constant *ivc = NULL;
     constant *arrc = NULL;
     node *arr = NULL;
-    ntype *ivtype;
     ntype *arrtype;
     shape *arrshp;
     pattern *pat1;
@@ -3417,7 +3414,6 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
     /* Case 1 */
     iv = PRF_ARG1 (arg_node);
     if (PMmatchFlat (pat1, arg_node)) {
-        ivtype = ID_NTYPE (iv);
         arrtype = ID_NTYPE (arr);
         if (TUshapeKnown (arrtype)) {
             arrshp = TYgetShape (arrtype);
