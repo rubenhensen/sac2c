@@ -181,7 +181,9 @@ IVUTarrayFromProxySel (node *iv)
     node *mat = NULL;
     node *z = NULL;
     int n;
+#ifndef DBUG_OFF
     const char *nmin;
+#endif
 
     DBUG_ENTER ();
 
@@ -219,8 +221,10 @@ IVUTarrayFromProxySel (node *iv)
     PMfree (pat1);
     PMfree (pat2);
 
+#ifndef DBUG_OFF
     nmin = ((NULL != iv) && (N_id == NODE_TYPE (iv))) ? AVIS_NAME (ID_AVIS (iv))
                                                       : "( N_array)";
+#endif
     if (b) {
         z = mat;
         DBUG_PRINT ("Case 2: AVIS_SHAPE %s is shape(%s)", nmin,
@@ -245,7 +249,9 @@ IVUTarrayFromProxyIdxsel (node *iv)
     constant *ncon = NULL;
     node *z = NULL;
     node *mat;
+#ifndef DBUG_OFF
     const char *nmin;
+#endif
     node *offset = NULL;
     int n;
 
@@ -289,8 +295,11 @@ IVUTarrayFromProxyIdxsel (node *iv)
     PMfree (pat1);
     PMfree (pat2);
 
+#ifndef DBUG_OFF
     nmin = ((NULL != iv) && (N_id == NODE_TYPE (iv))) ? AVIS_NAME (ID_AVIS (iv))
                                                       : "( N_array)";
+#endif
+
     if (b) {
         z = mat;
         DBUG_PRINT ("Case 2: AVIS_SHAPE %s is shape(%s)", nmin, AVIS_NAME (ID_AVIS (z)));

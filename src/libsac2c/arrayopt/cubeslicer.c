@@ -734,8 +734,10 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
     intersect_type_t intersecttype = INTERSECT_unknown;
     node *idx;
     int producerPartno = 0;
+#ifndef DBUG_OFF
     int intPartno = -1;
     char *nm;
+#endif
 
     DBUG_ENTER ();
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "expected N_prf arg_node");
@@ -758,17 +760,21 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
         if (intersecttype > z) {
             (*producerpart) = producerWLPart; /* Note best match */
             z = intersecttype;
+#ifndef DBUG_OFF
             intPartno = producerPartno;
+#endif
         }
         producerWLPart = PART_NEXT (producerWLPart);
         producerPartno++;
     }
 
+#ifndef DBUG_OFF
     if (NULL != arg_info) {
         nm = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)));
     } else {
         nm = "?";
     }
+#endif
 
     DBUG_PRINT ("match type is (%s) for intPartno %d of PWL=%s, CWL=%s",
                 IntersectTypeName (z), intPartno,

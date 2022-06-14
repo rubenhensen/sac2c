@@ -312,7 +312,9 @@ static node *
 SimplifySymbioticExpression (node *arg_node, info *arg_info)
 {
     int i = 0;
+#ifndef DBUG_OFF
     int ct = 0;
+#endif
     bool done = false;
 
     TOC_SETUP(14, COUNT_DLIR, COUNT_WLIR, COUNT_INL,
@@ -328,14 +330,14 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (global.optimize.dosse) {
-#define DEBUG
-#ifdef DEBUG // rbe
         DBUG_PRINT_TAG ("SSE", "Entering opt micro-cycle for %s %s",
                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                         FUNDEF_NAME (arg_node));
         /* Loop over optimizers until we reach a fix point or give up */
         for (i = 0; i < global.max_optcycles; i++) {
+#ifndef DBUG_OFF
             ct = i;
+#endif
 
             DBUG_PRINT_TAG ("SSE", "Cycle iteration %d (fun %s %s) begins.", i,
                             (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
@@ -423,8 +425,6 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
         DBUG_PRINT_TAG ("SSE", "Stabilized at iteration %d for function %s", ct,
                         FUNDEF_NAME (arg_node));
 
-#endif // DEBUG // rbe
-#undef DEBUG
     }
 
     DBUG_RETURN (arg_node);
@@ -2101,7 +2101,9 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     node *ivmin = NULL;
     node *ivmax = NULL;
     node *ivminmax = NULL;
+#ifndef DBUG_OFF
     char *cwlnm;
+#endif
 
     DBUG_ENTER ();
 
@@ -2198,9 +2200,11 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
             pwlp = PART_NEXT (pwlp);
         }
 
+#ifndef DBUG_OFF
         cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
                   ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
                   : "(naked consumer)";
+#endif
         DBUG_PRINT ("Built bounds intersect computations for consumer-WL %s", cwlnm);
     }
 
@@ -2264,14 +2268,18 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivavis)
     node *intersectcalc = NULL;
     node *args;
     ntype *ztype;
+#ifndef DBUG_OFF
     const char *nm;
+#endif
     node *noteint;
 
     DBUG_ENTER ();
 
+#ifndef DBUG_OFF
     nm = (NULL != INFO_CONSUMERWLIDS (arg_info))
            ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
            : "(no consumer WL)";
+#endif
     DBUG_PRINT ("Inserting attachextrema for producerWL %s into consumerWL %s",
                 AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))), nm);
 
@@ -2385,7 +2393,9 @@ AWLFIcheckProducerWLFoldable (node *arg_node)
     node *pcode;
     ntype *typ;
     node *p;
+#ifndef DBUG_OFF
     const char *nm;
+#endif
 
     DBUG_ENTER ();
 
@@ -2405,7 +2415,9 @@ AWLFIcheckProducerWLFoldable (node *arg_node)
         DBUG_PRINT ("PWL %s is OK for folding; WITH_REFERENCED_FOLD=%d",
                     AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (p));
     } else {
+#ifndef DBUG_OFF
         nm = (NULL != p) ? AVIS_NAME (ID_AVIS (arg_node)) : "(not a WL) ";
+#endif
         DBUG_PRINT ("PWL %s is not OK for folding", nm);
     }
 
@@ -2574,8 +2586,10 @@ AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
 {
     int plev;
     bool z;
+#ifndef DBUG_OFF
     const char *nmc;
     const char *nmp;
+#endif
 
     DBUG_ENTER ();
 
@@ -2584,6 +2598,7 @@ AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
     plev = AVIS_DEFDEPTH (ID_AVIS (pwlid));
     z = AWLFIisNakedWL (cwllevel, plev) || AWLFIisUsualWL (cwllevel, plev);
 
+#ifndef DBUG_OFF
     nmp = (NULL != pwlid) ? AVIS_NAME (ID_AVIS (pwlid)) : "(not a WL";
     nmc = (NULL != cwlids) ? AVIS_NAME (IDS_AVIS (cwlids)) : "(not a WL";
 
@@ -2593,6 +2608,7 @@ AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
         DBUG_PRINT ("PWL %s not foldable into CWL %s. DEFDEPTHs=%d, %d", nmp, nmc, plev,
                     cwllevel);
     }
+#endif
 
     DBUG_RETURN (z);
 }
@@ -2858,13 +2874,17 @@ AWLFIprf (node *arg_node, info *arg_info)
     node *z;
     node *ivavis = NULL;
     node *pwlid;
+#ifndef DBUG_OFF
     char *cwlnm;
+#endif
 
     DBUG_ENTER ();
 
+#ifndef DBUG_OFF
     cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
               ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
               : "(naked consumer)";
+#endif
 
     switch (PRF_PRF (arg_node)) {
     default:

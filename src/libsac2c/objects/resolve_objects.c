@@ -684,7 +684,9 @@ node *
 RSOglobobj (node *arg_node, info *arg_info)
 {
     node *new_node;
+#ifndef DBUG_OFF
     node *avis;
+#endif
 
     DBUG_ENTER ();
 
@@ -695,7 +697,9 @@ RSOglobobj (node *arg_node, info *arg_info)
                 CTIitemName (GLOBOBJ_OBJDEF (arg_node)),
                 AVIS_NAME (OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node))));
 
+#ifndef DBUG_OFF
     avis = OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node));
+#endif
     new_node = TBmakeId (OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node)));
 
     if (INFO_INWITHLOOP (arg_info)) {

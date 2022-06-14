@@ -1820,13 +1820,17 @@ DUPap (node *arg_node, info *arg_info)
 {
     node *old_fundef, *new_fundef;
     node *new_node;
+#ifndef DBUG_OFF
     node *fundef;
     const char *funname;
+#endif
 
     DBUG_ENTER ();
 
+#ifndef DBUG_OFF
     fundef = INFO_FUNDEF (arg_info);
     funname = (NULL == fundef) ? "?" : FUNDEF_NAME (fundef);
+#endif
     DBUG_PRINT ("duplicating N_ap call to %s() from %s",
                 (AP_FUNDEF (arg_node) != NULL) ? FUNDEF_NAME (AP_FUNDEF (arg_node)) : "?",
                 funname);

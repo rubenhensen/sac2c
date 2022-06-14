@@ -239,8 +239,8 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
     {
 #ifndef DBUG_OFF
         const char *var_name = AVIS_NAME (ID_AVIS (ivtmp->var));
-#endif
         const char *loopvar_name = "?";
+#endif
         node *m;
 
         /* Assume that we have inital value.  */
@@ -254,7 +254,9 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
             goto cleanup;
         }
 
+#ifndef DBUG_OFF
         loopvar_name = AVIS_NAME (ID_AVIS (ivtmp->var));
+#endif
 
         /* check that loop entrance identifier is an external constant.  */
         if (!GetConstantArg (ivtmp->var, fundef, ext_assign, &(ivtmp->init_value))) {

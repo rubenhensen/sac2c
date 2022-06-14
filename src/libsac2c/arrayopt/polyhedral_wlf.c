@@ -1616,7 +1616,9 @@ PWLFprf (node *arg_node, info *arg_info)
     node *pwlpart;
     node *foldpwlpart = NULL;
     node *z = NULL;
+#ifndef DBUG_OFF
     char *cwlnm;
+#endif
     int plresult = POLY_RET_UNKNOWN;
 
     DBUG_ENTER ();
@@ -1644,9 +1646,11 @@ PWLFprf (node *arg_node, info *arg_info)
                 pwlpart = POLYSsetClearAvisPart (pwlpart, pwlpart);
                 foldpwlpart = pwlpart;
                 plresult = PWLFintersectBoundsPolyhedral (arg_node, pwlpart, arg_info);
+#ifndef DBUG_OFF
                 cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
                           ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
                           : "(naked consumer)";
+#endif
                 if ((POLY_RET_MATCH_BC & plresult) || (POLY_RET_CCONTAINSB & plresult)) {
                     DBUG_PRINT ("We now fold PWL %s into CWL %s with plresult %d",
                                 AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);

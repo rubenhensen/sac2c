@@ -933,7 +933,9 @@ CountVariablesInIslclass (node *idlist, int islclass)
 { // +/idlist member islclass
 
     node *avis;
+#ifndef DBUG_OFF
     char *fn;
+#endif
     size_t n;
     size_t i;
     int z = 0;
@@ -942,7 +944,9 @@ CountVariablesInIslclass (node *idlist, int islclass)
 
     n = TCcountExprs (idlist);
     for (i = 0; i < n; i = i + 2) {
+#ifndef DBUG_OFF
         fn = STR_STRING (TCgetNthExprsExpr (i, idlist));
+#endif
         avis = ID_AVIS (TCgetNthExprsExpr (i + 1, idlist));
         DBUG_PRINT ("AVIS_ISLCLASS(%s) in fundef %s is %d", AVIS_NAME (avis), fn,
                     AVIS_ISLCLASS (avis));
