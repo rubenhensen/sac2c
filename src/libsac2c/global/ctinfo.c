@@ -350,14 +350,8 @@ CleanUp (void)
  *
  ******************************************************************************/
 static void
-ignore (int status)
-{ }
-
-static void
 CleanUpInterrupted (void)
 {
-    int status;
-
     // DBUG_ENTER ();
     // We do not want to use the DBUG macros here to keep the code as simple
     // as possible. Note that this is the interrupt handler that is only run
@@ -367,16 +361,18 @@ CleanUpInterrupted (void)
         global.cleanup = FALSE;
 
         if (global.system_cleanup != NULL) {
-            status = system (global.system_cleanup);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+            system (global.system_cleanup);
+#pragma GCC diagnostic pop
             /*
              * We ignore the return value here as we are already in
              * failure mode. Ignoring the result of a call to system
              * on some systems (eg. ubuntu) is designed to raise a warning!
              * Not using a defined variable on other systems (eg OSX)
-             * generates a warning. Our solution: a pseudo function that
-             * ignores its argument .....
+             * generates a warning. Our solution: disable the unused-result
+             * warning raised bu Ubuntu.
              */
-            ignore (status);
         }
     }
 
