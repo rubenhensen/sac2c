@@ -548,7 +548,9 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
 
     /* Extract some informations about the arguments*/
     int idx_dim = CONSTANT_DIM (idx);
+#ifndef DBUG_OFF
     int a_dim = CONSTANT_DIM (a);
+#endif
 
     shape *idx_shape = CONSTANT_SHAPE (idx);
     shape *a_shape = CONSTANT_SHAPE (a);
@@ -562,12 +564,14 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
     /* Calculate the length of the IV*/
     int iv_len = SHgetExtent (idx_shape, (idx_dim - 1));
 
+#ifndef DBUG_OFF
     char *cnst = NULL;
     cnst = COconstant2String (idx);
     DBUG_PRINT_TAG ("CO", "idx: %s", cnst);
     cnst = COconstant2String (a);
     DBUG_PRINT_TAG ("CO", "Matrix: %s", cnst);
     DBUG_ASSERT (iv_len <= a_dim, "overSel: dim(selection) > dim(array)!");
+#endif
 
     /* Construct shape of the result*/
     shape *frame_shape = SHdropFromShape (-1, idx_shape);

@@ -249,11 +249,15 @@ INFNCavis (node *arg_node, info *arg_info)
 node *
 INFNCids (node *arg_node, info *arg_info)
 {
+#ifndef DBUG_OFF
     node *avis;
+#endif
 
     DBUG_ENTER ();
 
+#ifndef DBUG_OFF
     avis = IDS_AVIS (arg_node);
+#endif
     DBUG_PRINT ("Looking at N_ids %s", AVIS_NAME (avis));
     IDS_AVIS (arg_node) = TRAVdo (IDS_AVIS (arg_node), arg_info);
 

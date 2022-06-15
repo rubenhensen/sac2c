@@ -140,11 +140,9 @@ TFRCHtfdag (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    node *defs;
     compinfo *ci;
 
     ci = TFDAG_INFO (arg_node);
-    defs = TFDAG_DEFS (arg_node);
 
     if (ci != NULL && COMPINFO_TLTABLE (ci) != NULL) {
 

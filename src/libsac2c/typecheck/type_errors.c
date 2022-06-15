@@ -1384,14 +1384,13 @@ TEassureValLeVal_SxS (char *obj1, ntype *type1, char *obj2, ntype *type2)
 void
 TEassureValLeVal (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
-    int i, dim1, dim2;
+    int i, dim1;
     int *dv1, *dv2;
 
     DBUG_ENTER ();
 
     if ((TYgetConstr (type1) == TC_akv) && (TYgetConstr (type2) == TC_akv)) {
         dim1 = SHgetExtent (COgetShape (TYgetValue (type1)), 0);
-        dim2 = SHgetExtent (COgetShape (TYgetValue (type2)), 0);
         dv1 = (int *)COgetDataVec (TYgetValue (type1));
         dv2 = (int *)COgetDataVec (TYgetValue (type2));
         for (i = 0; i < dim1; i++) {

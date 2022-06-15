@@ -390,7 +390,9 @@ EATarray (node *arg_node, info *arg_info)
     ntype *elemtype;
     ntype *outer;
     ntype *nested;
+#ifndef DBUG_OFF
     ntype *arrayelem;
+#endif
 
     DBUG_ENTER ();
 
@@ -413,7 +415,9 @@ EATarray (node *arg_node, info *arg_info)
     } else {
         outer = TYmakeAKS (TYcopyType (TYgetScalar (nested)),
                            SHcopyShape (ARRAY_FRAMESHAPE (arg_node)));
+#ifndef DBUG_OFF
         arrayelem = ARRAY_ELEMTYPE (arg_node);
+#endif
 
         elemtype = TYdeNestTypeFromOuter (nested, outer);
 

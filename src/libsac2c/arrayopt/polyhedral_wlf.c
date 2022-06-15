@@ -506,7 +506,6 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, size_t i
     node *ids;
     node *assgn;
     node *idx = NULL;
-    node *rhs;
     node *withidids;
     node *ipavis;
     size_t tcindex;
@@ -553,7 +552,6 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, size_t i
                     z = FlattenLbubel (lbub, ivindx, arg_info);
                 } else {
                     /* Vanilla variable */
-                    rhs = AVIS_SSAASSIGN (ID_AVIS (idx));
                     DBUG_PRINT ("We lost the trail.");
                     z = NULL;
                 }
@@ -1246,7 +1244,6 @@ int
 PWLFintersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
 {
     node *ivarr = NULL;
-    node *iv;
     node *ivel;
     node *pwlelavis;
     node *exprscwl = NULL;
@@ -1262,7 +1259,7 @@ PWLFintersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
     DBUG_ENTER ();
 
     // Must find N_array node for iv, or give up.
-    iv = PRF_ARG1 (arg_node);
+    // iv = PRF_ARG1 (arg_node);
     // If iv is a scalar, we build an N_array for it
     arravis
       = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
@@ -1450,7 +1447,6 @@ PWLFwith (node *arg_node, info *arg_info)
     node *consumerop;
     node *producershape;
     node *genop;
-    node *nextop;
 
     DBUG_ENTER ();
 
@@ -1498,7 +1494,7 @@ PWLFwith (node *arg_node, info *arg_info)
         producershape = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop)));
         genop = TBmakeGenarray (DUPdoDupTree (producershape), NULL);
         GENARRAY_NEXT (genop) = MODARRAY_NEXT (consumerop);
-        nextop = FREEdoFreeNode (consumerop);
+        consumerop = FREEdoFreeNode (consumerop);
         WITH_WITHOP (arg_node) = genop;
         DBUG_PRINT ("Replacing modarray by genarray");
     }
@@ -1620,7 +1616,9 @@ PWLFprf (node *arg_node, info *arg_info)
     node *pwlpart;
     node *foldpwlpart = NULL;
     node *z = NULL;
+#ifndef DBUG_OFF
     char *cwlnm;
+#endif
     int plresult = POLY_RET_UNKNOWN;
 
     DBUG_ENTER ();
@@ -1648,9 +1646,11 @@ PWLFprf (node *arg_node, info *arg_info)
                 pwlpart = POLYSsetClearAvisPart (pwlpart, pwlpart);
                 foldpwlpart = pwlpart;
                 plresult = PWLFintersectBoundsPolyhedral (arg_node, pwlpart, arg_info);
+#ifndef DBUG_OFF
                 cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
                           ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
                           : "(naked consumer)";
+#endif
                 if ((POLY_RET_MATCH_BC & plresult) || (POLY_RET_CCONTAINSB & plresult)) {
                     DBUG_PRINT ("We now fold PWL %s into CWL %s with plresult %d",
                                 AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);

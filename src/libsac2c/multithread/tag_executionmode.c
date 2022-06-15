@@ -495,7 +495,6 @@ IsGeneratorBigEnough (node *test_variables)
 {
     node *iterator;
     bool is_bigenough;
-    int var_dim;
     long long var_size;
     DBUG_ENTER ();
 
@@ -507,7 +506,6 @@ IsGeneratorBigEnough (node *test_variables)
     /* TODO handling of AUD and AKD arrays */
     while (iterator != NULL) {
 
-        var_dim = TYgetDim (IDS_NTYPE (iterator));
         var_size = SHgetUnrLen (TYgetShape (IDS_NTYPE (iterator)));
 
         if (var_size >= global.max_threads) {
@@ -542,7 +540,6 @@ static bool
 IsMTClever (node *test_variables)
 {
     bool is_clever;
-    int var_dim;  /* dimension and size of an actual variable */
     long long var_size; /* size of an actual variable */
     long long carry;
     node *iterator;
@@ -555,7 +552,6 @@ IsMTClever (node *test_variables)
 
     while ((is_clever == FALSE) && (iterator != NULL)) {
 
-        var_dim = TYgetDim (IDS_NTYPE (iterator));
         var_size = SHgetUnrLen (TYgetShape (IDS_NTYPE (iterator)));
 
         /* add the size of the actual variable to the sum of the sizes of the
@@ -588,7 +584,6 @@ IsSTClever (node *test_variables)
 {
     /* implementation is like IsMTClever, except of the absence carry-variable */
     bool is_clever;
-    int var_dim;  /* dimension and size of an actual variable */
     long long var_size; /* size of an actual variable */
     node *iterator;
     DBUG_ENTER ();
@@ -599,7 +594,6 @@ IsSTClever (node *test_variables)
 
     while ((is_clever == FALSE) && (iterator != NULL)) {
 
-        var_dim = TYgetDim (IDS_NTYPE (iterator));
         var_size = SHgetUnrLen (TYgetShape (IDS_NTYPE (iterator)));
 
         if (var_size >= (global.max_replication_size)) {

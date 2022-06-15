@@ -507,7 +507,7 @@ CropBounds (node *wl, shape *max_shp)
 static gen_prop_t
 ComputeGeneratorProperties (node *wl, shape *max_shp)
 {
-    node *lbe, *ube, *steps, *width;
+    node *lbe, *ube, *steps;
     gen_prop_t res = GPT_unknown;
     bool const_bounds, non_empty_bounds;
     constant *lbc, *ubc, *shpc, *tmpc, *tmp;
@@ -518,7 +518,6 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
     lbe = WITH_BOUND1 (wl);
     ube = WITH_BOUND2 (wl);
     steps = WITH_STEP (wl);
-    width = WITH_WIDTH (wl);
 
     lbc = COaST2Constant (lbe);
     ubc = COaST2Constant (ube);

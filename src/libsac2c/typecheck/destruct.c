@@ -665,7 +665,9 @@ DESarg (node *arg_node, info *arg_info)
     node *orig_td;
     node *old_arg;
     node *sd;
+#ifndef DBUG_OFF
     char *typestr;
+#endif
 
     DBUG_ENTER ();
 
@@ -685,8 +687,9 @@ DESarg (node *arg_node, info *arg_info)
         DBUG_ASSERT (orig_td != NULL, "No typedef found for this user type");
         sd = TYPEDEF_STRUCTDEF (orig_td);
         if (sd != NULL) {
-            /* TODO: Why can't I put this funcall directly in DBUG_PRINT()? - hly */
+#ifndef DBUG_OFF
             typestr = TYtype2String (type, FALSE, 0);
+#endif
             DBUG_PRINT ("Exploding arg struct %s (`%s')", STRUCTDEF_NAME (sd), typestr);
             old_arg = arg_node;
             arg_node = ExplodeArg (old_arg, STRUCTDEF_STRUCTELEM (sd));
@@ -730,7 +733,9 @@ DESret (node *arg_node, info *arg_info)
     node *orig_td;
     node *old_ret;
     node *sd;
+#ifndef DBUG_OFF
     char *typestr;
+#endif
 
     DBUG_ENTER ();
 
@@ -741,8 +746,9 @@ DESret (node *arg_node, info *arg_info)
         DBUG_ASSERT (orig_td != NULL, "No typedef found for this user type");
         sd = TYPEDEF_STRUCTDEF (orig_td);
         if (sd != NULL) {
-            /* TODO: Why can't I put this funcall directly in DBUG_PRINT()? - hly */
+#ifndef DBUG_OFF
             typestr = TYtype2String (type, FALSE, 0);
+#endif
             DBUG_PRINT ("Exploding ret struct %s (`%s')", STRUCTDEF_NAME (sd), typestr);
             old_ret = arg_node;
             arg_node = ExplodeRet (old_ret, STRUCTDEF_STRUCTELEM (sd));
@@ -845,7 +851,9 @@ DESexprs (node *arg_node, info *arg_info)
     node *orig_td;
     node *sd;
     node *old_exprs;
+#ifndef DBUG_OFF
     char *typestr;
+#endif
 
     DBUG_ENTER ();
 
@@ -862,7 +870,9 @@ DESexprs (node *arg_node, info *arg_info)
         DBUG_ASSERT (orig_td != NULL, "No typedef found for this user type");
         sd = TYPEDEF_STRUCTDEF (orig_td);
         if (sd != NULL) {
+#ifndef DBUG_OFF
             typestr = TYtype2String (type, FALSE, 0);
+#endif
             DBUG_PRINT ("Exploding N_id %s (type %s).", ID_NAME (expr), typestr);
             old_exprs = arg_node;
             arg_node = ExplodeExprs (old_exprs, STRUCTDEF_STRUCTELEM (sd));
@@ -993,7 +1003,6 @@ DESvardec (node *arg_node, info *arg_info)
     ntype *type;
     node *orig_td;
     node *sd;
-    node *oldvd;
 
     DBUG_ENTER ();
 
@@ -1008,7 +1017,7 @@ DESvardec (node *arg_node, info *arg_info)
         sd = TYPEDEF_STRUCTDEF (orig_td);
         if (sd != NULL) {
             DBUG_PRINT ("Removing struct vardec %s", VARDEC_NAME (arg_node));
-            oldvd = arg_node;
+            // oldvd = arg_node;
             arg_node = VARDEC_NEXT (arg_node);
             /* TODO: Check if it is safe to free this node (hint: it's not). */
             /* FREEdoFreeNode( oldvd); */

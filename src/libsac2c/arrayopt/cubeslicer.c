@@ -387,7 +387,9 @@ static bool
 isInt1Part (node *arg_node, node *cwlb1, node *cwlb2, node *cwlproj1, node *cwlproj2)
 {
     bool z = FALSE;
+#if 0
     bool z2 = FALSE; // DEBUG FIXME
+#endif
     constant *con;
 
     DBUG_ENTER ();
@@ -398,8 +400,10 @@ isInt1Part (node *arg_node, node *cwlb1, node *cwlb2, node *cwlproj1, node *cwlp
         COfreeConstant (con);
     }
 
+#if 0
     // FIXME
     z2 = (TULSisValuesMatch (cwlb1, cwlproj1) && TULSisValuesMatch (cwlb2, cwlproj2));
+#endif
     if (!z) {
         DBUG_PRINT ("someone is confused");
         // z = z || z2;
@@ -518,12 +522,16 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     bool notint1part;
     bool intnull;
     bool notintnull;
+#ifdef BROKEN
     int noteintinsertcycle;
+#endif
 
     DBUG_ENTER ();
 
     noteint = AWLFIfindNoteintersect (idx);
+#ifdef BROKEN
     noteintinsertcycle = PRF_NOTEINTERSECTINSERTIONCYCLE (noteint);
+#endif
     intersectListLim = (TCcountExprs (PRF_ARGS (noteint)) - WLFIRST) / WLEPP;
     pat = PMarray (1, PMAgetNode (&bnd), 1, PMskip (0));
     if (NULL != cwlp) { /* support for naked consumer - no CWL */
@@ -725,21 +733,18 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
     intersect_type_t z = INTERSECT_unknown;
     intersect_type_t intersecttype = INTERSECT_unknown;
     node *idx;
-    node *idxassign;
-    node *idxparent;
     int producerPartno = 0;
+#ifndef DBUG_OFF
     int intPartno = -1;
-    node *noteint;
     char *nm;
+#endif
 
     DBUG_ENTER ();
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "expected N_prf arg_node");
     DBUG_ASSERT (N_with == NODE_TYPE (pwl), "expected N_with pwl");
 
     idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, pwl) */
-    noteint = AWLFIfindNoteintersect (idx);
-    idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
-    idxparent = LET_EXPR (ASSIGN_STMT (idxassign));
+    // idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
     if (NULL != arg_info) {
         INFO_WLPROJECTION1 (arg_info) = NULL;
         INFO_WLPROJECTION2 (arg_info) = NULL;
@@ -755,17 +760,21 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
         if (intersecttype > z) {
             (*producerpart) = producerWLPart; /* Note best match */
             z = intersecttype;
+#ifndef DBUG_OFF
             intPartno = producerPartno;
+#endif
         }
         producerWLPart = PART_NEXT (producerWLPart);
         producerPartno++;
     }
 
+#ifndef DBUG_OFF
     if (NULL != arg_info) {
         nm = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)));
     } else {
         nm = "?";
     }
+#endif
 
     DBUG_PRINT ("match type is (%s) for intPartno %d of PWL=%s, CWL=%s",
                 IntersectTypeName (z), intPartno,

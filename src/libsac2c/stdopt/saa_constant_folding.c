@@ -1024,7 +1024,6 @@ node *
 SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf fun)
 {
     node *res = NULL;
-    simpletype tp;
     prf fna;
     prf fnb;
     prf fnc;
@@ -1043,7 +1042,6 @@ SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf
 
     DBUG_ENTER ();
 
-    tp = SCSgetBasetypeOfExpr (prfarg1);
     fna = TULSgetPrfFamilyName (fun);
     switch (fna) { // sheep vs. goats
     case F_lt_SxS:

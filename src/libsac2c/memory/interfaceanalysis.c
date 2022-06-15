@@ -172,13 +172,17 @@ SHALprintPreFun (node *arg_node, info *arg_info)
 node *
 EMIAdoInterfaceAnalysis (node *syntax_tree)
 {
+#ifndef DBUG_OFF
     int counter;
+#endif
 
     DBUG_ENTER ();
 
     DBUG_PRINT_TAG ("EMIA", "Starting interface alias analysis...");
 
+#ifndef DBUG_OFF
     counter = 0;
+#endif
     unaliased = -1;
 
     while (unaliased != 0) {
@@ -188,7 +192,9 @@ EMIAdoInterfaceAnalysis (node *syntax_tree)
         syntax_tree = TRAVdo (syntax_tree, NULL);
         TRAVpop ();
         DBUG_PRINT_TAG ("EMIA", "Interface analysis traversal complete.");
+#ifndef DBUG_OFF
         counter += unaliased;
+#endif
     }
 
     DBUG_PRINT_TAG ("EMIA", "%d interfaces unaliased.", counter);

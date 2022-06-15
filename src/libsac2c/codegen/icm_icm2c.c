@@ -801,7 +801,6 @@ GetNextVarAny (char ***ret, size_t *ret_len, size_t cnt, node *exprs)
 static node *
 GetNextVarNt (char ***ret, size_t cnt, node *exprs)
 {
-    node *expr;
     size_t i;
 
     DBUG_ENTER ();
@@ -810,7 +809,6 @@ GetNextVarNt (char ***ret, size_t cnt, node *exprs)
 
     DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
     DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
-    expr = EXPRS_EXPR (exprs);
 
     for (i = 0; i < cnt; i++) {
         exprs = GetNextNt (&((*ret)[i]), exprs);
@@ -845,7 +843,6 @@ node *GetNextVarId( char ***ret, int cnt, node *exprs)
 static node *
 GetNextVarInt (int **ret, size_t cnt, node *exprs)
 {
-    node *expr;
     size_t i;
 
     DBUG_ENTER ();
@@ -854,7 +851,6 @@ GetNextVarInt (int **ret, size_t cnt, node *exprs)
 
     DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
     DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
-    expr = EXPRS_EXPR (exprs);
 
     for (i = 0; i < cnt; i++) {
         exprs = GetNextInt (&((*ret)[i]), exprs);

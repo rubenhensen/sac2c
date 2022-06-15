@@ -198,7 +198,7 @@ updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own, bool inferr
     void **lut_pointer;
     offset_t *offset;
     char *avis_name;
-    int *extents, block_dim, block_size, block_offset, i;
+    int *extents, block_dim, block_offset;
     shape *src_shape;
 
     DBUG_ENTER ();
@@ -207,10 +207,12 @@ updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own, bool inferr
     src_shape = TYgetShape (AVIS_TYPE (src_avis));
     block_dim = SHgetDim (src_shape) - 1;
     extents = SHshape2IntVec (src_shape);
+#if 0
     block_size = 1;
     for (i = 0; i < block_dim; i++) {
         block_size *= extents[i];
     }
+#endif
 
     /* calculate index */
     if (val == 0) {

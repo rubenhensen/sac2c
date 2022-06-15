@@ -3090,7 +3090,6 @@ node *
 handle_npart (struct parser *parser)
 {
     struct token *tok;
-    struct location loc;
     node *generator = error_mark_node;
     node *block = error_mark_node;
     node *exprs = NULL;
@@ -3155,7 +3154,6 @@ handle_npart (struct parser *parser)
     if (token_is_operator (tok, tv_colon)) {
 
         tok = parser_get_token (parser);
-        loc = token_location (tok);
 
         if (token_is_keyword (tok, TYPE_VOID)) {
             exprs = NULL;

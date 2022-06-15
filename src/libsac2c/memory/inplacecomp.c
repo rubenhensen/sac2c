@@ -661,7 +661,9 @@ HandleBlock (node *block, node *rets, info *arg_info)
     node *avis;
     node *cavis;
     node *sub_ass, *new_sub_ass;
+#ifndef DBUG_OFF
     node *suballoc;
+#endif
     int depth = 0;
     DBUG_ENTER ();
 
@@ -679,7 +681,9 @@ HandleBlock (node *block, node *rets, info *arg_info)
              *    m  = fill( copy( a), m');     cavis: N_avis of 'a`
              *  }: m
              */
+#ifndef DBUG_OFF
             suballoc = ASSIGN_RHS (sub_ass);
+#endif
 
             DBUG_PRINT ("found  %s = suballoc( %s /*outer*/, %s /*idx*/, %d /*depth*/);",
                         IDS_NAME (ASSIGN_LHS (sub_ass)),

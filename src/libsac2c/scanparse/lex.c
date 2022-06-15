@@ -244,14 +244,13 @@ lexer_getch (struct lexer *lex)
 static inline void
 lexer_ungetch (struct lexer *lex, int ch)
 {
-    size_t s;
     (void)ch; /* Surpress unused variable warning */
 
     lex->unget_idx++;
     assert (lex->unget_idx < LEXER_BUFFER, "parser buffer holds only up to %i values.",
             LEXER_BUFFER);
 
-    s = circbuf_idx_dec (lex->buf_end, lex->unget_idx, LEXER_BUFFER);
+    circbuf_idx_dec (lex->buf_end, lex->unget_idx, LEXER_BUFFER);
 }
 
 /* Adds the character C to the string *BUFFER that has length *SIZE

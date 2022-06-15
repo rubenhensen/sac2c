@@ -953,8 +953,8 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
     rhs = LET_EXPR (arg_node);
     arg1avis = ID_AVIS (PRF_ARG1 (rhs));
     arg2avis = ID_AVIS (PRF_ARG2 (rhs));
-    arg1scalar = TUisIntScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (rhs))));
-    arg2scalar = TUisIntScalar (AVIS_TYPE (ID_AVIS (PRF_ARG2 (rhs))));
+    arg1scalar = TUisIntScalar (AVIS_TYPE (arg1avis));
+    arg2scalar = TUisIntScalar (AVIS_TYPE (arg2avis));
     /* non-scalar argument */
     nsa = arg2scalar ? PRF_ARG1 (rhs) : PRF_ARG2 (rhs);
 
@@ -2781,17 +2781,19 @@ node *
 IVEXPlet (node *arg_node, info *arg_info)
 {
     node *lhsavis;
+#ifdef VERBOSE
     char *lhsname;
+#endif // VERBOSE
     ntype *typ;
 
     DBUG_ENTER ();
 
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
 
+#ifdef VERBOSE
     lhsname = AVIS_NAME (lhsavis); /* Handy for ddd condition-setting */
 
-#ifdef VERBOSE
-    DBUG_PRINT ("Looking at %s", AVIS_NAME (lhsavis));
+    DBUG_PRINT ("Looking at %s", lhsname);
 #endif // VERBOSE
 
     typ = AVIS_TYPE (lhsavis);

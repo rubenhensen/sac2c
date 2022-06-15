@@ -446,7 +446,9 @@ CWLEcode (node *arg_node, info *arg_info)
 {
     node *cexpr;
     node *srcwl = NULL;
+#ifndef DBUG_OFF
     char *lhs;
+#endif
     info *subinfo;
 
     DBUG_ENTER ();
@@ -456,7 +458,9 @@ CWLEcode (node *arg_node, info *arg_info)
         cexpr = EXPRS_EXPR (CODE_CEXPRS (arg_node));
         srcwl = WLUTfindCopyPartitionFromCexpr (cexpr, INFO_WITHID (arg_info));
         if (NULL == srcwl) {
+#ifndef DBUG_OFF
             lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)));
+#endif
             DBUG_PRINT ("body of %s does not match _sel_VxA_( withid, &srcwl)", lhs);
             INFO_VALID (arg_info) = FALSE;
         }

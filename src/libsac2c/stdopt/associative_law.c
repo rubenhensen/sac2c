@@ -244,10 +244,13 @@ printOperands (node *exprs)
 static bool
 IsGuardPrf (prf op)
 {
+#if 0
     bool res;
+#endif
 
     DBUG_ENTER ();
 
+#if 0
     switch (op) {
         //  case F_guard:
         //  disbabled until the format of F_guard has been decided upon.
@@ -265,6 +268,7 @@ IsGuardPrf (prf op)
     default:
         res = FALSE;
     }
+#endif
 
     DBUG_RETURN (FALSE);
 }

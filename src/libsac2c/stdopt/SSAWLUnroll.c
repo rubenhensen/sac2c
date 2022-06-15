@@ -241,7 +241,6 @@ ApplyPropagate (node *bodycode, node *index, node *partn, node *withop, node *ce
     node *letn;
     node *tmp;
     node *tmp_prev;
-    bool F_prop_obj_found;
 
     DBUG_ENTER ();
 
@@ -255,7 +254,6 @@ ApplyPropagate (node *bodycode, node *index, node *partn, node *withop, node *ce
 
     tmp = bodycode;
     tmp_prev = NULL;
-    F_prop_obj_found = FALSE;
 
     while (tmp != NULL) {
         if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
@@ -303,7 +301,6 @@ ApplyPropagate (node *bodycode, node *index, node *partn, node *withop, node *ce
                 continue;
             }
 
-            F_prop_obj_found = TRUE;
         } else if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
                    && /* If the assignment is a prim. fct. and*/
                    (PRF_PRF (ASSIGN_RHS (tmp)) == F_prop_obj_out)) { /* it is a prop_out*/
@@ -351,7 +348,6 @@ ApplyPropagate (node *bodycode, node *index, node *partn, node *withop, node *ce
                 continue;
             }
 
-            F_prop_obj_found = TRUE;
         }
         if (ASSIGN_NEXT (tmp) == NULL) {
 
