@@ -68,7 +68,7 @@ encodeShapes (int *shapes)
 
     if (shapes == NULL) {
         fprintf (stderr, "ERROR -- \t Missing shape information!");
-        return '\0';
+        return calloc (1, sizeof (char));
     }
 
     num_args = shapes[0];
@@ -94,7 +94,7 @@ encodeShapes (int *shapes)
         }
     }
 
-    char *current = (char *)malloc (shape_string_size * sizeof (char));
+    char *current = malloc (shape_string_size * sizeof (char));
 
     current[0] = '\0';
 
@@ -163,8 +163,8 @@ SAC_persistence_init (int argc, char *argv[], int trace)
     int strlen_target = strlen (SAC_TARGET_ENV_STRING);
     int strlen_sbi = strlen (SAC_SBI_STRING);
 
-    cachedir = (char *)malloc (sizeof (char)
-                               * (strlen_homedir + strlen_target + strlen_sbi + 18));
+    cachedir = malloc (sizeof (char)
+                       * (strlen_homedir + strlen_target + strlen_sbi + 18));
 
     sprintf (cachedir, "%s/.sac2c/rtspec/" SAC_TARGET_ENV_STRING "/" SAC_SBI_STRING,
              homedir);
@@ -180,9 +180,9 @@ SAC_persistence_init (int argc, char *argv[], int trace)
     char *rtspecdir;
     char *targetdir;
 
-    basedir = (char *)malloc (sizeof (char) * (strlen_homedir + 9));
-    rtspecdir = (char *)malloc (sizeof (char) * (strlen_homedir + 16));
-    targetdir = (char *)malloc (sizeof (char) * (strlen_homedir + strlen_target + 16));
+    basedir = malloc (sizeof (char) * (strlen_homedir + 9));
+    rtspecdir = malloc (sizeof (char) * (strlen_homedir + 16));
+    targetdir = malloc (sizeof (char) * (strlen_homedir + strlen_target + 16));
 
     sprintf (basedir, "%s/.sac2c/", homedir);
     sprintf (rtspecdir, "%s/.sac2c/rtspec/", homedir);
@@ -244,7 +244,7 @@ SAC_persistence_add (char *filename, char *func_name, char *uuid, char *type_inf
     int strlen_destdir = strlen_cachedir + strlen_mod_name + strlen_func_name
                          + strlen_uuid + strlen_type_info + 5;
 
-    destdir = (char *)malloc (sizeof (char) * strlen_destdir);
+    destdir = malloc (sizeof (char) * strlen_destdir);
 
     sprintf (destdir, "%s/%s/%s/%s/%s", cachedir, mod_name, func_name, uuid, type_info);
 
@@ -253,10 +253,10 @@ SAC_persistence_add (char *filename, char *func_name, char *uuid, char *type_inf
         char *fundir;
         char *uuiddir;
 
-        moddir = (char *)malloc (sizeof (char) * (strlen_cachedir + strlen_mod_name + 2));
-        fundir = (char *)malloc (
+        moddir = malloc (sizeof (char) * (strlen_cachedir + strlen_mod_name + 2));
+        fundir = malloc (
           sizeof (char) * (strlen_cachedir + strlen_mod_name + strlen_func_name + 3));
-        uuiddir = (char *)malloc (
+        uuiddir = malloc (
           sizeof (char)
           * (strlen_cachedir + strlen_mod_name + strlen_func_name + strlen_uuid + 4));
 
@@ -323,15 +323,15 @@ SAC_persistence_add (char *filename, char *func_name, char *uuid, char *type_inf
         }
     }
 
-    destination = (char *)malloc (sizeof (char)
-                                  * (strlen_destdir + strlen_shape + strlen_extension
-                                     + 2)); // 1 "/" + null byte at the end
+    destination = malloc (sizeof (char)
+                          * (strlen_destdir + strlen_shape + strlen_extension
+                          + 2)); // 1 "/" + null byte at the end
 
     sprintf (destination, "%s/%s%s", destdir, shape, SAC_MODEXT_STRING);
 
     // 16 chars in cmd template, 2 from re-counted strlen of destination + null byte at
     // the end
-    char *cmd = (char *)malloc (
+    char *cmd = malloc (
       sizeof (char)
       * (strlen (filename) + strlen_destdir + strlen_shape + strlen_extension + 19));
 
@@ -431,11 +431,11 @@ SAC_persistence_get (char *key, char *func_name, char *uuid, char *type_info, ch
     int strlen_mod_name = strlen (mod_name);
 
     char *filename
-      = (char *)malloc (sizeof (char)
-                        * (strlen_cachedir + strlen_mod_name + strlen_func_name
-                           + strlen_uuid + strlen_type_info + strlen_shape
-                           + strlen_extension + 6 // 5 "/" + null string at the end
-                           ));
+      = malloc (sizeof (char)
+                * (strlen_cachedir + strlen_mod_name + strlen_func_name
+                   + strlen_uuid + strlen_type_info + strlen_shape
+                   + strlen_extension + 6 // 5 "/" + null string at the end
+                   ));
 
     sprintf (filename, "%s/%s/%s/%s/%s/%s%s", cachedir, mod_name, func_name, uuid,
              type_info, shape, SAC_MODEXT_STRING);
