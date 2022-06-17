@@ -793,8 +793,7 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
                           "The configuration files do not contain a specification of "
                           "target '%s`.", target);
             }
-            CTIerrorContinued (EMPTY_LOC,
-                               "You may choose a different target from the "
+            CTIerrorContinued ("You may choose a different target from the "
                                "compiler-specific configuration file '%s` or "
                                "your local ones in '~/.sac2crc/`. You may also add a new "
                                "target in a file in that folder, e.g. "
