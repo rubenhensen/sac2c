@@ -116,13 +116,13 @@ build-archlinux:
     <<: *build-template
     before_script:
         - source /etc/profile
-    image: sacbuild/archlinux:1.5.0
+    image: sacbuild/archlinux:1.6.0
 
 test-archlinux:
     <<: *test-template
     before_script:
         - source /etc/profile
-    image: sacbuild/archlinux:1.5.0
+    image: sacbuild/archlinux:1.6.0
     needs:
         - job: build-archlinux
           artifacts: true
@@ -131,87 +131,87 @@ stdlib-archlinux:
     <<: *build-stdlib-template
     before_script:
         - source /etc/profile
-    image: sacbuild/archlinux:1.5.0
+    image: sacbuild/archlinux:1.6.0
     needs:
         - job: test-archlinux
           artifacts: true
 
-### CENTOS 8 ###
+### ROCKYLINUX 8 ###
 
-build-centos8:
+build-rockylinux8:
     <<: *build-template
-    image: sacbuild/centos8:1.5.0
+    image: sacbuild/rockylinux8:1.6.0
 
-test-centos8:
+test-rockylinux8:
     <<: *test-template
-    image: sacbuild/centos8:1.5.0
+    image: sacbuild/rockylinux8:1.6.0
     needs:
-        - job: build-centos8
+        - job: build-rockylinux8
           artifacts: true
 
-stdlib-centos8:
+stdlib-rockylinux8:
     <<: *build-stdlib-template
-    image: sacbuild/centos8:1.5.0
+    image: sacbuild/rockylinux8:1.6.0
     needs:
-        - job: test-centos8
+        - job: test-rockylinux8
           artifacts: true
 
 ### CENTOS 7 ###
 
 build-centos7:
     <<: *build-template
-    image: sacbuild/centos7:1.5.0
+    image: sacbuild/centos7:1.6.0
 
 test-centos7:
     <<: *test-template
-    image: sacbuild/centos7:1.5.0
+    image: sacbuild/centos7:1.6.0
     needs:
         - job: build-centos7
           artifacts: true
 
 stdlib-centos7:
     <<: *build-stdlib-template
-    image: sacbuild/centos7:1.5.0
+    image: sacbuild/centos7:1.6.0
     needs:
         - job: test-centos7
           artifacts: true
 
-### UBUNTU 21 ###
+### UBUNTU 22 ###
 
-build-ubuntu21:
+build-ubuntu22:
     <<: *build-template
-    image: sacbuild/ubuntu21:1.5.0
+    image: sacbuild/ubuntu22:1.6.0
 
-test-ubuntu21:
+test-ubuntu22:
     <<: *test-template
-    image: sacbuild/ubuntu21:1.5.0
+    image: sacbuild/ubuntu22:1.6.0
     needs:
-        - job: build-ubuntu21
+        - job: build-ubuntu22
           artifacts: true
 
-stdlib-ubuntu21:
+stdlib-ubuntu22:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu21:1.5.0
+    image: sacbuild/ubuntu22:1.6.0
     needs:
-        - job: test-ubuntu21
+        - job: test-ubuntu22
           artifacts: true
 
 ### UBUNTU 20 ###
 
 build-ubuntu20:
     <<: *build-template
-    image: sacbuild/ubuntu20:1.5.0
+    image: sacbuild/ubuntu20:1.6.0
 
 test-ubuntu20:
     <<: *test-template
-    image: sacbuild/ubuntu20:1.5.0
+    image: sacbuild/ubuntu20:1.6.0
     needs:
         - job: build-ubuntu20
           artifacts: true
 
 stdlib-ubuntu20:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu20:1.5.0
+    image: sacbuild/ubuntu20:1.6.0
     needs:
         - job: test-ubuntu20
           artifacts: true
@@ -220,18 +220,18 @@ stdlib-ubuntu20:
 
 build-ubuntu18:
     <<: *build-template
-    image: sacbuild/ubuntu18:1.5.0
+    image: sacbuild/ubuntu18:1.6.0
 
 test-ubuntu18:
     <<: *test-template
-    image: sacbuild/ubuntu18:1.5.0
+    image: sacbuild/ubuntu18:1.6.0
     needs:
         - job: build-ubuntu18
           artifacts: true
 
 stdlib-ubuntu18:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu18:1.5.0
+    image: sacbuild/ubuntu18:1.6.0
     needs:
         - job: test-ubuntu18
           artifacts: true
@@ -257,6 +257,8 @@ test-macosARM:
 
 stdlib-macosARM:
     <<: *build-stdlib-template
+    # ensure that we build on the correct docker container (there should
+    # only be one tag listed below!)
     tags:
         - macosARM
     needs:
