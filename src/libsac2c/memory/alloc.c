@@ -5,7 +5,7 @@
  * This effectively converts functional SAC programs into imperative programs
  * that perform state changes.
  *
- * In principle, every assignment (including scalar assignments) 
+ * In principle, every assignment (including scalar assignments)
  *
  *    a = expr;
  *
@@ -16,7 +16,7 @@
  *
  * However, depending on the RHS expr, slightly different things need to happen:
  *
- * 1) function calls: here, the allocation happens inside the function. So, 
+ * 1) function calls: here, the allocation happens inside the function. So,
  *
  *        a = fun (...);
  *
@@ -34,7 +34,7 @@
  *     translates into
  *
  *         a_mem = alloc ( _add_SxS_( 1, _dim_A_( aud)), _shape_A_( [ aud, aud ]));
- *         a = _fill_( [ aud, aud ], a_mem); 
+ *         a = _fill_( [ aud, aud ], a_mem);
  *
  *  3) gen/modarray with-loops with scalar cells:
  *
@@ -112,7 +112,7 @@
  *     "allocated" memory.
  *
  *
- *  if you want to experiment with the actual compiler to see what happens, you can get 
+ *  if you want to experiment with the actual compiler to see what happens, you can get
  *  started using this code:
  *
  *
@@ -1585,6 +1585,7 @@ EMALlet (node *arg_node, info *arg_info)
             break;
         case EA_fillnoop:
             /*
+             * a = alloc (...); // see code for F_noop below in EMALprf
              * b = prf (a);
              *
              * is transferred into:
@@ -1602,9 +1603,6 @@ EMALlet (node *arg_node, info *arg_info)
             LET_EXPR (arg_node)
               = TCmakePrf2 (F_fill, TCmakePrf1 (F_noop, TBmakeId (avis)),
                             TBmakeId (avis));
-
-            /* make sure to allocate N_avis */
-            INFO_ALLOCLIST (arg_info)->avis = avis;
             break;
         case EA_nofill:
             /* do nothing */
@@ -2134,9 +2132,13 @@ EMALprf (node *arg_node, info *arg_info)
          * the alternative fill/alloc insertion in EMALlet (see EA_fillnoop). This
          * elides the host2device prf, instead using fill (noop (...), ...).
          */
-        INFO_MUSTFILL (arg_info) = AVIS_ISALLOCLIFT (ID_AVIS (PRF_ARG1 (arg_node)))
-                                     ? EA_fillnoop
-                                     : INFO_MUSTFILL (arg_info);
+        if (AVIS_ISALLOCLIFT (ID_AVIS (PRF_ARG1 (arg_node))))
+        {
+            INFO_MUSTFILL (arg_info) = EA_fillnoop;
+            /* we perform no allocation of the lhs */
+            INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+            break;
+        }
         /* Fall-through */
     case F_device2host:
     case F_device2host_start:
@@ -2198,7 +2200,7 @@ EMALprf (node *arg_node, info *arg_info)
          *
          * a = alloc (...);
          *
-         * a is *always* AKS, so shape and dim can be static evaluated.
+         * a is *always* AKS, so shape and dim can be staticly evaluated.
          *
          */
         if (AVIS_ISALLOCLIFT (als->avis))
@@ -2208,7 +2210,6 @@ EMALprf (node *arg_node, info *arg_info)
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = new_node;
             AVIS_SSAASSIGN (als->avis) = INFO_ASSIGN (arg_info);
-            //AVIS_ISALLOCLIFT (als->avis) = FALSE;
 
             /* we've changed the prf to an alloc, so we don't need another alloc */
             INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
