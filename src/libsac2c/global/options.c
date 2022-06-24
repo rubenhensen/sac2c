@@ -613,7 +613,7 @@ OPTcheckOptionConsistencyForTarget (bool in_module)
 #undef ARGS_ERROR
 #define ARGS_ERROR(msg)                                                                  \
     {                                                                                    \
-        CTIerror (EMPTY_LOC, "%s: %s %s %s", msg, ARGS_argv[0], STRonNull ("", OPT),                \
+        CTIerror (EMPTY_LOC, "%s: %s %s %s", msg, ARGS_argv[0], STRonNull ("", OPT),     \
                   STRonNull ("", ARG));                                                  \
     }
 

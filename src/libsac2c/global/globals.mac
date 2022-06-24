@@ -180,7 +180,7 @@ GLOBAL (bool, printccflags, FALSE, xfree_dummy, )
  * enables printing of ccflags in sac4c
  */
 
-GLOBAL (int, cti_message_length, MAX (40, get_terminal_size ()), xfree_dummy, )
+GLOBAL (int, cti_message_length, get_terminal_size (), xfree_dummy, )
 /*
  * wrapping length of cti messages (0 = no wrapping)
  */

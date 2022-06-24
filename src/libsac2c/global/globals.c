@@ -639,7 +639,9 @@ get_terminal_size (void)
     memset (&ws, 0, sizeof (struct winsize));
 
     if (!isatty (STDERR_FILENO))
-        return 80;
+        // If we are writing to a file, return a length of 0, which in turn
+        // disables line wrapping to avoid unexpected issues.
+        return 0;  
 
     ioctl (STDERR_FILENO, TIOCGWINSZ, &ws);
     return (unsigned short)(ws.ws_col > 4 ? ws.ws_col - 4 : 1);

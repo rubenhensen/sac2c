@@ -169,15 +169,15 @@ CTFinitialize (void)
         // If either of the headers are not the default format and contain newlines,
         // then warn that the newlines are replaced with a spaces.
         if ((!STReq (global.cti_header_format, CTF_DEFAULT_FIRST_LINE_HEADER)
-                && strchr (global.cti_header_format, '\n') == NULL)
+                && strchr (global.cti_header_format, '\n') != NULL)
                 || (!STReq (global.cti_multi_line_format, CTF_DEFAULT_MULTI_LINE_HEADER)
-                && strchr (global.cti_multi_line_format, '\n') == NULL)) {
+                && strchr (global.cti_multi_line_format, '\n') != NULL)) {
             CTIwarn (EMPTY_LOC, "Option -cti-single-line replaces newlines with spaces in the header formats.");
         }
 
         if (global.cti_message_length != 0) {
             CTIwarn (EMPTY_LOC, "Option -cti-single-line implies option -cti-message-length 0.\n"
-                    "Option -cti-message-length will be ignored.");
+                                "Line wrapping has been disabled.");
             global.cti_message_length = 0;
         }
 
