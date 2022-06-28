@@ -771,27 +771,28 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
         // This is only an error if we started with the whole list!
         if (remaining_list == target_list) {
             if (STReq (target, "arch_")) {
-                CTIerror (EMPTY_LOC, 
-                          "During the configuation of sac2c no CUDA architecture "
-                          "was identified. Please use target 'cuda_<arch>` instead "
-                          "of target 'cuda`; for example 'cuda_sm_60`.\n"
-                          "Alternatively, you can provide a default "
-                          "CUDA architecture by changing the definition "
-                          "of 'target cuda` from "
-                          "'target cuda :: cuda_core :: arch_:` to e.g. "
-                          "'target cuda :: cuda_core :: arch_sm_60` or "
-                          "by adding a target definition for 'target arch_`.");
+                CTIerrorBegin (EMPTY_LOC, 
+                    "During the configuation of sac2c no CUDA architecture "
+                    "was identified. Please use target 'cuda_<arch>` instead "
+                    "of target 'cuda`; for example 'cuda_sm_60`.\n"
+                    "Alternatively, you can provide a default "
+                    "CUDA architecture by changing the definition "
+                    "of 'target cuda` from "
+                    "'target cuda :: cuda_core :: arch_:` to e.g. "
+                    "'target cuda :: cuda_core :: arch_sm_60` or "
+                    "by adding a target definition for 'target arch_`.");
             } else if (STRprefix ("cuda_", target)
                        || STRprefix ("arch_", target)) {
                 suffix = STRsubStr (target, (size_t)5, (ssize_t)STRlen (target)-5);
-                CTIerror (EMPTY_LOC,
-                          "You are trying to compile for the CUDA architecture '%s`. "
-                          "The configuration files do not contain "
-                          "target '%s`.", suffix, target);
+                CTIerrorBegin (EMPTY_LOC,
+                    "You are trying to compile for the CUDA architecture '%s`. "
+                    "The configuration files do not contain target '%s`.", 
+                    suffix, target);
             } else {
-                CTIerror (EMPTY_LOC, 
-                          "The configuration files do not contain a specification of "
-                          "target '%s`.", target);
+                CTIerrorBegin (EMPTY_LOC, 
+                    "The configuration files do not contain a specification of "
+                    "target '%s`.",
+                    target);
             }
             CTIerrorContinued ("You may choose a different target from the "
                                "compiler-specific configuration file '%s` or "
@@ -801,6 +802,7 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
                                ( global.build_sac2crc_location != NULL ?
                                  global.build_sac2crc_location :
                                  global.global_sac2crc_location ));
+            CTIerrorEnd ();
             CTIabortOnError ();
         }
         DBUG_PRINT ("                   none found.");
@@ -821,7 +823,7 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
 
         resource = tmp->resource_list;
 
-        DBUG_PRINT ("                 scanning ressources...");
+        DBUG_PRINT ("                 scanning resources...");
         while (resource != NULL) {
             i = 0;
             while ((resource_table[i].name[0] != '\0')

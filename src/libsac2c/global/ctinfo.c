@@ -40,6 +40,7 @@
 #include <signal.h>
 
 #include "ctinfo.h"
+#include "ctformatting.h"
 
 #define DBUG_PREFIX "CTI"
 #include "debug.h"
@@ -72,6 +73,7 @@ static const char *error_message_header = "Error";
 static const char *warn_message_header = "Warning";
 static const char *note_message_header = "Note";
 static const char *indent_message_header = "  ";
+static const char *tell_message_header = "  ";
 static const char *state_message_header = "";
 
 static int errors = 0;
@@ -80,6 +82,51 @@ static int warnings = 0;
 static FILE * cti_stderr;
 
 #define MAX_ITEM_NAME_LENGTH 255
+
+#define PRINT_MESSAGE(header)                                           \
+    {                                                                   \
+        va_start (arg_p, format);                                       \
+        message = CTFvCreateMessage (header, header, format, arg_p);    \
+        va_end (arg_p);                                                 \
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (message));            \
+        SBUFfree (message);                                             \
+    }
+
+#define PRINT_MESSAGE_LOC(header)                                       \
+    {                                                                   \
+        va_start (arg_p, format);                                       \
+        message = CTFvCreateMessageLoc (loc, header, format, arg_p);    \
+        va_end (arg_p);                                                 \
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (message));            \
+        SBUFfree (message);                                             \
+    }
+
+#define PRINT_MESSAGE_BEGIN(header)                                         \
+    {                                                                       \
+        va_start (arg_p, format);                                           \
+        message = CTFvCreateMessageBeginLoc (loc, header, format, arg_p);   \
+        va_end (arg_p);                                                     \
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (message));                \
+        SBUFfree (message);                                                 \
+    }
+
+#define PRINT_MESSAGE_CONTINUED()                                               \
+    {                                                                           \
+        message = SBUFcreate (0);                                               \
+        va_start (arg_p, format);                                               \
+        SBUFvprintf (message, format, arg_p);                                   \
+        va_end (arg_p);                                                         \
+        message = CTFcreateMessageContinued (message); /*deallocates message*/  \
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (message));                    \
+        SBUFfree (message);                                                     \
+    }
+
+#define PRINT_MESSAGE_END()                                     \
+    {                                                           \
+        message = CTFcreateMessageEnd ();                       \
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (message));    \
+        SBUFfree (message);                                     \
+    }
 
 int
 CTIgetErrorCount (void)
@@ -103,168 +150,6 @@ FILE *
 CTIget_stderr ()
 {
     return cti_stderr;
-}
-
-
-/** <!--********************************************************************-->
- *
- * @fn void ProcessMessage( char *buffer, size_t first_header_length, 
- *                          size_t multiline_header_length)
- *
- *   @brief  Formats message according to the global message length, taking into
- *           account the length of the headers.
- *           If the global message length is set to 0, no line wrapping is performed.
- *           
- *           Otherwise, the effective header length for each type is set to 
- *           max(header length + 20, cti-message-length)
- *          
- *           Tab characters are replaced with spaces.
- *           Line wrapping is done by replacing the last known space with an '@' 
- *           character (representing a newline) at the last known position of a space
- *           when the line gets too long.
- *           When no space is available to line wrap, line wrapping is delayed until
- *           a space is found or the end of the string is reached.
- *
- *           NOTE: This function does not care about the global.cti-single-line setting.
- *                 Account for it by replacing newlines with spaces on the final string.
- * 
- *   @param buffer                   message buffer
- *   @param first_header_length      the length of the header used for the first line
- *   @param multiline_header_length  the length of the header for all other lines
- *
- ******************************************************************************/
-
-static void
-ProcessMessage (char *buffer, size_t first_header_length, size_t multiline_header_length)
-{
-    size_t first_line_length, multiline_length, line_length, index, column, last_space;
-    bool space_found;
-
-    DBUG_ENTER ();
-
-
-    if (global.cti_message_length == 0) {
-        first_line_length = 0; // We don't return here because we still 
-        multiline_length = 0;  // replace @ with \n and \t with space in this function.
-    } else {
-        // Just computes the max but I can't find a max function for size_t
-        first_line_length = first_header_length + 20 <= (size_t) global.cti_message_length
-                            ? (size_t) global.cti_message_length : first_header_length + 20;
-        multiline_length = multiline_header_length + 20 <= (size_t) global.cti_message_length
-                            ? (size_t) global.cti_message_length : multiline_header_length + 20;
-    } 
-
-    index = 0;
-    last_space = 0;
-    column = 0;
-    line_length = first_line_length;
-    space_found = false;
-
-    while (buffer[index] != '\0') {
-        if (buffer[index] == '\t') {
-            buffer[index] = ' ';
-        }
-
-        if (buffer[index] == ' ') {
-            last_space = index;
-            space_found = true;
-        }
-
-        if (buffer[index] == '@' || buffer[index] == '\n') {
-            buffer[index] = '@';
-            column = 0;
-            space_found = false;
-            line_length = multiline_length; // Swap to multiline lengths
-        } else if (line_length != 0 // line_length 0 disables insertion of newlines
-                   && column >= line_length // line length is exceeded
-                   && space_found) { // we have a space in the line to convert
-            buffer[last_space] = '@';
-            column = index - last_space;
-            space_found = false;
-            line_length = multiline_length; // Swap to multiline lengths
-        }
-
-        index++;
-        column++;
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn str_buf *Loc2buf( const struct location loc)
- *
- *   @brief  Produces a GNU format string representing the location.
- *           When NULL is given or the location is invalid, the buffer will be empty.
- *
- *   @param  loc A node representing the location of the error.
- *               If no location is available or appropriate, NULL should be supplied.
- * 
- *   @return A str_buf containing a string representation of the location.
- *
- ******************************************************************************/
-static str_buf *
-Loc2buf (const struct location loc) 
-{
-    str_buf *buf;
-    
-    DBUG_ENTER ();
-
-    buf = SBUFcreate (0);
-
-    if (loc.fname == NULL) {
-        DBUG_RETURN (buf);
-    }
-
-    buf = SBUFcreate (0);
-    if (loc.line != 0) {
-        if (loc.col != 0) {
-            SBUFprintf (buf, "%s:%zu:%zu: ", loc.fname, loc.line, loc.col);
-        } else {
-            SBUFprintf (buf, "%s:%zu: ", loc.fname, loc.line);
-        }
-    } else {
-        SBUFprintf (buf, "%s: ", loc.fname);
-    }
-    DBUG_RETURN (buf);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void PrintMessage( const char *header, const char *format, va_list arg_p)
- *
- *   @brief Formats the message, introduces linewraps, and prints the result to stderr.
- *
- *   @param header  string which precedes each line of the message, e.g.
-                    ERROR or WARNING.
- *   @param format  format string like in printf family of functions
- *
- ******************************************************************************/
-
-static void
-PrintMessage (const char *header, const char *format, va_list arg_p)
-{
-    char *line;
-    str_buf *buf;
-
-    DBUG_ENTER ();
-
-    buf = SBUFcreate (0);
-    SBUFvprintf (buf, format, arg_p);
-    // Processmessage doesn't affect the length, so we can pass the internal buffer
-    ProcessMessage (SBUFgetBuffer (buf), STRlen (header), STRlen (header));
-    line = strtok (SBUFgetBuffer (buf), "@"); // Destroys buf contents, which is fine
-
-    while (line != NULL) {
-        fprintf (cti_stderr, "%s%s\n", header, line);
-        line = strtok (NULL, "@");
-    }
-    fflush (cti_stderr);
-
-    SBUFfree (buf);
-
-    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -582,105 +467,6 @@ CTIinstallInterruptHandlers ()
 
 /** <!--********************************************************************-->
  *
- * @fn str_buf *FinalizeMessageBegin( const struct location loc, 
- *                                    const char *message_header, 
- *                                    const char *format, va_list arg_p)
- *
- *   @brief  Finalizes all processing required to display the message such that 
- *           it can later be printed with `fprintf(cti_stderr, "%s", ret)`
- *           Does not include a trailing newline.
- *
- *   @param loc             The location of the message.
- *   @param message_header  The header associated with the type of message, 
- *                          e.g. error_message_header for errors.
- *   @param format          format string like in printf
- *   @param arg_p           arguments for the format string
- *
- ******************************************************************************/
-
-static str_buf *
-FinalizeMessageBegin (const struct location loc, const char *message_header,
-                      const char *format, va_list arg_p)
-{
-    str_buf *message;
-    str_buf *message_header_base;
-    str_buf *message_header_multiline;
-    size_t message_header_first_line_length;
-    size_t message_header_multiline_length;
-
-    DBUG_ENTER ();
-
-    // PREPARING HEADERS
-    
-    // "<filepath>:<line>:<column>: <MessageType>"
-    message_header_base = Loc2buf (loc);
-    message_header_base = SBUFprint (message_header_base, message_header);
-
-    // Apply the base message header to the format string from cti-multi-line-format
-    // The user has control over the format through cli arguments: they can use a
-    // single %s or %0.s to (not) display the base header each time on subsequent lines.
-    message_header_multiline = SBUFcreate (1);
-    SBUFprint (message_header_multiline, "\n");
-    SBUFprintf (message_header_multiline, global.cti_multi_line_format, SBUFgetBuffer (message_header_base));
-    message_header_multiline_length = SBUFlen (message_header_multiline) - 1; // Don't count the '\n'
-
-    // CONSTRUCTING MESSAGE CONTENT
-
-    // Generate the header for the first line and store the length
-    message = SBUFcreate (0);
-    SBUFprintf (message, global.cti_header_format, SBUFgetBuffer (message_header_base));
-    message_header_first_line_length = SBUFlen (message);
-
-    // Append the format string
-    SBUFvprintf (message, format, arg_p);
-
-    // Insert line wraps, modifications are done in place.
-    ProcessMessage (SBUFgetBuffer (message), 
-                    message_header_first_line_length, message_header_multiline_length);
-    
-    if (global.cti_single_line) { // Kill newlines
-        SBUFsubstToken (message, "@", " ");
-        SBUFsubstToken (message, "\n", " ");
-    } else { // Generate newlines
-        SBUFsubstToken (message, "@", SBUFgetBuffer (message_header_multiline));
-    }
-
-    SBUFfree (message_header_base);
-    SBUFfree (message_header_multiline);
-    DBUG_RETURN (message);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn str_buf *FinalizeMessage( const struct location loc, 
- *                               const char *message_header, 
- *                               const char *format, va_list arg_p)
- *
- *   @brief  Returns FinalizeMessage but with a trailing newline.
- *
- *   @param loc              The location of the message.
- *   @param message_header   The header associated with the type of message, 
- *                           e.g. error_message_header for errors.
- *   @param format           format string like in printf
- *   @param arg_p            arguments for the format string
- *
- ******************************************************************************/
-
-static str_buf *
-FinalizeMessage (const struct location loc, const char *message_header, 
-                 const char *format, va_list arg_p)
-{
-    str_buf *message;
-    
-    DBUG_ENTER ();
-    message = FinalizeMessageBegin (loc, message_header, format, arg_p);
-    SBUFprint (message, "\n");
-
-    DBUG_RETURN (message);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn void CTIerror( const struct location loc, const char *format, ...)
  *
  *   @brief  Produces an error message with the file name, line number and
@@ -698,19 +484,12 @@ FinalizeMessage (const struct location loc, const char *message_header,
 void
 CTIerror(const struct location loc, const char *format, ...)
 {
-    str_buf *error_msg;
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
-    va_start (arg_p, format);
-
-    error_msg = FinalizeMessage (loc, error_message_header, format, arg_p);
-    fprintf (cti_stderr, "%s", SBUFgetBuffer (error_msg));
-    SBUFfree (error_msg);
-
-    va_end (arg_p);
-
+    PRINT_MESSAGE_LOC (error_message_header);
     errors++;
 
     DBUG_RETURN ();
@@ -718,15 +497,16 @@ CTIerror(const struct location loc, const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn char *CTIgetErrorMessageVA( int line, const char *file,
- *                                 const char *format, va_list arg_p)
+ * @fn str_buf *CTIgetErrorMessageVA( int line, const char *file,
+ *                                    const char *format, va_list arg_p)
  *
  *   @brief Generates an error message string.
  *
  *          This function allows for split-phase error messages:
  *
- *          str = CTIgetErrorMessageVA (line, fname, format, ...args);
- *          CTIabortOnBottom (str);
+ *          str_buf = CTIgetErrorMessageVA (line, fname, format, ...args);
+ *          CTIerrorRaw (SBUFgetBuffer (str_buf));
+ *          SBUFfree (str_buf);
  *
  *          equates to
  *
@@ -734,6 +514,8 @@ CTIerror(const struct location loc, const char *format, ...)
  *
  *          This allows preparing error messages in advance and activating
  *          them when needed.
+ * 
+ *          Afterwards, an abort can be triggered with CTIabortOnError ();
  *
  *   @param line    line number to use in error message
  *   @param file    file name to use in error message
@@ -741,74 +523,119 @@ CTIerror(const struct location loc, const char *format, ...)
  *
  ******************************************************************************/
 
-char *
+str_buf *
 CTIgetErrorMessageVA (size_t line, const char *file, const char *format, va_list arg_p)
 {
     str_buf *message;
     DBUG_ENTER ();
 
-    message = FinalizeMessage ((struct location) {.fname = file, .line = line, .col = 0},
-                               error_message_header, format, arg_p);
+    message = CTFvCreateMessageLoc ((struct location) {.fname = file, .line = line, .col = 0},
+                                    error_message_header, format, arg_p);
 
-    DBUG_RETURN (SBUF2strAndFree (&message));
-}
-
-char *
-CTIerrorBegin (const char *format, ...)
-{
-    if (global.cti_single_line) {
-
-    }
-    // Goal:
-    // If cti-single-line is active:
-    // • Same as CTIerror but without a trailing newline
-    // If cti-single-line is inactive:
-    // • Same as CTIerror
-    return NULL;
+    DBUG_RETURN (message);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIerrorContinued( const char *format, ...)
+ * @fn void CTIerrorBegin( const struct location loc, const char *format, ...)
  *
- *   @brief  Same as CTIerror BUT does not count as new error!
+ *   @brief  Produces an error message with the file name, line number and
+ *           column if they are available.
+ *           After calling CTIerrorBegin, any number of calls to CTIerrorContinued
+ *           can be made, after which *CTIerrorEnd* has to be called.
+ *
+ *   @param loc     If no location is available or relevant, you can provide
+ *                  the macro EMPTY_LOC.
+ *                  If the file name and line numbers are available, but the
+ *                  column is unknown, use the macro LINE_TO_LOC (line).
+ *                  If all information is available, just provide a location
+ *                  struct as normal.
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+void
+CTIerrorBegin (const struct location loc, const char *format, ...)
+{
+    str_buf *message;
+    va_list arg_p;
+
+    DBUG_ENTER ();
+
+    PRINT_MESSAGE_BEGIN (error_message_header);
+    errors++;
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIerrorContinued( const struct location loc, const char *format, ...)
+ *
+ *   @brief  Continues an error message that was started with CTIerrorBegin, using
+ *           the file name, line number and column from the location if they available.
+ *           After calling CTIerrorBegin, any number of calls to CTIerrorContinued
+ *           can be made, after which *CTIerrorEnd* has to be called.
  *
  *   @param format  format string like in printf
  *
  ******************************************************************************/
 
-void //TODO: change to char *
+void
 CTIerrorContinued (const char *format, ...)
 {
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
-    va_start (arg_p, format);
-
-    // Goal:
-    // If cti-single-line is active:
-    // • Don't print a header
-    // • Don't print a trailing newline, but print a trailing space
-    // If cti-single-line is inactive:
-    // • Do print a multiline header
-    // • Do print a trailing newline
-    PrintMessage (indent_message_header, format, arg_p);
-
-    va_end (arg_p);
+    PRINT_MESSAGE_CONTINUED ();
 
     DBUG_RETURN ();
 }
 
-char *
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIerrorEnd()
+ *
+ *   @brief  Ends an error message that was started with CTIerrorBegin and followed
+ *           by any number of CTIerrorContinued calls.
+ *           Failure to call this function will lead to memory leaks and missing
+ *           newlines if the command line option cti-single-line is enabled.
+ *
+ ******************************************************************************/
+void
 CTIerrorEnd (void) 
 {
-    // Goal:
-    // If cti-single-line is active:
-    // • Return a newline
-    // If cti-single-line is inactive:
-    // • Return an empty string
-    return NULL;
+    str_buf *message;
+    
+    DBUG_ENTER ();
+
+    PRINT_MESSAGE_END ();
+
+    DBUG_RETURN ();
+}
+
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIerrorRaw( const char *message)
+ *
+ *   @brief  Prints a preformatted error message and counts increments the error counter.
+ *           Should only be used in conjunction with CTIgetErrorMessageVA, but should
+ *           ideally be completely avoided in favor of CTIerror()
+ *
+ *   @param message The preformatted message to be printed to stderr.
+ *
+ ******************************************************************************/
+void
+CTIerrorRaw (const char *message)
+{
+    DBUG_ENTER ();
+
+    fprintf (cti_stderr, "%s", message);
+    errors++;
+
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -831,7 +658,7 @@ CTIerrorInternal (const char *format, ...)
 
     DBUG_ENTER ();
 
-    fprintf (cti_stderr, "%sInternal %s failure\n", error_message_header, global.toolname);
+    fprintf (cti_stderr, "%s: Internal %s failure\n", error_message_header, global.toolname);
 
     fprintf (cti_stderr,
              "%sCompiler phase:    %s\n"
@@ -847,7 +674,6 @@ CTIerrorInternal (const char *format, ...)
     fprintf (cti_stderr, "%s", error_message_header);
     fprintf (cti_stderr, format, arg_p);
     va_end (arg_p);
-
 
     errors++;
 
@@ -892,18 +718,12 @@ CTIabortOnBottom (char *err_msg)
 void
 CTIabort (const struct location loc, const char *format, ...)
 {
-    str_buf *abort_msg;
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
-    va_start (arg_p, format);
-    abort_msg = FinalizeMessage (loc, abort_message_header, format, arg_p);
-    va_end (arg_p);
-
-    fprintf (cti_stderr, "%s", SBUFgetBuffer (abort_msg));
-    SBUFfree (abort_msg);
-
+    PRINT_MESSAGE_LOC (abort_message_header);
 
     AbortCompilation ();
 }
@@ -986,49 +806,14 @@ CTIabortOnError ()
 void
 CTIwarn (const struct location loc, const char *format, ...)
 {
-    str_buf *warn_msg;
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     if (global.verbose_level >= 1) {
-        va_start (arg_p, format);
-        warn_msg = FinalizeMessage (loc, warn_message_header, format, arg_p);
-        va_end (arg_p);
-
-        fprintf (cti_stderr, "%s", SBUFgetBuffer (warn_msg));
-        SBUFfree (warn_msg);
-
+        PRINT_MESSAGE_LOC (warn_message_header);
         warnings++;
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIwarnContinued( const char *format, ...)
- *
- *   @brief   Same as CTIwarn BUT does not count as new warning.
- *
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIwarnContinued (const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    if (global.verbose_level >= 1) {
-        va_start (arg_p, format);
-
-        PrintMessage (indent_message_header, format, arg_p);
-
-        va_end (arg_p);
-
     }
 
     DBUG_RETURN ();
@@ -1054,16 +839,13 @@ CTIwarnContinued (const char *format, ...)
 void
 CTIstate (const char *format, ...)
 {
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     if (global.verbose_level >= 2) {
-        va_start (arg_p, format);
-
-        PrintMessage (state_message_header, format, arg_p);
-
-        va_end (arg_p);
+        PRINT_MESSAGE (state_message_header);
     }
 
     DBUG_RETURN ();
@@ -1083,7 +865,7 @@ CTIstate (const char *format, ...)
  *   @brief  Produces full compile time information output (verbosity level 3)
  *           If EMPTY_LOC is provided, the messages are indented with two spaces.
  *           If location information is provided, the messages have a header with
- *           `note:', similar to CTIerror/Abort/Warn.
+ *           `Note', similar to CTIerror/Abort/Warn.
  *
  *   @param loc     If no location is available or relevant, you can provide
  *                  the macro EMPTY_LOC.
@@ -1098,26 +880,19 @@ CTIstate (const char *format, ...)
 void
 CTInote (const struct location loc, const char *format, ...)
 {
-    str_buf *note_msg;
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     if (global.verbose_level >= 3) {
-        va_start (arg_p, format);
-
-        // Note (pun not intended) that we should not use FinalizeMessage for the
-        // note_message_header here because 17 years worth of code is specifically
-        // formatted to only be prefixed with 2 spaces (indent header).
-        if (loc.fname == NULL || loc.line == 0) { // 
-            PrintMessage (indent_message_header, format, arg_p);
+        if (loc.fname == NULL || loc.line == 0) {
+            // Legacy code - use the indent header instead of the note header if the location is empty
+            PRINT_MESSAGE (indent_message_header);
         } else {
-            note_msg = FinalizeMessage (loc, note_message_header, format, arg_p);
-            fprintf (cti_stderr, "%s", SBUFgetBuffer (note_msg));
-            SBUFfree (note_msg);
-        }        
-
-        va_end (arg_p);
+            // With a location, the message is generated 'as normal'.
+            PRINT_MESSAGE_LOC (note_message_header);
+        }
     }
 
     DBUG_RETURN ();
@@ -1142,16 +917,13 @@ CTInote (const struct location loc, const char *format, ...)
 void
 CTItell (int verbose_level, const char *format, ...)
 {
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     if (global.verbose_level >= verbose_level) {
-        va_start (arg_p, format);
-
-        PrintMessage (indent_message_header, format, arg_p);
-
-        va_end (arg_p);
+        PRINT_MESSAGE (tell_message_header);
     }
 
     DBUG_RETURN ();

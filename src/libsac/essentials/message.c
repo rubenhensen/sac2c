@@ -74,12 +74,12 @@ SAC_RuntimeError (const char *format, ...)
     va_start (arg_p, format);
 
     tmp = strdup (format);
-    line = strtok (tmp, "@");
+    line = strtok (tmp, "\n");
     while (line != NULL) {
         fprintf (stderr, "*** ");
         vfprintf (stderr, line, arg_p);
         fprintf (stderr, "\n");
-        line = strtok (NULL, "@");
+        line = strtok (NULL, "\n");
     }
 
     va_end (arg_p);

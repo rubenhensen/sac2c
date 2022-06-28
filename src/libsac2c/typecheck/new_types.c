@@ -1321,8 +1321,9 @@ TYmakeBottomType (char *err_msg)
  *
  * @fn void TYextendBottomError( ntype *type, char *err_msg)
  *
- *   @brief replaces the err_msg contained in the bottom type by a concatinantion
+ *   @brief Replaces the err_msg contained in the bottom type by a concatenantion
  *          of the existing message and the new one.
+ *          Does nothing if err_msg is NULL.
  *   @param err_msg error that generated this type
  *
  ******************************************************************************/
@@ -1334,9 +1335,11 @@ TYextendBottomError (ntype *type, char *err_msg)
 
     DBUG_ENTER ();
 
-    new_msg = STRcatn (3, BOTTOM_MSG (type), "@", err_msg);
-    BOTTOM_MSG (type) = MEMfree (BOTTOM_MSG (type));
-    BOTTOM_MSG (type) = new_msg;
+    if (err_msg != NULL) {
+        new_msg = STRcatn (3, BOTTOM_MSG (type), "\n", err_msg);
+        BOTTOM_MSG (type) = MEMfree (BOTTOM_MSG (type));
+        BOTTOM_MSG (type) = new_msg;
+    }
 
     DBUG_RETURN ();
 }

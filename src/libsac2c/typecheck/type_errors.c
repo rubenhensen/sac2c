@@ -436,7 +436,7 @@ TEgetNumRets (te_info *info)
     DBUG_RETURN (num_res);
 }
 
-static char *errors = NULL;
+static str_buf *errors = NULL;
 
 /** <!--********************************************************************-->
  *
@@ -454,19 +454,19 @@ void
 TEhandleError (size_t line, const char *file, const char *format, ...)
 {
     va_list arg_p;
-
+    str_buf *error_message;
     DBUG_ENTER ();
 
     va_start (arg_p, format);
+    error_message = CTIgetErrorMessageVA (line, file, format, arg_p);
+    va_end (arg_p);
 
     if (errors == NULL) {
-        errors = CTIgetErrorMessageVA (line, file, format, arg_p);
+        errors = error_message;
     } else {
-        errors
-          = STRcatn (3, errors, "@", CTIgetErrorMessageVA (line, file, format, arg_p));
+        SBUFprint (errors, "\n");
+        SBUFprintd (errors, SBUF2strAndFree (&error_message));
     }
-
-    va_end (arg_p);
 
     DBUG_RETURN ();
 }
@@ -487,8 +487,8 @@ TEfetchErrors ()
     char *res;
     DBUG_ENTER ();
 
-    res = errors;
-    errors = NULL;
+    // Return NULL or the string - errors is reset to NULL.
+    res = errors == NULL ? NULL : SBUF2strAndFree (&errors);
 
     DBUG_RETURN (res);
 }
@@ -496,6 +496,7 @@ TEfetchErrors ()
 void
 TEextendedAbort ()
 {
+    // SHOULD ONLY BE CALLED IMMEDIATELY AFTER CTIerrorBegin!
     node *assign;
     ntype *args;
 
@@ -532,7 +533,7 @@ TEextendedAbort ()
             global.act_info_chn = TI_CHN (global.act_info_chn);
         }
     }
-
+    CTIerrorEnd ();
     CTIabortOnError ();
 
     DBUG_RETURN ();

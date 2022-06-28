@@ -128,6 +128,35 @@ SBUFprint (str_buf *s, const char *string)
     DBUG_RETURN (s);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn str_buf *SBUFprintd( str_buf *s, char *string)
+ *
+ *   @brief  Append the given string to the buffer, then deallocate the string.
+ *
+ *   @param  s      The buffer.
+ *   @param  string The string to append to the buffer.
+ * 
+ *   @return The given string buffer.
+ *
+ ******************************************************************************/
+str_buf *
+SBUFprintd (str_buf *s, char *string)
+{
+    size_t len;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (s != NULL, "Expected the buffer to be non-null");
+    DBUG_ASSERT (string != NULL, "Expected the string to be non-null");
+
+    len = STRlen (string);
+    s = EnsureStrBufSpace (s, len);
+    s->len += (size_t)sprintf (&s->buf[s->len], "%s", string);
+    DBUG_PRINT ("len of buffer %p is now %zu", (void *)s, s->len);
+    MEMfree (string);
+
+    DBUG_RETURN (s);
+}
 
 /** <!--********************************************************************-->
  *

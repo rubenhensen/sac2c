@@ -93,13 +93,16 @@ CheckUseUnique (sttable_t *table)
             stentry_t *entry = STentryIteratorNext (entries);
 
             if (STentryIteratorHasMore (entries)) {
-                CTIerror (EMPTY_LOC, "Symbol `%s' used more than once", STsymbolName (symbol));
-                CTIerrorContinued ("... from module `%s'", STentryName (entry));
+                CTIerrorBegin (EMPTY_LOC, 
+                               "Symbol `%s' used more than once\n"
+                               "... from module `%s'", 
+                               STsymbolName (symbol), STentryName (entry));
 
                 while (STentryIteratorHasMore (entries)) {
                     entry = STentryIteratorNext (entries);
                     CTIerrorContinued ("... from module `%s'", STentryName (entry));
                 }
+                CTIerrorEnd ();
             }
         }
 

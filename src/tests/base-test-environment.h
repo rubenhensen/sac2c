@@ -10,11 +10,6 @@
 
 #include "gtest/gtest.h"
 
-extern "C" {
-#include "ctformatting.h"
-#include "ctinfo.h"
-}
-
 class BaseEnvironment : public ::testing::Environment {
     public:
 

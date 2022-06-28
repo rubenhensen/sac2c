@@ -690,7 +690,7 @@ CTFcreateMessage (const char *first_line_header, const char *multiline_header,
 
 /** <!--********************************************************************-->
  * 
- * @fn str_buf *CTFvcreateMessageLoc( struct location loc,
+ * @fn str_buf *CTFvCreateMessageLoc( struct location loc,
  *                                    const char *message_header,
  *                                    const char *format, va_list arg_p)
  * 
@@ -706,7 +706,7 @@ CTFcreateMessage (const char *first_line_header, const char *multiline_header,
  * 
  ******************************************************************************/
 str_buf *
-CTFvcreateMessageLoc (struct location loc, const char *message_header,
+CTFvCreateMessageLoc (struct location loc, const char *message_header,
                       const char *format, va_list arg_p)
 {
     str_buf *first_line_header;
@@ -749,7 +749,7 @@ CTFcreateMessageLoc (struct location loc, const char *message_header,
     DBUG_ENTER ();
 
     va_start (arg_p, format);
-    message = CTFvcreateMessageLoc (loc, message_header, format, arg_p);
+    message = CTFvCreateMessageLoc (loc, message_header, format, arg_p);
     va_end (arg_p);
 
     DBUG_RETURN (message);

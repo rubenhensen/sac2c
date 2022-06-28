@@ -4,6 +4,7 @@
 #include <stdarg.h>
 
 #include "types.h"
+#include "str_buffer.h"
 #include "fun-attrs.h"
 #include "globals.h"
 
@@ -30,11 +31,14 @@ extern const char *CTIfunParams (node *fundef);
  * verbosity level >= 0:
  */
 extern void CTIerror (const struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
+extern void CTIerrorBegin (const struct location loc, const char *format, ...) PRINTF_FORMAT(2, 3);
 extern void CTIerrorContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
+extern void CTIerrorEnd (void);
+extern void CTIerrorRaw (const char *message);
 extern void CTIerrorInternal (const char *format, ...) PRINTF_FORMAT (1, 2);
 /* helpers: */
-extern char *CTIgetErrorMessageVA (size_t line, const char *file, const char *format,
-                                   va_list arg_p);
+extern str_buf *CTIgetErrorMessageVA (size_t line, const char *file, const char *format,
+                                      va_list arg_p);
 extern void CTIabort (const struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3) FUN_ATTR_NORETURN;
 extern void CTIabortOnBottom (char *err_msg) FUN_ATTR_NORETURN;
 extern void CTIabortOutOfMemory (size_t request) FUN_ATTR_NORETURN;
@@ -44,7 +48,6 @@ extern void CTIabortOnError (void);
  * verbosity level >= 1:
  */
 extern void CTIwarn (const struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
-extern void CTIwarnContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
 
 /**
  * verbosity level >= 2:

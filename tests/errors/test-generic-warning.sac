@@ -1,9 +1,9 @@
-// This test asserts that generic warnings are printed as `Warning:`
 // SAC_TEST|include common.mk
-// SAC_TEST|SAC2C_FLAGS += -check c -v1 -b 1:loc
+// SAC_TEST|SAC2C_FLAGS += -v1 -b 1:loc -cti-single-line -cti-message-length 1 -cti-header-format "Test%sTest%%"
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>$(CALL_SAC2C) $< 2>&1 | grep -Pi "^Warning:$$" | $(GREP_COMMAND_OUTPUT) "" 1
+// SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) $< 2>&1`; <nlslash>
+// SAC_TEST|<tab>echo "$$OUTPUT" | grep -E "^TestWarningTest%.*cti-message-length.*$$" | $(GREP_COMMAND_OUTPUT) "" 1; <nlslash>
 
-// No code is necessary.
+// No code is necessary - the cti-single-line flag conflicts with the cti-message-length flag and leads to a warning

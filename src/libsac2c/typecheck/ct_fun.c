@@ -267,7 +267,7 @@ NTCCTudf (te_info *info, ntype *args)
                         (void *)global.act_info_chn);
 
         tmp = TYtype2String (args, FALSE, 0);
-        TEhandleError (global.linenum, global.filename, " -- in %s%s@",
+        TEhandleError (global.linenum, global.filename, " -- in %s%s",
                        CTIitemName (fundef), tmp);
         tmp = MEMfree (tmp);
     }

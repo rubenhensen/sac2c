@@ -127,22 +127,24 @@ available, you would place this into your test file:
 At times, it is desirable to run multiple checks on the sac output. In such scenarios, the output can be stored and reused as such:
 ```c
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) $<` && <nlslash>
+// SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) $<`; <nlslash>
 // Ensure we get exactly three lines as an output:
 // SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "" 3; <nlslash>
 // Ensure one of those lines contains "TEST"
-// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "test"
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "test" 1; <nlslash>
 ```
 
 This leads to the makefile
 ```
 all: <example-file-name.sac>
-  OUTPUT=`$(CALL_SAC2C) $< && \
+  OUTPUT=`$(CALL_SAC2C) $<; \
   echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "" 3; \
-  echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "test" 1
+  echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "test" 1; \
+
 ```  
 
-The `<nlslash>` meta tag gets transformed into a backslash. The backslash, in combination with either `&&` or `;` allows for the subsequent commands to happen in the same shell session. If the commands were executed in different shell sessions, the variable `OUTPUT` would be lost.
+The `<nlslash>` meta tag gets transformed into a backslash. The backslash, in combination with either `;` or `&&` allows for the subsequent commands to happen in the same shell session. If the commands were executed in different shell sessions, the variable `OUTPUT` would be lost.  
+While debugging or creating the tests, your first instinct should be to look for a missing `; <nlslash>`.
 
 ## Description of common.mk and scripts
 

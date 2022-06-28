@@ -42,6 +42,7 @@ ADD_LIBRARY (runtimedummy STATIC "runtime_dummy.c")
 # The implementation of the base environment has to be added and later linked, 
 # else test SetUp() and TearDown() functions methods will have no implementation.
 ADD_LIBRARY (base-test-environment STATIC "base-test-environment.cpp")
+TARGET_LINK_LIBRARIES (base-test-environment sac2cShared)
 
 # Some general variables
 SET (SAC2C_TESTS_PATH "${PROJECT_SOURCE_DIR}/src/tests")

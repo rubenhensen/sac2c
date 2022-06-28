@@ -184,7 +184,8 @@ NTCCTprf_cast (te_info *info, ntype *elems)
                                          expr_str, "\""), expr_bt);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
-        CTIerror (EMPTY_LOC, "%s", err_msg);
+        CTIerrorRaw (err_msg);
+        CTIerrorBegin (EMPTY_LOC, "%s", "");
         TEextendedAbort ();
     }
 
@@ -233,15 +234,15 @@ NTCCTprf_cast (te_info *info, ntype *elems)
             d_shp = TYgetShape (UTgetBaseType (TYgetUserType (TYgetScalar (cast_t))));
             s_shp = SHdropFromShape (SHgetDim (shp) - SHgetDim (d_shp), shp);
             if (!SHcompareShapes (d_shp, s_shp)) {
-                CTIerror (LINE_TO_LOC (global.linenum),
-                          "Cast type %s does not match expression type %s "
-                          "as \"%s\" relates to %s",
-                          TYtype2String (cast_t, FALSE, 0),
-                          TYtype2String (expr_t, FALSE, 0),
-                          UTgetName (TYgetUserType (TYgetScalar (cast_t))),
-                          TYtype2String (UTgetBaseType (
-                                           TYgetUserType (TYgetScalar (cast_t))),
-                                         FALSE, 0));
+                CTIerrorBegin (LINE_TO_LOC (global.linenum),
+                               "Cast type %s does not match expression type %s "
+                               "as \"%s\" relates to %s",
+                               TYtype2String (cast_t, FALSE, 0),
+                               TYtype2String (expr_t, FALSE, 0),
+                               UTgetName (TYgetUserType (TYgetScalar (cast_t))),
+                               TYtype2String (UTgetBaseType (
+                                                TYgetUserType (TYgetScalar (cast_t))),
+                                              FALSE, 0));
                 TEextendedAbort ();
             }
         }
@@ -249,15 +250,15 @@ NTCCTprf_cast (te_info *info, ntype *elems)
             d_shp = TYgetShape (UTgetBaseType (TYgetUserType (TYgetScalar (expr_t))));
             s_shp = SHdropFromShape (SHgetDim (shp) - SHgetDim (d_shp), shp);
             if (!SHcompareShapes (d_shp, s_shp)) {
-                CTIerror (LINE_TO_LOC (global.linenum),
-                          "Cast type %s does not match expression type %s "
-                          "as \"%s\" relates to %s",
-                          TYtype2String (cast_t, FALSE, 0),
-                          TYtype2String (expr_t, FALSE, 0),
-                          UTgetName (TYgetUserType (TYgetScalar (expr_t))),
-                          TYtype2String (UTgetBaseType (
-                                           TYgetUserType (TYgetScalar (expr_t))),
-                                         FALSE, 0));
+                CTIerrorBegin (LINE_TO_LOC (global.linenum),
+                               "Cast type %s does not match expression type %s "
+                               "as \"%s\" relates to %s",
+                               TYtype2String (cast_t, FALSE, 0),
+                               TYtype2String (expr_t, FALSE, 0),
+                               UTgetName (TYgetUserType (TYgetScalar (expr_t))),
+                               TYtype2String (UTgetBaseType (
+                                                TYgetUserType (TYgetScalar (expr_t))),
+                                              FALSE, 0));
                 TEextendedAbort ();
             }
         }
@@ -273,19 +274,19 @@ NTCCTprf_cast (te_info *info, ntype *elems)
                   : !SHcompareShapes (SHdropFromShape (SHgetDim (shp) - SHgetDim (d_shp),
                                                        shp),
                                       d_shp)) {
-                CTIerror (LINE_TO_LOC (global.linenum),
-                          "Cast type %s does not match expression type %s "
-                          "as \"%s\" relates to %s whereas \"%s\" relates to %s",
-                          TYtype2String (cast_t, FALSE, 0),
-                          TYtype2String (expr_t, FALSE, 0),
-                          UTgetName (TYgetUserType (TYgetScalar (cast_t))),
-                          TYtype2String (UTgetBaseType (
-                                           TYgetUserType (TYgetScalar (cast_t))),
-                                         FALSE, 0),
-                          UTgetName (TYgetUserType (TYgetScalar (expr_t))),
-                          TYtype2String (UTgetBaseType (
-                                           TYgetUserType (TYgetScalar (expr_t))),
-                                         FALSE, 0));
+                CTIerrorBegin (LINE_TO_LOC (global.linenum),
+                               "Cast type %s does not match expression type %s "
+                               "as \"%s\" relates to %s whereas \"%s\" relates to %s",
+                               TYtype2String (cast_t, FALSE, 0),
+                               TYtype2String (expr_t, FALSE, 0),
+                               UTgetName (TYgetUserType (TYgetScalar (cast_t))),
+                               TYtype2String (UTgetBaseType (
+                                                TYgetUserType (TYgetScalar (cast_t))),
+                                              FALSE, 0),
+                               UTgetName (TYgetUserType (TYgetScalar (expr_t))),
+                               TYtype2String (UTgetBaseType (
+                                                TYgetUserType (TYgetScalar (expr_t))),
+                                              FALSE, 0));
                 TEextendedAbort ();
             }
         }
@@ -349,7 +350,7 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
         res = TYcopyType (arg);
     } else {
         TEhandleError (TEgetLine (info), TEgetFile (info),
-                       "inferred type %s should match declared type %s",
+                       "Inferred type %s should match declared type %s",
                        TYtype2String (arg, FALSE, 0), TYtype2String (type, FALSE, 0));
         err_msg = TEfetchErrors ();
         res = TYmakeBottomType (err_msg);
@@ -701,7 +702,7 @@ NTCCTprf_type_constraint (te_info *info, ntype *args)
         pred = TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0));
     } else {
         TEhandleError (TEgetLine (info), TEgetFile (info),
-                       "inferred type %s should match required type %s",
+                       "Inferred type %s should match required type %s",
                        TYtype2String (arg, FALSE, 0), TYtype2String (type, FALSE, 0));
         err_msg = TEfetchErrors ();
         res = TYmakeBottomType (err_msg);
