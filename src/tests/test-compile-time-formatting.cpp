@@ -133,7 +133,7 @@ TEST (CTF, testCreateMessageBeginSingleLineWrapping)
                            "If wrapping were enabled, it would surely work on this gigantic string.");
 
     header = SBUFcreate (0);
-    message_no_wrap = CTFcreateMessageBegin (&header, "%s", long_message);
+    message_no_wrap = CTFcreateMessageBegin (&header, "", "%s", long_message);
     SBUFfree (CTFcreateMessageEnd ());
 
     global.cti_single_line = true;
@@ -143,7 +143,7 @@ TEST (CTF, testCreateMessageBeginSingleLineWrapping)
     // Ensure that line wrapping is ignored when single_line is active:
     // The output should be equal to the output from single line with wrapping explicitly disabled
     header = SBUFcreate (0);
-    message_wrap = CTFcreateMessageBegin (&header, "%s", long_message);
+    message_wrap = CTFcreateMessageBegin (&header, "", "%s", long_message);
     SBUFfree (CTFcreateMessageEnd ());
     EXPECT_STREQ (SBUFgetBuffer (message_no_wrap), SBUFgetBuffer(message_wrap));
     SBUFfree (message_no_wrap);
