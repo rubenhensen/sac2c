@@ -72,6 +72,7 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
 
     GLOBinitializeGlobal (argc, argv, tool, toolname);
     OPTanalyseCommandline (argc, argv);
+    CTFinitialize (); // Reinitialize formatting settings based on command line arguments
 
     RSCevaluateConfiguration ();
 

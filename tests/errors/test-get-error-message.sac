@@ -8,8 +8,9 @@
 // SAC_TEST|<tab>echo "$$OUTPUT" | grep -F '  All instances of "main" contain type errors' | $(GREP_COMMAND_OUTPUT) "" 1; <nlslash>
 // SAC_TEST|<tab>echo "$$OUTPUT" | grep -F "  Inferred type int[1]{0} should match declared type int" | $(GREP_COMMAND_OUTPUT) "" 1 ; <nlslash>
 
+// Test the function CTIgetErrorMessageVA by causing type errors.
 
 int main ()
 {
-  return [0];
+  return [0]; // Expects int but gets int[1]{0}
 }

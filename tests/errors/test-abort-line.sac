@@ -7,6 +7,8 @@
 // SAC_TEST|<tab>echo "$$OUTPUT" | grep -E "^.*:[[:digit:]]+: abort:$$" | $(GREP_COMMAND_OUTPUT) "" 1; <nlslash>
 // SAC_TEST|<tab>echo "$$OUTPUT" | grep -F "  Cannot overload functions of arity 0" | $(GREP_COMMAND_OUTPUT) "" 1; <nlslash>
 
+// Test the function CTIabort and the underlying CTF functions with partial location information.
+
 int main ()
 {
   return 0;

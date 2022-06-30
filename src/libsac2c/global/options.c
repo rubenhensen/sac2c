@@ -154,9 +154,6 @@ OPTcheckOptionConsistency (void)
 
     DBUG_ENTER ();
 
-    // Handle all the checks for compile time formatting aka error handling
-    CTFinitialize ();
-
     if (global.optimize.dophm && !global.config.use_phm_api) {
         CTIerror (EMPTY_LOC, "Private heap management disabled for this SBI.");
     }

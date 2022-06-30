@@ -124,13 +124,14 @@ CheckImportNameClash (const char *symbol, const char *module, sttable_t *table)
     if (STcontains (symbol, table)) {
         iterator = STentryIteratorGet (symbol, table);
 
-        CTIerror (EMPTY_LOC, "Symbol `%s' imported from module '%s' and", symbol, module);
+        CTIerrorBegin (EMPTY_LOC, "Symbol `%s' imported from module '%s' and", 
+                       symbol, module);
 
         while (STentryIteratorHasMore (iterator)) {
             CTIerrorContinued ("...used from module '%s'",
                                STentryName (STentryIteratorNext (iterator)));
         }
-
+        CTIerrorEnd ();
         iterator = STentryIteratorRelease (iterator);
     }
 
