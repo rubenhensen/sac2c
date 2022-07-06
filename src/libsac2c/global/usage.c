@@ -1060,7 +1060,7 @@ PrintCompiletimeMessagingOptions (void)
       "                    Omits all line breaks within messages and\n"
       "                    sets -cti-message-length 0.\n"
       "\n"
-      "    -cti-header-format <string>\n"
+      "    -cti-primary-header-format <string>\n"
       "                    Customize the header of the first line of all message types.\n"
       "                    The string must contain exactly one '%%s` which will be\n"
       "                    replaced by a possible location (GNU format), followed by\n"
@@ -1069,8 +1069,8 @@ PrintCompiletimeMessagingOptions (void)
       "                    line breaks.\n"
       "                    (default: \"%s\")\n"
       "\n"
-      "    -cti-multi-line-format <string>\n"
-      "                    Customize the header of continuation lines in multi-line\n"
+      "    -cti-continuation-header-format <string>\n"
+      "                    Customize the header of the remaining lines in multi-line\n"
       "                    messages.\n"
       "                    The string must contain exactly one '%%s` which will be \n"
       "                    replaced by a possible location (GNU format), followed by\n"
@@ -1079,7 +1079,7 @@ PrintCompiletimeMessagingOptions (void)
       "                    Note that \"%%.s\" or \"%%.0s\" allows the location and\n"
       "                    message type to be omitted.\n"
       "                    This is done with the default value: \"%s\".\n",
-      global.cti_message_length, global.cti_header_format, global.cti_multi_line_format);
+      global.cti_message_length, global.cti_primary_header_format, global.cti_continuation_header_format);
 
     DBUG_RETURN ();
 }

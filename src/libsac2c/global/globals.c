@@ -682,8 +682,8 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname)
     if (!global.cwd)
         CTIabort (EMPTY_LOC, "getcwd: %s", strerror (errno));
     
-    global.cti_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
-    global.cti_multi_line_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
+    global.cti_primary_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
+    global.cti_continuation_header_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
 
     DBUG_RETURN ();
 }

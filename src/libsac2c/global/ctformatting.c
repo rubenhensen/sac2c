@@ -37,7 +37,7 @@ static char *processed_multi_line_format = NULL;
 
 static bool initialized = false;
 
-static char *current_multi_line_header = NULL;
+static char *current_continuation_header = NULL;
 
 /** <!--********************************************************************-->
  *
@@ -58,13 +58,13 @@ ProcessHeaders (void)
 
     if (global.cti_single_line) {
         // We shouldn't encounter \n in any of the headers, but it's not bad to account for it.
-        processed_header_format = STRsubstTokens (global.cti_header_format, 2, "@", " ", "\n", " ");
+        processed_header_format = STRsubstTokens (global.cti_primary_header_format, 2, "@", " ", "\n", " ");
     } else {
-        processed_header_format = STRsubstToken (global.cti_header_format, "@", "\n");
+        processed_header_format = STRsubstToken (global.cti_primary_header_format, "@", "\n");
     }
-    // Newlines in the multi-line header format lead to stupid results, so @ characters are 
+    // Newlines in the continuation header format lead to stupid results, so @ characters are 
     // never converted to newlines, and newlines are always converted to spaces.
-    processed_multi_line_format = STRsubstToken (global.cti_multi_line_format, "\n", " ");
+    processed_multi_line_format = STRsubstToken (global.cti_continuation_header_format, "\n", " ");
 }
 
 
@@ -73,11 +73,11 @@ ProcessHeaders (void)
  * @fn void CTFcheckHeaderConsistency( char *header)
  *
  *   @brief  Checks whether the provided header is valid to be used as the
- *           global.cti_header_format or global.cti_multiline_format.
+ *           global.cti_primary_header_format or global.cti_continuation_header_format.
  * 
  *           If the header is valid, the function returns void.
  *           If the header is invalid, the program gracefully aborts using the 
- *           default global header and multiline format.
+ *           default primary and continuation header formats.
  * 
  *   @param  header The header to check.
  ******************************************************************************/
@@ -134,10 +134,10 @@ CTFcheckHeaderConsistency (char *header)
         // Before we can raise the error, we have to replace the format with something that
         // we know will work: the default error format.
         
-        MEMfree (global.cti_header_format);
-        MEMfree (global.cti_multi_line_format);
-        global.cti_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
-        global.cti_multi_line_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
+        MEMfree (global.cti_primary_header_format);
+        MEMfree (global.cti_continuation_header_format);
+        global.cti_primary_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
+        global.cti_continuation_header_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
         ProcessHeaders();
 
         initialized = true; // Avoid initializing again for no reason
@@ -149,16 +149,16 @@ void
 CTFinitialize (void)
 {
     // If the headers don't exist, which can happen during unit-tests, we apply the default formats
-    if (global.cti_header_format == NULL) {
-        global.cti_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
+    if (global.cti_primary_header_format == NULL) {
+        global.cti_primary_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
     }
-    if (global.cti_multi_line_format == NULL) {
-        global.cti_multi_line_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
+    if (global.cti_continuation_header_format == NULL) {
+        global.cti_continuation_header_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
     }
 
     // Gracefully aborts if the format is not invalid.
-    CTFcheckHeaderConsistency (global.cti_header_format);
-    CTFcheckHeaderConsistency (global.cti_multi_line_format);
+    CTFcheckHeaderConsistency (global.cti_primary_header_format);
+    CTFcheckHeaderConsistency (global.cti_continuation_header_format);
 
     ProcessHeaders ();
 
@@ -168,10 +168,10 @@ CTFinitialize (void)
     if (global.cti_single_line) {
         // If either of the headers are not the default format and contain newlines,
         // then warn that the newlines are replaced with a spaces.
-        if ((!STReq (global.cti_header_format, CTF_DEFAULT_FIRST_LINE_HEADER)
-                && strchr (global.cti_header_format, '\n') != NULL)
-                || (!STReq (global.cti_multi_line_format, CTF_DEFAULT_MULTI_LINE_HEADER)
-                && strchr (global.cti_multi_line_format, '\n') != NULL)) {
+        if ((!STReq (global.cti_primary_header_format, CTF_DEFAULT_FIRST_LINE_HEADER)
+                && strchr (global.cti_primary_header_format, '\n') != NULL)
+                || (!STReq (global.cti_continuation_header_format, CTF_DEFAULT_MULTI_LINE_HEADER)
+                && strchr (global.cti_continuation_header_format, '\n') != NULL)) {
             CTIwarn (EMPTY_LOC, "Option -cti-single-line replaces newlines with spaces in the header formats.");
         }
 
@@ -181,8 +181,8 @@ CTFinitialize (void)
             global.cti_message_length = 0;
         }
 
-        if (!STReq (global.cti_multi_line_format, CTF_DEFAULT_MULTI_LINE_HEADER)) {
-            CTIwarn (EMPTY_LOC, "Option -cti-single-line makes option -cti-multi-line-format redundant.");
+        if (!STReq (global.cti_continuation_header_format, CTF_DEFAULT_MULTI_LINE_HEADER)) {
+            CTIwarn (EMPTY_LOC, "Option -cti-single-line makes option -cti-continuation-header-format redundant.");
         }
     }
 }
@@ -243,7 +243,7 @@ InsertWrapLocations (char *buffer, size_t header_length, bool return_at_newline)
         } else {
             // Return at a newline if the parameter demands it.
             // Note that continuing after the newline leads to problems if the header for the
-            // first line and the header for the second line have different lengths.
+            // first line and the header for the remaining line have different lengths.
             if (buffer[index] == '\n') {
                 if (return_at_newline) {
                     DBUG_RETURN ();
@@ -321,15 +321,15 @@ Loc2buf (const struct location loc)
  *
  *   @brief  Produces a GNU format header of the location and message header.
  *           Formats that header using the processed header formats.
- *           It loads the multiline header into the current_multi_line_header variable,
- *           and returns the first line header.
+ *           It loads the continuation header into the current_continuation_header variable,
+ *           and returns the primary header.
  *
  *   @param  loc            The location of the message.
  *                          If no location is available or appropriate, NULL should be supplied.
  *   @param  message_header The header of the message. Should be of the form "[A-Z][a-z]*".
  *                          Examples are "Error", "Warn" and "Abort"
  * 
- *   @return A str_buf containing the first line header constructed from loc 
+ *   @return A str_buf containing the primary header constructed from loc 
  *           and message_header in the GNU format.
  *
  ******************************************************************************/
@@ -337,15 +337,15 @@ static str_buf *
 CreateAndLoadGNUformatHeader (const struct location loc, const char *message_header)
 {
     str_buf *base_header;
-    str_buf *first_line_header;
-    str_buf *multi_line_header;
+    str_buf *primary_header;
+    str_buf *continuation_header;
     size_t len;
 
     DBUG_ENTER ();
 
     // If this assert triggers, a call to CTFcreateMessageEnd is missing.
-    DBUG_ASSERT (current_multi_line_header == NULL,
-                 "Expected a deallocated current_multi_line_header, but it was allocated, "
+    DBUG_ASSERT (current_continuation_header == NULL,
+                 "Expected a deallocated current_continuation_header, but it was allocated, "
                  "leading to memory leaks.");
     
     base_header = Loc2buf (loc);
@@ -360,18 +360,18 @@ CreateAndLoadGNUformatHeader (const struct location loc, const char *message_hea
 
     // The base header is used to construct the header for the first and subsequent
     // lines using the processed format string.
-    first_line_header = SBUFcreate (0);
-    SBUFprintf (first_line_header, processed_header_format, SBUFgetBuffer (base_header));
+    primary_header = SBUFcreate (0);
+    SBUFprintf (primary_header, processed_header_format, SBUFgetBuffer (base_header));
 
-    // Load the multiline header into the static variable current_multi_line_header.
+    // Load the continuation header into the static variable current_continuation_header.
     // This prevents having to store the location/header on the calling side when invoking
     // functions like CTIerrorContinued.
-    multi_line_header = SBUFcreate (0);
-    SBUFprintf (multi_line_header, processed_multi_line_format, SBUFgetBuffer (base_header));
-    current_multi_line_header = SBUF2strAndFree (&multi_line_header);
+    continuation_header = SBUFcreate (0);
+    SBUFprintf (continuation_header, processed_multi_line_format, SBUFgetBuffer (base_header));
+    current_continuation_header = SBUF2strAndFree (&continuation_header);
 
     SBUFfree (base_header);
-    DBUG_RETURN (first_line_header);
+    DBUG_RETURN (primary_header);
 }
 
 /** <!--********************************************************************-->
@@ -432,7 +432,7 @@ vCreateMessageBegin (str_buf **header, const char *format, va_list arg_p)
     // If we call CTFcreateMessage, we want repeating newlines "\n\n" to also be respected.
     // However, if the call to this function doesn't contain any newline, but would still 
     // process the remanining lines, the result would be something of the following form:
-    // concat(first_line_header, message, multi_line_header, newline)
+    // concat(primary_header, message, continuation_header, newline)
     // Clearly, we don't want the multi_line header there.
     if (!SBUFisEmpty (remaining_lines)) {
         remaining_lines = CTFcreateMessageContinued (remaining_lines);
@@ -444,20 +444,20 @@ vCreateMessageBegin (str_buf **header, const char *format, va_list arg_p)
 
 /** <!--********************************************************************-->
  * @fn str_buf *CTFCreateMessageBegin( str_buf **header, 
- *                                     const char *multi_line_header,
+ *                                     const char *continuation_header,
  *                                     const char *format, va_list arg_p)
  * 
  *   @brief  Formats the message based on the given header and format string.
  *   
  *   @param  header            The header for the first line.
- *   @param  multi_line_header The header for subsequent lines.
+ *   @param  continuation_header The header for subsequent lines.
  *   @param  format            The format on which to apply arg_p to generate the message.
  *   @param  arg_p             The arguments to apply to the format to generate the message.
  * 
  *   @return Returns the formatted message.
  ******************************************************************************/
 str_buf *
-CTFcreateMessageBegin (str_buf **header, const char *multi_line_header, const char *format, ...)
+CTFcreateMessageBegin (str_buf **header, const char *continuation_header, const char *format, ...)
 {
     str_buf *message;
     va_list arg_p;
@@ -465,10 +465,10 @@ CTFcreateMessageBegin (str_buf **header, const char *multi_line_header, const ch
     DBUG_ENTER ();
 
     // If this assert triggers, a call to CTFcreateMessageEnd is missing.
-    DBUG_ASSERT (current_multi_line_header == NULL,
-                 "Expected a deallocated current_multi_line_header, but it was allocated, "
+    DBUG_ASSERT (current_continuation_header == NULL,
+                 "Expected a deallocated current_continuation_header, but it was allocated, "
                  "leading to memory leaks.");
-    current_multi_line_header = STRcpy (multi_line_header);
+    current_continuation_header = STRcpy (continuation_header);
 
     va_start (arg_p, format);
     message = vCreateMessageBegin (header, format, arg_p); // frees header
@@ -528,10 +528,10 @@ CTFcreateMessageContinued (str_buf *remaining_lines)
 
     DBUG_ENTER ();
     
-    DBUG_ASSERT (current_multi_line_header != NULL, 
+    DBUG_ASSERT (current_continuation_header != NULL, 
                  "Attempted to continue a message but there was no message to continue.");
 
-    header_len = STRlen (current_multi_line_header);
+    header_len = STRlen (current_continuation_header);
     InsertWrapLocations (SBUFgetBuffer (remaining_lines), header_len, false);
 
     message = SBUFcreate (SBUFlen (remaining_lines));
@@ -545,9 +545,9 @@ CTFcreateMessageContinued (str_buf *remaining_lines)
     } else {
         // Before we add remaining_lines, we have to manually add the first header
         // because remaining_lines doesn't start with a newline
-        SBUFprint (message, current_multi_line_header);
+        SBUFprint (message, current_continuation_header);
 
-        SBUFinsertAfterToken (remaining_lines, "\n", current_multi_line_header);
+        SBUFinsertAfterToken (remaining_lines, "\n", current_continuation_header);
     }
     
     SBUFprint (message, SBUFgetBuffer (remaining_lines));
@@ -564,7 +564,7 @@ CTFcreateMessageContinued (str_buf *remaining_lines)
  * @fn str_buf *CTFcreateMessageEnd( void)
  * 
  *   @brief  Ends the message.
- *           Frees the static variable current_multi_line_header and sets it to NULL.
+ *           Frees the static variable current_continuation_header and sets it to NULL.
  * 
  *   @return A str_buf containing "\n" if cti_single_line is enabled, 
  *           an empty str_buf otherwise.
@@ -583,20 +583,20 @@ CTFcreateMessageEnd (void)
         SBUFprint (end, "\n");
     }
 
-    current_multi_line_header = MEMfree (current_multi_line_header);
+    current_continuation_header = MEMfree (current_continuation_header);
     DBUG_RETURN (end);
 }
 
 /** <!--********************************************************************-->
  * 
- * @fn str_buf *vCreateMessage( str_buf *first_line_header,
+ * @fn str_buf *vCreateMessage( str_buf *primary_header,
  *                              const char *format, va_list arg_p)
  * 
- *   @brief  Creates a message based on the first_line header, the static
- *           variable current_multi_line_header, and on the format string, 
+ *   @brief  Creates a message based on the primary header, the static
+ *           variable current_continuation_header, the format string, 
  *           and list of arguments for the format string.
  * 
- *   @param  first_line_header The header for the first line of the message.
+ *   @param  primary_header The header for the first line of the message.
  *   @param  format            The format on which to apply the arguments.
  *   @param  arg_p             The arguments to apply onto the format.
  * 
@@ -604,7 +604,7 @@ CTFcreateMessageEnd (void)
  * 
  ******************************************************************************/
 static str_buf *
-vCreateMessage (const char *first_line_header, const char *format, va_list arg_p)
+vCreateMessage (const char *primary_header, const char *format, va_list arg_p)
 {
     str_buf *header;
     str_buf *message;
@@ -612,11 +612,11 @@ vCreateMessage (const char *first_line_header, const char *format, va_list arg_p
     
     DBUG_ENTER ();
 
-    DBUG_ASSERT (current_multi_line_header != NULL, 
+    DBUG_ASSERT (current_continuation_header != NULL, 
                  "Attempted to create a message but not all information was present.");
 
     header = SBUFcreate (0);
-    SBUFprint (header, first_line_header);
+    SBUFprint (header, primary_header);
 
     message = vCreateMessageBegin (&header, format, arg_p); // frees header
 
@@ -629,15 +629,15 @@ vCreateMessage (const char *first_line_header, const char *format, va_list arg_p
 
 /** <!--********************************************************************-->
  * 
- * @fn str_buf *CTFvCreateMessage( str_buf *first_line_header,
- *                                 const char *multiline_header,
+ * @fn str_buf *CTFvCreateMessage( str_buf *primary_header,
+ *                                 const char *continuation_header,
  *                                 const char *format, va_list arg_p)
  * 
  *   @brief  Creates a message based on the given headers, format string, 
  *           and list of arguments for the format string.
  * 
- *   @param  first_line_header The header for the first line of the message.
- *   @param  multiline_header  The header for subsequent lines of the message.
+ *   @param  primary_header The header for the first line of the message.
+ *   @param  continuation_header  The header for subsequent lines of the message.
  *   @param  format            The format on which to apply the arguments.
  *   @param  arg_p             The arguments to apply onto the format.
  * 
@@ -645,27 +645,27 @@ vCreateMessage (const char *first_line_header, const char *format, va_list arg_p
  * 
  ******************************************************************************/
 str_buf *
-CTFvCreateMessage (const char *first_line_header, const char *multiline_header, 
+CTFvCreateMessage (const char *primary_header, const char *continuation_header, 
                    const char *format, va_list arg_p)
 {
     DBUG_ENTER ();
 
-    // current_multi_line_header is always NULL at this point, no need to deallocate it.
-    current_multi_line_header = STRcpy (multiline_header);
-    DBUG_RETURN (vCreateMessage (first_line_header, format, arg_p));
+    // current_continuation_header is always NULL at this point, no need to deallocate it.
+    current_continuation_header = STRcpy (continuation_header);
+    DBUG_RETURN (vCreateMessage (primary_header, format, arg_p));
 }
 
 /** <!--********************************************************************-->
  * 
- * @fn str_buf *CTFcreateMessage( str_buf *first_line_header, 
- *                                const char *multiline_header, 
+ * @fn str_buf *CTFcreateMessage( str_buf *primary_header, 
+ *                                const char *continuation_header, 
  *                                const char *format, ...)
  * 
  *   @brief  Creates a message based on the given headers, format string, 
  *           and list of arguments for the format string.
  * 
- *   @param  first_line_header The header for the first line of the message.
- *   @param  multiline_header  The header for subsequent lines of the message.
+ *   @param  primary_header The header for the first line of the message.
+ *   @param  continuation_header  The header for subsequent lines of the message.
  *   @param  format            The format on which to apply extra arguments to 
  *                             generate the message.
  * 
@@ -673,7 +673,7 @@ CTFvCreateMessage (const char *first_line_header, const char *multiline_header,
  * 
  ******************************************************************************/
 str_buf *
-CTFcreateMessage (const char *first_line_header, const char *multiline_header, 
+CTFcreateMessage (const char *primary_header, const char *continuation_header, 
                   const char *format, ...)
 {
     va_list arg_p;
@@ -682,7 +682,7 @@ CTFcreateMessage (const char *first_line_header, const char *multiline_header,
     DBUG_ENTER ();
     
     va_start (arg_p, format);
-    message = CTFvCreateMessage (first_line_header, multiline_header, format, arg_p);
+    message = CTFvCreateMessage (primary_header, continuation_header, format, arg_p);
     va_end (arg_p);
 
     DBUG_RETURN (message);
@@ -709,16 +709,16 @@ str_buf *
 CTFvCreateMessageLoc (struct location loc, const char *message_header,
                       const char *format, va_list arg_p)
 {
-    str_buf *first_line_header;
+    str_buf *primary_header;
     str_buf *message;
     
     DBUG_ENTER ();
 
-    first_line_header = CreateAndLoadGNUformatHeader (loc, message_header);
+    primary_header = CreateAndLoadGNUformatHeader (loc, message_header);
 
-    message = vCreateMessage (SBUFgetBuffer (first_line_header), format, arg_p);
+    message = vCreateMessage (SBUFgetBuffer (primary_header), format, arg_p);
 
-    SBUFfree (first_line_header);
+    SBUFfree (primary_header);
     DBUG_RETURN (message);
 }
 

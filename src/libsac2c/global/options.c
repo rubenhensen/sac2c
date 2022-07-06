@@ -716,9 +716,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("cti-single-line", global.cti_single_line= TRUE);
 
-    ARGS_OPTION ("cti-header-format", global.cti_header_format = STRcpy (ARG));
+    ARGS_OPTION ("cti-primary-header-format", global.cti_primary_header_format = STRcpy (ARG));
 
-    ARGS_OPTION ("cti-multi-line-format", global.cti_multi_line_format = STRcpy (ARG));
+    ARGS_OPTION ("cti-continuation-header-format", global.cti_continuation_header_format = STRcpy (ARG));
 
     ARGS_OPTION ("ccflag", CTIwarn (EMPTY_LOC, "Option -ccflag has been replaced by -Xc");
                  SBUFprintf (cflags_buf, " %s", ARG));
@@ -1474,9 +1474,9 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_FLAG ("cti-single-line", global.cti_single_line= TRUE);
 
-    ARGS_OPTION ("cti-header-format", global.cti_header_format = STRcpy (ARG));
+    ARGS_OPTION ("cti-primary-header-format", global.cti_primary_header_format = STRcpy (ARG));
 
-    ARGS_OPTION ("cti-multi-line-format", global.cti_multi_line_format = STRcpy (ARG));
+    ARGS_OPTION ("cti-continuation-header-format", global.cti_continuation_header_format = STRcpy (ARG));
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
@@ -1747,9 +1747,9 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
 
     ARGS_FLAG ("cti-single-line", global.cti_single_line= TRUE);
 
-    ARGS_OPTION ("cti-header-format", global.cti_header_format = STRcpy (ARG));
+    ARGS_OPTION ("cti-primary-header-format", global.cti_primary_header_format = STRcpy (ARG));
 
-    ARGS_OPTION ("cti-multi-line-format", global.cti_multi_line_format = STRcpy (ARG));
+    ARGS_OPTION ("cti-continuation-header-format", global.cti_continuation_header_format = STRcpy (ARG));
 
     ARGS_OPTION_BEGIN ("cppI")
     {

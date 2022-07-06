@@ -1,5 +1,5 @@
 // SAC_TEST|include common.mk
-// SAC_TEST|SAC2C_FLAGS += -check tc -b 1:loc -printstart 1:loc -cti-message-length 1 -cti-header-format "%s begin----: " -cti-multi-line-format "%s continued: "
+// SAC_TEST|SAC2C_FLAGS += -check tc -b 1:loc -printstart 1:loc -cti-message-length 1 -cti-primary-header-format "%s begin----: " -cti-continuation-header-format "%s continued: "
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
 // SAC_TEST|all: <file-name>

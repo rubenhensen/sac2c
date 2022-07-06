@@ -21,13 +21,13 @@ extern "C" {
 // A function to call CTFcreateMessageContinued more conveniently during the tests
 // without exposing additional API.
 static str_buf *
-CTFcreateMessageContinuedRaw (const char *multiline_header, str_buf *remaining_lines)
+CTFcreateMessageContinuedRaw (const char *continuation_header, str_buf *remaining_lines)
 {
     str_buf *primary_header;
     str_buf *message;
     
     primary_header = SBUFcreate (0);
-    SBUFfree (CTFcreateMessageBegin (&primary_header, multiline_header, "%s", ""));
+    SBUFfree (CTFcreateMessageBegin (&primary_header, continuation_header, "%s", ""));
     message = CTFcreateMessageContinued (remaining_lines);
     SBUFfree (CTFcreateMessageEnd());
 
@@ -53,7 +53,7 @@ TEST (CTF, testCreateMessageBeginSingleLineNoWrapping)
     fprintf (stderr, "%s\n", SBUFgetBuffer (header));
     #pragma GCC diagnostic ignored "-Wformat-zero-length"
     message = CTFcreateMessageBegin (&header, "", "");
-    SBUFfree (CTFcreateMessageEnd ()); // Free the multiline header that CTFcreateMessageBegin allocates
+    SBUFfree (CTFcreateMessageEnd ()); // Free the continuation header that CTFcreateMessageBegin allocates
     #pragma GCC diagnostic warning "-Wformat-zero-length"
     EXPECT_TRUE (SBUFisEmpty (message));
     EXPECT_TRUE (header == NULL);
@@ -66,7 +66,7 @@ TEST (CTF, testCreateMessageBeginSingleLineNoWrapping)
     EXPECT_STREQ ("A normal yet fabulous test.", SBUFgetBuffer (message));
     SBUFfree (message);
 
-    // Ensure that multiline messages are still printed on one line
+    // Ensure that multi-line messages are still printed on one line
     header = SBUFcreate (0);
     message = CTFcreateMessageBegin (&header, "", "A\nmessage\ncontaining%sspaces", "\nmany\n");
     SBUFfree (CTFcreateMessageEnd ());
@@ -107,8 +107,8 @@ TEST (CTF, testCreateMessageBeginMultiLineNoWrapping)
     EXPECT_STREQ ("A normal test.\n", SBUFgetBuffer (message));
     SBUFfree (message);
 
-    // Ensure that the first_line_header is prepended only to the first line
-    // and that the multi_line_header is prepended to the other lines
+    // Ensure that the primary_header is prepended only to the first line
+    // and that the continuation_header is prepended to the other lines
     header = SBUFcreate (0);
     SBUFprint (header, "Interesting header: ");
     message = CTFcreateMessageBegin (&header, "  ", "A\nMultiline\nTest");
@@ -401,9 +401,9 @@ TEST (CTF, testCreateMessageMultilineNoWrapping)
     str_buf *message;
 
     // Ensure that the headers are properly printed after each newline
-    message = CTFcreateMessage ("First header: ", "Multiline header!", 
-                                "After each\nnewline, we expect a\nmultiline header.");
-    EXPECT_STREQ ("First header: After each\nMultiline header!newline, we expect a\nMultiline header!multiline header.\n",
+    message = CTFcreateMessage ("First header: ", "Continuation header!", 
+                                "After each\nnewline, we expect a\ncontinuation header.");
+    EXPECT_STREQ ("First header: After each\nContinuation header!newline, we expect a\nContinuation header!continuation header.\n",
                   SBUFgetBuffer (message));
     SBUFfree (message);
 }
@@ -455,10 +455,10 @@ TEST (CTF, testCreateMessageLoc)
 {
     global.cti_single_line = true;
     global.cti_message_length = 0;
-    MEMfree (global.cti_header_format);
-    MEMfree (global.cti_multi_line_format);
-    global.cti_header_format = STRcpy ("%s: ");
-    global.cti_multi_line_format = STRcpy ("%.0s  ");
+    MEMfree (global.cti_primary_header_format);
+    MEMfree (global.cti_continuation_header_format);
+    global.cti_primary_header_format = STRcpy ("%s: ");
+    global.cti_continuation_header_format = STRcpy ("%.0s  ");
     CTFinitialize ();
 
     str_buf *message;
@@ -488,22 +488,22 @@ TEST (CTF, testCreateMessageLoc)
     // to spaces if cti_single_line is enabled.
     global.cti_single_line = true;
     global.cti_message_length = 0;
-    MEMfree (global.cti_header_format);
-    global.cti_header_format = STRcpy ("%s:@");
+    MEMfree (global.cti_primary_header_format);
+    global.cti_primary_header_format = STRcpy ("%s:@");
     CTFinitialize ();
 
     message = CTFcreateMessageLoc (EMPTY_LOC, "Error", "foo\nbar");
     EXPECT_STREQ ("Error: foo bar\n", SBUFgetBuffer (message));
     SBUFfree (message);
 
-    // Ensure that *only* @ symbols the first line header are converted to newlines
-    // and ensure that @ symbols in the multiline header remain @ symbols.
+    // Ensure that *only* @ symbols in the primary header are converted to newlines
+    // and ensure that @ symbols in the continuation header remain @ symbols.
     global.cti_single_line = false;
     global.cti_message_length = 0;
-    MEMfree (global.cti_header_format);
-    MEMfree (global.cti_multi_line_format);
-    global.cti_header_format = STRcpy ("%s:@First:");
-    global.cti_multi_line_format = STRcpy ("%.0sContinued:@");
+    MEMfree (global.cti_primary_header_format);
+    MEMfree (global.cti_continuation_header_format);
+    global.cti_primary_header_format = STRcpy ("%s:@First:");
+    global.cti_continuation_header_format = STRcpy ("%.0sContinued:@");
     CTFinitialize ();
 
     message = CTFcreateMessageLoc (EMPTY_LOC, "Error", "foo\nbar");
