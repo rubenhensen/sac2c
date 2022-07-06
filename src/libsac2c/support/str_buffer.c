@@ -153,7 +153,7 @@ SBUFprintd (str_buf *s, char *string)
     s = EnsureStrBufSpace (s, len);
     s->len += (size_t)sprintf (&s->buf[s->len], "%s", string);
     DBUG_PRINT ("len of buffer %p is now %zu", (void *)s, s->len);
-    MEMfree (string);
+    string = MEMfree (string);
 
     DBUG_RETURN (s);
 }

@@ -386,7 +386,7 @@ CreateAndLoadGNUformatHeader (const struct location loc, const char *message_hea
  * 
  *   @return Returns the formatted message.
  ******************************************************************************/
-str_buf *
+static str_buf *
 vCreateMessageBegin (str_buf **header, const char *format, va_list arg_p)
 {
     str_buf *message;
@@ -603,7 +603,7 @@ CTFcreateMessageEnd (void)
  *   @return A str_buf containing the finalized message.
  * 
  ******************************************************************************/
-str_buf *
+static str_buf *
 vCreateMessage (const char *first_line_header, const char *format, va_list arg_p)
 {
     str_buf *header;

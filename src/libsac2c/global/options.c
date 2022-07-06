@@ -1901,6 +1901,7 @@ OPTanalyseCommandline (int argc, char *argv[])
         AnalyseCommandlineSac2tex (argc, argv);
         break;
     }
+    CTFinitialize (); // Reinitialize formatting settings based on command line arguments
 
     DBUG_RETURN ();
 }

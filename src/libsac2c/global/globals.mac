@@ -16,8 +16,6 @@
 #include "config.h"
 #include "sacdirs.h"
 
-
-
 /* The source file of sac program can come from various files due to
    recognition of #line directives.  Usually massively used by preprocessor.
    Every token keeps a pointer to the file name.  In order to share file names

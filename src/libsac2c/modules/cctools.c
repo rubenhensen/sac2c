@@ -364,7 +364,8 @@ CCTperformTask (ccm_task_t task)
         source_subst = MEMfree (source_subst);                                           \
         target_subst = MEMfree (target_subst);                                           \
                                                                                          \
-        CTInote (EMPTY_LOC, "Preprocessing C source \"%s%s\"", Source, global.config.Kind##cext);   \
+        CTInote (EMPTY_LOC, "Preprocessing C source \"%s%s\"",                           \
+                 Source, global.config.Kind##cext);                                      \
         DBUG_PRINT ("compile command: %s", compile_cmd);                                 \
         SYScall ("%s", compile_cmd);                                                     \
         compile_cmd = MEMfree (compile_cmd);                                             \
@@ -383,7 +384,8 @@ CCTperformTask (ccm_task_t task)
         source_subst = MEMfree (source_subst);                                           \
         target_subst = MEMfree (target_subst);                                           \
                                                                                          \
-        CTInote (EMPTY_LOC, "Compiling C source \"%s%s\"", Source, global.config.Kind##cext);       \
+        CTInote (EMPTY_LOC, "Compiling C source \"%s%s\"",                               \
+                 Source, global.config.Kind##cext);                                      \
         DBUG_PRINT ("compile command: %s", compile_cmd);                                 \
         SYScall ("%s", compile_cmd);                                                     \
         compile_cmd = MEMfree (compile_cmd);                                             \
@@ -395,7 +397,7 @@ CCTperformTask (ccm_task_t task)
         const char *objects_subst = Objects;                                             \
         char *link_cmd = DO_SUBST (LinkString);                                          \
                                                                                          \
-        CTInote (EMPTY_LOC, "Linking \"%s\"", target_subst);                                        \
+        CTInote (EMPTY_LOC, "Linking \"%s\"", target_subst);                             \
         DBUG_PRINT ("link command: %s", link_cmd);                                       \
         SYScall ("%s", link_cmd);                                                        \
         link_cmd = MEMfree (link_cmd);                                                   \

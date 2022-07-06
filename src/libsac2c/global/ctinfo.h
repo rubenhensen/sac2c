@@ -6,7 +6,6 @@
 #include "types.h"
 #include "str_buffer.h"
 #include "fun-attrs.h"
-#include "globals.h"
 
 #define LINE_TO_LOC(line_nr) ((struct location) {.fname = global.filename, .line = (line_nr), .col = 0})
 #define EMPTY_LOC ((struct location) {.fname = NULL, .line = 0, .col = 0})
