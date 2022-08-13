@@ -37,11 +37,19 @@ INCLUDE_DIRECTORIES (${PROJECT_BINARY_DIR}/src/include)
 # All paths as found via sac2c/config.cmake for sac2crc
 INCLUDE_DIRECTORIES (${SAC2CRC_INCS})
 
+#
+
 # Base test environment defines functions that need to be called on each
 # test invocation using the SetUp() and TearDown() methods available through
 # gtest. This library must be compiled into all *libsac2c* based tests, this
 # should not be used for runtime tests!
 ADD_LIBRARY (base-test-environment OBJECT "base-test-environment.cpp")
+
+SET_TARGET_PROPERTIES (base-test-environment
+        PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED YES
+            INCLUDE_DIRECTORIES /opt/local/include)
 # Generated dummy runtime library, includes dummy functions to satisfy linker
 ADD_LIBRARY (runtimedummy STATIC "runtime_dummy.c")
 
