@@ -4,13 +4,7 @@
  * to the GoogleTest framework and makes it so the SetUp() and TearDown()
  * functions are run before and after every test.
  */
-
 #include "base-test-environment.h"
-
-extern "C" {
-#include "ctformatting.h"
-#include "ctinfo.h"
-}
 
 void BaseEnvironment::SetUp()
 {
