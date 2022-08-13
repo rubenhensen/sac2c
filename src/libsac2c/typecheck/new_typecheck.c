@@ -634,7 +634,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     inf_type = INFO_TYPE (arg_info);
 
     if (!inf_type) {
-        CTIabortLine (NODE_LINE (fundef),
+        CTIabort (NODE_LOCATION (fundef),
                       "Could not infer the return type of function \"%s\".",
                       FUNDEF_NAME (fundef));
     }
@@ -650,7 +650,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     spec_n = TYgetProductSize (spec_type);
 
     if ((spec_n > inf_n) || ((spec_n < inf_n) && !FUNDEF_HASDOTRETS (fundef))) {
-        CTIabortLine (NODE_LINE (fundef),
+        CTIabort (NODE_LOCATION (fundef),
                       "Number of return expressions in function \"%s\" does not match"
                       " the number of return types specified",
                       FUNDEF_NAME (fundef));
@@ -663,7 +663,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
         ok = SSInewTypeRel (itype, stype);
 
         if (!ok) {
-            CTIabortLine (NODE_LINE (fundef),
+            CTIabort (NODE_LOCATION (fundef),
                           "Function %s: Component #%zu of inferred return type (%s) is "
                           "not within %s",
                           FUNDEF_NAME (fundef), i, TYtype2String (itype, FALSE, 0),
@@ -701,7 +701,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
          */
         if ((global.act_info_chn == NULL) && TYisAlpha (stype)
             && (SSIgetMin (TYgetAlpha (stype)) == NULL)) {
-            CTIabortLine (NODE_LINE (fundef),
+            CTIabort (NODE_LOCATION (fundef),
                           "Function %s: Component #%zu of inferred return type (%s) has "
                           "no lower bound;"
                           " an application of \"%s\" will not terminate",
@@ -1056,17 +1056,17 @@ NTClet (node *arg_node, info *arg_info)
         } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
             if ((PRF_PRF (LET_EXPR (arg_node)) != F_type_error)
                 && (TCcountIds (lhs) != TYgetProductSize (rhs_type))) {
-                CTIabortLine (global.linenum,
-                              "%s yields %zu instead of %zu return value(s)",
-                              global.prf_name[PRF_PRF (LET_EXPR (arg_node))],
-                              TYgetProductSize (rhs_type), TCcountIds (lhs));
+                CTIabort (LINE_TO_LOC (global.linenum),
+                          "%s yields %zu instead of %zu return value(s)",
+                          global.prf_name[PRF_PRF (LET_EXPR (arg_node))],
+                          TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         } else {
             if (TCcountIds (lhs) != TYgetProductSize (rhs_type)) {
-                CTIabortLine (global.linenum,
-                              "with loop returns %zu value(s)"
-                              " but %zu variable(s) specified on the lhs",
-                              TYgetProductSize (rhs_type), TCcountIds (lhs));
+                CTIabort (LINE_TO_LOC (global.linenum),
+                          "with loop returns %zu value(s)"
+                          " but %zu variable(s) specified on the lhs",
+                          TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         }
         i = 0;
@@ -1087,7 +1087,7 @@ NTClet (node *arg_node, info *arg_info)
                                  "non-alpha type for LHS found!");
                     ok = SSInewTypeRel (inferred_type, existing_type);
                     if (!ok) {
-                        CTIabortLine (NODE_LINE (arg_node),
+                        CTIabort (NODE_LOCATION (arg_node),
                                       "Component #%zu of inferred RHS type (%s) does not "
                                       "match %s",
                                       i, TYtype2String (inferred_type, FALSE, 0),
@@ -1102,11 +1102,11 @@ NTClet (node *arg_node, info *arg_info)
             } else {
                 if (existing_type == NULL) {
                     if (declared_type == NULL) {
-                        CTIabortLine (global.linenum,
-                                      "Cannot infer type of \"%s\" as it corresponds to "
-                                      "\"...\" "
-                                      "return type -- missing type declaration",
-                                      IDS_NAME (lhs));
+                        CTIabort (LINE_TO_LOC (global.linenum),
+                                  "Cannot infer type of \"%s\" as it corresponds to "
+                                  "\"...\" "
+                                  "return type -- missing type declaration",
+                                  IDS_NAME (lhs));
                     } else {
                         /**
                          * ' commented out the following warning as it was issued to often
@@ -1115,8 +1115,8 @@ NTClet (node *arg_node, info *arg_info)
                         principle
                          * would be the better way to go for anyways....
                          *
-                        CTIwarnLine( global.linenum,
-                                     "Cannot infer type of \"%s\" as it corresponds to
+                        CTIwarn (LINE_TO_LOC (global.linenum),
+                                 "Cannot infer type of \"%s\" as it corresponds to
                         \"...\" " "return type -- relying on type declaration", IDS_NAME(
                         lhs));
                          */
@@ -1155,9 +1155,9 @@ NTClet (node *arg_node, info *arg_info)
 
         /* lhs must be one ids only since rhs is not a function application! */
         if (TCcountIds (lhs) != 1) {
-            CTIabortLine (global.linenum,
-                          "rhs yields one value, %zu vars specified on the lhs",
-                          TCcountIds (lhs));
+            CTIabort (LINE_TO_LOC (global.linenum),
+                      "rhs yields one value, %zu vars specified on the lhs",
+                      TCcountIds (lhs));
         }
 
         existing_type = AVIS_TYPE (IDS_AVIS (lhs));
@@ -1172,7 +1172,7 @@ NTClet (node *arg_node, info *arg_info)
             DBUG_ASSERT (TYisAlpha (existing_type), "non-alpha type for LHS found!");
             ok = SSInewTypeRel (inferred_type, existing_type);
             if (!ok) {
-                CTIabortLine (NODE_LINE (arg_node),
+                CTIabort (NODE_LOCATION (arg_node),
                               "Inferred RHS type (%s) does not match %s",
                               TYtype2String (inferred_type, FALSE, 0),
                               TYtype2String (existing_type, FALSE, 0));
@@ -1595,7 +1595,7 @@ NTCid (node *arg_node, info *arg_info)
     type = AVIS_TYPE (ID_AVIS (arg_node));
 
     if (type == NULL) {
-        CTIabortLine (NODE_LINE (arg_node),
+        CTIabort (NODE_LOCATION (arg_node),
                       "Cannot infer type for %s as it may be"
                       " used without a previous definition",
                       ID_NAME (arg_node));
@@ -1819,9 +1819,9 @@ NTCcast (node *arg_node, info *arg_info)
          * Therefore, only a single return type is legal. This one is to be extracted!
          */
         if (TYgetProductSize (expr_t) != 1) {
-            CTIabortLine (global.linenum,
-                          "Cast used for a function application with %zu return values",
-                          TYgetProductSize (expr_t));
+            CTIabort (LINE_TO_LOC (global.linenum),
+                      "Cast used for a function application with %zu return values",
+                      TYgetProductSize (expr_t));
         } else {
             expr_t = TYgetProductMember (expr_t, 0);
         }
@@ -1924,10 +1924,10 @@ NTCwith (node *arg_node, info *arg_info)
     INFO_ACT_FOLD_POS (arg_info) = 0;
 
     if (TYgetProductSize (body) != TCcountWithops (WITH_WITHOP (arg_node))) {
-        CTIabortLine (global.linenum,
-                      "Inconsistent with loop: %zu operator(s) "
-                      "but %zu value(s) specified in the body",
-                      TCcountWithops (WITH_WITHOP (arg_node)), TYgetProductSize (body));
+        CTIabort (LINE_TO_LOC (global.linenum),
+                  "Inconsistent with loop: %zu operator(s) "
+                  "but %zu value(s) specified in the body",
+                  TCcountWithops (WITH_WITHOP (arg_node)), TYgetProductSize (body));
     }
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
@@ -2353,8 +2353,8 @@ NTCfold (node *arg_node, info *arg_info)
      * First, we check the neutral expression:
      */
     if (FOLD_NEUTRAL (arg_node) == NULL) {
-        CTIabortLine (global.linenum,
-                      "Missing neutral element for user-defined fold function");
+        CTIabort (LINE_TO_LOC (global.linenum),
+                  "Missing neutral element for user-defined fold function");
     }
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     neutr = INFO_TYPE (arg_info);
@@ -2451,7 +2451,7 @@ NTCfold (node *arg_node, info *arg_info)
         ok = SSInewTypeRel (TYgetProductMember (res, 0), acc);
     }
     if (!ok) {
-        CTIabortLine (global.linenum, "Illegal fold function in fold with loop");
+        CTIabort (LINE_TO_LOC (global.linenum), "Illegal fold function in fold with loop");
     }
 
     FOLD_NEXT (arg_node) = HandleMultiOperators (FOLD_NEXT (arg_node), arg_info);
@@ -2521,12 +2521,12 @@ NTCpropagate (node *arg_node, info *arg_info)
     ok = SSInewTypeRel (body, prop_obj_type);
 
     if (!ok) {
-        CTIabortLine (global.linenum,
-                      "Illegal object transformation in propagate with loop"
-                      " body yields %s, but %s is propagated",
-                      TYtype2String (body, FALSE, 0),
-                      TYtype2String (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (arg_node))),
-                                     FALSE, 0));
+        CTIabort (LINE_TO_LOC (global.linenum),
+                  "Illegal object transformation in propagate with loop"
+                  " body yields %s, but %s is propagated",
+                  TYtype2String (body, FALSE, 0),
+                  TYtype2String (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (arg_node))),
+                                 FALSE, 0));
     }
 
     if (PROPAGATE_NEXT (arg_node) == NULL) {

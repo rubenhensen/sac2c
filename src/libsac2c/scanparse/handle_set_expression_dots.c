@@ -536,9 +536,8 @@ AnalyseVec (node *vec, info *arg_info)
                         INFO_HSED_K (arg_info) = 1;
                         before = FALSE;
                     } else {
-                        CTIerrorLine (global.linenum,
-                                      "only one \"...\" per set-expression"
-                                      " admissable");
+                        CTIerror (LINE_TO_LOC (global.linenum),
+                                  "only one \"...\" per set-expression  admissable");
                     }
                 }
             }

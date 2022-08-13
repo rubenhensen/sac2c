@@ -567,9 +567,8 @@ HWLOwith (node *arg_node, info *arg_info)
     if ( (TCcountExprs (INFO_HWLO_CEXPRS (arg_info)) > 1)
          && !IsLegitimateMoWl (WITH_WITHOP (arg_node), arg_info)) {
         if (INFO_HWLO_LHS (arg_info) == NULL) {
-            CTIerrorLine (global.linenum,
-                          "Multi-Operator With-Loop used in expression position");
-            CTIabortOnError ();
+            CTIabort (LINE_TO_LOC (global.linenum),
+                      "Multi-Operator With-Loop used in expression position");
         }
         /**
          * Traversing the withops yields:
@@ -656,24 +655,24 @@ StdWithOp (node *arg_node, info *arg_info)
      */
     if (WITHOP_NEXT (arg_node) != NULL) {
         if (EXPRS_NEXT (my_cexprs) == NULL) {
-            CTIerrorLine (global.linenum,
-                          "more operator parts than body expressions in with loop");
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "more operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) == NULL) {
-            CTIerrorLine (global.linenum, "more operator parts in with loop than left "
-                                          "hand side variables");
+            CTIerror (LINE_TO_LOC (global.linenum), 
+                      "more operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
 
         L_WITHOP_NEXT (arg_node, TRAVdo (WITHOP_NEXT (arg_node), arg_info));
     } else {
         if (EXPRS_NEXT (my_cexprs) != NULL) {
-            CTIerrorLine (global.linenum,
-                          "less operator parts than body expressions in with loop");
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "less operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) != NULL) {
-            CTIerrorLine (global.linenum, "less operator parts in with loop than left "
-                                          "hand side variables");
+            CTIerror (LINE_TO_LOC (global.linenum), 
+                      "less operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
     }
@@ -797,22 +796,22 @@ HWLOpropagate (node *arg_node, info *arg_info)
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
         if (EXPRS_NEXT (my_cexprs) == NULL) {
-            CTIerror ("more operator parts than body expressions in with loop");
+            CTIerror (EMPTY_LOC, "more operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) == NULL) {
-            CTIerror ("more operator parts in with loop than left hand side variables");
+            CTIerror (EMPTY_LOC, "more operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
 
         PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
     } else {
         if (EXPRS_NEXT (my_cexprs) != NULL) {
-            CTIerrorLine (global.linenum,
-                          "less operator parts than body expressions in with loop");
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "less operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) != NULL) {
-            CTIerrorLine (global.linenum, "less operator parts in with loop than left "
-                                          "hand side variables");
+            CTIerror (LINE_TO_LOC (global.linenum), 
+                      "less operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
     }
@@ -822,10 +821,10 @@ HWLOpropagate (node *arg_node, info *arg_info)
         DBUG_ASSERT (NODE_TYPE (PROPAGATE_DEFAULT (arg_node)) == N_spid,
                      "propgate defaults should be N_spid!");
         tmp = STRcpy (SPID_NAME (PROPAGATE_DEFAULT (arg_node)));
-        CTIwarnLoc (NODE_LOCATION (arg_node), "effect on \"%s\" in multi-operator-"
-                                              "with-loop will be repeated %d times due "
-                                              "to splitting of the with-loop.",
-                                              tmp, INFO_HWLO_NUM_STD_OPS (arg_info));
+        CTIwarn (NODE_LOCATION (arg_node), 
+                 "Effect on \"%s\" in multi-operator-with-loop will be repeated %d "
+                 "times due to splitting of the with-loop.",
+                 tmp, INFO_HWLO_NUM_STD_OPS (arg_info));
 
         new_withop = TBmakePropagate (TBmakeSpid (NULL, tmp));
         PROPAGATE_NEXT (new_withop) = INFO_HWLO_NEW_WITHOPS (arg_info);

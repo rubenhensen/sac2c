@@ -29,7 +29,10 @@
 #include "globals.h"
 #include "str.h"
 #include "memory.h"
+
+#include "ctformatting.h"
 #include "ctinfo.h"
+
 #include "libstat.h"
 #include "stringset.h"
 #include "phase_options.h"
@@ -148,10 +151,11 @@ OPTcheckPostSetupOptions (void)
 void
 OPTcheckOptionConsistency (void)
 {
+
     DBUG_ENTER ();
 
     if (global.optimize.dophm && !global.config.use_phm_api) {
-        CTIerror ("Private heap management disabled for this SBI.");
+        CTIerror (EMPTY_LOC, "Private heap management disabled for this SBI.");
     }
 
     global.mtmode = MT_none;
@@ -168,85 +172,85 @@ OPTcheckOptionConsistency (void)
         global.mtmode = MT_mtstblock;
         break;
     default:
-        CTIerror ("Target MT_MODE has an invalid value.");
+        CTIerror (EMPTY_LOC, "Target MT_MODE has an invalid value.");
     }
 
     if (STReq (global.config.backend, "MUTC")) {
 
         if (global.mtmode != MT_none) {
-            CTIerror ("The MUTC backend only supports MT_MODE = 0.");
+            CTIerror (EMPTY_LOC, "The MUTC backend only supports MT_MODE = 0.");
         }
 
         if ((global.mutc_disable_thread_mem == TRUE)
             && (global.mutc_thread_mem == TRUE)) {
-            CTIerror ("-mutc_thread_mem can not be used with "
-                      "-mutc_disable_thread_mem");
+            CTIerror (EMPTY_LOC, "-mutc_thread_mem can not be used with "
+                                 "-mutc_disable_thread_mem");
         }
 
         if ((global.mutc_distribution_mode == MUTC_DMODE_bounded)
             && (global.mutc_distribution_mode_arg == -1)) {
-            CTIerror ("bounded distribution mode requires an argument");
+            CTIerror (EMPTY_LOC, "bounded distribution mode requires an argument");
         }
 
         if ((global.mutc_force_block_size != -1)
             && (global.mutc_static_resource_management)) {
-            CTIerror ("Can only use one method of setting the block size at a time");
+            CTIerror (EMPTY_LOC, "Can only use one method of setting the block size at a time");
         }
 
         if (!powOf2 (global.mutc_rc_places)) {
-            CTIerror ("-mutc_rc_places must be a power of 2");
+            CTIerror (EMPTY_LOC, "-mutc_rc_places must be a power of 2");
         }
 
         if ((global.mutc_rc_places != 1) && (global.mutc_rc_indirect == TRUE)) {
-            CTIerror ("-mutc_rc_places can not be used with "
-                      "-mutc_rc_indirect");
+            CTIerror (EMPTY_LOC, "-mutc_rc_places can not be used with "
+                                 "-mutc_rc_indirect");
         }
     } else {
         if (global.mutc_fun_as_threads == TRUE) {
-            CTIerror ("-mutc_fun_threads only works with mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_fun_threads only works with mutc backend");
         }
         if (global.mutc_thread_mem == TRUE) {
-            CTIerror ("-mutc_thread_mem only works with mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_thread_mem only works with mutc backend");
         }
         if (global.mutc_disable_thread_mem == TRUE) {
-            CTIerror ("-mutc_disable_thread_mem only works with mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_disable_thread_mem only works with mutc backend");
         }
         if (global.mutc_static_resource_management == TRUE) {
-            CTIerror ("-mutc_static_resource_management needs mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_static_resource_management needs mutc backend");
         }
         if (global.mutc_force_block_size != -1) {
-            CTIerror ("-mutc_force_block_size only works with mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_force_block_size only works with mutc backend");
         }
         if (global.mutc_benchmark == TRUE) {
-            CTIerror ("-mutc_benchmark needs mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_benchmark needs mutc backend");
         }
         if (global.mutc_force_spawn_flags != NULL) {
-            CTIerror ("-mutc_force_spawn_flags needs mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_force_spawn_flags needs mutc backend");
         }
         if (global.mutc_suballoc_desc_one_level_up == TRUE) {
-            CTIerror ("-mutc_suballoc_desc_one_level_up only works with mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_suballoc_desc_one_level_up only works with mutc backend");
         }
         if (global.mutc_rc_places != 1) {
-            CTIerror ("-mutc_rc_places only works with mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_rc_places only works with mutc backend");
         }
         if (global.mutc_rc_indirect == TRUE) {
-            CTIerror ("-mutc_rc_indirect only works with mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_rc_indirect only works with mutc backend");
         }
         if (global.mutc_seq_data_parallel == TRUE) {
-            CTIerror ("-mutc_seq_data_parallel only works with mutc backend");
+            CTIerror (EMPTY_LOC, "-mutc_seq_data_parallel only works with mutc backend");
         }
     }
 
     if (global.runtimecheck.boundary && global.optimize.doap) {
         global.optimize.doap = FALSE;
-        CTIwarn ("Option -check b requires option -noAP\n"
-                 "Array padding disabled");
+        CTIwarn (EMPTY_LOC, "Option -check b requires option -noAP\n"
+                            "Array padding disabled");
     }
 
     if (global.runtimecheck.conformity && !global.insertconformitychecks) {
         global.insertconformitychecks = TRUE;
-        CTIwarn ("Option -check c implies option -ecc.\n"
-                 "Insertion of explicit conformity checks has been enabled.");
+        CTIwarn (EMPTY_LOC, "Option -check c implies option -ecc.\n"
+                            "Insertion of explicit conformity checks has been enabled.");
     }
 
     /* Checks related to the distributed memory backend */
@@ -254,34 +258,35 @@ OPTcheckOptionConsistency (void)
         /* The distributed memory backend is used. Check for incompatible options. */
 
 #if !ENABLE_DISTMEM
-        CTIerror ("The distributed memory backend (-target) is not supported by this "
+        CTIerror (EMPTY_LOC, "The distributed memory backend (-target) is not supported by this "
                   "installation.");
 #endif
 
         if (global.mtmode != MT_none) {
-            CTIerror ("Multi-threaded program execution is not "
-                      "supported when using the distributed memory backend.");
+            CTIerror (EMPTY_LOC, "Multi-threaded program execution is not "
+                                 "supported when using the distributed memory backend.");
         }
 
         if (global.optimize.dodmgs && !global.optimize.dodmmls) {
-            CTIerror ("The optimization DMGS requires the optimization DMMLS.");
+            CTIerror (EMPTY_LOC, "The optimization DMGS requires the optimization DMMLS.");
         }
 
         if (global.optimize.dodmmls && global.dmgs_max_selects != 0
             && global.dmgs_min_selects > global.dmgs_max_selects) {
-            CTIerror ("dmgs_max_selects must be 0 (unbounded) or >= dmgs_min_selects");
+            CTIerror (EMPTY_LOC, "dmgs_max_selects must be 0 (unbounded) or >= dmgs_min_selects");
         }
 
         /* Communication library specific checks */
         switch (global.distmem_commlib) {
         case DISTMEM_COMMLIB_MPI:
 #if !ENABLE_DISTMEM_MPI
-            CTIerror ("The MPI communication library (-target) for the distributed "
+            CTIerror (EMPTY_LOC, "The MPI communication library (-target) for the distributed "
                       "memory backend is not supported by this installation.");
 #endif
 
             if (global.distmem_cache_outside_dsm) {
-                CTIwarn ("When MPI is used as a communication library, the cache is "
+                CTIwarn (EMPTY_LOC, 
+                         "When MPI is used as a communication library, the cache is "
                          "always allocated "
                          "outside of the DSM segment. dsm_cache_outside_seg does not "
                          "have any effect.");
@@ -291,12 +296,13 @@ OPTcheckOptionConsistency (void)
             break;
         case DISTMEM_COMMLIB_ARMCI:
 #if !ENABLE_DISTMEM_ARMCI
-            CTIerror ("The ARMCI communication library (-target) for the distributed "
+            CTIerror (EMPTY_LOC, "The ARMCI communication library (-target) for the distributed "
                       "memory backend is not supported by this installation.");
 #endif
 
             if (global.distmem_cache_outside_dsm) {
-                CTIwarn ("When ARMCI is used as a communication library, the cache is "
+                CTIwarn (EMPTY_LOC,
+                         "When ARMCI is used as a communication library, the cache is "
                          "always allocated "
                          "outside of the DSM segment. dsm_cache_outside_seg does not "
                          "have any effect.");
@@ -306,12 +312,13 @@ OPTcheckOptionConsistency (void)
             break;
         case DISTMEM_COMMLIB_GPI:
 #if !ENABLE_DISTMEM_GPI
-            CTIerror ("The GPI communication library (-target) for the distributed "
+            CTIerror (EMPTY_LOC, "The GPI communication library (-target) for the distributed "
                       "memory backend is not supported by this installation.");
 #endif
 
             if (global.distmem_cache_outside_dsm) {
-                CTIwarn ("When GPI is used as a communication library, the cache is "
+                CTIwarn (EMPTY_LOC,
+                         "When GPI is used as a communication library, the cache is "
                          "always allocated "
                          "within the DSM segment. dsm_cache_outside_seg does not have "
                          "any effect.");
@@ -320,12 +327,13 @@ OPTcheckOptionConsistency (void)
             break;
         case DISTMEM_COMMLIB_GASNET:
 #if !ENABLE_DISTMEM_GASNET
-            CTIerror ("The GASNet communication library (-target) for the distributed "
+            CTIerror (EMPTY_LOC, "The GASNet communication library (-target) for the distributed "
                       "memory backend is not supported by this installation.");
 #endif
 
             if (global.distmem_cache_outside_dsm) {
-                CTIwarn ("The cache will be registered outside of the GASNet segment "
+                CTIwarn (EMPTY_LOC,
+                         "The cache will be registered outside of the GASNet segment "
                          "which can cause bugs. If you experience the following error "
                          "this is probably the reason: FATAL ERROR: ibv_reg_mr failed in "
                          "firehose_move_callback errno=14 (Bad address). To fix this "
@@ -351,15 +359,15 @@ OPTcheckOptionConsistency (void)
 
     /* turn on default multithreading if using cuda hybrid backend */
     if (global.backend == BE_cudahybrid && global.mtmode == MT_none) {
-        CTIerror ("Target MT_MODE must be set with BACKEND CudaHybrid.");
+        CTIerror (EMPTY_LOC, "Target MT_MODE must be set with BACKEND CudaHybrid.");
     }
 
     if (global.backend == BE_omp) {
         if (global.mtmode == MT_none) {
-            CTIerror ("Target MT_MODE must be set with BACKEND omp.");
+            CTIerror (EMPTY_LOC, "Target MT_MODE must be set with BACKEND omp.");
         }
         if (!STReq (global.config.mt_lib, "omp")) {
-            CTIerror ("Target MT_LIB must be set to omp with BACKEND omp.");
+            CTIerror (EMPTY_LOC, "Target MT_LIB must be set to omp with BACKEND omp.");
         }
     }
 
@@ -370,53 +378,55 @@ OPTcheckOptionConsistency (void)
               || STReq (global.config.mt_lib, "pthread"))) {
             global.mtmode = MT_none;
             global.num_threads = 1;
-            CTIerror ("The MT_LIB specification can be either 'pthread' or 'lpel'.");
+            CTIerror (EMPTY_LOC, "The MT_LIB specification can be either 'pthread' or 'lpel'.");
         }
     }
 
     if (global.mtmode != MT_none) {
         if (global.docachesim) {
-            CTIerror ("Cache simulation is not available for multi-threaded "
-                      "program execution");
+            CTIerror (EMPTY_LOC, "Cache simulation is not available for multi-threaded "
+                                 "program execution");
         }
 
         if (global.doprofile) {
-            CTIerror ("Profiling is not available for multi-threaded "
-                      "program execution");
+            CTIerror (EMPTY_LOC, "Profiling is not available for multi-threaded "
+                                 "program execution");
         }
     }
 
     if (global.runtimecheck.heap && !global.optimize.dophm) {
-        CTIerror ("Diagnostic heap management is only available in "
-                  "conjunction with private heap management.\n"
-                  "Diagnostic disabled");
+        CTIerror (EMPTY_LOC, "Diagnostic heap management is only available in "
+                             "conjunction with private heap management.\n"
+                             "Diagnostic disabled");
     }
 
     if (global.fp && global.mtmode == MT_none) {
-        CTIerror ("Functional Parallelism only works when MT is enabled");
+        CTIerror (EMPTY_LOC, "Functional Parallelism only works when MT is enabled");
     }
 
     if (STReq (global.config.cuda_alloc, "cumanp") && STRgt("SM_60", global.config.cuda_arch)) {
-        CTIwarn ("Compiling for CC < 6.0 (Pascal), CUDA prefetching is not available. Disabling...");
+        CTIwarn (EMPTY_LOC, "Compiling for CC < 6.0 (Pascal), CUDA prefetching is not available. Disabling...");
        global.optimize.docuprf = FALSE;
     }
 
     if (global.optimize.dosaa && !global.optimize.dodcr) {
-        CTIwarn ("Symbolic array attributes (SAA) require dead code"
-                 "removal (DCR).\n"
+        CTIwarn (EMPTY_LOC, 
+                 "Symbolic array attributes (SAA) require dead coderemoval (DCR).\n"
                  "Symbolic array attributes disabled.");
         global.optimize.dosaa = FALSE;
     }
 
     if (global.optimize.doive && !global.optimize.dosaa) {
-        CTIwarn ("Index vector elimination (IVE) requires symbolic array "
+        CTIwarn (EMPTY_LOC,
+                 "Index vector elimination (IVE) requires symbolic array "
                  "attributes (SAA).\n"
                  "Index vector elimination disabled.");
         global.optimize.doive = FALSE;
     }
 
     if (!global.optimize.dowlur) {
-        CTIwarn ("With-Loop unrolling (WLUR) was disabled using the command line. "
+        CTIwarn (EMPTY_LOC,
+                 "With-Loop unrolling (WLUR) was disabled using the command line. "
                  "However, unrolling of single-trip with-loops is required for "
                  "code generation. Therefore, WLUR will be re-enabled with the  "
                  "maximum number of unrolling steps set to 1.");
@@ -428,23 +438,24 @@ OPTcheckOptionConsistency (void)
     if ((global.optimize.dopwlf || global.optimize.dopogo || global.optimize.doplur)) {
         if (!global.optimize.dossawl) {
             global.optimize.dossawl = TRUE;
-            CTIwarn ("PLUR/POGO/PWLF is enabled: -dossawl enabled.");
+            CTIwarn (EMPTY_LOC,
+                     "PLUR/POGO/PWLF is enabled: -dossawl enabled.");
         }
     }
 
     if (global.optimize.doawlf && (!global.insertconformitychecks)) {
         global.insertconformitychecks = TRUE;
-        CTIwarn ("AWLF is enabled: -ecc enabled.");
+        CTIwarn (EMPTY_LOC, "AWLF is enabled: -ecc enabled.");
     }
 
     if (global.optimize.doawlf && (!global.doivext)) {
         global.doivext = TRUE;
-        CTIwarn ("AWLF is enabled: -extrema enabled.");
+        CTIwarn (EMPTY_LOC, "AWLF is enabled: -extrema enabled.");
     }
 
     if (global.optimize.doawlf) {
         global.max_optcycles = global.max_optcycles * 2;
-        CTIwarn ("AWLF is enabled: -maxoptcyc=%d", global.max_optcycles);
+        CTIwarn (EMPTY_LOC, "AWLF is enabled: -maxoptcyc=%d", global.max_optcycles);
     }
 
     if ((global.mtmode == MT_none) && (global.num_threads != 1)) {
@@ -454,33 +465,34 @@ OPTcheckOptionConsistency (void)
 
 #if !ENABLE_HWLOC
     if (global.cpubindstrategy != HWLOC_off) {
-        CTIwarn (
+        CTIwarn (EMPTY_LOC,
           "sac2c was compiled without hwloc support, forcing cpubindstrategy to OFF.");
         global.cpubindstrategy = HWLOC_off;
     }
 #endif
 
     if ((global.mt_smart_mode > 0) && (global.min_parallel_size != 0)) {
-        CTIwarn ("Cannot use both -minmtsize and -mt_smart_mode simultaniously, "
+        CTIwarn (EMPTY_LOC, 
+                 "Cannot use both -minmtsize and -mt_smart_mode simultaniously, "
                  "setting -minmtsize to 0.");
         global.min_parallel_size = 0;
     }
 
     if ((global.mt_smart_mode > 0) && (global.mt_smart_filename == NULL)) {
-        CTIerror ("-mt_smart_filename must be set when using -mt_smart_mode. ");
+        CTIerror (EMPTY_LOC, "-mt_smart_filename must be set when using -mt_smart_mode. ");
     }
 
     if ((global.mt_smart_mode > 0) && (global.mt_smart_arch == NULL)) {
-        CTIerror ("-mt_smart_arch must be set when using -mt_smart_mode. ");
+        CTIerror (EMPTY_LOC, "-mt_smart_arch must be set when using -mt_smart_mode. ");
     }
 
     if ((global.mt_smart_filename != NULL)
         && (strstr (global.mt_smart_filename, ".") != NULL)) {
-        CTIerror ("Illegal use of dot (\".\") character in -mt_smart_filename.");
+        CTIerror (EMPTY_LOC, "Illegal use of dot (\".\") character in -mt_smart_filename.");
     }
 
     if ((global.mt_smart_arch != NULL) && (strstr (global.mt_smart_arch, ".") != NULL)) {
-        CTIerror ("Illegal use of dot (\".\") character in -mt_smart_arch.");
+        CTIerror (EMPTY_LOC, "Illegal use of dot (\".\") character in -mt_smart_arch.");
     }
 
     /* validity check of RC_METHOD entry */
@@ -490,42 +502,47 @@ OPTcheckOptionConsistency (void)
     } else if (STReq (global.config.rc_method, "async")) {
     } else if (STReq (global.config.rc_method, "local_norc_desc")) {
         if (global.backend != BE_mutc) {
-            CTIerror ("Specified reference counting method %s is currently only "
+            CTIerror (EMPTY_LOC, 
+                      "Specified reference counting method %s is currently only "
                       "supported for the backend BE_mutc!",
                       global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "local_norc_ptr")) {
         if (global.backend != BE_mutc) {
-            CTIerror ("Specified reference counting method %s is currently only "
+            CTIerror (EMPTY_LOC, 
+                      "Specified reference counting method %s is currently only "
                       "supported for the backend BE_mutc!",
                       global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "async_norc_copy_desc")) {
         if (global.backend != BE_mutc) {
-            CTIerror ("Specified reference counting method %s is currently only "
+            CTIerror (EMPTY_LOC, 
+                      "Specified reference counting method %s is currently only "
                       "supported for the backend BE_mutc!",
                       global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "async_norc_two_descs")) {
-        CTIerror ("Specified reference counting method %s is currently not supported!",
+        CTIerror (EMPTY_LOC, 
+                  "Specified reference counting method %s is currently not supported!",
                   global.config.rc_method);
     } else if (STReq (global.config.rc_method, "async_norc_ptr")) {
         if (global.backend != BE_mutc) {
-            CTIerror ("Specified reference counting method %s is currently only "
+            CTIerror (EMPTY_LOC, 
+                      "Specified reference counting method %s is currently only "
                       "supported for the backend BE_mutc!",
                       global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "local_pasync_norc_desc")) {
-        CTIwarn ("Specified reference counting method %s is a work in progress!",
+        CTIwarn (EMPTY_LOC, "Specified reference counting method %s is a work in progress!",
                  global.config.rc_method);
     } else if (STReq (global.config.rc_method, "local_async_norc_ptr")) {
-        CTIwarn ("Specified reference counting method %s is a work in progress!",
+        CTIwarn (EMPTY_LOC, "Specified reference counting method %s is a work in progress!",
                  global.config.rc_method);
     } else if (STReq (global.config.rc_method, "local_pasync")) {
-        CTIwarn ("Specified reference counting method %s is a work in progress!",
+        CTIwarn (EMPTY_LOC, "Specified reference counting method %s is a work in progress!",
                  global.config.rc_method);
     } else {
-        CTIerror ("Illegal reference counting method specified RC_METHOD == %s !",
+        CTIerror (EMPTY_LOC, "Illegal reference counting method specified RC_METHOD == %s !",
                   global.config.rc_method);
     }
 
@@ -593,7 +610,7 @@ OPTcheckOptionConsistencyForTarget (bool in_module)
 #undef ARGS_ERROR
 #define ARGS_ERROR(msg)                                                                  \
     {                                                                                    \
-        CTIerror ("%s: %s %s %s", msg, ARGS_argv[0], STRonNull ("", OPT),                \
+        CTIerror (EMPTY_LOC, "%s: %s %s %s", msg, ARGS_argv[0], STRonNull ("", OPT),     \
                   STRonNull ("", ARG));                                                  \
     }
 
@@ -693,7 +710,17 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("cshost", strncpy (global.cachesim_host, ARG, NAME_MAX - 1));
 
-    ARGS_OPTION ("ccflag", CTIwarn ("Option -ccflag has been replaced by -Xc");
+    ARGS_OPTION ("cti-message-length", ARG_RANGE (global.cti_message_length,0,255));
+
+    ARGS_FLAG ("cti-no-color", global.cti_no_color = TRUE);
+
+    ARGS_FLAG ("cti-single-line", global.cti_single_line= TRUE);
+
+    ARGS_OPTION ("cti-primary-header-format", global.cti_primary_header_format = STRcpy (ARG));
+
+    ARGS_OPTION ("cti-continuation-header-format", global.cti_continuation_header_format = STRcpy (ARG));
+
+    ARGS_OPTION ("ccflag", CTIwarn (EMPTY_LOC, "Option -ccflag has been replaced by -Xc");
                  SBUFprintf (cflags_buf, " %s", ARG));
 
     ARGS_FLAG ("cs", global.docachesim = FALSE);
@@ -985,7 +1012,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("maxoptcyc", ARG_NUM (global.max_optcycles));
 
-    ARGS_OPTION ("maxrecinl", CTIabort ("Option -maxrecinl de-activated temporarily");
+    ARGS_OPTION ("maxrecinl", CTIabort (EMPTY_LOC, "Option -maxrecinl de-activated temporarily");
                  ARG_NUM (global.max_recursive_inlining));
 
     ARGS_OPTION ("maxlur", ARG_NUM (global.unrnum));
@@ -1102,7 +1129,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("o")
     {
         if (global.outfilename != NULL && global.runtime != TRUE) {
-            CTIabort ("-o cannot be specified multiple times.");
+            CTIabort (EMPTY_LOC, "-o cannot be specified multiple times.");
         }
         if (global.outfilename == NULL) {
             global.outfilename = STRcpy (ARG);
@@ -1113,7 +1140,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("olib")
     {
         if (global.target_modlibdir != NULL)
-            CTIabort ("-olib cannot be specified multiple times.");
+            CTIabort (EMPTY_LOC, "-olib cannot be specified multiple times.");
         global.target_modlibdir = STRcpy (ARG);
     }
     ARGS_OPTION_END ("olib");
@@ -1198,34 +1225,37 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_BEGIN ();
 
         ARG_CHOICE ("simple", if (global.config.rtspec == FALSE) {
-                                  CTIwarn ("RTSPEC in sac2c is not set;"
-                                           " `-rtspec_mode simple` will be ignored");
+                                  CTIwarn (EMPTY_LOC, 
+                                           "RTSPEC in sac2c is not set; "
+                                           "`-rtspec_mode simple` will be ignored");
                               } else {
                                   global.rtspec_mode = RTSPEC_MODE_SIMPLE;
                               });
 
 #if ENABLE_HASH
         ARG_CHOICE ("hash", if (global.config.rtspec == FALSE) {
-                                  CTIwarn ("RTSPEC in sac2c is not set;"
-                                           " `-rtspec_mode hash` will be ignored");
+                                  CTIwarn (EMPTY_LOC,
+                                           "RTSPEC in sac2c is not set; "
+                                           "`-rtspec_mode hash` will be ignored");
                               } else {
                                   global.rtspec_mode = RTSPEC_MODE_HASH;
                               });
 #else
         ARG_CHOICE ("hash",
-                    CTIabort ("hash support not available in the current build."));
+                    CTIabort (EMPTY_LOC, "hash support not available in the current build."));
 #endif /* ENABLE_HASH */
 
 #if ENABLE_UUID
         ARG_CHOICE ("uuid", if (global.config.rtspec == FALSE) {
-                                CTIwarn ("RTSPEC in sac2c is not set;"
-                                         " `-rtspec_mode uuid` will be ignored");
+                                CTIwarn (EMPTY_LOC, 
+                                         "RTSPEC in sac2c is not set; "
+                                         "`-rtspec_mode uuid` will be ignored");
                             } else {
                                 global.rtspec_mode = RTSPEC_MODE_UUID;
                             });
 #else
         ARG_CHOICE ("uuid",
-                    CTIabort ("uuid support not available in the current build."));
+                    CTIabort (EMPTY_LOC, "uuid support not available in the current build."));
 #endif /* ENABLE_UUID */
 
         ARG_CHOICE_END ();
@@ -1291,7 +1321,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION ("timefreq", global.timefreq = atoi (ARG));
 #else
     ARGS_OPTION ("timefreq",
-                 CTIerror ("Timing is not available since you don't have clock_gettime"));
+                 CTIerror (EMPTY_LOC, "Timing is not available since you don't have clock_gettime"));
 #endif
 
     ARGS_FLAG ("tog", global.dotogstuff = TRUE);
@@ -1432,10 +1462,21 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_FLAG ("ccflags", global.printccflags = TRUE;);
 
     ARGS_OPTION ("ccflag",
-                 CTIwarn ("Option -ccflag is deprecated, consider using -Xc instead.");
+                 CTIwarn (EMPTY_LOC, 
+                          "Option -ccflag is deprecated, consider using -Xc instead.");
                  SBUFprintf (cflags_buf, " %s", ARG));
 
     ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (EXIT_SUCCESS));
+
+    ARGS_OPTION ("cti-message-length", ARG_RANGE (global.cti_message_length,0,255));
+
+    ARGS_FLAG ("cti-no-color", global.cti_no_color = TRUE);
+
+    ARGS_FLAG ("cti-single-line", global.cti_single_line= TRUE);
+
+    ARGS_OPTION ("cti-primary-header-format", global.cti_primary_header_format = STRcpy (ARG));
+
+    ARGS_OPTION ("cti-continuation-header-format", global.cti_continuation_header_format = STRcpy (ARG));
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
@@ -1572,7 +1613,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("target")
     {
         if (global.target_name == NULL)
-            CTIabort ("-target is missing an argument.");
+            CTIabort (EMPTY_LOC, "-target is missing an argument.");
         global.target_name = ARG;
     }
     ARGS_OPTION_END ("target");
@@ -1580,7 +1621,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("t")
     {
         if (global.target_name == NULL)
-            CTIabort ("-target is missing an argument.");
+            CTIabort (EMPTY_LOC, "-target is missing an argument.");
         global.target_name = ARG;
     }
     ARGS_OPTION_END ("t");
@@ -1666,15 +1707,15 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     }
 
     if (global.exported_modules == NULL) {
-        CTIabort ("No modules given as argument. See sac4c -h for details.");
+        CTIabort (EMPTY_LOC, "No modules given as argument. See sac4c -h for details.");
     }
 
     if (global.printldflags && global.printccflags) {
-        CTIabort ("-ldflags and -ccflags cannot be used simultaneously.");
+        CTIabort (EMPTY_LOC, "-ldflags and -ccflags cannot be used simultaneously.");
     }
 
     if (global.optimize.dophm) {
-        CTIwarn (
+        CTIwarn (EMPTY_LOC,
           "Private Heap Manager in sac4c is experimental! Use -nophm to disable it.");
     }
 
@@ -1699,6 +1740,16 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
      */
 
     ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (EXIT_SUCCESS));
+
+    ARGS_OPTION ("cti-message-length", ARG_RANGE (global.cti_message_length,0,255));
+
+    ARGS_FLAG ("cti-no-color", global.cti_no_color = TRUE);
+
+    ARGS_FLAG ("cti-single-line", global.cti_single_line= TRUE);
+
+    ARGS_OPTION ("cti-primary-header-format", global.cti_primary_header_format = STRcpy (ARG));
+
+    ARGS_OPTION ("cti-continuation-header-format", global.cti_continuation_header_format = STRcpy (ARG));
 
     ARGS_OPTION_BEGIN ("cppI")
     {
@@ -1850,6 +1901,7 @@ OPTanalyseCommandline (int argc, char *argv[])
         AnalyseCommandlineSac2tex (argc, argv);
         break;
     }
+    CTFinitialize (); // Reinitialize formatting settings based on command line arguments
 
     DBUG_RETURN ();
 }

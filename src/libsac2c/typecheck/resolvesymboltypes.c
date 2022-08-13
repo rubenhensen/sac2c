@@ -68,7 +68,7 @@ RSTntype (ntype *arg_type, info *arg_info)
         udt = UTfindUserType (TYgetName (arg_type), TYgetNamespace (arg_type));
 
         if (udt == UT_NOT_DEFINED) {
-            CTIerror ("unknown user defined type `%s::%s'.",
+            CTIerror (EMPTY_LOC, "unknown user defined type `%s::%s'.",
                       NSgetName (TYgetNamespace (arg_type)), TYgetName (arg_type));
         } else {
             DBUG_PRINT ("resolved symbol type %s:%s.",
@@ -164,12 +164,12 @@ RSTtypedef (node *arg_node, info *arg_info)
                 err_str2 = STRcpy (CTIitemName (UTgetTdef (udt)));
             }
 
-            CTIerrorLine (global.linenum,
-                          "%s %s collides with previously %s %s in line %zu.",
-                          TYPEDEF_ISALIAS (arg_node) ? "Imported type"
-                                                     : "Local definition of",
-                          err_str1, UTisAlias (udt) ? "imported type" : "defined type",
-                          err_str2, UTgetLine (udt));
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "%s %s collides with previously %s %s in line %zu.",
+                      TYPEDEF_ISALIAS (arg_node) ? "Imported type"
+                                                 : "Local definition of",
+                      err_str1, UTisAlias (udt) ? "imported type" : "defined type",
+                      err_str2, UTgetLine (udt));
 
             err_str1 = MEMfree (err_str1);
             err_str2 = MEMfree (err_str2);

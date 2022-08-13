@@ -327,8 +327,8 @@ INSTCid (node *arg_node, info *arg_info)
     if (INFO_INSTC_RETURN (arg_info) != NULL) {
 
         if (INFO_INSTC_RETS (arg_info) == NULL) {
-            CTIerrorLoc (NODE_LOCATION (arg_node),
-                         "more expressions returned than return types specified!");
+            CTIerror (NODE_LOCATION (arg_node),
+                      "more expressions returned than return types specified!");
         } else {
             old_type = RET_TYPE (INFO_INSTC_RETS (arg_info));
             if (!TYisAUD (old_type)) {
@@ -370,9 +370,9 @@ INSTCreturn (node *arg_node, info *arg_info)
     }
 
     if (INFO_INSTC_RETS (arg_info) != NULL) {
-        CTIerrorLoc (NODE_LOCATION (arg_node),
-                     "fewer expressions returned than return types specified in line %zu!",
-                     NODE_LINE (INFO_INSTC_RETS (arg_info)));
+        CTIerror (NODE_LOCATION (arg_node),
+                  "fewer expressions returned than return types specified in line %zu!",
+                  NODE_LINE (INFO_INSTC_RETS (arg_info)));
     }
 
     DBUG_RETURN (arg_node);

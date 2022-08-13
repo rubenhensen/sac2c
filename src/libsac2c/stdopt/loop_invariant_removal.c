@@ -511,7 +511,7 @@ CreateNewResult (node *avis, info *arg_info)
     // #ifdef LETISAADOIT           not is SSALIR
     if (PHisSAAMode ()) {
         /* FIXME should set AVIS_DIM/SHAPE here */
-        CTIwarn ("CreateNewResult could not set AVIS_SHAPE/AVIS_DIM");
+        CTIwarn (EMPTY_LOC, "CreateNewResult could not set AVIS_SHAPE/AVIS_DIM");
     }
     // #endif // LETISAADOIT
 

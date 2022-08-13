@@ -31,6 +31,7 @@
 #include "memory.h"
 #include "free.h"
 #include "traverse.h"
+#include "globals.h"
 #include "ctinfo.h"
 #include "DupTree.h"
 #include "wl_bounds.h"
@@ -183,7 +184,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
         DBUG_ASSERT (arg_spec != NULL, "Illegal scheduling specification");
 
         if (exprs == NULL) {
-            CTIabortLine (line,
+            CTIabort (LINE_TO_LOC (line),
                           "Scheduling discipline '%s` expects %zu arguments "
                           "(too few specified)",
                           sched->discipline, sched->num_args);
@@ -196,7 +197,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
             switch (arg_spec[0]) {
             case 'n':
                 if (NODE_TYPE (expr) != N_num) {
-                    CTIabortLine (line,
+                    CTIabort (LINE_TO_LOC (line),
                                   "Argument %zu of scheduling discipline '%s` must be"
                                   " a number",
                                   i, sched->discipline);
@@ -207,7 +208,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
 
             case 'i':
                 if (NODE_TYPE (expr) != N_spid) {
-                    CTIabortLine (line,
+                    CTIabort (LINE_TO_LOC (line),
                                   "Argument %zu of scheduling discipline '%s` must be"
                                   " an identifier",
                                   i, sched->discipline);
@@ -227,7 +228,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
                     sched->args[i].arg.id = STRcpy (SPID_NAME (expr));
                     break;
                 default:
-                    CTIabortLine (line,
+                    CTIabort (LINE_TO_LOC (line),
                                   "Argument %zu of scheduling discipline '%s` must be"
                                   " an identifier or a number",
                                   i, sched->discipline);
@@ -254,7 +255,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
     }
 
     if (exprs != NULL) {
-        CTIabortLine (line,
+        CTIabort (LINE_TO_LOC (line),
                       "Scheduling discipline '%s` expects %zu arguments "
                       "(too many specified)",
                       sched->discipline, sched->num_args);
@@ -289,7 +290,7 @@ SCHmakeScheduling (char *discipline, ...)
     sched_t *sched;
     int disc_no, tmp_num;
     size_t i;
-    
+
     DBUG_ENTER ();
 
     va_start (args, discipline);
@@ -310,7 +311,7 @@ SCHmakeScheduling (char *discipline, ...)
     sched->mclass = scheduler_table[disc_no].mclass;
     /*
      * line can be safely treated as undefined on '0' as origin is '1'
-     * FIXME full location would be better than just line number  
+     * FIXME full location would be better than just line number
      */
     sched->line = 0;
 
@@ -421,7 +422,7 @@ SCHmakeSchedulingByPragma (node *ap_node, size_t line)
         sched = CheckSchedulingArgs (sched, scheduler_table[i].arg_spec,
                                      SPAP_ARGS (ap_node), line);
     } else {
-        CTIabortLine (line,
+        CTIabort (LINE_TO_LOC (line),
                       "Illegal argument in wlcomp-pragma found:\n"
                       "Scheduling( %s): Unknown scheduler",
                       SPAP_NAME (ap_node));
@@ -738,10 +739,10 @@ SCHcheckSuitabilityConstSeg (sched_t *sched)
     DBUG_ENTER ();
 
     if ((sched->mclass != SC_const_seg) && (sched->mclass != SC_var_seg)) {
-        CTIerrorLine (sched->line,
-                      "Scheduling discipline '%s` is not suitable for "
-                      "constant segments",
-                      sched->discipline);
+        CTIerror (LINE_TO_LOC (sched->line),
+                  "Scheduling discipline '%s` is not suitable for "
+                  "constant segments",
+                  sched->discipline);
     }
 
     DBUG_RETURN ();
@@ -753,10 +754,10 @@ SCHcheckSuitabilityVarSeg (sched_t *sched)
     DBUG_ENTER ();
 
     if (sched->mclass != SC_var_seg) {
-        CTIerrorLine (sched->line,
-                      "Scheduling discipline '%s` is not suitable for "
-                      "variable segments",
-                      sched->discipline);
+        CTIerror (LINE_TO_LOC (sched->line),
+                  "Scheduling discipline '%s` is not suitable for "
+                  "variable segments",
+                  sched->discipline);
     }
 
     DBUG_RETURN ();
@@ -768,10 +769,10 @@ SCHcheckSuitabilityWithloop (sched_t *sched)
     DBUG_ENTER ();
 
     if (sched->mclass != SC_withloop) {
-        CTIerrorLine (sched->line,
-                      "Scheduling discipline '%s` is not suitable for "
-                      "with-loops",
-                      sched->discipline);
+        CTIerror (LINE_TO_LOC (sched->line),
+                  "Scheduling discipline '%s` is not suitable for "
+                  "with-loops",
+                  sched->discipline);
     }
 
     DBUG_RETURN ();
@@ -1165,7 +1166,7 @@ CheckTaskselArgs (tasksel_t *tasksel, node *exprs, size_t line)
     for (i = 0; i < tasksel->num_args; i++) {
 
         if (exprs == NULL) {
-            CTIabortLine (line,
+            CTIabort (LINE_TO_LOC (line),
                           "Taskselector discipline '%s` expects %zu arguments "
                           "(too few specified)",
                           tasksel->discipline, tasksel->num_args);
@@ -1174,7 +1175,7 @@ CheckTaskselArgs (tasksel_t *tasksel, node *exprs, size_t line)
         expr = EXPRS_EXPR (exprs);
 
         if (NODE_TYPE (expr) != N_num) {
-            CTIabortLine (line,
+            CTIabort (LINE_TO_LOC (line),
                           "Argument %zu of taskselector discipline '%s` must be"
                           " a number",
                           i, tasksel->discipline);
@@ -1186,7 +1187,7 @@ CheckTaskselArgs (tasksel_t *tasksel, node *exprs, size_t line)
     }
 
     if (exprs != NULL) {
-        CTIabortLine (line,
+        CTIabort (LINE_TO_LOC (line),
                       "Taskselector discipline '%s` expects %zu arguments "
                       "(too many specified)",
                       tasksel->discipline, tasksel->num_args);
@@ -1293,7 +1294,7 @@ SCHmakeTaskselByPragma (node *ap_node, size_t line)
 
         tasksel = CheckTaskselArgs (tasksel, SPAP_ARGS (ap_node), line);
     } else {
-        CTIabortLine (line,
+        CTIabort (LINE_TO_LOC (line),
                       "Illegal argument in wlcomp-pragma found:\n"
                       "Tasksel( %s): Unknown Taskselector",
                       SPAP_NAME (ap_node));

@@ -156,7 +156,7 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
     CheckEnableDbug (phase);
 #endif
 
-    CTInote (" ");
+    CTInote (EMPTY_LOC, " ");
 
     if (cond) {
         CTIstate ("** %2d: %s ...", global.phase_num, PHIphaseText (phase));
@@ -194,10 +194,10 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
         || (global.prtphafun_start_phase == phase
             && global.prtphafun_start_subphase == PH_undefined)) {
         if (global.prtphafun_stop_phase == PH_undefined) {
-            CTIerror (
-              "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
-              "If it is only one phase/subphase/cyclephase you want reported\n"
-              "\nthen the -printstart and -printstop options will be identical.\n");
+            CTIerror (EMPTY_LOC,
+                      "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
+                      "If it is only one phase/subphase/cyclephase you want reported\n"
+                      "then the -printstart and -printstop options will be identical.");
         } else {
             global.prt_cycle_range = TRUE;
             PRTdoPrintFile (FMGRwriteOpen ("%s.%d", global.outfilename, global.phase_num),
@@ -238,7 +238,7 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 
     if (cond) {
         if (PHIphaseType (subphase) != PHT_cycle) {
-            CTInote ("**** %s ...", PHIphaseText (subphase));
+            CTInote (EMPTY_LOC, "**** %s ...", PHIphaseText (subphase));
         }
 
         TIMEbegin (subphase);
@@ -271,10 +271,10 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
          && global.prt_cycle_range == TRUE)
         || global.prtphafun_start_subphase == subphase) {
         if (global.prtphafun_stop_phase == PH_undefined) {
-            CTIerror (
-              "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
-              "If it is only one phase/subphase/cyclephase you want reported\n"
-              "\nthen the -printstart and -printstop options should be identical.\n");
+            CTIerror (EMPTY_LOC,
+                      "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
+                      "If it is only one phase/subphase/cyclephase you want reported\n"
+                      "then the -printstart and -printstop options should be identical.");
         } else {
             global.prt_cycle_range = TRUE;
             PRTdoPrintFile (FMGRwriteOpen ("%s.%d.%s", global.outfilename,
@@ -324,8 +324,8 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
 
         global.cycle_counter = 1;
         do {
-            CTInote (" ");
-            CTInote ("**** %s pass: %i", PHIphaseText (cycle), global.cycle_counter);
+            CTInote (EMPTY_LOC, " ");
+            CTInote (EMPTY_LOC, "**** %s pass: %i", PHIphaseText (cycle), global.cycle_counter);
             STATclearCounters (&oc_pass);
 
             TIMEbegin (cycle);
@@ -352,7 +352,7 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
                 STATaddCounters (&oc_global, &oc_pass);
             } else {
                 go_on = FALSE;
-                CTInote (" ");
+                CTInote (EMPTY_LOC, " ");
             }
 
             /*
@@ -363,11 +363,10 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
                 || (global.prtphafun_start_subphase == cycle
                     && global.prtphafun_start_cycle == PH_undefined)) {
                 if (global.prtphafun_stop_phase == PH_undefined) {
-                    CTIerror (
-                      "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
-                      "If it is only one phase/subphase/cyclephase you want reported\n"
-                      "\nthen the -printstart and -printstop options will be "
-                      "identical.\n");
+                    CTIerror (EMPTY_LOC,
+                              "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
+                              "If it is only one phase/subphase/cyclephase you want reported\n"
+                              "then the -printstart and -printstop options will be identical.");
                 } else {
                     global.prt_cycle_range = TRUE;
                     PRTdoPrintFile (FMGRwriteOpen ("%s.%d.%s.%d", global.outfilename,
@@ -390,7 +389,7 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
         STATcopyCounters (&global.optcounters, &oc_global);
 
         if (go_on && (global.cycle_counter == global.max_optcycles)) {
-            CTIwarn ("Maximum number of optimization cycles reached");
+            CTIwarn (EMPTY_LOC, "Maximum number of optimization cycles reached");
             global.run_stabilization_cycle = TRUE;
         }
 
@@ -431,7 +430,7 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
     if (cond
         && ((cyclephase <= global.break_after_cyclephase)
             || (global.cycle_counter < global.break_cycle_specifier))) {
-        CTInote ("****** %s ...", PHIphaseText (cyclephase));
+        CTInote (EMPTY_LOC, "****** %s ...", PHIphaseText (cyclephase));
 
         TIMEbegin (cyclephase);
         syntax_tree = PHIphaseFun (cyclephase) (syntax_tree);
@@ -464,10 +463,10 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
         || (global.prtphafun_start_cycle == cyclephase
             && global.prtphafun_stop_cycle_specifier == 0)) {
         if (global.prtphafun_stop_phase == PH_undefined) {
-            CTIerror (
-              "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
-              "If it is only one phase/subphase/cyclephase you want reported\n"
-              "\nthen the -printstart and -printstop options should be identical.\n");
+            CTIerror (EMPTY_LOC,
+                      "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
+                      "If it is only one phase/subphase/cyclephase you want reported\n"
+                      "\nthen the -printstart and -printstop options should be identical.");
         } else {
             PRTdoPrintFile (FMGRwriteOpen ("%s.%d.%s.%d", global.outfilename,
                                            global.phase_num, PHIphaseIdent (cyclephase),
@@ -505,14 +504,14 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
             CTItell (4, " ");
 
             if (FUNDEF_ISLOOPFUN (fundef)) {
-                CTInote ("****** Optimizing loop function:");
+                CTInote (EMPTY_LOC, "****** Optimizing loop function:");
             } else if (FUNDEF_ISCONDFUN (fundef)) {
-                CTInote ("****** Optimizing conditional function:");
+                CTInote (EMPTY_LOC, "****** Optimizing conditional function:");
             } else {
-                CTInote ("****** Optimizing regular function:");
+                CTInote (EMPTY_LOC, "****** Optimizing regular function:");
             }
 
-            CTInote ("******  %s( %s): ...", CTIitemName (fundef), CTIfunParams (fundef));
+            CTInote (EMPTY_LOC, "******  %s( %s): ...", CTIitemName (fundef), CTIfunParams (fundef));
 
             FUNDEF_ISINLINECOMPLETED (fundef) = FALSE;
 
@@ -605,10 +604,10 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
             || (global.prtphafun_start_cycle == cyclephase
                 && global.prtphafun_stop_cycle_specifier == 0)) {
             if (global.prtphafun_stop_phase == PH_undefined) {
-                CTIerror (
-                  "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
-                  "If it is only one phase/subphase/cyclephase you want reported\n"
-                  "\nthen the -printstart and -printstop options will be identical.\n");
+                CTIerror (EMPTY_LOC,
+                          "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
+                          "If it is only one phase/subphase/cyclephase you want reported\n"
+                          "\nthen the -printstart and -printstop options will be identical.");
             } else {
                 if (global.break_fun_name == NULL
                     || STReq (FUNDEF_NAME (fundef), global.break_fun_name)) {

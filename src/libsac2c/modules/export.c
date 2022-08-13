@@ -160,7 +160,7 @@ EXPprovide (node *arg_node, info *arg_info)
                 INFO_PROVIDED (arg_info) = TRUE;
             }
         } else {
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "The provide directive is only allowed in modules and "
                         "classes. Ignoring...");
 
@@ -188,7 +188,7 @@ EXPexport (node *arg_node, info *arg_info)
                 INFO_EXPORTED (arg_info) = TRUE;
             }
         } else {
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "The export directive is only allowed in modules and classes. "
                         "Ignoring...");
 
@@ -217,9 +217,9 @@ EXPsymbol (node *arg_node, info *arg_info)
         }
     } else if (INFO_SYMBMODE (arg_info) == SYM_check) {
         if (!SYMBOL_USED (arg_node)) {
-            CTIerrorLoc (NODE_LOCATION (arg_node),
-                         "Symbol '%s' used in export or provide is not defined.",
-                         SYMBOL_ID (arg_node));
+            CTIerror (NODE_LOCATION (arg_node),
+                      "Symbol '%s' used in export or provide is not defined.",
+                      SYMBOL_ID (arg_node));
         }
     }
 
@@ -454,7 +454,7 @@ EXPdoExport (node *syntax_tree)
 
     if (MODULE_FILETYPE (syntax_tree) != FT_prog) {
         if (!global.optimize.dodfr) {
-            CTIwarn ("Dead Function Removal is disabled. This will lead to "
+            CTIwarn (EMPTY_LOC, "Dead Function Removal is disabled. This will lead to "
                      "bigger modules.");
         }
     }

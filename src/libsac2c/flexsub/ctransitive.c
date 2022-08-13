@@ -215,7 +215,7 @@ TFCTRtfvertex (node *arg_node, info *arg_info)
                  * a warning.
                  */
 
-                CTIabort ("Forward edge found in subtyping hierarchy");
+                CTIabort (EMPTY_LOC, "Forward edge found in subtyping hierarchy");
 
             } else if (pre_child < pre_parent && post_parent < post_child) {
 
@@ -224,7 +224,7 @@ TFCTRtfvertex (node *arg_node, info *arg_info)
                  * disallowed, throw an error here.
                  */
 
-                CTIabort ("Back edge found in subtyping hierarchy");
+                CTIabort (EMPTY_LOC, "Back edge found in subtyping hierarchy");
 
             } else if (pre_child < pre_parent && post_child < post_parent) {
 
@@ -277,7 +277,7 @@ TFCTRtfvertex (node *arg_node, info *arg_info)
 
             } else {
 
-                CTIabort ("Unclassifiable edge found in subtyping hierarchy");
+                CTIabort (EMPTY_LOC, "Unclassifiable edge found in subtyping hierarchy");
             }
 
             TFEDGE_WASCLASSIFIED (children) = 1;

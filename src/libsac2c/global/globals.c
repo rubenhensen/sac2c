@@ -38,6 +38,7 @@
 #include "structural_constant_constant_folding.h"
 #include "saa_constant_folding.h"
 #include "ctinfo.h"
+#include "ctformatting.h"
 #include "free.h"
 #include "namespaces.h"
 #include "resource.h"
@@ -638,7 +639,9 @@ get_terminal_size (void)
     memset (&ws, 0, sizeof (struct winsize));
 
     if (!isatty (STDERR_FILENO))
-        return 80;
+        // If we are writing to a file, return a length of 0, which in turn
+        // disables line wrapping to avoid unexpected issues.
+        return 0;  
 
     ioctl (STDERR_FILENO, TIOCGWINSZ, &ws);
     return (unsigned short)(ws.ws_col > 4 ? ws.ws_col - 4 : 1);
@@ -675,12 +678,12 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname)
     memset (global.profile_funnme, 0, sizeof (char *) * PF_MAXFUN);
     memset (global.profile_funapcntr, 0, sizeof (int) * PF_MAXFUN);
 
-    /* setup the line length for cti interface.  */
-    set_message_line_length ((size_t)get_terminal_size ());
-
     global.cwd = getcwd (0, 0);
     if (!global.cwd)
-        CTIabort ("getcwd: %s", strerror (errno));
+        CTIabort (EMPTY_LOC, "getcwd: %s", strerror (errno));
+    
+    global.cti_primary_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
+    global.cti_continuation_header_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
 
     DBUG_RETURN ();
 }
@@ -704,7 +707,7 @@ GLOBsetupBackend (void)
     }
 #include "backends.mac"
     else {
-        CTIabort ("Unknown compiler backend in sac2crc file: %s", global.config.backend);
+        CTIabort (EMPTY_LOC, "Unknown compiler backend in sac2crc file: %s", global.config.backend);
     }
 
     DBUG_RETURN ();
@@ -725,7 +728,7 @@ GLOBsetupDistMemCommLib (void)
     }
 #include "distmem_commlibs.mac"
     else {
-        CTIabort (
+        CTIabort (EMPTY_LOC,
           "Unknown distributed memory backend communication library in sac2crc file: %s",
           global.config.distmem_commlib);
     }

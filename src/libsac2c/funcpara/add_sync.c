@@ -114,9 +114,10 @@ ErrorOnSpawnInExport (node *fundef, node *let)
 {
     DBUG_ENTER ();
 
-    CTIerrorLoc (NODE_LOCATION (let), "Spawn found in exported function %s",
-                 FUNDEF_NAME (fundef));
-    CTIerrorContinued ("Not allowed, create a wrapper function to resolve this");
+    CTIerror (NODE_LOCATION (let), 
+              "Spawn found in exported function %s\n"
+              "Not allowed, create a wrapper function to resolve this",
+              FUNDEF_NAME (fundef));
 
     DBUG_RETURN ();
 }

@@ -300,9 +300,9 @@ SERIgenerator (node *arg_node, info *arg_info)
             }
         } else {
             if (INFO_SERI_ISLASTPART (arg_info)) {
-                CTIerrorLoc ( NODE_LOCATION (arg_node),
-                              "Unable to infer upper bound for final partition of"
-                              " set expression; please specify an upper bound.");
+                CTIerror (NODE_LOCATION (arg_node),
+                          "Unable to infer upper bound for final partition of"
+                          " set expression; please specify an upper bound.");
             } else {
                 /*
                  * The shiny new "adjustable length bound-dot" (see HWLD for details)
@@ -314,7 +314,7 @@ SERIgenerator (node *arg_node, info *arg_info)
                  *    =>   { didxs -> expr | idxs <= . ; ...}
                  *
                  */
-                CTInote ("Unable to infer upper bound for a partition of"
+                CTInote (EMPTY_LOC, "Unable to infer upper bound for a partition of"
                          " a set expression; using \".\" instead.");
                 GENERATOR_BOUND2 (arg_node) = TBmakeDot (1);
                 GENERATOR_OP2 (arg_node) = F_wl_le;

@@ -1137,7 +1137,7 @@ WLAAprf (node *arg_node, info *arg_info)
 
                 if ((NODE_TYPE (arg_node_arg1) != N_id)
                     || (NODE_TYPE (arg_node_arg2) != N_id)) {
-                    CTIwarn ("WLAA only works correctly with constant folding,"
+                    CTIwarn (EMPTY_LOC, "WLAA only works correctly with constant folding,"
                              " N_id exspected !");
                 } else {
                     access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
@@ -1188,7 +1188,7 @@ WLAAprf (node *arg_node, info *arg_info)
                   if ((ID_VECLEN(arg_node_arg1) < 0)
                       && (ID_VECLEN(arg_node_arg2) < 0)) {
                     
-                    CTIwarn( "WLAA only works correctly with constant"
+                    CTIwarn (EMPTY_LOC, "WLAA only works correctly with constant"
                              " folding, variable exspected !");
                   }
 #endif
@@ -1289,7 +1289,7 @@ WLAAprf (node *arg_node, info *arg_info)
 
                 if ((NODE_TYPE (arg_node_arg1) != N_id)
                     || (NODE_TYPE (arg_node_arg2) != N_id)) {
-                    CTIwarn ("WLAA only works correctly with constant folding,"
+                    CTIwarn (EMPTY_LOC, "WLAA only works correctly with constant folding,"
                              " N_id exspected !");
                 } else {
                     access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
@@ -1333,7 +1333,7 @@ WLAAprf (node *arg_node, info *arg_info)
                   if ((ID_VECLEN(arg_node_arg1) < 0)
                       && (ID_VECLEN(arg_node_arg2) < 0)) {
                     
-                    CTIwarn( "WLAA only works correctly with constant folding,"
+                    CTIwarn (EMPTY_LOC, "WLAA only works correctly with constant folding,"
                              " variable exspected !");
                   }
 #endif

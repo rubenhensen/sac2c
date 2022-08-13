@@ -233,7 +233,7 @@ DSTmodule (node *arg_node, info *arg_info)
     } while (INFO_FAILED (arg_info) && INFO_THROTTLE (arg_info) > 0);
 
     if (INFO_FAILED (arg_info)) {
-        CTIwarn ("Could not compute static thread distribution. The "
+        CTIwarn (EMPTY_LOC, "Could not compute static thread distribution. The "
                  "program might deadlock due to lack of resources.");
     }
 

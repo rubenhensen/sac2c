@@ -216,7 +216,7 @@ CBLfundef (node *arg_node, info *arg_info)
             INFO_BUNDLES (arg_info)
               = InsertIntoBundles (old_node, arity, INFO_BUNDLES (arg_info));
         } else {
-            CTIwarn ("%s is not exported as it uses varargs.", CTIitemName (arg_node));
+            CTIwarn (EMPTY_LOC, "%s is not exported as it uses varargs.", CTIitemName (arg_node));
         }
     }
 

@@ -463,21 +463,21 @@ CSGDarg (node *arg_node, info *arg_info)
          */
         if (!PolymorphicTypeComplies (ARG_NTYPE (INFO_CURRENT (arg_info)),
                                       ARG_NTYPE (arg_node))) {
-            CTIerrorLoc (NODE_LOCATION (INFO_CURRENT (arg_info)),
-                         "In definition of %s: type and shape variables cannot be "
-                         "mixed (in arguments %s and %s).",
-                         CTIitemName (INFO_FUNDEF (arg_info)),
-                         ARG_NAME (INFO_CURRENT (arg_info)), ARG_NAME (arg_node));
+            CTIerror (NODE_LOCATION (INFO_CURRENT (arg_info)),
+                      "In definition of %s: type and shape variables cannot be "
+                      "mixed (in arguments %s and %s).",
+                      CTIitemName (INFO_FUNDEF (arg_info)),
+                      ARG_NAME (INFO_CURRENT (arg_info)), ARG_NAME (arg_node));
         }
         break;
     case CSGD_checkret:
         if (!PolymorphicTypeComplies (RET_TYPE (INFO_CURRENT (arg_info)),
                                       ARG_NTYPE (arg_node))) {
-            CTIerrorLoc (NODE_LOCATION (INFO_CURRENT (arg_info)),
-                         "In definition of %s: type and shape variables cannot be "
-                         "mixed (in return type %d and argument %s).",
-                         CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info),
-                         ARG_NAME (arg_node));
+            CTIerror (NODE_LOCATION (INFO_CURRENT (arg_info)),
+                      "In definition of %s: type and shape variables cannot be "
+                      "mixed (in return type %d and argument %s).",
+                      CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info),
+                      ARG_NAME (arg_node));
         }
 
         arg_info = AnnotateDefinedVars (RET_TYPE (INFO_CURRENT (arg_info)),
@@ -486,10 +486,10 @@ CSGDarg (node *arg_node, info *arg_info)
     case CSGD_checkcast:
         if (!PolymorphicTypeComplies (CAST_NTYPE (INFO_CURRENT (arg_info)),
                                       ARG_NTYPE (arg_node))) {
-            CTIerrorLoc (NODE_LOCATION (INFO_CURRENT (arg_info)),
-                         "In definition of %s: type and shape variables cannot be "
-                         "mixed (in cast type and argument %s).",
-                         CTIitemName (INFO_FUNDEF (arg_info)), ARG_NAME (arg_node));
+            CTIerror (NODE_LOCATION (INFO_CURRENT (arg_info)),
+                      "In definition of %s: type and shape variables cannot be "
+                      "mixed (in cast type and argument %s).",
+                      CTIitemName (INFO_FUNDEF (arg_info)), ARG_NAME (arg_node));
         }
 
         arg_info = AnnotateDefinedVars (CAST_NTYPE (INFO_CURRENT (arg_info)),
@@ -498,12 +498,12 @@ CSGDarg (node *arg_node, info *arg_info)
     case CSGD_checkavis:
         if (!PolymorphicTypeComplies (AVIS_TYPE (INFO_CURRENT (arg_info)),
                                       ARG_NTYPE (arg_node))) {
-            CTIerrorLoc (NODE_LOCATION (INFO_CURRENT (arg_info)),
-                         "In definition of %s: type and shape variables cannot be "
-                         "mixed (in declared type of local variable %s and "
-                         "argument %s).",
-                         CTIitemName (INFO_FUNDEF (arg_info)),
-                         AVIS_NAME (INFO_CURRENT (arg_info)), ARG_NAME (arg_node));
+            CTIerror (NODE_LOCATION (INFO_CURRENT (arg_info)),
+                      "In definition of %s: type and shape variables cannot be "
+                      "mixed (in declared type of local variable %s and "
+                      "argument %s).",
+                      CTIitemName (INFO_FUNDEF (arg_info)),
+                      AVIS_NAME (INFO_CURRENT (arg_info)), ARG_NAME (arg_node));
         }
 
         arg_info = AnnotateDefinedVars (AVIS_TYPE (INFO_CURRENT (arg_info)),
@@ -587,30 +587,27 @@ CSGDret (node *arg_node, info *arg_info)
             }
 
             if (!INFO_OUTERDEFINED (arg_info)) {
-                CTIerrorLoc (NODE_LOCATION (arg_node),
-                             "In definition of %s: Type variable in polymorphic return "
-                             "type not bound by any argument (return value %d).",
-                             CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info));
+                CTIerror (NODE_LOCATION (arg_node),
+                          "In definition of %s: Type variable in polymorphic return "
+                          "type not bound by any argument (return value %d).",
+                          CTIitemName (INFO_FUNDEF (arg_info)), INFO_RETNO (arg_info));
             }
 
             if (TYisPolyUser (TYgetScalar (RET_TYPE (arg_node)))) {
                 if (!INFO_INNERDEFINED (arg_info)) {
-                    CTIerrorLoc (NODE_LOCATION (arg_node),
-                                 "In definition of %s: Inner type variable in "
-                                 "polymorphic "
-                                 "return type not bound by any argument (return value "
-                                 "%d).",
-                                 CTIitemName (INFO_FUNDEF (arg_info)),
-                                 INFO_RETNO (arg_info));
+                    CTIerror (NODE_LOCATION (arg_node),
+                              "In definition of %s: Inner type variable in polymorphic "
+                              "return type not bound by any argument (return value %d).",
+                              CTIitemName (INFO_FUNDEF (arg_info)),
+                              INFO_RETNO (arg_info));
                 }
 
                 if (!INFO_SHAPEDEFINED (arg_info)) {
-                    CTIerrorLoc (NODE_LOCATION (arg_node),
-                                 "In definition of %s: Shape variable in polymorphic "
-                                 "return "
-                                 "type not bound by any argument (return value %d).",
-                                 CTIitemName (INFO_FUNDEF (arg_info)),
-                                 INFO_RETNO (arg_info));
+                    CTIerror (NODE_LOCATION (arg_node),
+                              "In definition of %s: Shape variable in polymorphic return "
+                              "type not bound by any argument (return value %d).",
+                              CTIitemName (INFO_FUNDEF (arg_info)),
+                              INFO_RETNO (arg_info));
                 }
             }
 
@@ -683,39 +680,39 @@ CSGDcast (node *arg_node, info *arg_info)
         }
 
         if (!INFO_OUTERDEFINED (arg_info)) {
-            CTIerrorLoc (NODE_LOCATION (arg_node),
-                         "In definition of %s: Type variable in polymorphic cast "
-                         "type not bound by any argument.",
-                         CTIitemName (INFO_FUNDEF (arg_info)));
+            CTIerror (NODE_LOCATION (arg_node),
+                      "In definition of %s: Type variable in polymorphic cast "
+                      "type not bound by any argument.",
+                      CTIitemName (INFO_FUNDEF (arg_info)));
         }
 
         if (TYisPolyUser (TYgetScalar (CAST_NTYPE (arg_node)))) {
             if (!INFO_INNERDEFINED (arg_info)) {
-                CTIerrorLoc (NODE_LOCATION (arg_node),
-                             "In definition of %s: Inner type variable in polymorphic "
-                             "cast type not bound by any argument.",
-                             CTIitemName (INFO_FUNDEF (arg_info)));
+                CTIerror (NODE_LOCATION (arg_node),
+                          "In definition of %s: Inner type variable in polymorphic "
+                          "cast type not bound by any argument.",
+                          CTIitemName (INFO_FUNDEF (arg_info)));
             }
 
             if (!INFO_SHAPEDEFINED (arg_info)) {
-                CTIerrorLoc (NODE_LOCATION (arg_node),
-                             "In definition of %s: Shape variable in polymorphic cast "
-                             "type not bound by any argument.",
-                             CTIitemName (INFO_FUNDEF (arg_info)));
+                CTIerror (NODE_LOCATION (arg_node),
+                          "In definition of %s: Shape variable in polymorphic cast "
+                          "type not bound by any argument.",
+                          CTIitemName (INFO_FUNDEF (arg_info)));
             }
 
             if (TYgetPolyUserDeNest (TYgetScalar (CAST_NTYPE (arg_node)))) {
-                CTIerrorLoc (NODE_LOCATION (arg_node),
-                             "In definition of %s: Implicit denesting of polymorphic "
-                             "user type not allowed in cast expressions.",
-                             CTIitemName (INFO_FUNDEF (arg_info)));
+                CTIerror (NODE_LOCATION (arg_node),
+                          "In definition of %s: Implicit denesting of polymorphic "
+                          "user type not allowed in cast expressions.",
+                          CTIitemName (INFO_FUNDEF (arg_info)));
             }
 
             if (TYgetPolyUserReNest (TYgetScalar (CAST_NTYPE (arg_node)))) {
-                CTIerrorLoc (NODE_LOCATION (arg_node),
-                             "In definition of %s: Implicit renesting of polymorphic "
-                             "user type not allowed in cast expressions.",
-                             CTIitemName (INFO_FUNDEF (arg_info)));
+                CTIerror (NODE_LOCATION (arg_node),
+                          "In definition of %s: Implicit renesting of polymorphic "
+                          "user type not allowed in cast expressions.",
+                          CTIitemName (INFO_FUNDEF (arg_info)));
             }
         }
 
@@ -751,41 +748,39 @@ CSGDavis (node *arg_node, info *arg_info)
         }
 
         if (!INFO_OUTERDEFINED (arg_info)) {
-            CTIerrorLoc (NODE_LOCATION (arg_node),
-                         "In definition of %s: Type variable in polymorphic cast "
-                         "type not bound by any argument.",
-                         CTIitemName (INFO_FUNDEF (arg_info)));
+            CTIerror (NODE_LOCATION (arg_node),
+                      "In definition of %s: Type variable in polymorphic cast "
+                      "type not bound by any argument.",
+                      CTIitemName (INFO_FUNDEF (arg_info)));
         }
 
         if (TYisPolyUser (TYgetScalar (AVIS_TYPE (arg_node)))) {
             if (!INFO_INNERDEFINED (arg_info)) {
-                CTIerrorLoc (NODE_LOCATION (arg_node),
-                             "In definition of %s: Inner type variable in polymorphic "
-                             "type of local variable %s not bound by any argument.",
-                             CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
+                CTIerror (NODE_LOCATION (arg_node),
+                          "In definition of %s: Inner type variable in polymorphic "
+                          "type of local variable %s not bound by any argument.",
+                          CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
             }
 
             if (!INFO_SHAPEDEFINED (arg_info)) {
-                CTIerrorLoc (NODE_LOCATION (arg_node),
-                             "In definition of %s: Shape variable in polymorphic type "
-                             "of local variable %s not bound by any argument.",
-                             CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
+                CTIerror (NODE_LOCATION (arg_node),
+                          "In definition of %s: Shape variable in polymorphic type "
+                          "of local variable %s not bound by any argument.",
+                          CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
             }
 
             if (TYgetPolyUserDeNest (TYgetScalar (AVIS_TYPE (arg_node)))) {
-                CTIerrorLoc (NODE_LOCATION (arg_node),
-                             "In definition of %s: Implicit denesting of polymorphic "
-                             "user "
-                             "type not allowed in type declaration of local variable %s.",
-                             CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
+                CTIerror (NODE_LOCATION (arg_node),
+                          "In definition of %s: Implicit denesting of polymorphic user "
+                          "type not allowed in type declaration of local variable %s.",
+                          CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
             }
 
             if (TYgetPolyUserReNest (TYgetScalar (AVIS_TYPE (arg_node)))) {
-                CTIerrorLoc (NODE_LOCATION (arg_node),
-                             "In definition of %s: Implicit renesting of polymorphic "
-                             "user "
-                             "type not allowed in type declaration of local variable %s.",
-                             CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
+                CTIerror (NODE_LOCATION (arg_node),
+                          "In definition of %s: Implicit renesting of polymorphic user "
+                          "type not allowed in type declaration of local variable %s.",
+                          CTIitemName (INFO_FUNDEF (arg_info)), AVIS_NAME (arg_node));
             }
         }
     }

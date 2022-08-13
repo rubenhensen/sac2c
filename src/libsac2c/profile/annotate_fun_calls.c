@@ -236,7 +236,7 @@ PFfundef (node *arg_node, info *arg_info)
         str_buff = Fundef2ProfileString (arg_node);
         DBUG_PRINT ("annotating \"%s\"", str_buff);
         if (global.profile_funcntr == PF_MAXFUN) {
-            CTIwarn ("\"PF_MAXFUN\" too low!\n"
+            CTIwarn (EMPTY_LOC, "\"PF_MAXFUN\" too low!\n"
                      "Function \"%s\" will not be profiled separately. "
                      "Instead, it's time will be accounted to \"main\"",
                      str_buff);
@@ -322,7 +322,7 @@ PFassign (node *arg_node, info *arg_info)
          */
         if (global.profile_funapcntr[funno] == PF_MAXFUNAP) {
             str_buff = Fundef2ProfileString (INFO_PF_FUNDEF (arg_info));
-            CTIwarn ("\"PF_MAXFUNAP\" too low!\n"
+            CTIwarn (EMPTY_LOC, "\"PF_MAXFUNAP\" too low!\n"
                      "Application of function \"%s\" in line %zu will not "
                      "be profiled separately, but be accounted to the application "
                      "in line %zu",

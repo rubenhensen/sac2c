@@ -130,7 +130,7 @@ DAGgetAnnotation (dag *g, vertex *from)
     if (v != NULL)
         res = v->annotation;
     else
-        CTIerror ("Vertex non-existant in graph");
+        CTIerror (EMPTY_LOC, "Vertex non-existant in graph");
     DBUG_RETURN (res);
 }
 
@@ -140,7 +140,7 @@ DAGaddEdge (dag *g, vertex *from, vertex *to)
     DBUG_ENTER ();
     vertex *src = vlookup (g, from), *tar = vlookup (g, to);
     if (src == NULL || tar == NULL) {
-        CTIerror ("Source or target vertex non-existant in the graph");
+        CTIerror (EMPTY_LOC, "Source or target vertex non-existant in the graph");
     } else {
         addEdge (from->vnode, to->vnode);
         if (!TFDAG_DIRTY (g->gnode))
@@ -161,7 +161,7 @@ preprocessDAG (node *gnode)
         if (TFVERTEX_PARENTS (defs) == NULL)
             root_count++;
         if (root_count > 1)
-            CTIerror ("DAG has multiple roots");
+            CTIerror (EMPTY_LOC, "DAG has multiple roots");
         else
             TFDAG_ROOT (gnode) = defs;
         defs = TFVERTEX_NEXT (defs);

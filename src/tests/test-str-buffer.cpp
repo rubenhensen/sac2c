@@ -1,6 +1,9 @@
 #include <sys/types.h>
 #include <dirent.h>
+
 #include "gtest/gtest.h"
+#include "base-test-environment.h" // All unit test files need to import this!
+testing::Environment* base_test_env = testing::AddGlobalTestEnvironment(new BaseEnvironment);
 
 extern "C" {
 #define DBUG_PREFIX "TEST-STRBUF"
@@ -186,4 +189,57 @@ TEST (StrBuffer, testSubstToken)
 
     SBUFfree (buf);
     MEMfree (str);
+}
+
+TEST (StrBuffer, testInsertAfterToken)
+{
+    str_buf *buf_insert;
+    str_buf *buf_subst;
+
+    // Applying SBUFinsertAfterToken(buf, token, insert) should give the
+    // same result as SBUFsubstToken(buf, token, STRcat (token, insert))
+    buf_insert = SBUFcreate (0);
+    buf_subst = SBUFcreate (0);
+    SBUFprint (buf_insert, "A,glorious,sentence,containing,many,commas.");
+    SBUFprint (buf_subst, "A,glorious,sentence,containing,many,commas.");
+
+    SBUFinsertAfterToken (buf_insert, ",", " ");
+    SBUFsubstToken (buf_subst, ",", ", ");
+    EXPECT_STREQ (SBUFgetBuffer (buf_subst), SBUFgetBuffer (buf_insert));
+
+    SBUFinsertAfterToken (buf_insert, ", ", "A larger test");
+    SBUFsubstToken (buf_subst, ", ", ", A larger test");
+    EXPECT_STREQ (SBUFgetBuffer (buf_subst), SBUFgetBuffer (buf_insert));
+
+    SBUFfree (buf_insert);
+    SBUFfree (buf_subst);
+}
+
+TEST (StrBuffer, testTruncate)
+{
+    str_buf *buf_one;
+    str_buf *buf_two;
+    char *string;
+
+    buf_one = SBUFcreate(0);
+    buf_two = SBUFcreate(15);
+
+    // Initially, the two buffers differ
+    SBUFprint (buf_two, "Buffer contents");
+    EXPECT_EQ (15, SBUFlen (buf_two)); // To test the internal len parameter
+    EXPECT_EQ (15, STRlen (SBUFgetBuffer(buf_two))); // To test that the null byte is set correctly
+    EXPECT_STRNE (SBUFgetBuffer(buf_one), SBUFgetBuffer (buf_two));
+    
+    // After truncating and leaving buf_two at a length of 1, the buffers still differ
+    SBUFtruncate (buf_two, 1);
+    EXPECT_EQ (1, SBUFlen (buf_two));
+    EXPECT_STRNE (SBUFgetBuffer(buf_one), SBUFgetBuffer (buf_two));
+
+    // After truncating the buffer to be empty, the buffers are equal.
+    SBUFtruncate (buf_two, 0);
+    EXPECT_TRUE (SBUFisEmpty (buf_two));
+    EXPECT_STREQ (SBUFgetBuffer(buf_one), SBUFgetBuffer (buf_two));
+
+    SBUFfree (buf_one);
+    SBUFfree (buf_two);
 }

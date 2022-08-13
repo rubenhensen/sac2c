@@ -343,16 +343,15 @@ CheckBounds (node *arg_node, shape *max_shp)
         tnum = SHgetExtent (max_shp, dim);
         if (lbnum < 0) {
             NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-            CTIerrorLoc (NODE_LOCATION (arg_node),
-                         "Lower bound of WL-generator in dim %d below zero: %d", dim,
-                         lbnum);
+            CTIerror (NODE_LOCATION (arg_node),
+                      "Lower bound of WL-generator in dim %d below zero: %d", dim,
+                      lbnum);
         }
         if (ubnum > tnum) {
             NUM_VAL (EXPRS_EXPR (ube)) = tnum;
-            CTIerrorLoc (NODE_LOCATION (arg_node),
-                         "Upper bound of WL-generator in dim %d greater than shape %d: "
-                         "%d",
-                         dim, tnum, ubnum);
+            CTIerror (NODE_LOCATION (arg_node),
+                      "Upper bound of WL-generator in dim %d greater than shape %d: %d",
+                      dim, tnum, ubnum);
         }
 
         dim++;
@@ -475,16 +474,16 @@ CropBounds (node *wl, shape *max_shp)
         tnum = SHgetExtent (max_shp, dim);
         if (lbnum < 0) {
             NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-            CTIerrorLoc (NODE_LOCATION (wl),
-                         "Lower bound of WL-generator in dim %d below zero: %d", dim,
-                         lbnum);
+            CTIerror (NODE_LOCATION (wl),
+                      "Lower bound of WL-generator in dim %d below zero: %d", dim,
+                      lbnum);
         }
         if (ubnum > tnum) {
             NUM_VAL (EXPRS_EXPR (ube)) = tnum;
-            CTIerrorLoc (NODE_LOCATION (wl),
-                         "Upper bound of WL-generator in dim %d greater than shape %d: "
-                         "%d",
-                         dim, tnum, ubnum);
+            CTIerror (NODE_LOCATION (wl),
+                      "Upper bound of WL-generator in dim %d greater than shape %d: "
+                      "%d",
+                      dim, tnum, ubnum);
         }
 
         dim++;
@@ -794,13 +793,13 @@ WLAgenerator (node *arg_node, info *arg_info)
     switch (WLPGnormalizeStepWidth( &GENERATOR_STEP( arg_node),
                                     &GENERATOR_WIDTH( arg_node))) {
     case 1:
-      CTIabortLine( NODE_LINE(wln), "Component of width greater than step");
+      CTIabort (NODE_LOCATION (wln), "Component of width greater than step");
       break;
     case 2:
-      CTIabortLine( NODE_LINE(wln), "Component of width less than zero");
+      CTIabort (NODE_LOCATION (wln), "Component of width less than zero");
       break;
     case 3:
-      CTIabortLine( NODE_LINE(wln), "Width vector without step vector");
+      CTIabort (NODE_LOCATION (wln), "Width vector without step vector");
       break;
     }
   }

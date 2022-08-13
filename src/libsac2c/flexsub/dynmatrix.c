@@ -99,7 +99,7 @@ setMatrixElem (matrix *m, int x, int y, elem *element)
         void *_temp
           = MEMrealloc (MATRIX_ARRAY2D (m), MATRIX_TOTALROWS (m) * sizeof (dynarray *));
         if (!_temp) {
-            CTIabort ("setMatrixValue couldn't realloc memory!\n");
+            CTIabort (EMPTY_LOC, "setMatrixValue couldn't realloc memory!\n");
         }
 
         MEMfree (MATRIX_ARRAY2D (m));

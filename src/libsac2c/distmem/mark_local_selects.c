@@ -1036,8 +1036,8 @@ DMMLSdoMarkLocalSelects (node *syntax_tree)
 
     info = MakeInfo ();
     syntax_tree = TRAVdo (syntax_tree, info);
-    CTInote ("Found %d local selects (DMMLS optimization).", INFO_LOCAL_SELECTS (info));
-    CTInote ("Found %d possibly local selects (DMGS optimization).",
+    CTInote (EMPTY_LOC, "Found %d local selects (DMMLS optimization).", INFO_LOCAL_SELECTS (info));
+    CTInote (EMPTY_LOC, "Found %d possibly local selects (DMGS optimization).",
              INFO_BOUNDARY_SELECTS (info));
     info = FreeInfo (info);
 

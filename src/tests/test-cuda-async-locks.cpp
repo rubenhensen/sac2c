@@ -1,7 +1,7 @@
+#include <cstdlib>
+
 #include "gtest/gtest.h"
 #include "config.h"
-
-#include <cstdlib>
 
 #if ENABLE_CUDA
 

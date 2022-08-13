@@ -67,7 +67,7 @@ FMGRfindFilePath (pathkind_t p, const char *name)
 
     if (name[0] == '/') { /* absolute path specified! */
         if (!FMGRcheckExistFile (name))
-            CTIabort ("Error: cannot find/open '%s'.", name);
+            CTIabort (EMPTY_LOC, "Error: cannot find/open '%s'.", name);
 
         path = STRcpy ("");
     } else {
@@ -469,7 +469,7 @@ FMGRwriteOpen (const char *format, ...)
     file = fopen (buffer, "w");
 
     if (file == NULL) {
-        CTIabort ("Unable to write file \"%s\"", buffer);
+        CTIabort (EMPTY_LOC, "Unable to write file \"%s\"", buffer);
     } else {
         DBUG_PRINT ("Opening file \"%s\" for writing", buffer);
     }
@@ -493,7 +493,7 @@ FMGRreadWriteOpen (const char *format, ...)
     file = fopen (buffer, "w+");
 
     if (file == NULL) {
-        CTIabort ("Unable to write file \"%s\"", buffer);
+        CTIabort (EMPTY_LOC, "Unable to write file \"%s\"", buffer);
     } else {
         DBUG_PRINT ("Opening file \"%s\" for writing and reading", buffer);
     }
@@ -534,7 +534,7 @@ FMGRreadOpen (const char *format, ...)
     file = fopen (buffer, "r");
 
     if (file == NULL) {
-        CTIabort ("Unable to read file \"%s\"", buffer);
+        CTIabort (EMPTY_LOC, "Unable to read file \"%s\"", buffer);
     }
 
     DBUG_RETURN (file);
@@ -577,7 +577,7 @@ FMGRwriteOpenExecutable (const char *format, ...)
     file = fdopen (fd, "w");
 
     if (file == NULL) {
-        CTIabort ("Unable to write file \"%s\"", buffer);
+        CTIabort (EMPTY_LOC, "Unable to write file \"%s\"", buffer);
     }
 
     DBUG_RETURN (file);
@@ -616,7 +616,7 @@ FMGRappendOpen (const char *format, ...)
     file = fopen (buffer, "a");
 
     if (file == NULL) {
-        CTIabort ("Unable to append file \"%s\"", buffer);
+        CTIabort (EMPTY_LOC, "Unable to append file \"%s\"", buffer);
     }
 
     DBUG_RETURN (file);
@@ -638,7 +638,7 @@ FMGRclose (FILE *file)
     DBUG_ENTER ();
 
     if (fclose (file) != 0) {
-        CTIabort ("There was an error while closing a file.");
+        CTIabort (EMPTY_LOC, "There was an error while closing a file.");
     }
 
     DBUG_RETURN ((FILE *)NULL);
@@ -683,7 +683,7 @@ FMGRsetFileNames (node *module)
             buffer = STRcat (NSgetName (MODULE_NAMESPACE (module)), ".sac");
 
             if (!STReq (buffer, global.puresacfilename)) {
-                CTIwarn ("Module/class '%s` should be in a file named \"%s\" "
+                CTIwarn (EMPTY_LOC, "Module/class '%s` should be in a file named \"%s\" "
                          "instead of \"%s\"",
                          NSgetName (MODULE_NAMESPACE (module)), buffer,
                          global.sacfilename);
@@ -697,7 +697,7 @@ FMGRsetFileNames (node *module)
         } else {
             global.targetdir = FMGRabsName (global.outfilename);
             if (!FMGRcheckExistDir (global.targetdir)) {
-                CTIabort ("Target directory `%s' does not exist.", global.targetdir);
+                CTIabort (EMPTY_LOC, "Target directory `%s' does not exist.", global.targetdir);
             }
         }
 
@@ -757,7 +757,7 @@ FMGRcreateTmpDir (void)
     global.tmp_dirname = mkdtemp (global.tmp_dirname);
 
     if (global.tmp_dirname == NULL) {
-        CTIabort ("System failed to create temporary directory");
+        CTIabort (EMPTY_LOC, "System failed to create temporary directory");
     }
 
     global.system_cleanup = STRcatn (3, global.config.rmdir, " ", global.tmp_dirname);
@@ -783,7 +783,7 @@ FMGRcreateTmpDir (void)
     global.tmp_dirname = tempnam (global.config.tmpdir, "SAC_");
 
     if (global.tmp_dirname == NULL) {
-        CTIabort ("System failed to create temporary directory");
+        CTIabort (EMPTY_LOC, "System failed to create temporary directory");
     }
 
     SYScall ("%s %s", global.config.mkdir, global.tmp_dirname);
@@ -831,7 +831,7 @@ FMGRforEach (const char *path, const char *filterexpr, void *funargs,
     currdir = opendir (path);
 
     if (currdir == NULL) {
-        CTIabort ("Cannot read directory `%s'.", path);
+        CTIabort (EMPTY_LOC, "Cannot read directory `%s'.", path);
     }
 
     error = regcomp (&regexpr, fullpattern, REG_NOSUB);

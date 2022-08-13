@@ -1230,7 +1230,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     error = TransformationRangeCheck (transf2, substwln, target_ig);
     transf2 = FREEfreeIndexInfo (transf2);
     if (error) {
-        CTIabortLine (NODE_LINE (idn), "Array access to %s out of range in dimension %i",
+        CTIabort (NODE_LOCATION (idn), "Array access to %s out of range in dimension %i",
                       ID_NAME (idn), error);
     }
 
@@ -1245,7 +1245,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     subst_ig = FinalTransformations (subst_ig, transformations, target_ig->shape);
 
     if (!subst_ig) {
-        CTIabortLine (NODE_LINE (idn), "Constants of index vector out of range");
+        CTIabort (NODE_LOCATION (idn), "Constants of index vector out of range");
     }
 
     /* intersect target_ig and subst_ig

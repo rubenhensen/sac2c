@@ -381,7 +381,7 @@ InsertMinAndCheckAssumption (tvar *var, ntype *new_min)
         }
 
         if (!ok) {
-            CTIabortLine (global.linenum, "Ugly squad type contradiction");
+            CTIabort (LINE_TO_LOC (global.linenum), "Ugly squad type contradiction");
         }
     } else {
         TVAR_MIN (var) = new_min;

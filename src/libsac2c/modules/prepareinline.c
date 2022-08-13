@@ -174,7 +174,7 @@ PPIfundef (node *arg_node, info *arg_info)
         } else {
             char *funsig = TUtypeSignature2String (arg_node);
 
-            CTIerror ("Unable to find body of function '%s' with args '%s' in module.",
+            CTIerror (EMPTY_LOC, "Unable to find body of function '%s' with args '%s' in module.",
                       CTIitemName (arg_node), funsig);
 
             funsig = MEMfree (funsig);

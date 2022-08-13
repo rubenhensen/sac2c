@@ -862,7 +862,7 @@ CFcond (node *arg_node, info *arg_info)
          * to true we have an endless loop. We MUST avoid doing CF, as it
          * won't terminate either!
          */
-        CTIwarnLoc (NODE_LOCATION (arg_node),
+        CTIwarn (NODE_LOCATION (arg_node),
                     "Infinite loop detected, program may not terminate");
         condknown = FALSE;
     }

@@ -167,8 +167,9 @@ ESPfundef (node *arg_node, info *arg_info)
     DBUG_EXECUTE (MEMfree (tmp_str));
 
     if (disp_res == NULL) {
-        CTIwarnLine (global.linenum, "Specialization of \"%s\" to arguments () ignored",
-                     CTIitemName (arg_node));
+        CTIwarn (LINE_TO_LOC (global.linenum), 
+                 "Specialization of \"%s\" to arguments () ignored",
+                 CTIitemName (arg_node));
     } else {
         /*
          * create specializations (if appropriate), trigger the type
@@ -181,10 +182,10 @@ ESPfundef (node *arg_node, info *arg_info)
             /*
              * no match at all!
              */
-            CTIerrorLine (global.linenum,
-                          "No matching definition found for the specialization "
-                          " of \"%s\" for arguments %s",
-                          CTIitemName (arg_node), TYtype2String (args, FALSE, 0));
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "No matching definition found for the specialization "
+                      " of \"%s\" for arguments %s",
+                      CTIitemName (arg_node), TYtype2String (args, FALSE, 0));
         }
 
         TYfreeDft_res (disp_res);

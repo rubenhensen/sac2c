@@ -5,6 +5,7 @@
 #include "phase_drivers.h"
 #include "options.h"
 #include "ctinfo.h"
+#include "ctformatting.h"
 #include "memory.h"
 #include "cctools.h"
 #include "globals.h"
@@ -63,6 +64,7 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
     set_debug_exit_function (CTIexit);
 
     CTIset_stderr (stderr);
+    CTFinitialize ();
 
     setlocale (LC_ALL, "en_US");
     CTIinstallInterruptHandlers ();

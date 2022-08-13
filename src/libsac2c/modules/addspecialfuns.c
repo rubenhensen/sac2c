@@ -65,7 +65,8 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
          * give an error!
          */
         if (STReq (global.modulename, global.preludename)) {
-            CTIabort ("Cannot load `%s' when compiling a module of the same "
+            CTIabort (EMPTY_LOC, 
+                      "Cannot load `%s' when compiling a module of the same "
                       "name. Try compiling with option -noprelude!", global.modulename);
         }
 
@@ -106,7 +107,7 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
          */
         last_fundef = TagPreludeAsSticky (last_fundef);
     } else {
-        CTInote ("The prelude library `%s' has not been loaded.", global.preludename);
+        CTInote (EMPTY_LOC, "The prelude library `%s' has not been loaded.", global.preludename);
     }
 
     DBUG_RETURN (syntaxtree);

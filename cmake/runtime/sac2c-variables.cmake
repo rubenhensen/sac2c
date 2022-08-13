@@ -1,5 +1,5 @@
 # Create local variant of the SAC2C flags
-SET (SAC2C_T ${SAC2C_EXEC} -target ${TARGET})
+SET (SAC2C_T ${SAC2C_EXEC} -target ${TARGET} -cti-message-length 0 -cti-single-line)
 
 # In case of BUILDGENERIC we need to propagate the -generic flag
 # to all the sac libraries.
@@ -8,7 +8,7 @@ IF (BUILDGENERIC)
 ENDIF ()
 
 SET (SAC2C ${SAC2C_T} -Xp "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"")
-SET (SAC2C_NT ${SAC2C_EXEC} -Xp "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"") # defaults to SEQ
+SET (SAC2C_NT ${SAC2C_EXEC} -cti-message-length 0 -cti-single-line -Xp "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"") # defaults to SEQ
 
 # set environment vars - these are only used during configuration and are lost there after
 # we them because EXECUTE_PROCESS does not support passing in vars via the command.

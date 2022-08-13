@@ -1,7 +1,8 @@
-#include "gtest/gtest.h"
-#include "config.h"
-
 #include <cstdlib>
+
+#include "gtest/gtest.h"
+
+#include "config.h"
 
 #if ENABLE_HWLOC
 

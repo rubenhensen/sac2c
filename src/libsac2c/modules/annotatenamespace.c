@@ -93,13 +93,16 @@ CheckUseUnique (sttable_t *table)
             stentry_t *entry = STentryIteratorNext (entries);
 
             if (STentryIteratorHasMore (entries)) {
-                CTIerror ("Symbol `%s' used more than once", STsymbolName (symbol));
-                CTIerrorContinued ("... from module `%s'", STentryName (entry));
+                CTIerrorBegin (EMPTY_LOC, 
+                               "Symbol `%s' used more than once\n"
+                               "... from module `%s'", 
+                               STsymbolName (symbol), STentryName (entry));
 
                 while (STentryIteratorHasMore (entries)) {
                     entry = STentryIteratorNext (entries);
                     CTIerrorContinued ("... from module `%s'", STentryName (entry));
                 }
+                CTIerrorEnd ();
             }
         }
 
@@ -121,13 +124,14 @@ CheckImportNameClash (const char *symbol, const char *module, sttable_t *table)
     if (STcontains (symbol, table)) {
         iterator = STentryIteratorGet (symbol, table);
 
-        CTIerror ("Symbol `%s' imported from module '%s' and", symbol, module);
+        CTIerrorBegin (EMPTY_LOC, "Symbol `%s' imported from module '%s' and", 
+                       symbol, module);
 
         while (STentryIteratorHasMore (iterator)) {
             CTIerrorContinued ("...used from module '%s'",
                                STentryName (STentryIteratorNext (iterator)));
         }
-
+        CTIerrorEnd ();
         iterator = STentryIteratorRelease (iterator);
     }
 
@@ -140,7 +144,7 @@ CheckLocalNameClash (const char *symbol, sttable_t *table, struct location loc)
     DBUG_ENTER ();
 
     if (STcontains (symbol, table)) {
-        CTIerrorLoc (loc, "Symbol `%s' used and locally defined", symbol);
+        CTIerror (loc, "Symbol `%s' used and locally defined", symbol);
     }
 
     DBUG_RETURN ();

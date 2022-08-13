@@ -608,7 +608,7 @@ EBTcond (node *arg_node, info *arg_info)
         /**
          * There are errors in both branches, i.e., abort
          */
-        CTIabortLine (global.linenum, "Conditional with type errors in both branches");
+        CTIabort (LINE_TO_LOC (global.linenum), "Conditional with type errors in both branches");
     }
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);

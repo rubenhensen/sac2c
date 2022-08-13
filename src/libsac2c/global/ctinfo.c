@@ -40,8 +40,9 @@
 #include <signal.h>
 
 #include "ctinfo.h"
+#include "ctformatting.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "CTI"
 #include "debug.h"
 
 #include "filemgr.h"
@@ -62,34 +63,70 @@
 #include "check_mem.h"
 #include "stringset.h"
 #include "new_types.h" /* for TYtype2String */
+#include "math_utils.h"
 
 #include "cppcompat.h"
 #undef exit
 
-static char *message_buffer = NULL;
-static size_t message_buffer_size = 0;
-static size_t message_line_length = 80;
-
-static char *abort_message_header = "abort: ";
-static char *error_message_header = "error: ";
-static char *warn_message_header = "warning: ";
-static char *second_level_header = "=> ";
-static char *state_message_header = "";
-static char *note_message_header = "  ";
+static const char *abort_message_header = "Abort";
+static const char *error_message_header = "Error";
+static const char *warn_message_header = "Warning";
+static const char *note_message_header = "Note";
+static const char *indent_message_header = "  ";
+static const char *tell_message_header = "  ";
+static const char *state_message_header = "";
 
 static int errors = 0;
 static int warnings = 0;
 
 static FILE * cti_stderr;
 
-
 #define MAX_ITEM_NAME_LENGTH 255
 
-void
-set_message_line_length (size_t l)
-{
-    message_line_length = l;
-}
+#define PRINT_MESSAGE(header)                                           \
+    {                                                                   \
+        va_start (arg_p, format);                                       \
+        message = CTFvCreateMessage (header, header, format, arg_p);    \
+        va_end (arg_p);                                                 \
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (message));            \
+        SBUFfree (message);                                             \
+    }
+
+#define PRINT_MESSAGE_LOC(header)                                       \
+    {                                                                   \
+        va_start (arg_p, format);                                       \
+        message = CTFvCreateMessageLoc (loc, header, format, arg_p);    \
+        va_end (arg_p);                                                 \
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (message));            \
+        SBUFfree (message);                                             \
+    }
+
+#define PRINT_MESSAGE_BEGIN(header)                                         \
+    {                                                                       \
+        va_start (arg_p, format);                                           \
+        message = CTFvCreateMessageBeginLoc (loc, header, format, arg_p);   \
+        va_end (arg_p);                                                     \
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (message));                \
+        SBUFfree (message);                                                 \
+    }
+
+#define PRINT_MESSAGE_CONTINUED()                                               \
+    {                                                                           \
+        message = SBUFcreate (0);                                               \
+        va_start (arg_p, format);                                               \
+        SBUFvprintf (message, format, arg_p);                                   \
+        va_end (arg_p);                                                         \
+        message = CTFcreateMessageContinued (message); /*deallocates message*/  \
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (message));                    \
+        SBUFfree (message);                                                     \
+    }
+
+#define PRINT_MESSAGE_END()                                     \
+    {                                                           \
+        message = CTFcreateMessageEnd ();                       \
+        fprintf (cti_stderr, "%s", SBUFgetBuffer (message));    \
+        SBUFfree (message);                                     \
+    }
 
 int
 CTIgetErrorCount (void)
@@ -115,212 +152,11 @@ CTIget_stderr ()
     return cti_stderr;
 }
 
-
-/** <!--********************************************************************-->
- *
- * @fn void ProcessMessage( char *buffer, int line_length)
- *
- *   @brief  formats message according to line length
- *
- *           '@' characters are inserted into the buffer to represent line
- *           breaks.
- *
- *   @param buffer  message buffer
- *   @param line_length maximum line length
- *
- ******************************************************************************/
-
-static void
-ProcessMessage (char *buffer, size_t line_length)
-{
-    size_t index, column, last_space;
-
-    DBUG_ENTER ();
-
-    index = 0;
-    last_space = 0;
-    column = 0;
-
-    while (buffer[index] != '\0') {
-        if (buffer[index] == '\t') {
-            buffer[index] = ' ';
-        }
-
-        if (buffer[index] == ' ') {
-            last_space = index;
-        }
-
-        if (buffer[index] == '\n') {
-            buffer[index] = '@';
-            column = 0;
-        } else {
-            if (column == line_length) {
-                if (buffer[last_space] == ' ') {
-                    buffer[last_space] = '@';
-                    column = index - last_space;
-                } else {
-                    break;
-                }
-            }
-        }
-
-        index++;
-        column++;
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void Format2Buffer( const char *format, va_list arg_p)
- *
- *   @brief The message specified by format string and variable number
- *          of arguments is "printed" into the global message buffer.
- *          It is taken care of buffer overflows.
- *
- *   @param format  format string like in printf family of functions
- *
- ******************************************************************************/
-
-static void
-Format2Buffer (const char *format, va_list arg_p)
-{
-    int len;
-    size_t len_p;
-    va_list arg_p_copy;
-
-    DBUG_ENTER ();
-
-    va_copy (arg_p_copy, arg_p);
-    len_p = (size_t)(len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
-    va_end (arg_p_copy);
-
-    if (len < 0) {
-        DBUG_ASSERT (message_buffer_size == 0, "message buffer corruption");
-        /*
-         * Output error due to non-existing message buffer
-         */
-
-        len_p = 120;
-
-        message_buffer = (char *)MEMmalloc (len_p + 2);
-        CHKMdoNotReport (message_buffer);
-        message_buffer_size = len_p + 2;
-
-        va_copy (arg_p_copy, arg_p);
-        len_p = (size_t)(len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
-        va_end (arg_p_copy);
-        DBUG_ASSERT (len >= 0, "message buffer corruption");
-    }
-
-    if (len_p >= message_buffer_size) {
-        /* buffer too small  */
-
-        MEMfree (message_buffer);
-        message_buffer = (char *)MEMmalloc (len_p + 2);
-        CHKMdoNotReport (message_buffer);
-        message_buffer_size = len_p + 2;
-
-        va_copy (arg_p_copy, arg_p);
-        len_p = (size_t)(len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
-        va_end (arg_p_copy);
-
-
-        DBUG_ASSERT (len >= 0 || len_p < message_buffer_size, "message buffer corruption");
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn char *CTIgetErrorMessageVA( int line, const char* file,
- *                                 const char *format, va_list arg_p)
- *
- *   @brief generates error message string
- *
- *          This function allows for split-phase error messages:
- *
- *          str = CTIgetErrorMessageVA (line, fname, format, ...args);
- *          CTIerror ("%s", str);
- *
- *          equates to
- *
- *          CTIerrorLine (line, format, ...args);
- *
- *          This allows to prepare error meassages in advnace and only
- *          activate them when actualy needed.
- *
- *   @param line    line number to use in error message
- *   @param file    file name to use in error message
- *   @param format  format string like in printf family of functions
- *
- ******************************************************************************/
-
-char *
-CTIgetErrorMessageVA (size_t line, const char *file, const char *format, va_list arg_p)
-{
-    char *res;
-    str_buf *buffer;
-
-    DBUG_ENTER ();
-    Format2Buffer (format, arg_p);
-    ProcessMessage (message_buffer, message_line_length - STRlen (error_message_header));
-
-    buffer = SBUFcreate (255);
-    SBUFprintf (buffer, "line %d in file %s:@", line, file);
-    SBUFprint (buffer, message_buffer);
-    res = SBUF2str (buffer);
-
-    buffer = SBUFfree (buffer);
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void PrintMessage( const char *header, const char *format, va_list arg_p)
- *
- *   @brief prints message
- *
- *          The message specified by format string and variable number
- *          of arguments is "printed" into the global message buffer.
- *          It is taken care of buffer overflows. Afterwards, the message
- *          is formatted to fit a certain line length and is printed to
- *          stderr.
- *
- *   @param header  string which precedes each line of the message, e.g.
-                    ERROR or WARNING.
- *   @param format  format string like in printf family of functions
- *
- ******************************************************************************/
-
-static void
-PrintMessage (const char *header, const char *format, va_list arg_p)
-{
-    char *line;
-
-    DBUG_ENTER ();
-
-    Format2Buffer (format, arg_p);
-    ProcessMessage (message_buffer, message_line_length - STRlen (header));
-    line = strtok (message_buffer, "@");
-
-    while (line != NULL) {
-        fprintf (cti_stderr, "%s%s\n", header, line);
-        line = strtok (NULL, "@");
-    }
-    fflush (cti_stderr);
-
-    DBUG_RETURN ();
-}
-
 /** <!--********************************************************************-->
  *
  * @fn static void CleanUp()
  *
- *   @brief  does som clean up upon termination
+ *   @brief  Does some cleanup upon termination.
  *
  *
  ******************************************************************************/
@@ -343,10 +179,10 @@ CleanUp (void)
  *
  * @fn static void CleanUpInterrupted()
  *
- *   @brief  does som clean up upon termination
+ *   @brief  Does some clean up upon termination.
  *           This function is used by interrupt signal handlers.
  *           In contrast to CleanUp() above it avoids calling the usual
- *           function and aims at terminating as quickly as possible.
+ *           function and aims to terminate as quickly as possible.
  *
  ******************************************************************************/
 static void
@@ -386,7 +222,7 @@ CleanUpInterrupted (void)
  *
  * @fn void AbortCompilation()
  *
- *   @brief  terminates the compilation process with a suitable error message.
+ *   @brief  Terminates the compilation process with a suitable error message.
  *
  ******************************************************************************/
 
@@ -402,7 +238,7 @@ AbortCompilation (void)
 
     CleanUp ();
 
-    (void)fprintf (cti_stderr, "compilation failed while %s",
+    (void)fprintf (cti_stderr, "Compilation failed while %s",
                    PHIphaseText (global.compiler_phase));
     if (errors > 0)
         (void)fprintf (cti_stderr, ", %d error(s)", errors);
@@ -429,12 +265,12 @@ CTIexit (int status)
  *
  * @fn void InternalCompilerErrorBreak( int sig)
  *
- *   @brief  interrupt handler for segmentation faults and bus errors
+ *   @brief  Interrupt handler for segmentation faults and bus errors.
  *
  *           An error message is produced and a bug report is created which
- *           may be sent via email to an appropriate address.
+ *           the user can send in to have us fix it.
  *           Temporary files are deleted and the compilation process
- *           terminated.
+ *           terminates.
  *
  *           DBUG_ENTER/RETURN are omitted on purpose to reduce risk of
  *           creating more errors during error handling.
@@ -590,10 +426,10 @@ InternalCompilerErrorBreak (int sig)
  *
  * @fn void UserForcedBreak( int sig)
  *
- *   @brief  interrupt handler for user-forced breaks like CTRL-C
+ *   @brief  Interrupt handler for user-forced breaks like CTRL-C.
  *
  *           Temporary files are deleted and the compilation process
- *           terminated.
+ *           terminates.
  *
  *           DBUG_ENTER/RETURN are omitted on purpose to reduce risk of
  *           creating more errors during error handling.
@@ -613,7 +449,7 @@ UserForcedBreak (int sig)
  *
  * @fn void CTIinstallInterruptHandlers()
  *
- *   @brief  installs interrupt handlers
+ *   @brief  Installs interrupt handlers.
  *
  ******************************************************************************/
 
@@ -631,27 +467,29 @@ CTIinstallInterruptHandlers ()
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIerror( const char *format, ...)
+ * @fn void CTIerror( const struct location loc, const char *format, ...)
  *
- *   @brief  produces an error message without file name and line number.
+ *   @brief  Produces an error message with the file name, line number and
+ *           column if they are available.
  *
+ *   @param loc     If no location is available or relevant, you can provide
+ *                  the macro EMPTY_LOC.
+ *                  If the file name and line numbers are available, but the
+ *                  column is unknown, use the macro LINE_TO_LOC (line).
+ *                  If all information is available, just provide a location
+ *                  struct as normal.
  *   @param format  format string like in printf
  *
  ******************************************************************************/
-
 void
-CTIerror (const char *format, ...)
+CTIerror(const struct location loc, const char *format, ...)
 {
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
-    va_start (arg_p, format);
-
-    PrintMessage (error_message_header, format, arg_p);
-
-    va_end (arg_p);
-
+    PRINT_MESSAGE_LOC (error_message_header);
     errors++;
 
     DBUG_RETURN ();
@@ -659,107 +497,71 @@ CTIerror (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIerrorLine( int line, const char *format, ...)
+ * @fn str_buf *CTIgetErrorMessageVA( int line, const char *file,
+ *                                    const char *format, va_list arg_p)
  *
- *   @brief  produces an error message preceded by file name and line number.
+ *   @brief Generates an error message string.
  *
+ *          This function allows for split-phase error messages:
  *
- *   @param line  line number
- *   @param format  format string like in printf
+ *          str_buf = CTIgetErrorMessageVA (line, fname, format, ...args);
+ *          CTIerrorRaw (SBUFgetBuffer (str_buf));
+ *          SBUFfree (str_buf);
+ *
+ *          equates to
+ *
+ *          CTIerror (LINE_TO_LOC (line), format, ...args);
+ *
+ *          This allows preparing error messages in advance and activating
+ *          them when needed.
+ * 
+ *          Afterwards, an abort can be triggered with CTIabortOnError ();
+ *
+ *   @param line    line number to use in error message
+ *   @param file    file name to use in error message
+ *   @param format  format string like in printf family of functions
  *
  ******************************************************************************/
 
-void
-CTIerrorLine (size_t line, const char *format, ...)
+str_buf *
+CTIgetErrorMessageVA (size_t line, const char *file, const char *format, va_list arg_p)
 {
+    str_buf *message;
+    DBUG_ENTER ();
+
+    message = CTFvCreateMessageLoc ((struct location) {.fname = file, .line = line, .col = 0},
+                                    error_message_header, format, arg_p);
+
+    DBUG_RETURN (message);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIerrorBegin( const struct location loc, const char *format, ...)
+ *
+ *   @brief  Produces an error message with the file name, line number and
+ *           column if they are available.
+ *           After calling CTIerrorBegin, any number of calls to CTIerrorContinued
+ *           can be made, after which *CTIerrorEnd* has to be called.
+ *
+ *   @param loc     If no location is available or relevant, you can provide
+ *                  the macro EMPTY_LOC.
+ *                  If the file name and line numbers are available, but the
+ *                  column is unknown, use the macro LINE_TO_LOC (line).
+ *                  If all information is available, just provide a location
+ *                  struct as normal.
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+void
+CTIerrorBegin (const struct location loc, const char *format, ...)
+{
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
-    va_start (arg_p, format);
-
-    fprintf (cti_stderr, "%s %zu ", global.filename, line);
-    PrintMessage (error_message_header, format, arg_p);
-
-    va_end (arg_p);
-
-    errors++;
-
-    DBUG_RETURN ();
-}
-
-static inline char *
-produce_header (struct location loc, const char *hdr)
-{
-    char *res;
-    str_buf *buffer;
-
-    buffer = SBUFcreate (128);
-    SBUFprintf (buffer, "%s:", loc.fname);
-    if (loc.line == 0)
-        SBUFprint (buffer, "??:");
-    else
-        SBUFprintf (buffer, "%zd:", loc.line);
-
-    if (loc.col > 0)
-        SBUFprintf (buffer, "%zd: ", loc.col);
-    else
-        SBUFprint (buffer, " ");
-
-    SBUFprintf (buffer, "%s", hdr);
-    res = SBUF2strAndFree (&buffer);
-
-    return res;
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIerrorLoc( struct location loc, const char *format, ...)
- *
- *   @brief   produces an error message preceded by location info
- *
- *   @param loc     location info
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-void
-CTIerrorLoc (struct location loc, const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    va_start (arg_p, format);
-    fprintf (cti_stderr, "%s\n", produce_header (loc, error_message_header));
-    PrintMessage (second_level_header, format, arg_p);
-    va_end (arg_p);
-
-    errors++;
-
-    DBUG_RETURN ();
-}
-
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIerrorLineVA( int line, const char *format, va_list arg_p)
- *
- *   @brief  produces an error message preceded by file name and line number.
- *
- *
- *   @param line  line number
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIerrorLineVA (int line, const char *format, va_list arg_p)
-{
-    DBUG_ENTER ();
-
-    fprintf (cti_stderr, "%s %d ", global.filename, line);
-    PrintMessage (error_message_header, format, arg_p);
-
+    PRINT_MESSAGE_BEGIN (error_message_header);
     errors++;
 
     DBUG_RETURN ();
@@ -767,9 +569,12 @@ CTIerrorLineVA (int line, const char *format, va_list arg_p)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIerrorContinued( const char *format, ...)
+ * @fn void CTIerrorContinued( const struct location loc, const char *format, ...)
  *
- *   @brief  same as CTIerror BUT does not count as new error!
+ *   @brief  Continues an error message that was started with CTIerrorBegin, using
+ *           the file name, line number and column from the location if they available.
+ *           After calling CTIerrorBegin, any number of calls to CTIerrorContinued
+ *           can be made, after which *CTIerrorEnd* has to be called.
  *
  *   @param format  format string like in printf
  *
@@ -778,15 +583,57 @@ CTIerrorLineVA (int line, const char *format, va_list arg_p)
 void
 CTIerrorContinued (const char *format, ...)
 {
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
-    va_start (arg_p, format);
+    PRINT_MESSAGE_CONTINUED ();
 
-    PrintMessage (error_message_header, format, arg_p);
+    DBUG_RETURN ();
+}
 
-    va_end (arg_p);
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIerrorEnd()
+ *
+ *   @brief  Ends an error message that was started with CTIerrorBegin and followed
+ *           by any number of CTIerrorContinued calls.
+ *           Failure to call this function will lead to memory leaks and missing
+ *           newlines if the command line option cti-single-line is enabled.
+ *
+ ******************************************************************************/
+void
+CTIerrorEnd (void) 
+{
+    str_buf *message;
+    
+    DBUG_ENTER ();
+
+    PRINT_MESSAGE_END ();
+
+    DBUG_RETURN ();
+}
+
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIerrorRaw( const char *message)
+ *
+ *   @brief  Prints a preformatted error message and counts increments the error counter.
+ *           Should only be used in conjunction with CTIgetErrorMessageVA, but should
+ *           ideally be completely avoided in favor of CTIerror()
+ *
+ *   @param message The preformatted message to be printed to stderr.
+ *
+ ******************************************************************************/
+void
+CTIerrorRaw (const char *message)
+{
+    DBUG_ENTER ();
+
+    fprintf (cti_stderr, "%s", message);
+    errors++;
 
     DBUG_RETURN ();
 }
@@ -795,7 +642,10 @@ CTIerrorContinued (const char *format, ...)
  *
  * @fn void CTIerrorInternal( const char *format, ...)
  *
- *   @brief  produces an error message without file name and line number.
+ *   @brief  Produces an error message without file name and line number, but
+ *           specifies the phase where the compiler failed.
+ *           This function does not respect all cti command-line arguments
+ *           to avoid potential crashes or hangs during error handling.
  *
  *   @param format  format string like in printf
  *
@@ -808,11 +658,7 @@ CTIerrorInternal (const char *format, ...)
 
     DBUG_ENTER ();
 
-    fprintf (cti_stderr, "%sInternal %s failure\n", error_message_header, global.toolname);
-
-    va_start (arg_p, format);
-    PrintMessage (error_message_header, format, arg_p);
-    va_end (arg_p);
+    fprintf (cti_stderr, "%s: Internal %s failure\n", error_message_header, global.toolname);
 
     fprintf (cti_stderr,
              "%sCompiler phase:    %s\n"
@@ -824,6 +670,11 @@ CTIerrorInternal (const char *format, ...)
              error_message_header, TRAVgetName (), error_message_header,
              CTIitemName (global.current_fundef), CTIfunParams (global.current_fundef));
 
+    va_start (arg_p, format);
+    fprintf (cti_stderr, "%s", error_message_header);
+    fprintf (cti_stderr, format, arg_p);
+    va_end (arg_p);
+
     errors++;
 
     DBUG_RETURN ();
@@ -831,28 +682,10 @@ CTIerrorInternal (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn size_t CTIgetErrorMessageLineLength( )
- *
- *   @brief  yields useful line length for error messages
- *
- *   @return line length
- *
- ******************************************************************************/
-
-size_t
-CTIgetErrorMessageLineLength ()
-{
-    DBUG_ENTER ();
-
-    DBUG_RETURN (message_line_length - STRlen (error_message_header));
-}
-
-/** <!--********************************************************************-->
- *
  * @fn void CTIabortOnBottom( const char *err_msg)
  *
- *   @brief   produces an error message from preprocessed error message
- *            containing @ symbols as line breaks.
+ *   @brief   Prints a preprocessed error message obtained from CTIgetErrorMessageVA
+ *            and aborts the compilation.
  *
  *   @param err_msg  pre-processed error message
  *
@@ -861,93 +694,36 @@ CTIgetErrorMessageLineLength ()
 void
 CTIabortOnBottom (char *err_msg)
 {
-    char *line;
-
-    fprintf (cti_stderr, "\n");
-
-    line = strtok (err_msg, "@");
-
-    while (line != NULL) {
-        fprintf (cti_stderr, "%s%s\n", error_message_header, line);
-        line = strtok (NULL, "@");
-    }
-
+    fprintf (cti_stderr, "%s", err_msg);
     AbortCompilation ();
 }
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIabort( const char *format, ...)
+ * @fn void CTIabort( const struct location loc, const char *format, ...)
  *
- *   @brief   produces an error message without file name and line number
- *            and terminates the compilation process.
+ *   @brief   Aborts with an abort message with the file name, line number and
+ *            column if they are available.
  *
+ *   @param loc     If no location is available or relevant, you can provide
+ *                  the macro EMPTY_LOC.
+ *                  If the file name and line numbers are available, but the
+ *                  column is unknown, use the macro LINE_TO_LOC (line).
+ *                  If all information is available, just provide a location
+ *                  struct as normal.
  *   @param format  format string like in printf
  *
  ******************************************************************************/
 
 void
-CTIabort (const char *format, ...)
+CTIabort (const struct location loc, const char *format, ...)
 {
+    str_buf *message;
     va_list arg_p;
 
-    va_start (arg_p, format);
+    DBUG_ENTER ();
 
-    PrintMessage (abort_message_header, format, arg_p);
-
-    va_end (arg_p);
-
-    AbortCompilation ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIabortLoc( struct location loc, const char *format, ...)
- *
- *   @brief   produces an error message preceded by location info
- *            and terminates the compilation process
- *
- *   @param loc     location info
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-void
-CTIabortLoc (struct location loc, const char *format, ...)
-{
-    va_list arg_p;
-
-    va_start (arg_p, format);
-    fprintf (cti_stderr, "%s\n", produce_header (loc, error_message_header));
-    PrintMessage (second_level_header, format, arg_p);
-    va_end (arg_p);
-
-    AbortCompilation ();
-}
-
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIabortLine( int line, const char *format, ...)
- *
- *   @brief   produces an error message preceded by file name and line number
- *            and terminates the compilation process.
- *
- *   @param line  line number
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIabortLine (size_t line, const char *format, ...)
-{
-    va_list arg_p;
-
-    va_start (arg_p, format);
-
-    fprintf (cti_stderr, "%s %zu ", global.filename, line);
-    PrintMessage (abort_message_header, format, arg_p);
-
-    va_end (arg_p);
+    PRINT_MESSAGE_LOC (abort_message_header);
 
     AbortCompilation ();
 }
@@ -956,7 +732,7 @@ CTIabortLine (size_t line, const char *format, ...)
  *
  * @fn void CTIabortOutOfMemory( size_t request)
  *
- *   @brief   produces a specific "out of memory" error message
+ *   @brief   Produces a specific "out of memory" error message
  *            without file name and line number and terminates the
  *            compilation process.
  *
@@ -974,11 +750,11 @@ void
 CTIabortOutOfMemory (size_t request)
 {
     fprintf (cti_stderr,
-             "%sOut of memory:\n"
-             "%s %zu bytes requested\n",
-             abort_message_header, abort_message_header, request);
+             "%s:\n"
+             "%sOut of memory: %zu bytes requested\n",
+             abort_message_header, indent_message_header, request);
 
-    fprintf (cti_stderr, "%s %zu bytes already allocated\n", abort_message_header,
+    fprintf (cti_stderr, "%s%zu bytes already allocated\n", indent_message_header,
              global.current_allocated_mem);
 
     AbortCompilation ();
@@ -988,7 +764,7 @@ CTIabortOutOfMemory (size_t request)
  *
  * @fn void CTIabortOnError()
  *
- *   @brief  terminates compilation process if errors have occurred.
+ *   @brief  Terminates compilation process if errors have occurred.
  *
  ******************************************************************************/
 
@@ -1012,145 +788,36 @@ CTIabortOnError ()
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIwarnLoc( ,struct location loc, const char *format, ...)
+ * @fn void CTIwarn( const struct location loc, const char *format, ...)
+ * 
+ *   @brief   Produces a warning message with the file name, line number and
+ *            column if they are available.
  *
- *   @brief   produces a warning message preceded by location info
- *
- *   @param loc     location info
+ *   @param loc     If no location is available or relevant, you can provide
+ *                  the macro EMPTY_LOC.
+ *                  If the file name and line numbers are available, but the
+ *                  column is unknown, use the macro LINE_TO_LOC (line).
+ *                  If all information is available, just provide a location
+ *                  struct as normal.
  *   @param format  format string like in printf
  *
  ******************************************************************************/
+
 void
-CTIwarnLoc (struct location loc, const char *format, ...)
+CTIwarn (const struct location loc, const char *format, ...)
 {
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     if (global.verbose_level >= 1) {
-        va_start (arg_p, format);
-        fprintf (cti_stderr, "%s\n", produce_header (loc, warn_message_header));
-        PrintMessage (second_level_header, format, arg_p);
-        va_end (arg_p);
-
+        PRINT_MESSAGE_LOC (warn_message_header);
         warnings++;
     }
 
     DBUG_RETURN ();
 }
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIwarnLine( int line, const char *format, ...)
- *
- *   @brief   produces a warning message preceded by file name and line number.
- *
- *   @param line  line number
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIwarnLine (size_t line, const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    if (global.verbose_level >= 1) {
-        va_start (arg_p, format);
-
-        fprintf (cti_stderr, "%s %zu ", global.filename, line);
-        PrintMessage (warn_message_header, format, arg_p);
-
-        va_end (arg_p);
-
-        warnings++;
-    }
-
-    DBUG_RETURN ();
-}
-
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIwarn( const char *format, ...)
- *
- *   @brief   produces a warning message without file name and line number.
- *
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIwarn (const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    if (global.verbose_level >= 1) {
-        va_start (arg_p, format);
-
-        PrintMessage (warn_message_header, format, arg_p);
-
-        va_end (arg_p);
-
-        warnings++;
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIwarnContinued( const char *format, ...)
- *
- *   @brief   same as CTIwarn BUT does not count as new warning.
- *
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIwarnContinued (const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    if (global.verbose_level >= 1) {
-        va_start (arg_p, format);
-
-        PrintMessage (warn_message_header, format, arg_p);
-
-        va_end (arg_p);
-
-    }
-
-    DBUG_RETURN ();
-}
-
-
-/** <!--********************************************************************-->
- *
- * @fn size_t CTIgetWarnMessageLineLength( )
- *
- *   @brief  yields useful line length for warning messages
- *
- *   @return line length
- *
- ******************************************************************************/
-
-size_t
-CTIgetWarnMessageLineLength ()
-{
-    DBUG_ENTER ();
-
-    DBUG_RETURN (message_line_length - STRlen (warn_message_header));
-}
-
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -1163,7 +830,7 @@ CTIgetWarnMessageLineLength ()
  *
  * @fn void CTIstate( const char *format, ...)
  *
- *   @brief  produces full compile time information output (verbose level 3)
+ *   @brief  Produces basic compile time information output (verbosity level 2)
  *
  *   @param format  format string like in printf
  *
@@ -1172,16 +839,13 @@ CTIgetWarnMessageLineLength ()
 void
 CTIstate (const char *format, ...)
 {
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     if (global.verbose_level >= 2) {
-        va_start (arg_p, format);
-
-        PrintMessage (state_message_header, format, arg_p);
-
-        va_end (arg_p);
+        PRINT_MESSAGE (state_message_header);
     }
 
     DBUG_RETURN ();
@@ -1196,62 +860,43 @@ CTIstate (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTInote( const char *format, ...)
+ * @fn void CTInote( const struct location loc, const char *format, ...)
  *
- *   @brief  produces basic compile time information output (verbose level 2)
+ *   @brief  Produces full compile time information output (verbosity level 3)
+ *           If EMPTY_LOC is provided, the messages are indented with two spaces.
+ *           If location information is provided, the messages have a header with
+ *           `Note', similar to CTIerror/Abort/Warn.
  *
+ *   @param loc     If no location is available or relevant, you can provide
+ *                  the macro EMPTY_LOC.
+ *                  If the file name and line numbers are available, but the
+ *                  column is unknown, use the macro LINE_TO_LOC (line).
+ *                  If all information is available, just provide a location
+ *                  struct as normal.
  *   @param format  format string like in printf
  *
  ******************************************************************************/
 
 void
-CTInote (const char *format, ...)
+CTInote (const struct location loc, const char *format, ...)
 {
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     if (global.verbose_level >= 3) {
-        va_start (arg_p, format);
-
-        PrintMessage (note_message_header, format, arg_p);
-
-        va_end (arg_p);
+        if (loc.fname == NULL || loc.line == 0) {
+            // Legacy code - use the indent header instead of the note header if the location is empty
+            PRINT_MESSAGE (indent_message_header);
+        } else {
+            // With a location, the message is generated 'as normal'.
+            PRINT_MESSAGE_LOC (note_message_header);
+        }
     }
 
     DBUG_RETURN ();
 }
-
-/** <!--********************************************************************-->
- *
- * @fn void CTInoteLine( int line, const char *format, ...)
- *
- *   @brief  produces basic compile time information output (verbose level 2)
- *
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTInoteLine (size_t line, const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    if (global.verbose_level >= 3) {
-        va_start (arg_p, format);
-
-        fprintf (cti_stderr, "%s %zu ", global.filename, line);
-        PrintMessage (note_message_header, format, arg_p);
-
-        va_end (arg_p);
-    }
-
-    DBUG_RETURN ();
-}
-
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -1263,7 +908,7 @@ CTInoteLine (size_t line, const char *format, ...)
  *
  * @fn void CTItell( int verbose_level, const char *format, ...)
  *
- *   @brief produces compile time information at given verbosity level
+ *   @brief Produces compile time information at the given verbosity level.
  *
  *   @param format  format string like in printf
  *
@@ -1272,16 +917,13 @@ CTInoteLine (size_t line, const char *format, ...)
 void
 CTItell (int verbose_level, const char *format, ...)
 {
+    str_buf *message;
     va_list arg_p;
 
     DBUG_ENTER ();
 
     if (global.verbose_level >= verbose_level) {
-        va_start (arg_p, format);
-
-        PrintMessage (note_message_header, format, arg_p);
-
-        va_end (arg_p);
+        PRINT_MESSAGE (tell_message_header);
     }
 
     DBUG_RETURN ();
@@ -1291,7 +933,7 @@ CTItell (int verbose_level, const char *format, ...)
  *
  * @fn void CTIterminateCompilation()
  *
- *   @brief  terminates successful compilation process
+ *   @brief  Terminates successful compilation process.
  *
  ******************************************************************************/
 
@@ -1322,7 +964,7 @@ CTIterminateCompilation (node *syntax_tree)
 
     if (global.visual_after_break && (syntax_tree != NULL)) {
         if (!DOT_FLAG) {
-            CTIwarn ("If you want to visualize syntax tree. Please install dot. \n");
+            CTIwarn (EMPTY_LOC, "If you want to visualize syntax tree. Please install dot. \n");
         } else {
             if (!global.dovisualizefunsets) {
                 global.dovisualizefunsets
@@ -1405,10 +1047,10 @@ CTIterminateCompilation (node *syntax_tree)
 /**
  * @fn const char *CTIitemName(node *item)
  *
- * @brief creates a string containing the module and name of
+ * @brief Creates a string containing the module and name of
  *        the given item. As this function uses an internal
  *        buffer, the returned string should only be used to
- *        print one single message.
+ *        print a single message.
  *
  * @param item a N_fundef, N_objdef or N_typedef
  *

@@ -209,7 +209,7 @@ EATfundef (node *arg_node, info *arg_info)
         if (TYcountNoMinAlpha (ftype) > 0) {
 
             if (FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
-                CTIabortLine (NODE_LINE (arg_node),
+                CTIabort (NODE_LOCATION (arg_node),
                               "One component of inferred return type (%s) has no lower "
                               "bound;"
                               " an application of \"%s\" will not terminate",
@@ -361,7 +361,7 @@ EATavis (node *arg_node, info *arg_info)
         DBUG_EXECUTE (tmp_str = MEMfree (tmp_str); tmp_str2 = MEMfree (tmp_str2));
 
         if (!(TYisArray (type) || TYisBottom (type))) {
-            CTIabort ("Could not infer proper type for arg %s", AVIS_NAME (arg_node));
+            CTIabort (EMPTY_LOC, "Could not infer proper type for arg %s", AVIS_NAME (arg_node));
         }
     } else {
         /*

@@ -22,15 +22,15 @@ SPdoLocateSource (node *syntax_tree)
 
     if (global.sacfilename == NULL) {
         pathname = NULL;
-        CTInote ("Reading from stdin ...");
+        CTInote (EMPTY_LOC, "Reading from stdin ...");
     } else {
         pathname = FMGRfindFile (PK_path, global.sacfilename);
 
         if (pathname == NULL) {
-            CTIabort ("Unable to open file \"%s\"", global.sacfilename);
+            CTIabort (EMPTY_LOC, "Unable to open file \"%s\"", global.sacfilename);
         }
 
-        CTInote ("Reading from file \"%s\" ...", pathname);
+        CTInote (EMPTY_LOC, "Reading from file \"%s\" ...", pathname);
     }
 
     DBUG_RETURN (syntax_tree);
@@ -83,13 +83,13 @@ SPdoScanParse (node *syntax_tree)
     cppfile = STRcat (global.tmp_dirname, "/source");
 
     if (global.show_syscall) {
-        CTInote ("yyin = fopen( \"%s\", \"r\")", cppfile);
+        CTInote (EMPTY_LOC, "yyin = fopen( \"%s\", \"r\")", cppfile);
     }
 
     yyin = fopen (cppfile, "r");
 
     if ((yyin == NULL) || (ferror (yyin))) {
-        CTIabort ("C preprocessing failed");
+        CTIabort (EMPTY_LOC, "C preprocessing failed");
     }
 
     global.start_token = PARSE_PRG;
@@ -97,16 +97,16 @@ SPdoScanParse (node *syntax_tree)
     SPmyYyparse ();
 
     if (global.show_syscall) {
-        CTInote ("err = fclose( yyin)");
+        CTInote (EMPTY_LOC, "err = fclose( yyin)");
     }
 
     err = fclose (yyin);
     if (err) {
-        CTIabort ("C preprocessor error");
+        CTIabort (EMPTY_LOC, "C preprocessor error");
     }
 
     if (global.show_syscall) {
-        CTInote ("err = remove( \"%s\")", cppfile);
+        CTInote (EMPTY_LOC, "err = remove( \"%s\")", cppfile);
     }
 
     err = remove (cppfile);
@@ -114,11 +114,11 @@ SPdoScanParse (node *syntax_tree)
     cppfile = MEMfree (cppfile);
 
     if (err) {
-        CTIabort ("Could not delete /tmp-file");
+        CTIabort (EMPTY_LOC, "Could not delete /tmp-file");
     }
 
     if (global.syntax_tree == NULL)
-        CTIabort ("Failed to construct a syntax tree for `%s'\n", global.filename);
+        CTIabort (EMPTY_LOC, "Failed to construct a syntax tree for `%s'\n", global.filename);
 
     FMGRsetFileNames (global.syntax_tree);
 

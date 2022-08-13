@@ -148,7 +148,7 @@ RSCprintConfigEntry (char *config)
         }
     }
     if (resource_table[i].name[0] == '\0') {
-        CTIerror ("Resource %s unknown", config);
+        CTIerror (EMPTY_LOC, "Resource %s unknown", config);
     }
 
     DBUG_RETURN ();
@@ -378,7 +378,7 @@ PrintResources (void)
                     *((int *)(resource_table[i].store)));
             break;
         default:
-            CTIabort ("Internal data structure resource_table corrupted");
+            CTIabort (EMPTY_LOC, "Internal data structure resource_table corrupted");
         }
     }
 
@@ -484,7 +484,7 @@ MapParse (const char *path, const char *file, void *params)
     MEMfree (filename);
 
     if (!ok) {
-        CTIabort ("Error while parsing '%s'.", filename);
+        CTIabort (EMPTY_LOC, "Error while parsing '%s'.", filename);
     }
 }
 
@@ -512,12 +512,12 @@ ParseResourceFiles (void)
     if (envvar != NULL && FMGRcheckExistFile (envvar)) {
         ok = RSCparseResourceFile (envvar);
         if (!ok) {
-            CTIabort ("Error while parsing '%s' (via SAC2CRC).", envvar);
+            CTIabort (EMPTY_LOC, "Error while parsing '%s' (via SAC2CRC).", envvar);
         }
     } else if (!is_dirty && FMGRcheckExistFile (global.global_sac2crc_location)) {
         ok = RSCparseResourceFile (global.global_sac2crc_location);
         if (!ok) {
-            CTIabort ("Error while parsing '%s'.", global.global_sac2crc_location);
+            CTIabort (EMPTY_LOC, "Error while parsing '%s'.", global.global_sac2crc_location);
         }
     } else {
         CTItell (4, "%sTrying to read sac2crc from %s.\n",
@@ -527,7 +527,7 @@ ParseResourceFiles (void)
         /* We have to load the original sac2crc with all the targets.  */
         ok = RSCparseResourceFile (global.build_sac2crc_location);
         if (!ok) {
-            CTIabort ("Error while parsing '%s'.", global.build_sac2crc_location);
+            CTIabort (EMPTY_LOC, "Error while parsing '%s'.", global.build_sac2crc_location);
         }
         /* And the sac2crc.local where pathes to libs and includes
          * are specified relatively to the build directory.
@@ -535,7 +535,7 @@ ParseResourceFiles (void)
         filename = STRcat (global.build_sac2crc_location, ".local");
         ok = RSCparseResourceFile (filename);
         if (!ok) {
-            CTIabort ("Error while parsing '%s'.", filename);
+            CTIabort (EMPTY_LOC, "Error while parsing '%s'.", filename);
         }
 
         MEMfree (filename);
@@ -563,7 +563,7 @@ ParseResourceFiles (void)
             ok = RSCparseResourceFile (filename);
 
             if (!ok) {
-                CTIabort ("Error while parsing '%s'.", filename);
+                CTIabort (EMPTY_LOC, "Error while parsing '%s'.", filename);
             }
         }
         MEMfree (filename);
@@ -635,11 +635,11 @@ UpdateResourceTable (int i, char *target_name, resource_list_t *resource, bool a
     switch (resource_table[i].tag) {
     case str:
         if (resource->value_str == NULL) {
-            CTIabort ("'%s` target: specification of resource '%s` illegal", target_name,
+            CTIabort (EMPTY_LOC, "'%s` target: specification of resource '%s` illegal", target_name,
                       resource_table[i].name);
         } else if (resource->add_flag) {
             if (!allow_inc) {
-                CTIabort (
+                CTIabort (EMPTY_LOC, 
                   "'%s` target: specification of '+=` on resource '%s` is illegal",
                   target_name, resource_table[i].name);
             } else {
@@ -657,11 +657,11 @@ UpdateResourceTable (int i, char *target_name, resource_list_t *resource, bool a
 
     case num:
         if (resource->value_str != NULL) {
-            CTIabort ("'%s` target: specification of resource '%s` illegal", target_name,
+            CTIabort (EMPTY_LOC, "'%s` target: specification of resource '%s` illegal", target_name,
                       resource_table[i].name);
         } else if (resource->add_flag) {
             if (!allow_inc) {
-                CTIabort (
+                CTIabort (EMPTY_LOC, 
                   "'%s` target: specification of '+=` on resource '%s` is illegal",
                   target_name, resource_table[i].name);
             } else {
@@ -673,7 +673,7 @@ UpdateResourceTable (int i, char *target_name, resource_list_t *resource, bool a
         break;
 
     default:
-        CTIabort ("Internal data structure resource_table corrupted");
+        CTIabort (EMPTY_LOC, "Internal data structure resource_table corrupted");
     }
 }
 
@@ -705,11 +705,11 @@ EvaluateDefaultTarget (target_list_t *target)
     target = FindTarget ("default", target);
 
     if (target == NULL) {
-        CTIabort ("The configuration files do not contain default target specification");
+        CTIabort (EMPTY_LOC, "Configuration files do not contain default target specification");
     }
 
     if (target->super_targets != NULL) {
-        CTIabort (
+        CTIabort (EMPTY_LOC,
           "The default target specification must not inherit from any other target");
     }
 
@@ -718,7 +718,7 @@ EvaluateDefaultTarget (target_list_t *target)
         resource = FindResource (resource_table[i].name, target->resource_list);
 
         if (resource == NULL) {
-            CTIerror ("Default target specification of resource '%s` missing",
+            CTIerror (EMPTY_LOC, "Default target specification of resource '%s` missing",
                       resource_table[i].name);
         } else {
             UpdateResourceTable (i, "default", resource, FALSE);
@@ -727,8 +727,8 @@ EvaluateDefaultTarget (target_list_t *target)
 
     // Now we check for uniqueness of the default target:
     if (FindTarget ("default", target->next) != NULL) {
-        CTIabort (
-          "The configuration files contain more than one default target specification");
+        CTIabort (EMPTY_LOC,
+          "Configuration files contain more than one default target specification");
     }
     DBUG_RETURN ();
 }
@@ -771,24 +771,28 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
         // This is only an error if we started with the whole list!
         if (remaining_list == target_list) {
             if (STReq (target, "arch_")) {
-                CTIerror ("During the configuation of sac2c no CUDA architecture "
-                          "was identified. Please use target 'cuda_<arch>` instead "
-                          "of target 'cuda`; for example 'cuda_sm_60`.");
-                CTIerrorContinued ("Alternatively, you can provide a default "
-                                   "CUDA architecture by changing the definition "
-                                   "of 'target cuda` from "
-                                   "'target cuda :: cuda_core :: arch_:` to e.g. "
-                                   "'target cuda :: cuda_core :: arch_sm_60` or "
-                                   "by adding a target definition for 'target arch_`.");
+                CTIerrorBegin (EMPTY_LOC, 
+                    "During the configuation of sac2c no CUDA architecture "
+                    "was identified. Please use target 'cuda_<arch>` instead "
+                    "of target 'cuda`; for example 'cuda_sm_60`.\n"
+                    "Alternatively, you can provide a default "
+                    "CUDA architecture by changing the definition "
+                    "of 'target cuda` from "
+                    "'target cuda :: cuda_core :: arch_:` to e.g. "
+                    "'target cuda :: cuda_core :: arch_sm_60` or "
+                    "by adding a target definition for 'target arch_`.");
             } else if (STRprefix ("cuda_", target)
                        || STRprefix ("arch_", target)) {
                 suffix = STRsubStr (target, (size_t)5, (ssize_t)STRlen (target)-5);
-                CTIerror ("You are trying to compile for the CUDA architecture '%s`. "
-                          "The configuration files do not contain "
-                          "target '%s`.", suffix, target);
+                CTIerrorBegin (EMPTY_LOC,
+                    "You are trying to compile for the CUDA architecture '%s`. "
+                    "The configuration files do not contain target '%s`.", 
+                    suffix, target);
             } else {
-                CTIerror ("The configuration files do not contain a specification of "
-                          "target '%s`.", target);
+                CTIerrorBegin (EMPTY_LOC, 
+                    "The configuration files do not contain a specification of "
+                    "target '%s`.",
+                    target);
             }
             CTIerrorContinued ("You may choose a different target from the "
                                "compiler-specific configuration file '%s` or "
@@ -798,6 +802,7 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
                                ( global.build_sac2crc_location != NULL ?
                                  global.build_sac2crc_location :
                                  global.global_sac2crc_location ));
+            CTIerrorEnd ();
             CTIabortOnError ();
         }
         DBUG_PRINT ("                   none found.");
@@ -818,7 +823,7 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
 
         resource = tmp->resource_list;
 
-        DBUG_PRINT ("                 scanning ressources...");
+        DBUG_PRINT ("                 scanning resources...");
         while (resource != NULL) {
             i = 0;
             while ((resource_table[i].name[0] != '\0')
@@ -827,7 +832,7 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
             }
 
             if (resource_table[i].name[0] == '\0') {
-                CTIwarn (
+                CTIwarn (EMPTY_LOC, 
                   "Specification of target '%s` contains unrecognized resource '%s`",
                   target, resource->name);
             } else {

@@ -341,9 +341,9 @@ AddAffectedObjects (node **exprs, node *list, info *info)
         objdef = LookupObjdef (SPID_NS (spid), SPID_NAME (spid), INFO_OBJDEFS (info));
 
         if (objdef == NULL) {
-            CTIerrorLine (NODE_LINE (spid),
-                          "Objdef %s:%s referenced in effect pragma is undefined",
-                          NSgetName (SPID_NS (spid)), SPID_NAME (spid));
+            CTIerror (NODE_LOCATION (spid),
+                      "Objdef %s:%s referenced in effect pragma is undefined",
+                      NSgetName (SPID_NS (spid)), SPID_NAME (spid));
         } else {
             /*
              * remove all aliasings first. We do this here for
@@ -561,7 +561,8 @@ OANobjdef (node *arg_node, info *arg_info)
 
     if ((OBJDEF_INITFUN (arg_node) != NULL)
         && (TCsetContains (FUNDEF_OBJECTS (OBJDEF_INITFUN (arg_node)), arg_node))) {
-        CTIerror ("The initialisation expression of global object `%s' depends on "
+        CTIerror (EMPTY_LOC, 
+                  "The initialisation expression of global object `%s' depends on "
                   "its own result (the global object). Most likely it uses a "
                   "function that requires the object to already exist.",
                   CTIitemName (arg_node));

@@ -177,7 +177,7 @@ CHKLACFfundef (node *arg_node, info *arg_info)
             }
 
             if (fundef == NULL) {
-                CTIerror ("LaC function %s called in regular function %s, "
+                CTIerror (EMPTY_LOC, "LaC function %s called in regular function %s, "
                           "but not a member of regular function's local "
                           "function set or on CopiedSpecialFundefsHook",
                           FUNDEF_NAME (arg_node),
@@ -189,7 +189,8 @@ CHKLACFfundef (node *arg_node, info *arg_info)
             FUNDEF_CALLFUN (arg_node) = INFO_FUNDEF (arg_info);
         } else {
             // FIXME: it would be nice to provide more context here
-            CTIerror ("LaC function %s called again in %s.\n"
+            CTIerror (EMPTY_LOC, 
+                      "LaC function %s called again in %s.\n"
                       "Previous call site in ...",
                       FUNDEF_NAME (arg_node), FUNDEF_NAME (FUNDEF_CALLFUN (arg_node)));
         }

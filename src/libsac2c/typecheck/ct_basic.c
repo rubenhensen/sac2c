@@ -150,7 +150,7 @@ NTCCTcond (te_info *err_info, ntype *args)
     err_msg = TEfetchErrors ();
 
     if (err_msg != NULL) {
-        CTIabort ("%s", err_msg);
+        CTIabort (EMPTY_LOC, "%s", err_msg);
     } else {
         res = TYmakeProductType (0);
     }
@@ -189,7 +189,7 @@ NTCCTfuncond (te_info *err_info, ntype *args)
         err_msg = TEfetchErrors ();
 
         if (err_msg != NULL) {
-            CTIabort ("%s", err_msg);
+            CTIabort (EMPTY_LOC, "%s", err_msg);
         }
 
         if (TYisAlpha (rhs1)) {
@@ -209,7 +209,7 @@ NTCCTfuncond (te_info *err_info, ntype *args)
             err_msg = TEfetchErrors ();
 
             if (err_msg != NULL) {
-                CTIabort ("%s", err_msg);
+                CTIabort (EMPTY_LOC, "%s", err_msg);
             }
         }
 

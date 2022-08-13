@@ -404,7 +404,7 @@ PrintGlobalSettings (node *syntax_tree)
         break;
 
     default:
-        CTIerror ("internal error: missing strategy in gen_startup_code");
+        CTIerror (EMPTY_LOC, "internal error: missing strategy in gen_startup_code");
     }
 
     fprintf (global.outfile, "#define SAC_SET_BARRIER_TYPE               %d\n",

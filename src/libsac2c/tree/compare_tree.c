@@ -792,7 +792,7 @@ CMPTunknown (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_EXECUTE (CTInote ("Unknown node type %s encountered in compare tree "
+    DBUG_EXECUTE (CTInote (EMPTY_LOC, "Unknown node type %s encountered in compare tree "
                            "traversal!",
                            NODE_TEXT (arg_node)));
     INFO_EQFLAG (arg_info) = CMPT_NEQ;

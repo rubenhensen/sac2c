@@ -636,11 +636,11 @@ WLFtree2InternGen (node *wln, node *filter)
             /* normalize step and width */
             switch (WLFnormalizeInternGen (tmp_ig)) {
             case 1:
-                CTIabortLine (NODE_LINE (wln), "Component of width greater than step");
+                CTIabort (NODE_LOCATION (wln), "Component of width greater than step");
             case 2:
-                CTIabortLine (NODE_LINE (wln), "Component of width less 0");
+                CTIabort (NODE_LOCATION (wln), "Component of width less 0");
             case 3:
-                CTIabortLine (NODE_LINE (wln), "Width vector without step vector");
+                CTIabort (NODE_LOCATION (wln), "Width vector without step vector");
             }
         }
 

@@ -652,7 +652,7 @@ WLSIMPfold (node *arg_node, info *arg_info)
     AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
 
     if (isSAAMode ()) {
-        CTIwarn ("WLSIMPfold failed to set AVIS_DIM/AVIS_SHAPE");
+        CTIwarn (EMPTY_LOC, "WLSIMPfold failed to set AVIS_DIM/AVIS_SHAPE");
 #ifdef FIXME // I have no idea of dim/shape here */
         int shp;
         shp = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
@@ -714,7 +714,7 @@ WLSIMPpropagate (node *arg_node, info *arg_info)
     AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
 
     if (isSAAMode ()) {
-        CTIwarn ("WLSIMPfold failed to set AVIS_DIM/AVIS_SHAPE");
+        CTIwarn (EMPTY_LOC, "WLSIMPfold failed to set AVIS_DIM/AVIS_SHAPE");
 #ifdef FIXME // I have no idea of dim/shape here */
         shp = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
         AVIS_DIM (IDS_AVIS (lhs)) = TBmakeNum (1);

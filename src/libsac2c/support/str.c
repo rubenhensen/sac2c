@@ -282,6 +282,53 @@ STRcatn (int n, ...)
     DBUG_RETURN (result);
 }
 
+/** 
+ * @brief Constructs a format string based on the format and list of arguments.
+ *        Making sure that the number of arguments matches the 
+ *        format string is the responsibility of the caller.
+ *
+ * @param format The format string on which to apply the arguments.
+ * @param arg_list The list of arguments to apply to the format string.
+ *
+ * @return The processed format string.
+ */
+static char *
+vformat (const char *format, va_list arg_list)
+{
+    str_buf *buf;
+  
+    DBUG_ENTER ();
+  
+    buf = SBUFcreate (0);
+    SBUFvprintf (buf, format, arg_list);
+
+    DBUG_RETURN (SBUF2strAndFree (&buf));
+}
+
+/** 
+ * @brief Constructs a format string based on the format and list of arguments.
+ *        Making sure that the number of arguments matches the 
+ *        format string is the responsibility of the caller.
+ *
+ * @param format The format string on which to apply the arguments.
+ *
+ * @return The processed format string/
+ */
+char *
+STRformat (const char *format, ...)
+{
+    va_list arg_list;
+    char *res;
+
+    DBUG_ENTER();
+
+    va_start (arg_list, format);
+    res = vformat (format, arg_list);
+    va_end (arg_list);
+
+    DBUG_RETURN (res);
+}
+
 /**
  * @brief Compare two strings.
  *
@@ -549,13 +596,17 @@ STRsuffix (const char *suffix, const char *str)
     DBUG_RETURN (res);
 }
 
-/**
- * @brief Checks if prefix is prefix of str
+/*******************************************************************************
  *
- * @param sub first string to compare
- * @parma str second string to compare
- * @return TRUE if sub is substring of str, or FALSE otherwise
- */
+ * @fn void STRsub( const char *sub, const char *str)
+ * 
+ *   @brief  Checks is sub is a substring of str.
+ *
+ *   @param  sub the substring to look for
+ *   @param  str the string to find substrings in
+ * 
+ *   @return TRUE if sub is substring of str or sub is NULL, FALSE otherwise
+ ******************************************************************************/
 bool
 STRsub (const char *sub, const char *str)
 {
@@ -627,16 +678,16 @@ CharInString (char c, const char *str)
 /**
  * @brief Tokenize string.
  *
- * On first call the str will be copied to internal static variable, next calls
- * str should be NULL. With last call the allocated memory of the copy will be
- * freed.
+ * For the first call, the str will be copied to internal static variable.
+ * For further calls, str should be NULL. 
+ * The last call frees the copy that was made during the first call.
  *
  * In contrast to strtok, STRtok leaves the argument string untouched and always
  * allocates the tokens in fresh memory.
  *
  * @param str string to tokenize
  * @param tok tokenizer
- * @return pointer to the next token, or NULL iff no more tokens
+ * @return A pointer to the next token, or NULL iff there are no more tokens.
  */
 char *
 STRtok (const char *first, const char *sep)

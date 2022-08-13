@@ -1,9 +1,9 @@
-Unittests for sac2c
+End-to-end tests for sac2c
 ===================
 
-The unit tests in this directory are supposed to ensure correct operation of
-a specific functionality of `sac2c`.  Each unit test in its code encodes how
-it should be run and what are its criteria for success.
+The end-to-end tests in this directory are supposed to ensure correct operation of
+a specific functionality of `sac2c`.  Each test file encodes how
+it should be run and what its criteria are for success.
 
 The encoding is done using a series of line comments that start with a tag
 `// SAC_TEST|` from the first column of any line.  `// SAC_TEST|...` lines
@@ -31,9 +31,9 @@ a tab symbol can be inserted directly in the text, it is often tedious to
 convince your text editor to keep it unexpanded.  For more meta tags see
 Meta tags section below.
 
-## Running unit tests
+## Running end-to-end tests
 
-Running unit tests is achieved via
+Running end-to-end tests is achieved via
 
 ```sh
 make check
@@ -47,42 +47,51 @@ ctest -j5
 For each test, cmake generates a call to a script
 `<cmake-build-dir>/tests/scripts/run.sh <sac-test-file> <cmake-build-dir>/tests`.
 For debugging purposes, this process can be done manually:
+```sh
+cd <cmake-build-dir>/tests
+# Running a test in the test directory
+./scripts/run.sh test-trivial.sac $PWD
+# Running a test in a subdirectory
+./scripts/run.sh errors/test-generic-error.sac $PWD
 ```
-cd build/tests/<rel-path-to-test>
-<cmake-build-dir>/tests/scripts/run.sh test-trivial.sac <cmake-build-dir>/tests
+
+Additionally, the script can be used to run all tests in a folder using the -r flag:
+```sh
+cd <cmake-build-dir>/tests
+./scripts/run.sh -r errors $PWD
 ```
-To inspect the makefile generated for the test, see `<sac-filename>.mk`
-file, e.g. for the above example that would be `test-trivial.sac.mk`.
 
-### Adding new unit tests
+To inspect the makefile generated for the test, see the `<sac-filename>.mk`
+file, e.g. for one of the above example that would be `test-trivial.sac.mk`.
 
-To add a new unit test add a file that is named `test-\*.sac` in tests
+### Adding new end-to-end tests
+
+To add a new end-to-end test, add a file that is named `test-\*.sac` in tests
 directory. The test should include build/run instructions using the `SAC_TEST`
 keyword. Tests can depend on specific features being available in sac2c, you
 can use the `REQFEATURES` keyword to marks these. See in the next section for
 further details.
 
-Once you've added your test, make sure you run
+Once you've added your test, make sure you run the following command before triggering new checks!
 ```sh
 make rebuild_cache
 ```
-before triggering new checks!
 
-## A structure of a unit test
+## Structure of an end-to-end test
 
-When writing a unit test we rely on a few conventions.  First, we keep
-the size of each unit test as small as possible.  For that reason, unit tests
+When writing an end-to-end test we rely on a few conventions.  First, we keep
+the size of each end-to-end test as small as possible.  For that reason, end-to-end tests
 do not use the standard library. Common functionality, like basic wrappers around
 builtin functions are defined in `mini-stdlib.sac` that should be used via
 `#include "mini-stdlib.sac"`.
 
 Secondly, we want to abstract generic functionality. Therefore, we provide
 a file called `common.mk` that contains convenient makefile definitions that
-are often used.  It is very likely that every unit test should start with 
+are often used.  It is very likely that every end-to-end test should start with 
 ```
 // SAC_TEST|include common.mk
 ```
-definition.  Further, common functionality that is relevant to a set of unit
+definition.  Further, common functionality that is relevant to a set of end-to-end
 tests can be abstracted in the header files and sed via includes.  For example:
 
 ```sh
@@ -114,6 +123,28 @@ available, you would place this into your test file:
 // SAC_TEST|include common.mk
 // ... more build/run specification here ...
 ```
+
+At times, it is desirable to run multiple checks on the sac output. In such scenarios, the output can be stored and reused as such:
+```c
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) $<`; <nlslash>
+// Ensure we get exactly three lines as an output:
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "" 3; <nlslash>
+// Ensure one of those lines contains "TEST"
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "test" 1; <nlslash>
+```
+
+This leads to the makefile
+```
+all: <example-file-name.sac>
+  OUTPUT=`$(CALL_SAC2C) $<; \
+  echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "" 3; \
+  echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "test" 1; \
+
+```  
+
+The `<nlslash>` meta tag gets transformed into a backslash. The backslash, in combination with either `;` or `&&` allows for the subsequent commands to happen in the same shell session. If the commands were executed in different shell sessions, the variable `OUTPUT` would be lost.  
+While debugging or creating the tests, your first instinct should be to look for a missing `; <nlslash>`.
 
 ## Description of common.mk and scripts
 
@@ -160,13 +191,3 @@ a Makefile which is ultimately used to run the test(s):
 
   * `<nlslash>` --- expands to `\` followed by a newline.  This is needed if
      you want to encode makefile rule with linebreaks.
-
-## Existing tests
-
-One of the first goals would be to port the relevant tests from Bob's testsuite
-in the sac2c repository.  The `testsuite-porting.txt` file describes the
-progress.
-
-Unfortunately a lot of tests there fail when you run them.  Currently it is very
-difficult to understand whether this indicates a problem in the compiler or a
-problem in a particular unit test.

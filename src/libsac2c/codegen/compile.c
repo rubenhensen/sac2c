@@ -2737,7 +2737,7 @@ COMPdoPrepareSmart (info *info)
       = strlen (global.mt_smart_filename) + strlen (global.mt_smart_arch) + 14;
 
     if (dp == NULL) {
-        CTIabort ("Unable to open current directory.");
+        CTIabort (EMPTY_LOC, "Unable to open current directory.");
     }
 
     // only target database files contain the following id.
@@ -2765,7 +2765,7 @@ COMPdoPrepareSmart (info *info)
     }
 
     if (nr_files == 0) {
-        CTIabort (
+        CTIabort (EMPTY_LOC,
           "No stat files found. Smart decisions can't be made without training data.");
     }
 
@@ -2794,7 +2794,7 @@ COMPdoPrepareSmart (info *info)
 
             fp = fopen (inode->d_name, "r");
             if (fp == NULL) {
-                CTIabort ("Unable to load stat files.");
+                CTIabort (EMPTY_LOC, "Unable to load stat files.");
             }
             INFO_FP_LIST (info)[i] = fp;
             i++;
@@ -4145,11 +4145,11 @@ COMPApIds (node *ap, info *arg_info)
                       IDS_NTYPE (((node *)argtab->ptr_out[i])));
                     DBUG_ASSERT (sc != C_unknowns, "illegal data class found!");
                     if ((sc == C_akd) || (sc == C_aud)) {
-                        CTIabortLine (global.linenum,
-                                      "Return value with undefined shape/dimension found."
-                                      " Non-AKS return values in external functions are "
-                                      "only allowed when the corresponding refcounting"
-                                      " pragma is set.");
+                        CTIabort (LINE_TO_LOC (global.linenum),
+                                  "Return value with undefined shape/dimension found."
+                                  " Non-AKS return values in external functions are "
+                                  "only allowed when the corresponding refcounting"
+                                  " pragma is set.");
                     }
                 }
 
@@ -4360,7 +4360,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
 
     // Handle trivial cases
     if (global.mt_smart_gradient < 0 || global.mt_smart_gradient > 90) {
-        CTIabort ("The gradient must be a value between 0 and 90 degrees.");
+        CTIabort (EMPTY_LOC, "The gradient must be a value between 0 and 90 degrees.");
     } else if (global.mt_smart_gradient == 90) {
         DBUG_PRINT ("SAC will use 1 thread to compute SPMD function %i.\n", spmd_id);
         recommendations = MEMmalloc (3 * sizeof (int));
@@ -10615,8 +10615,8 @@ COMPwith (node *arg_node, info *arg_info)
 
     if (isfull) {
         if (CODE_NEXT (WITH_CODE (arg_node)) == NULL) {
-                CTIabortLine (NODE_LINE (arg_node),
-                              "cannot infer default element for with-loop");
+                CTIabort (NODE_LOCATION (arg_node),
+                          "Cannot infer default element for with-loop.");
         }
         default_icms
           = DUPdoDupTree (BLOCK_ASSIGNS (CODE_CBLOCK (CODE_NEXT (WITH_CODE (arg_node)))));
@@ -11105,7 +11105,7 @@ COMPwith2 (node *arg_node, info *arg_info)
         withop = WITH2_WITHOP (wlnode);
 
         if (num_with_ops > 1) {
-            CTIwarn ("The distributed memory backend does not yet support distributed "
+            CTIwarn (EMPTY_LOC, "The distributed memory backend does not yet support distributed "
                      "multi-operator with-loops "
                      "(first target: %s, first operator: %s, number of operators: %d).",
                      IDS_NAME (wlids), profile_name, num_with_ops);

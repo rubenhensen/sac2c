@@ -1379,10 +1379,10 @@ GKCOcompAssertNormalized (char *mapping, size_t dim, gpukernelres_t *inner)
     DBUG_ENTER ();
 
     if (!STReq (GKR_LB_D_READ (inner, dim), CONST_ZERO))
-        CTIabortLoc (NODE_LOCATION (GKR_SPAP (inner)),
-                     "Mapping %s requires lowerbound to be 0 in dimension %zu. "
-                     "Consider running the mapping 'ShiftLB' first. ",
-                     mapping, dim);
+        CTIabort (NODE_LOCATION (GKR_SPAP (inner)),
+                  "Mapping %s requires lowerbound to be 0 in dimension %zu. "
+                  "Consider running the mapping 'ShiftLB' first. ",
+                  mapping, dim);
 
     DBUG_RETURN (inner);
 }
@@ -1398,11 +1398,10 @@ GKCOcompAssertDense (char *mapping, size_t dim, gpukernelres_t *inner)
     GKCOcompAssertNormalized (mapping, dim, inner);
 
     if (!STReq (GKR_ST_D_READ (inner, dim), GKR_WI_D_READ (inner, dim)))
-        CTIabortLoc (NODE_LOCATION (GKR_SPAP (inner)),
-                     "Mapping %s requires the step and width to be equal in dimension "
-                     "%zu. "
-                     "Consider running the mapping 'CompressGrid' or 'PruneGrid' first. ",
-                     mapping, dim);
+        CTIabort (NODE_LOCATION (GKR_SPAP (inner)),
+                  "Mapping %s requires the step and width to be equal in dimension %zu. "
+                  "Consider running the mapping 'CompressGrid' or 'PruneGrid' first. ",
+                  mapping, dim);
 
     DBUG_RETURN (inner);
 }

@@ -1712,7 +1712,7 @@ PRTtypedef (node *arg_node, info *arg_info)
      *
      * The following warning was issued when a discard happened:
      *
-     *   CTIwarn("Discarding copy fun for %s\n", TYPEDEF_NAME( arg_node));
+     *   CTIwarn (EMPTY_LOC,"Discarding copy fun for %s\n", TYPEDEF_NAME( arg_node));
      *
      */
     if (TYPEDEF_COPYFUN (arg_node) != NULL) {
@@ -6117,7 +6117,7 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
              */
             global.outfile = FMGRwriteOpen ("%s/%s%s", global.targetdir,
                                             global.outfilename, global.config.ccp_cext);
-            CTInote ("Writing file \"%s/%s%s\"", global.targetdir, global.outfilename,
+            CTInote (EMPTY_LOC, "Writing file \"%s/%s%s\"", global.targetdir, global.outfilename,
                      global.config.ccp_cext);
 
             GSCprintFileHeader (syntax_tree);

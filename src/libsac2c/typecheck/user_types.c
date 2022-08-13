@@ -236,9 +236,9 @@ UTfindUserType (const char *name, const namespace_t *ns)
             res2--;
         }
         if (res2 >= 0) {
-            CTIerrorLine (global.linenum,
-                          "User defined type \"%s\" can not uniquely be determined",
-                          name);
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "User defined type \"%s\" can not uniquely be determined",
+                      name);
         }
     } else {
         while ((res >= 0)

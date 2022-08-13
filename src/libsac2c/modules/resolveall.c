@@ -120,7 +120,7 @@ CheckSymbolExistsRec (const char *mod, const sttable_t *table, node *symbols,
                 && ((!(STsymbolVisibility (symbol) == SVT_provided)) || exportedonly))) {
             node *tmp;
 
-            CTIwarnLoc (NODE_LOCATION (symbols),
+            CTIwarn (NODE_LOCATION (symbols),
                         "Symbol `%s::%s' is undefined. Ignoring...", mod,
                         SYMBOL_ID (symbols));
 
@@ -184,7 +184,7 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
     }
 
     if (result == NULL) {
-        CTIwarn ("All flag resolved to empty set of symbols.");
+        CTIwarn (EMPTY_LOC, "All flag resolved to empty set of symbols.");
     }
 
     DBUG_RETURN (result);
@@ -200,9 +200,9 @@ RSAuse (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (STReq (USE_MOD (arg_node), NSgetModule (INFO_CURRENTNS (arg_info)))) {
-        CTIerrorLoc (NODE_LOCATION (arg_node),
-                     "The namespace of the module being compiled cannot be "
-                     "referenced in use statements.");
+        CTIerror (NODE_LOCATION (arg_node),
+                  "The namespace of the module being compiled cannot be "
+                  "referenced in use statements.");
 
         if (USE_NEXT (arg_node) != NULL) {
             USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
@@ -224,7 +224,7 @@ RSAuse (node *arg_node, info *arg_info)
         if (USE_SYMBOL (arg_node) == NULL) {
             node *tmp;
 
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "Use statement has empty set of symbols. Ignoring...");
 
             tmp = USE_NEXT (arg_node);
@@ -243,9 +243,9 @@ RSAimport (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (STReq (IMPORT_MOD (arg_node), NSgetModule (INFO_CURRENTNS (arg_info)))) {
-        CTIerrorLoc (NODE_LOCATION (arg_node),
-                     "The namespace of the module being compiled cannot be "
-                     "referenced in import statements.");
+        CTIerror (NODE_LOCATION (arg_node),
+                  "The namespace of the module being compiled cannot be "
+                  "referenced in import statements.");
 
         if (IMPORT_NEXT (arg_node) != NULL) {
             IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
@@ -267,7 +267,7 @@ RSAimport (node *arg_node, info *arg_info)
         if (IMPORT_SYMBOL (arg_node) == NULL) {
             node *tmp;
 
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "Import statement has empty set of symbols. Ignoring...");
 
             tmp = IMPORT_NEXT (arg_node);

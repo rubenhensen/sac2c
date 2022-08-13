@@ -128,7 +128,7 @@ ArrayPadding (node *arg_node)
     DBUG_PRINT ("ARRAY PADDING");
     DBUG_PRINT_TAG ("AP", "Entering Array Padding");
 
-    CTInote ("Optimizing array types:");
+    CTInote (EMPTY_LOC, "Optimizing array types:");
 
     if (global.config.cache1_size > 0) {
 

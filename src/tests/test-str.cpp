@@ -1,6 +1,9 @@
 #include <sys/types.h>
 #include <dirent.h>
+
 #include "gtest/gtest.h"
+#include "base-test-environment.h" // All unit test files need to import this!
+testing::Environment* base_test_env = testing::AddGlobalTestEnvironment(new BaseEnvironment);
 
 extern "C" {
 #define DBUG_PREFIX "TEST-STR"

@@ -1321,8 +1321,9 @@ TYmakeBottomType (char *err_msg)
  *
  * @fn void TYextendBottomError( ntype *type, char *err_msg)
  *
- *   @brief replaces the err_msg contained in the bottom type by a concatinantion
+ *   @brief Replaces the err_msg contained in the bottom type by a concatenantion
  *          of the existing message and the new one.
+ *          Does nothing if err_msg is NULL.
  *   @param err_msg error that generated this type
  *
  ******************************************************************************/
@@ -1334,9 +1335,11 @@ TYextendBottomError (ntype *type, char *err_msg)
 
     DBUG_ENTER ();
 
-    new_msg = STRcatn (3, BOTTOM_MSG (type), "@", err_msg);
-    BOTTOM_MSG (type) = MEMfree (BOTTOM_MSG (type));
-    BOTTOM_MSG (type) = new_msg;
+    if (err_msg != NULL) {
+        new_msg = STRcatn (3, BOTTOM_MSG (type), "\n", err_msg);
+        BOTTOM_MSG (type) = MEMfree (BOTTOM_MSG (type));
+        BOTTOM_MSG (type) = new_msg;
+    }
 
     DBUG_RETURN ();
 }
@@ -1963,7 +1966,7 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
 
     if ((fun1 != NULL) && (NTYPE_CON (fun1) != TC_fun) && (fun2 != NULL)
         && (NTYPE_CON (fun2) != TC_fun)) {
-        CTIabortLine (global.linenum, "Cannot overload functions of arity 0");
+        CTIabort (LINE_TO_LOC (global.linenum), "Cannot overload functions of arity 0");
     }
 
     res = MakeOverloadedFunType (fun1, fun2);
@@ -2110,14 +2113,14 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
                     lub = TYlubOfTypes (SSIgetMax (ALPHA_SSI (fun1)),
                                         SSIgetMax (ALPHA_SSI (fun2)));
                     if (lub == NULL) {
-                        CTIabortLine (global.linenum,
-                                      "Cannot overload functions with disjoint result "
-                                      "type;"
-                                      " types found: \"%s\" and \"%s\"",
-                                      TYtype2String (SSIgetMax (ALPHA_SSI (fun1)), FALSE,
-                                                     0),
-                                      TYtype2String (SSIgetMax (ALPHA_SSI (fun2)), FALSE,
-                                                     0));
+                        CTIabort (LINE_TO_LOC (global.linenum),
+                                  "Cannot overload functions with disjoint result "
+                                  "type;"
+                                  " types found: \"%s\" and \"%s\"",
+                                  TYtype2String (SSIgetMax (ALPHA_SSI (fun1)), FALSE,
+                                                 0),
+                                  TYtype2String (SSIgetMax (ALPHA_SSI (fun2)), FALSE,
+                                                 0));
                     } else {
                         res = TYmakeAlphaType (lub);
                         ok = SSInewRel (ALPHA_SSI (fun1), ALPHA_SSI (res));
@@ -3037,12 +3040,12 @@ TYdispatchFunType (ntype *fun, ntype *args)
             ires = DispatchOneArg (&lower, fun, arg);
             if (ires == NULL) {
                 fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (fun, 0)), 0);
-                CTIabortLine (global.linenum,
-                              "No definition found for a function \"%s\" that"
-                              " accepts an argument of type \"%s\" as parameter"
-                              " no %zu. Full argument types are \"%s\".",
-                              CTIitemName (fundef), TYtype2String (arg, FALSE, 0), i + 1,
-                              TYtype2String (args, FALSE, 0));
+                CTIabort (LINE_TO_LOC (global.linenum),
+                          "No definition found for a function \"%s\" that"
+                          " accepts an argument of type \"%s\" as parameter"
+                          " no %zu. Full argument types are \"%s\".",
+                          CTIitemName (fundef), TYtype2String (arg, FALSE, 0), i + 1,
+                          TYtype2String (args, FALSE, 0));
             }
 
             DBUG_EXECUTE_TAG ("NTDIS", tmp_str = TYtype2String (arg, FALSE, 0));

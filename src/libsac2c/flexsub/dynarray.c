@@ -78,7 +78,7 @@ addToArray (dynarray *arrayd, elem *item)
         void *_temp = MEMrealloc (DYNARRAY_ELEMS (arrayd),
                                   DYNARRAY_ALLOCELEMS (arrayd) * sizeof (elem *));
         if (!_temp) {
-            CTIabort ("addToArray couldn't realloc memory!\n");
+            CTIabort (EMPTY_LOC, "addToArray couldn't realloc memory!\n");
         }
 
         MEMfree (DYNARRAY_ELEMS (arrayd));
@@ -119,7 +119,7 @@ addToArrayAtPos (dynarray *arrayd, elem *item, int pos)
         void *_temp = MEMrealloc (DYNARRAY_ELEMS (arrayd),
                                   DYNARRAY_ALLOCELEMS (arrayd) * sizeof (elem *));
         if (!_temp) {
-            CTIabort ("addToArrayAtPos couldn't realloc memory!\n");
+            CTIabort (EMPTY_LOC, "addToArrayAtPos couldn't realloc memory!\n");
         }
 
         MEMfree (DYNARRAY_ELEMS (arrayd));
@@ -216,7 +216,7 @@ sortArray (elem **elems, int lower, int upper, int desc)
 {
 
     if (elems == NULL) {
-        CTIabort ("Typechecker trying to sort DYNARRAY with null elements");
+        CTIabort (EMPTY_LOC, "Typechecker trying to sort DYNARRAY with null elements");
     }
 
     if (upper - lower > 0) {

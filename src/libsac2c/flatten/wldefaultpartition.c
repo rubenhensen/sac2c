@@ -475,10 +475,10 @@ WLDPgenarray (node *arg_node, info *arg_info)
               = TBmakeExprs (TBmakeId (avis), INFO_DEFEXPR (arg_info));
 
         } else {
-            CTIabortLine (global.linenum,
-                          "Genarray with-loop with missing default expression found."
-                          " Unfortunately, a default expression is necessary here"
-                          " to generate code for new partitions");
+            CTIabort (LINE_TO_LOC (global.linenum),
+                      "Genarray with-loop with missing default expression found."
+                      " Unfortunately, a default expression is necessary here"
+                      " to generate code for new partitions");
         }
 
     } else {

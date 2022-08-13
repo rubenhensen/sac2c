@@ -186,7 +186,7 @@ SEUTbuildIdTable (node *vec, idtable *oldscope)
                 result = newtab;
                 DBUG_PRINT ("adding scalar id \"%s\"", newtab->id);
             } else if (NODE_TYPE (id) != N_dot) {
-                CTIerrorLine (global.linenum, "Found neither id nor dot as index in WL set notation");
+                CTIerror (LINE_TO_LOC (global.linenum), "Found neither id nor dot as index in WL set notation");
             }
 
             vec = EXPRS_NEXT (vec);
@@ -201,7 +201,7 @@ SEUTbuildIdTable (node *vec, idtable *oldscope)
         result = newtab;
         DBUG_PRINT ("adding vector id \"%s\"", newtab->id);
     } else {
-        CTIabortLine (global.linenum, "Malformed index vector in WL set notation");
+        CTIabort (LINE_TO_LOC (global.linenum), "Malformed index vector in WL set notation");
     }
 
     DBUG_RETURN (result);
@@ -437,10 +437,9 @@ node * SEUTgenShape (idtable *table)
             shpchain *handle = table->shapes;
 
             if (handle == NULL) {
-                CTIerrorLine (global.linenum,
-                              "No shape information found for index "
-                              "scalar '%s'.",
-                              table->id);
+                CTIerror (LINE_TO_LOC (global.linenum),
+                          "No shape information found for index scalar '%s'.",
+                          table->id);
             } else {
                 shape = handle->shape;
                 handle = handle->next;
@@ -458,10 +457,9 @@ node * SEUTgenShape (idtable *table)
         result = TCmakeIntVector (result);
     } else if (table->type == ID_vector) {
         if (table->shapes == NULL) {
-            CTIerrorLine (global.linenum,
-                          "No shape information found for index "
-                          "vector '%s'.",
-                          table->id);
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "No shape information found for index vector '%s'.",
+                      table->id);
         } else {
             /*
              * do not build min-WL if there is only one shape
@@ -583,10 +581,9 @@ void SEUTscanSelectionForShapeInfo (node *idxvec, node *array, idtable *scope)
                             DBUG_EXECUTE (PRTdoPrintFile (stderr, chain->shape));
 
                         } else {
-                            CTIerrorLine (NODE_LINE (idxvec),
-                                         "Set notation index vector '%s' is used in a scalar "
-                                         "context.",
-                                         entry->id);
+                            CTIerror (NODE_LOCATION (idxvec),
+                                      "Set notation index vector '%s' is used in a scalar context.",
+                                      entry->id);
                         }
                     }
                 } else if ((NODE_TYPE (EXPRS_EXPR (idxvec)) == N_dot)

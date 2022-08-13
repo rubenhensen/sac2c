@@ -79,10 +79,10 @@ CheckRefReadNums (struct location loc, int size, node *nums)
         DBUG_PRINT_TAG ("PRAGMA", "Nums value is %d", NUMS_VAL (tmp));
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) >= size)) {
-            CTIerrorLoc (loc,
-                         "Invalid argument of pragma 'readonly` or 'refcounting`: "
-                         "Entry no. %d with value %d does not match a function parameter",
-                         i, NUMS_VAL (tmp));
+            CTIerror (loc,
+                      "Invalid argument of pragma 'readonly` or 'refcounting`: "
+                      "Entry no. %d with value %d does not match a function parameter",
+                      i, NUMS_VAL (tmp));
         }
 
         tmp = NUMS_NEXT (tmp);
@@ -105,19 +105,19 @@ CheckLinkSignNums (struct location loc, int size, node *nums)
         DBUG_PRINT_TAG ("PRAGMA", "Nums value is %d", NUMS_VAL (tmp));
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) > size)) {
-            CTIerrorLoc (loc,
-                         "Invalid argument of pragma 'linksign`: "
-                         "Entry no. %d does not match a valid parameter position",
-                         i + 1);
+            CTIerror (loc,
+                      "Invalid argument of pragma 'linksign`: "
+                      "Entry no. %d does not match a valid parameter position",
+                      i + 1);
             result = FALSE;
         }
     }
 
     if (i < size) {
-        CTIerrorLoc (loc,
-                     "Invalid argument of pragma 'linksign` :"
-                     "Less entries (%d) than parameters of function (%d)",
-                     i, size);
+        CTIerror (loc,
+                  "Invalid argument of pragma 'linksign` :"
+                  "Less entries (%d) than parameters of function (%d)",
+                  i, size);
         result = FALSE;
     }
 
@@ -130,7 +130,7 @@ CheckLinkSignNums (struct location loc, int size, node *nums)
             tmp = NUMS_NEXT (tmp);
         } while (tmp != NULL);
 
-        CTIerrorLoc (loc,
+        CTIerror (loc,
                      "Invalid argument of pragma 'linksign`: "
                      "More entries (%d) than function parameters (%d)",
                      i, size);
@@ -370,19 +370,19 @@ RSPfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("number of arguments: %d", PRAGMA_NUMPARAMS (pragma));
 
         if (PRAGMA_COPYFUN (pragma) != NULL) {
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "Pragma 'copyfun` has no effect on function");
             PRAGMA_COPYFUN (pragma) = MEMfree (PRAGMA_COPYFUN (pragma));
         }
 
         if (PRAGMA_FREEFUN (pragma) != NULL) {
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "Pragma 'freefun` has no effect on function");
             PRAGMA_FREEFUN (pragma) = MEMfree (PRAGMA_FREEFUN (pragma));
         }
 
         if (PRAGMA_INITFUN (pragma) != NULL) {
-            CTIwarnLoc (NODE_LOCATION (arg_node),
+            CTIwarn (NODE_LOCATION (arg_node),
                         "Pragma 'initfun` has no effect on function");
             PRAGMA_INITFUN (pragma) = MEMfree (PRAGMA_INITFUN (pragma));
         }
@@ -411,7 +411,7 @@ RSPfundef (node *arg_node, info *arg_info)
             if (FUNDEF_HASDOTARGS (arg_node) || FUNDEF_HASDOTRETS (arg_node)) {
                 FUNDEF_REFCOUNTDOTS (arg_node) = PRAGMA_REFCOUNTDOTS (pragma);
             } else {
-                CTIwarnLoc (NODE_LOCATION (arg_node),
+                CTIwarn (NODE_LOCATION (arg_node),
                             "Pragma 'refcountdots' has no effect on function");
             }
         }
@@ -468,7 +468,7 @@ RSPfundef (node *arg_node, info *arg_info)
 
         if (PRAGMA_CUDALINKNAME (pragma) != NULL) {
             if (FUNDEF_LINKNAME (arg_node) == NULL) {
-                CTIwarnLoc (NODE_LOCATION (arg_node),
+                CTIwarn (NODE_LOCATION (arg_node),
                             "Implicit declaration of 'C' version of external function"
                             " use linkname to explicitly declare 'C' version");
             }

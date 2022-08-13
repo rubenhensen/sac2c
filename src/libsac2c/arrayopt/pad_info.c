@@ -1575,8 +1575,8 @@ PInoteResults ()
         overhead = PIpaddingOverhead (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr),
                                       PI_PADDING (pi_ptr));
 
-        CTInote ("%s%s  by  %s", basetype, old, pad);
-        CTInote ("   ->  %s%s    <= %d%% overhead", basetype, xnew, overhead);
+        CTInote (EMPTY_LOC, "%s%s  by  %s", basetype, old, pad);
+        CTInote (EMPTY_LOC, "   ->  %s%s    <= %d%% overhead", basetype, xnew, overhead);
 
         old = MEMfree (old);
         xnew = MEMfree (xnew);
