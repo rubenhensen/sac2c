@@ -31,6 +31,7 @@
 #include "memory.h"
 #include "free.h"
 #include "traverse.h"
+#include "globals.h"
 #include "ctinfo.h"
 #include "DupTree.h"
 #include "wl_bounds.h"
@@ -289,7 +290,7 @@ SCHmakeScheduling (char *discipline, ...)
     sched_t *sched;
     int disc_no, tmp_num;
     size_t i;
-    
+
     DBUG_ENTER ();
 
     va_start (args, discipline);
@@ -310,7 +311,7 @@ SCHmakeScheduling (char *discipline, ...)
     sched->mclass = scheduler_table[disc_no].mclass;
     /*
      * line can be safely treated as undefined on '0' as origin is '1'
-     * FIXME full location would be better than just line number  
+     * FIXME full location would be better than just line number
      */
     sched->line = 0;
 
