@@ -1213,7 +1213,8 @@ isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info, bool signum)
  *                      GDBWhatIsnNid( arg_node, arg_info->fundef)
  *
  *
- * @result: TRUE if we found a suitable expression; else FALSE
+ * @result: TRUE if we find that we have either ((arg2 fff Y) fung arg2 )
+ *          or  ((Y fff arg2) fung arg2)  ; else FALSE
  *          Side effects: We set fff, fffg, and Y, if the result is TRUE.
  *
  *
@@ -1350,7 +1351,18 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("SCSisRelationalOnDyadicFn (%s, %s, %s, ??, out)...",
+                 global.prf_name[ fung], ID_NAME (arg1), ID_NAME (arg2));
     if (SCSextractCompositionInfo (fung, arg1, arg2, arg_info, &fff, &ffg, &Y)) {
+        DBUG_PRINT ("  identified (%s %s y) %s %s  OR  (y %s %s) %s %s!",
+                     ID_NAME (arg2),
+                     global.prf_name[fff],
+                     global.prf_name[ffg],
+                     ID_NAME (arg2),
+                     global.prf_name[fff],
+                     ID_NAME (arg2),
+                     global.prf_name[ffg],
+                     ID_NAME (arg2));
 
         // (x min y) <= x
         SCSECI (F_min_SxS, F_le_SxS, TRUE, TRUE);
@@ -1405,7 +1417,15 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
     // With reversed arguments, we have to reverse the sense of the relational
     // E.g., < becomes >; <= becomes >=
     if (SCSextractCompositionInfo (fung, arg2, arg1, arg_info, &fff, &ffg, &Y)) {
-
+        DBUG_PRINT ("  identified (%s %s y) %s %s  OR  (y %s %s) %s %s!",
+                     ID_NAME (arg1),
+                     global.prf_name[fff],
+                     global.prf_name[ffg],
+                     ID_NAME (arg1),
+                     global.prf_name[fff],
+                     ID_NAME (arg1),
+                     global.prf_name[ffg],
+                     ID_NAME (arg1));
         // x < (x min y)
         SCSECI (F_min_SxS, F_lt_SxS, FALSE, TRUE);
         // x >= (x min y)
@@ -1456,6 +1476,8 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
     if (!global.optimize.dorelcf) {
         z = FALSE;
     }
+
+    DBUG_PRINT ("... yields %s", (z ? "true" : "false"));
 
     DBUG_RETURN (z);
 }

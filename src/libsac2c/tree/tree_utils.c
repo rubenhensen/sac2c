@@ -264,7 +264,11 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
         c = (NULL != c) ? COfreeConstant (c) : NULL;
     }
 
-    res = res || isZeroTripGeneratorComposition (lb, ub);
+    if (!res) {
+        res = isZeroTripGeneratorComposition (lb, ub);
+        if (res)
+            DBUG_PRINT ("criterion 6 met!");
+    }
 
     DBUG_RETURN (res);
 }
