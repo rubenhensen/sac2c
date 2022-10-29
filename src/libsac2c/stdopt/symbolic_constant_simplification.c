@@ -1188,77 +1188,15 @@ isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info, bool signum)
 
 /** <!--********************************************************************-->
  *
- * @fn bool SCSextractCompositionInfo( )
+ * @fn bool matchesDyadicWithLeftArg (node *expr, node *arg1, prf *fun, node **arg2)
  *
- * @brief Extract semantic info for compositions of the form:
- *
- *            ( X f Y) g X
- *            ( Y f X) g X
- *
- *        We do not directly support compositions of the following form,
- *        because g may not be commutative, but the caller can just
- *        call this function twice, with reversed arg1/arg2:
- *
- *            X        g ( X f Y)
- *            X        g ( Y f X)
- *
- *
- *        We assume that f is commutative and dyadic, and that g is dyadic.
- *
- * @param: fung: an N_prf for g
- * @param: arg1: PRF_ARG1 of fung
- * @param: arg2: PRF_ARG2 of fung
- * @param: arg_info: Your basic arg_info node, here only to
- *                   facilitate debugging. E.g.:
- *                      GDBWhatIsnNid( arg_node, arg_info->fundef)
- *
- *
- * @result: TRUE if we find that we have either ((arg2 fff Y) fung arg2 )
- *          or  ((Y fff arg2) fung arg2)  ; else FALSE
- *          Side effects: We set fff, fffg, and Y, if the result is TRUE.
- *
- *
- * @result: fff: The function family prototype for f
- * @result: ffg: The function family prototype for g
- * @result: Y: the value of Y, from the above expressions.
+ * @brief: checks whether <expr> matches (<arg1> fun arg2)
+ *         <expr> and <arg1> are given through the parameters,
+ *         fun and arg2 are being matched here and returned through the
+ *         parameters. NOTE here, that not necessarily fun itself is returned
+ *         but the _SxS_ version of it!
  *
  *****************************************************************************/
-bool
-SCSextractCompositionInfo (prf fung, node *arg1, node *arg2, info *arg_info, prf *fff,
-                           prf *ffg, node **Y)
-{
-    bool z = FALSE;
-    pattern *patadd1;
-    pattern *patadd2;
-    node *farg = NULL;
-    node *xy = NULL;
-    prf funf = F_unknown;
-
-    DBUG_ENTER ();
-
-    patadd1 = PMprf (1, PMAgetPrf (&funf), 2, PMvar (1, PMAisVar (&xy), 0),
-                     PMvar (1, PMAgetNode (&farg), 0));
-
-    patadd2 = PMprf (1, PMAgetPrf (&funf), 2, PMvar (1, PMAgetNode (&farg), 0),
-                     PMvar (1, PMAisVar (&xy), 0));
-
-    xy = arg2;
-    if ((PMmatchFlatSkipExtrema (patadd1, arg1)
-         || PMmatchFlatSkipExtrema (patadd2, arg1))) {
-        z = TRUE;
-        //  f( x, y) g x
-        //  f( x, y) g y
-        *fff = TULSgetPrfFamilyName (funf);
-        *ffg = TULSgetPrfFamilyName (fung);
-        *Y = farg;
-    }
-
-    patadd1 = PMfree (patadd1);
-    patadd2 = PMfree (patadd2);
-
-    DBUG_RETURN (z);
-}
-
 static
 bool matchesDyadicWithLeftArg (node *expr, node *arg1, prf *fun, node **arg2)
 {
@@ -1276,6 +1214,17 @@ bool matchesDyadicWithLeftArg (node *expr, node *arg1, prf *fun, node **arg2)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool matchesDyadicWithRightArg (node *expr, node *arg2, prf *fun, node **arg1)
+ *
+ * @brief: checks whether <expr> matches (arg1 fun <arg2>)
+ *         <expr> and <arg2> are given through the parameters,
+ *         fun and arg2 are being matched here and returned through the
+ *         parameters. NOTE here, that not necessarily fun itself is returned
+ *         but the _SxS_ version of it!
+ *
+ *****************************************************************************/
 static
 bool matchesDyadicWithRightArg (node *expr, node *arg2, prf *fun, node **arg1)
 {
@@ -1293,6 +1242,21 @@ bool matchesDyadicWithRightArg (node *expr, node *arg2, prf *fun, node **arg1)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool matchesDyadicWithGivenArg (node *expr, node *arg,
+ *                                     prf *fun, node **other_arg, bool *arg_is_left)
+ *
+ * @brief: checks whether <expr> matches 
+ *         (<arg> fun other_arg) or (other_arg fun <arg>) where
+ *         <expr> and <arg> are given through the parameters,
+ *         fun and other_arg are being matched here and returned through the
+ *         parameters. The final return value arg_is_left indicates which 
+ *         variant matched; if true, it is the former.
+ *         NOTE here, that not necessarily fun itself is returned
+ *         but the _SxS_ version of it!
+ *
+ *****************************************************************************/
 static
 bool matchesDyadicWithGivenArg (node *expr, node *arg, prf *fun, node **other_arg,
                                 bool *arg_is_left)
@@ -1303,6 +1267,29 @@ bool matchesDyadicWithGivenArg (node *expr, node *arg, prf *fun, node **other_ar
                  || matchesDyadicWithRightArg (expr, arg, fun, other_arg));
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool canOptLEOnDyadicFn (node *arg1, node *arg2, bool *result)
+ *
+ * @brief: checks whether ( arg1 <= arg2 ) can statically be decided.
+ *         if so, *result is set accordingly.
+ *         Currently, the following cases are supported:
+ *           (x min y) <= x            TRUE
+ *           (y min x) <= x            TRUE
+ *             (x + y) <= x   | y<0    TRUE
+ *             (y + x) <= x   | y<0    TRUE
+ *             (x - y) <= x   | y>=0   TRUE
+ *             (x + y) <= x   | y>0    FALSE
+ *             (y + x) <= x   | y>0    FALSE
+ *         and
+ *           x <= (x max y)            TRUE
+ *           x <= (y max x)            TRUE
+ *           x <=   (x + y)   | y>=0   TRUE
+ *           x <=   (y + x)   | y>=0   TRUE
+ *           x <=   (x + y)   | y<0    FALSE
+ *           x <=   (y + x)   | y<0    FALSE
+ *           x <=   (x - y)   | y>0    FALSE
+ *****************************************************************************/
 static
 bool canOptLEOnDyadicFn (node *arg1, node *arg2, bool *result)
 {
@@ -1344,6 +1331,29 @@ bool canOptLEOnDyadicFn (node *arg1, node *arg2, bool *result)
     DBUG_RETURN (can);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool canOptGEOnDyadicFn (node *arg1, node *arg2, bool *result)
+ *
+ * @brief: checks whether ( arg1 >= arg2 ) can statically be decided.
+ *         if so, *result is set accordingly.
+ *         Currently, the following cases are supported:
+ *           (x max y) >= x            TRUE
+ *           (y max x) >= x            TRUE
+ *             (x + y) >= x   | y<0    TRUE
+ *             (y + x) >= x   | y<0    TRUE
+ *             (x + y) >= x   | y<0    FALSE
+ *             (y + x) >= x   | y<0    FALSE
+ *             (x - y) >= x   | y>0    FALSE
+ *         and
+ *           x >= (x min y)            TRUE
+ *           x >= (y min x)            TRUE
+ *           x >=   (x + y)   | y<0    TRUE
+ *           x >=   (y + x)   | y<0    TRUE
+ *           x >=   (x - y)   | y>=0   TRUE
+ *           x >=   (x + y)   | y>0    FALSE
+ *           x >=   (y + x)   | y>0    FALSE
+ *****************************************************************************/
 bool SCScanOptGEOnDyadicFn (node *arg1, node *arg2, bool *result)
 {
     prf fun;
@@ -1384,6 +1394,14 @@ bool SCScanOptGEOnDyadicFn (node *arg1, node *arg2, bool *result)
     DBUG_RETURN (can);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool canOptGTOnDyadicFn (node *arg1, node *arg2, bool *result)
+ *
+ * @brief: checks whether ( arg1 > arg2 ) can statically be decided.
+ *         if so, *result is set accordingly.
+ *         Handles the same cases as canOptLEOnDyadicFn.
+ *****************************************************************************/
 static
 bool canOptGTOnDyadicFn (node *arg1, node *arg2, bool *result)
 {
@@ -1401,6 +1419,14 @@ bool canOptGTOnDyadicFn (node *arg1, node *arg2, bool *result)
     DBUG_RETURN (can);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool canOptLTOnDyadicFn (node *arg1, node *arg2, bool *result)
+ *
+ * @brief: checks whether ( arg1 < arg2 ) can statically be decided.
+ *         if so, *result is set accordingly.
+ *         Handles the same cases as canOptGEOnDyadicFn.
+ *****************************************************************************/
 static
 bool canOptLTOnDyadicFn (node *arg1, node *arg2, bool *result)
 {
@@ -1418,6 +1444,19 @@ bool canOptLTOnDyadicFn (node *arg1, node *arg2, bool *result)
     DBUG_RETURN (can);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool SCScanOptMAXOnDyadicFn (node *arg1, node *arg2, bool *result_is_arg1)
+ *
+ * @brief: checks whether ( arg1 max arg2 ) can statically be decided.
+ *         if so, *result_is_arg1 indicates which argument is the result.
+ *         Currently, the following cases are supported:
+ *           ( (x min y) max x )       x   (!result_is_arg1)
+ *           ( (y min x) max x )       x   (!result_is_arg1)
+ *         and
+ *           ( x max (x min y) )       x   (result_is_arg1)
+ *           ( x max (y min x) )       x   (result_is_arg1)
+ *****************************************************************************/
 bool SCScanOptMAXOnDyadicFn (node *arg1, node *arg2, bool *result_is_arg1)
 {
     prf fun;
@@ -1448,6 +1487,19 @@ bool SCScanOptMAXOnDyadicFn (node *arg1, node *arg2, bool *result_is_arg1)
     DBUG_RETURN (can);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool SCScanOptMINOnDyadicFn (node *arg1, node *arg2, bool *result_is_arg1)
+ *
+ * @brief: checks whether ( arg1 min arg2 ) can statically be decided.
+ *         if so, *result_is_arg1 indicates which argument is the result.
+ *         Currently, the following cases are supported:
+ *           ( (x max y) min x )       x   (!result_is_arg1)
+ *           ( (y max x) min x )       x   (!result_is_arg1)
+ *         and
+ *           ( x min (x max y) )       x   (result_is_arg1)
+ *           ( x min (y max x) )       x   (result_is_arg1)
+ *****************************************************************************/
 bool SCScanOptMINOnDyadicFn (node *arg1, node *arg2, bool *result_is_arg1)
 {
     prf fun;
