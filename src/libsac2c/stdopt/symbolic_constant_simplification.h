@@ -10,6 +10,10 @@
  * prefix: SCS
  *
  *****************************************************************************/
+/*
+ * These functions seem to be helpers.... not sure they should be in this
+ * module.
+ */
 extern bool SCSisSelOfShape (node *arg_node);
 extern bool SCSisPositive (node *arg_node);
 extern bool SCSisNegative (node *arg_node);
@@ -28,10 +32,15 @@ extern node *SCSrecurseWithExtrema (node *arg_node, info *arg_info, node *arg1,
                                     node *arg2, node *(*fun) (node *, info *));
 extern node *SCSmakeVectorArray (shape *shp, node *scalarval);
 extern bool SCSisRelationalOnMinMax (prf fun, node *arg1, node *arg2, info *arg_info);
-extern bool SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info,
-                                       bool *res);
+extern bool SCScanOptGEOnDyadicFn (node *arg1, node *arg2, bool *res);
+extern bool SCScanOptMAXOnDyadicFn (node *arg1, node *arg2, bool *res);
+extern bool SCScanOptMINOnDyadicFn (node *arg1, node *arg2, bool *res);
 extern bool SCSisMatchPrfargs (node *arg_node, info *arg_info);
 
+/*
+ * All functions below are triggered from CF through the function tables
+ * defined in prf_info.mac
+ */
 extern node *SCSprf_tobool_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toc_S (node *arg_node, info *arg_info);
 extern node *SCSprf_tob_S (node *arg_node, info *arg_info);

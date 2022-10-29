@@ -128,7 +128,7 @@ isZeroTripGeneratorComposition (node *lb, node *ub)
             elub = EXPRS_EXPR (aelemsub);
             if ((N_id == NODE_TYPE (ellb)) && // We may have non-flattened bounds!
                 (N_id == NODE_TYPE (elub))
-                && SCSisRelationalOnDyadicFn (F_ge_SxS, ellb, elub, NULL, &relres)) {
+                && SCScanOptGEOnDyadicFn (ellb, elub, &relres)) {
                 z = relres;
             }
             aelemslb = EXPRS_NEXT (aelemslb);

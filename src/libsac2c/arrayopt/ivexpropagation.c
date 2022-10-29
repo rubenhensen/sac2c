@@ -1737,14 +1737,12 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
 
         // Case 5: constant vs extrema present
         if ((c1 && e2) && (NULL == INFO_MAXVAL (arg_info))
-            && (SCSisRelationalOnDyadicFn (F_min_SxS, PRF_ARG1 (rhs), AVIS_MAX (arg2avis),
-                                           arg_info, &z))) {
+            && (SCScanOptMINOnDyadicFn (PRF_ARG1 (rhs), AVIS_MAX (arg2avis), &z))) {
             INFO_MAXVAL (arg_info) = z ? arg1avis : ID_AVIS (AVIS_MAX (arg2avis));
         }
 
         if ((c2 && e1) && (NULL == INFO_MAXVAL (arg_info))
-            && (SCSisRelationalOnDyadicFn (F_min_SxS, PRF_ARG2 (rhs), AVIS_MAX (arg1avis),
-                                           arg_info, &z))) {
+            && (SCScanOptMINOnDyadicFn (PRF_ARG2 (rhs), AVIS_MAX (arg1avis), &z))) {
             INFO_MAXVAL (arg_info) = z ? arg2avis : ID_AVIS (AVIS_MAX (arg1avis));
         }
 
@@ -1834,8 +1832,7 @@ GenerateExtremaForMax (node *lhsavis, node *rhs, info *arg_info)
         INFO_MINVAL (arg_info) = MaxOnExtrema (rhs, arg_info);
 
         if ((c2 && e1) && (NULL == INFO_MINVAL (arg_info))
-            && (SCSisRelationalOnDyadicFn (F_max_SxS, PRF_ARG2 (rhs), AVIS_MIN (arg1avis),
-                                           arg_info, &z))) {
+            && (SCScanOptMAXOnDyadicFn (PRF_ARG2 (rhs), AVIS_MIN (arg1avis), &z))) {
             INFO_MINVAL (arg_info) = z ? arg2avis : ID_AVIS (AVIS_MIN (arg1avis));
         }
 
