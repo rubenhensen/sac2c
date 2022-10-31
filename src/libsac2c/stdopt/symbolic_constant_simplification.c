@@ -981,9 +981,9 @@ MatchNegV (node *arg1, node *arg2)
  *
  * Predicate for:
  *
- *     arg1 +  _neg_S_( arg1)
+ *     arg2 ==  _neg_S_( arg1)
  *
- * Arguments:  PRF_ARG1 and PRF_ARG2 for +
+ * Arguments:  N_id nodes
  *
  *****************************************************************************/
 static bool
@@ -1188,279 +1188,348 @@ isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info, bool signum)
 
 /** <!--********************************************************************-->
  *
- * @fn bool SCSextractCompositionInfo( )
+ * @fn bool matchesDyadicWithLeftArg (node *expr, node *arg1, prf *fun, node **arg2)
  *
- * @brief Extract semantic info for compositions of the form:
- *
- *            ( X f Y) g X
- *            ( Y f X) g X
- *
- *        We do not directly support compositions of the following form,
- *        because g may not be commutative, but the caller can just
- *        call this function twice, with reversed arg1/arg2:
- *
- *            X        g ( X f Y)
- *            X        g ( Y f X)
- *
- *
- *        We assume that f is commutative and dyadic, and that g is dyadic.
- *
- * @param: fung: an N_prf for g
- * @param: arg1: PRF_ARG1 of fung
- * @param: arg2: PRF_ARG2 of fung
- * @param: arg_info: Your basic arg_info node, here only to
- *                   facilitate debugging. E.g.:
- *                      GDBWhatIsnNid( arg_node, arg_info->fundef)
- *
- *
- * @result: TRUE if we found a suitable expression; else FALSE
- *          Side effects: We set fff, fffg, and Y, if the result is TRUE.
- *
- *
- * @result: fff: The function family prototype for f
- * @result: ffg: The function family prototype for g
- * @result: Y: the value of Y, from the above expressions.
+ * @brief: checks whether <expr> matches (<arg1> fun arg2)
+ *         <expr> and <arg1> are given through the parameters,
+ *         fun and arg2 are being matched here and returned through the
+ *         parameters. NOTE here, that not necessarily fun itself is returned
+ *         but the _SxS_ version of it!
  *
  *****************************************************************************/
-bool
-SCSextractCompositionInfo (prf fung, node *arg1, node *arg2, info *arg_info, prf *fff,
-                           prf *ffg, node **Y)
+static
+bool matchesDyadicWithLeftArg (node *expr, node *arg1, prf *fun, node **arg2)
 {
-    bool z = FALSE;
-    pattern *patadd1;
-    pattern *patadd2;
-    node *farg = NULL;
-    node *xy = NULL;
-    prf funf = F_unknown;
-
+    bool res = FALSE;
+    pattern *pat;
     DBUG_ENTER ();
 
-    patadd1 = PMprf (1, PMAgetPrf (&funf), 2, PMvar (1, PMAisVar (&xy), 0),
-                     PMvar (1, PMAgetNode (&farg), 0));
+    pat = PMprf (1, PMAgetPrf (fun), 2, PMvar (1, PMAisVar (&arg1), 0),
+                 PMvar (1, PMAgetNode (arg2), 0));
+    res = PMmatchFlatSkipExtrema (pat, expr);
+    if (res)
+        *fun = TULSgetPrfFamilyName (*fun);
+    pat = PMfree (pat);
 
-    patadd2 = PMprf (1, PMAgetPrf (&funf), 2, PMvar (1, PMAgetNode (&farg), 0),
-                     PMvar (1, PMAisVar (&xy), 0));
-
-    xy = arg2;
-    if ((PMmatchFlatSkipExtrema (patadd1, arg1)
-         || PMmatchFlatSkipExtrema (patadd2, arg1))) {
-        z = TRUE;
-        //  f( x, y) g x
-        //  f( x, y) g y
-        *fff = TULSgetPrfFamilyName (funf);
-        *ffg = TULSgetPrfFamilyName (fung);
-        *Y = farg;
-    }
-
-    patadd1 = PMfree (patadd1);
-    patadd2 = PMfree (patadd2);
-
-    DBUG_RETURN (z);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn bool SCSisRelationalOnDyadicFn( prf funf, node *arg1, node *arg2,
- *                                   info *arg_info, bool *res)
+ * @fn bool matchesDyadicWithRightArg (node *expr, node *arg2, prf *fun, node **arg1)
  *
- * @brief  Return TRUE if we can satisfy the composition, and FALSE
- *         if we do not know. If TRUE, res is set to TRUE OR FALSE, as
- *         required.
- *         Some compositions produce res=TRUE, some FALSE, and some DoNotKnow.
- *
- *         These compositions produce res = TRUE:
- *
- *               min( x, Y) <= x
- *               min( Y, x) <= x
- *               x          >= min( x, Y)
- *               x          >= min( Y, x)
- *
- *               max( x, Y) >=Yx
- *               max( Y, x) >= x
- *               x          <= max( x, Y)
- *               x          <= max( Y, x)
- *
- *               add( x, nonnegY) >= x
- *               add( nonnegY, x) >= x
- *               x          <= add( x, nonnegY)
- *               x          <= add( nonnegY, x)
- *
- *         These compositions produce res = FALSE:
- *
- *               min( x, Y) >  x
- *               min( Y, x) >  x
- *               x          < min( x, Y)
- *               x          < min( Y, x)
- *
- *               max( x, Y) < x
- *               max( Y, x) < x
- *               x          > max( x, Y)
- *               x          > max( Y, x)
- *
- *               x < add( x, nonnegY)
- *               x < add( nonnegY, x)
- *               x          > add( x, nonnegY)
- *               x          > add( nonnegY, x)
- *
- * @param: funf: an N_prf
- * @param: arg1: PRF_ARG1 of funf
- * @param: arg2: PRF_ARG2 of funf
- * @param: arg_info: Your basic arg_info node, here only to
- *                   facilitate debugging. E.g.:
- *                      GDBWhatIsnNid( arg_node, arg_info->fundef)
- *
- * @result: TRUE if we can match the relational.
- *          FALSE if we are unable to satisfy it or if the relational
- *          is not true. Do NOT make decisions based on a FALSE result!
- *
- * @note: This optimization is required to allow AWLF to operate
- *        on code such as that in AWLF unit test SCSprf_val_le_val_SxSMax.sac.
- *
- *        We start by looking for a generic match on the above four
- *        patterns, such as:
- *
- *              ( f( x,y) g x)
- *
- *        Then, we filter any results that match.
- *
- * @note: Feel free to expand the set of supported compositions.
- *        Or, if you want to make this table-driven, that would
- *        reduce code size by a wee bit.
- *
- * @note: This function is really misnamed. We might want to call it
- *        SCSisCompositionOnRelationalFunctions(), or something like that.
- *         Note that, for example, we have min/max code below that
- *         does not entail any relationals.
+ * @brief: checks whether <expr> matches (arg1 fun <arg2>)
+ *         <expr> and <arg2> are given through the parameters,
+ *         fun and arg2 are being matched here and returned through the
+ *         parameters. NOTE here, that not necessarily fun itself is returned
+ *         but the _SxS_ version of it!
  *
  *****************************************************************************/
-
-#define SCSECI(funf, fung, myres, condit)                                                \
-    if ((funf == fff) && (fung == ffg) && (condit)) {                                    \
-        z = TRUE;                                                                        \
-        *res = myres;                                                                    \
-    }
-
-bool
-SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, bool *res)
+static
+bool matchesDyadicWithRightArg (node *expr, node *arg2, prf *fun, node **arg1)
 {
-    bool z = FALSE;
-    prf fff = F_unknown;
-    prf ffg = F_unknown;
-    node *Y = NULL;
-
+    bool res = FALSE;
+    pattern *pat;
     DBUG_ENTER ();
 
-    if (SCSextractCompositionInfo (fung, arg1, arg2, arg_info, &fff, &ffg, &Y)) {
+    pat = PMprf (1, PMAgetPrf (fun), 2, PMvar (1, PMAgetNode (arg1), 0),
+                 PMvar (1, PMAisVar (&arg2), 0));
+    res = PMmatchFlatSkipExtrema (pat, expr);
+    if (res)
+        *fun = TULSgetPrfFamilyName (*fun);
+    pat = PMfree (pat);
 
-        // (x min y) <= x
-        SCSECI (F_min_SxS, F_le_SxS, TRUE, TRUE);
-        // (x min y) >  x
-        SCSECI (F_min_SxS, F_gt_SxS, FALSE, TRUE);
-
-        // (x max y) >= x
-        SCSECI (F_max_SxS, F_ge_SxS, TRUE, TRUE);
-        // (x max y) <  x
-        SCSECI (F_max_SxS, F_lt_SxS, FALSE, TRUE);
-
-        // (x + negY) < x
-        SCSECI (F_add_SxS, F_lt_SxS, TRUE, SCSisNegative (Y));
-        // (x + negY) <= x
-        SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisNegative (Y));
-        // (x + negY) >= x
-        SCSECI (F_add_SxS, F_ge_SxS, FALSE, SCSisNegative (Y));
-        // (x + negY) >  x
-        SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNegative (Y));
-
-        // (x + nonnegY) <  x
-        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonNegative (Y));
-        // (x + nonnegY) <= x         dunno
-        // (x + nonnegY) >= x
-        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonNegative (Y));
-        // (x + nonnegY) > x          dunno
-
-        // (x + posY) <= x
-        SCSECI (F_add_SxS, F_le_SxS, FALSE, SCSisPositive (Y));
-        // (x + posY) < x
-        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisPositive (Y));
-        // (x + posY) >= x
-        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisPositive (Y));
-        // (x + posY) >  x
-        SCSECI (F_add_SxS, F_gt_SxS, TRUE, SCSisPositive (Y));
-
-        // (x - nonnegY) <   x         dunno
-        // (x - nonnegY) <=  x
-        SCSECI (F_sub_SxS, F_le_SxS, TRUE, SCSisNonNegative (Y));
-        // (x - nonnegY) > x
-        SCSECI (F_sub_SxS, F_gt_SxS, FALSE, SCSisNonNegative (Y));
-        // (x - nonnegY) >= x         dunno
-
-        // In these functions, myres == FALSE means PRF_ARG2 is the result;
-        //                               TRUE means PRF_ARG1 is the result.
-        // max( x, min( x, y)) --> x
-        SCSECI (F_min_SxS, F_max_SxS, FALSE, TRUE);
-        // min( x, max( x, y)) --> x
-        SCSECI (F_max_SxS, F_min_SxS, FALSE, TRUE);
-    }
-
-    // With reversed arguments, we have to reverse the sense of the relational
-    // E.g., < becomes >; <= becomes >=
-    if (SCSextractCompositionInfo (fung, arg2, arg1, arg_info, &fff, &ffg, &Y)) {
-
-        // x < (x min y)
-        SCSECI (F_min_SxS, F_lt_SxS, FALSE, TRUE);
-        // x >= (x min y)
-        SCSECI (F_min_SxS, F_ge_SxS, TRUE, TRUE);
-
-        // x <= (x max y)
-        SCSECI (F_max_SxS, F_le_SxS, TRUE, TRUE);
-        // x >  (x max y)
-        SCSECI (F_max_SxS, F_gt_SxS, FALSE, TRUE);
-
-        // x <  (x + negY)
-        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNegative (Y));
-        // x <= (x + negY)
-        SCSECI (F_add_SxS, F_le_SxS, FALSE, SCSisNegative (Y));
-        // x >= (x + negY)
-        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNegative (Y));
-        // x >  (x + negY)
-        SCSECI (F_add_SxS, F_gt_SxS, TRUE, SCSisNegative (Y));
-
-        // x <= (x + nonnegY)
-        SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisNonNegative (Y));
-        // x >  (x + nonnegY)
-        SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNonNegative (Y));
-
-        // x <= (x + posY)
-        SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisPositive (Y));
-        // x <  (x + posY)
-        SCSECI (F_add_SxS, F_lt_SxS, TRUE, SCSisPositive (Y));
-        // x >= (x + posY)
-        SCSECI (F_add_SxS, F_ge_SxS, FALSE, SCSisPositive (Y));
-        // x >  (x + posY)
-        SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisPositive (Y));
-
-        // x <  (x - nonnegY)
-        SCSECI (F_sub_SxS, F_lt_SxS, FALSE, SCSisNonNegative (Y));
-        // x <= (x - nonnegY)         dunno
-        // x >= (x - nonnegY)
-        SCSECI (F_sub_SxS, F_ge_SxS, TRUE, SCSisNonNegative (Y));
-        // x >  (x - nonnegY)         dunno
-
-        // max( min( x, y), x) --> x
-        SCSECI (F_min_SxS, F_max_SxS, TRUE, TRUE);
-        // min( max( x, y), x) --> x
-        SCSECI (F_max_SxS, F_min_SxS, TRUE, TRUE);
-    }
-
-    // Temporary code to aid in measuring POGO performance on relationals
-    if (!global.optimize.dorelcf) {
-        z = FALSE;
-    }
-
-    DBUG_RETURN (z);
+    DBUG_RETURN (res);
 }
 
-#undef SCSECI
+/** <!--********************************************************************-->
+ *
+ * @fn bool matchesDyadicWithGivenArg (node *expr, node *arg,
+ *                                     prf *fun, node **other_arg, bool *arg_is_left)
+ *
+ * @brief: checks whether <expr> matches 
+ *         (<arg> fun other_arg) or (other_arg fun <arg>) where
+ *         <expr> and <arg> are given through the parameters,
+ *         fun and other_arg are being matched here and returned through the
+ *         parameters. The final return value arg_is_left indicates which 
+ *         variant matched; if true, it is the former.
+ *         NOTE here, that not necessarily fun itself is returned
+ *         but the _SxS_ version of it!
+ *
+ *****************************************************************************/
+static
+bool matchesDyadicWithGivenArg (node *expr, node *arg, prf *fun, node **other_arg,
+                                bool *arg_is_left)
+{
+    DBUG_ENTER ();
+    *arg_is_left = matchesDyadicWithLeftArg (expr, arg, fun, other_arg);
+    DBUG_RETURN ( *arg_is_left
+                 || matchesDyadicWithRightArg (expr, arg, fun, other_arg));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool canOptLEOnDyadicFn (node *arg1, node *arg2, bool *result)
+ *
+ * @brief: checks whether ( arg1 <= arg2 ) can statically be decided.
+ *         if so, *result is set accordingly.
+ *         Currently, the following cases are supported:
+ *           (x min y) <= x            TRUE
+ *           (y min x) <= x            TRUE
+ *             (x + y) <= x   | y<0    TRUE
+ *             (y + x) <= x   | y<0    TRUE
+ *             (x - y) <= x   | y>=0   TRUE
+ *             (x + y) <= x   | y>0    FALSE
+ *             (y + x) <= x   | y>0    FALSE
+ *         and
+ *           x <= (x max y)            TRUE
+ *           x <= (y max x)            TRUE
+ *           x <=   (x + y)   | y>=0   TRUE
+ *           x <=   (y + x)   | y>=0   TRUE
+ *           x <=   (x + y)   | y<0    FALSE
+ *           x <=   (y + x)   | y<0    FALSE
+ *           x <=   (x - y)   | y>0    FALSE
+ *****************************************************************************/
+static
+bool canOptLEOnDyadicFn (node *arg1, node *arg2, bool *result)
+{
+    prf fun;
+    node *y;
+    bool is_left;
+    bool can = FALSE;
+
+    DBUG_ENTER ();
+    if (matchesDyadicWithGivenArg (arg1, arg2, &fun, &y, &is_left)) {
+        /*
+         * arg1 == (arg2 fun y) <= arg2    | is_left
+         * arg1 == (y fun arg2) <= arg2    | otherwise
+         */
+        if ( (fun == F_min_SxS)
+             || ((fun == F_add_SxS) && SCSisNegative (y))
+             || ((fun == F_sub_SxS) && SCSisNonNegative (y) && is_left) ) {
+            can = TRUE;
+            *result = TRUE;
+        } else if ((fun == F_add_SxS) && SCSisPositive (y)) {
+            can = TRUE;
+            *result = FALSE;
+        }
+    } else if (matchesDyadicWithGivenArg (arg2, arg1, &fun, &y, &is_left)) {
+        /*
+         * arg1 <= (arg1 fun y)     | is_left
+         * arg1 <= (y fun arg1)     | otherwise
+         */
+        if ( (fun == F_max_SxS)
+             || ((fun == F_add_SxS) && SCSisNonNegative (y)) ) {
+            can = TRUE;
+            *result = TRUE;
+        } else if ( ((fun == F_add_SxS) && SCSisNegative (y))
+                    || ((fun == F_sub_SxS) && SCSisPositive (y) && is_left) ) {
+            can = TRUE;
+            *result = FALSE;
+        }
+    }
+    DBUG_RETURN (can);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool canOptGEOnDyadicFn (node *arg1, node *arg2, bool *result)
+ *
+ * @brief: checks whether ( arg1 >= arg2 ) can statically be decided.
+ *         if so, *result is set accordingly.
+ *         Currently, the following cases are supported:
+ *           (x max y) >= x            TRUE
+ *           (y max x) >= x            TRUE
+ *             (x + y) >= x   | y<0    TRUE
+ *             (y + x) >= x   | y<0    TRUE
+ *             (x + y) >= x   | y<0    FALSE
+ *             (y + x) >= x   | y<0    FALSE
+ *             (x - y) >= x   | y>0    FALSE
+ *         and
+ *           x >= (x min y)            TRUE
+ *           x >= (y min x)            TRUE
+ *           x >=   (x + y)   | y<0    TRUE
+ *           x >=   (y + x)   | y<0    TRUE
+ *           x >=   (x - y)   | y>=0   TRUE
+ *           x >=   (x + y)   | y>0    FALSE
+ *           x >=   (y + x)   | y>0    FALSE
+ *****************************************************************************/
+bool SCScanOptGEOnDyadicFn (node *arg1, node *arg2, bool *result)
+{
+    prf fun;
+    node *y;
+    bool is_left;
+    bool can = FALSE;
+
+    DBUG_ENTER ();
+    if (matchesDyadicWithGivenArg (arg1, arg2, &fun, &y, &is_left)) {
+        /*
+         * arg1 == (arg2 fun y) >= arg2    | is_left
+         * arg1 == (y fun arg2) >= arg2    | otherwise
+         */
+        if ( (fun == F_max_SxS)
+             || ((fun == F_add_SxS) && SCSisNonNegative (y)) ) {
+            can = TRUE;
+            *result = TRUE;
+        } else if ( ((fun == F_add_SxS) && SCSisNegative (y))
+                    || ((fun == F_sub_SxS) && SCSisPositive (y) && is_left) ) {
+            can = TRUE;
+            *result = FALSE;
+        }
+    } else if (matchesDyadicWithGivenArg (arg2, arg1, &fun, &y, &is_left)) {
+        /*
+         * arg1 >= (arg1 fun y)     | is_left
+         * arg1 >= (y fun arg1)     | otherwise
+         */
+        if ( (fun == F_min_SxS)
+             || ((fun == F_add_SxS) && SCSisNegative (y))
+             || ((fun == F_sub_SxS) && SCSisNonNegative (y) && is_left) ) {
+            can = TRUE;
+            *result = TRUE;
+        } else if ((fun == F_add_SxS) && SCSisPositive (y)) {
+            can = TRUE;
+            *result = FALSE;
+        }
+    }
+    DBUG_RETURN (can);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool canOptGTOnDyadicFn (node *arg1, node *arg2, bool *result)
+ *
+ * @brief: checks whether ( arg1 > arg2 ) can statically be decided.
+ *         if so, *result is set accordingly.
+ *         Handles the same cases as canOptLEOnDyadicFn.
+ *****************************************************************************/
+static
+bool canOptGTOnDyadicFn (node *arg1, node *arg2, bool *result)
+{
+    bool can = FALSE;
+
+    DBUG_ENTER ();
+    /*
+     * Whenever I can decide that  (arg1 <= arg2) holds,
+     * I can also decide that      (arg1 >  arg2) will not hold
+     * and vice versa!
+     */
+    can = canOptLEOnDyadicFn (arg1, arg2, result);
+    if (can)
+        *result = !*result;
+    DBUG_RETURN (can);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool canOptLTOnDyadicFn (node *arg1, node *arg2, bool *result)
+ *
+ * @brief: checks whether ( arg1 < arg2 ) can statically be decided.
+ *         if so, *result is set accordingly.
+ *         Handles the same cases as canOptGEOnDyadicFn.
+ *****************************************************************************/
+static
+bool canOptLTOnDyadicFn (node *arg1, node *arg2, bool *result)
+{
+    bool can = FALSE;
+
+    DBUG_ENTER ();
+    /*
+     * Whenever I can decide that  (arg1 >= arg2) holds,
+     * I can also decide that      (arg1 <  arg2) will not hold
+     * and vice versa!
+     */
+    can = SCScanOptGEOnDyadicFn (arg1, arg2, result);
+    if (can)
+        *result = !*result;
+    DBUG_RETURN (can);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool SCScanOptMAXOnDyadicFn (node *arg1, node *arg2, bool *result_is_arg1)
+ *
+ * @brief: checks whether ( arg1 max arg2 ) can statically be decided.
+ *         if so, *result_is_arg1 indicates which argument is the result.
+ *         Currently, the following cases are supported:
+ *           ( (x min y) max x )       x   (!result_is_arg1)
+ *           ( (y min x) max x )       x   (!result_is_arg1)
+ *         and
+ *           ( x max (x min y) )       x   (result_is_arg1)
+ *           ( x max (y min x) )       x   (result_is_arg1)
+ *****************************************************************************/
+bool SCScanOptMAXOnDyadicFn (node *arg1, node *arg2, bool *result_is_arg1)
+{
+    prf fun;
+    node *y;
+    bool is_left;
+    bool can = FALSE;
+
+    DBUG_ENTER ();
+    if (matchesDyadicWithGivenArg (arg1, arg2, &fun, &y, &is_left)) {
+        /*
+         * max (arg1 == (arg2 fun y), arg2)    | is_left
+         * max (arg1 == (y fun arg2), arg2)    | otherwise
+         */
+        if (fun == F_min_SxS) {
+            can = TRUE;
+            *result_is_arg1 = FALSE;
+        }
+    } else if (matchesDyadicWithGivenArg (arg2, arg1, &fun, &y, &is_left)) {
+        /*
+         * max (arg1, (arg1 fun y))     | is_left
+         * max (arg1, (y fun arg1))     | otherwise
+         */
+        if (fun == F_min_SxS) {
+            can = TRUE;
+            *result_is_arg1 = TRUE;
+        }
+    }
+    DBUG_RETURN (can);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool SCScanOptMINOnDyadicFn (node *arg1, node *arg2, bool *result_is_arg1)
+ *
+ * @brief: checks whether ( arg1 min arg2 ) can statically be decided.
+ *         if so, *result_is_arg1 indicates which argument is the result.
+ *         Currently, the following cases are supported:
+ *           ( (x max y) min x )       x   (!result_is_arg1)
+ *           ( (y max x) min x )       x   (!result_is_arg1)
+ *         and
+ *           ( x min (x max y) )       x   (result_is_arg1)
+ *           ( x min (y max x) )       x   (result_is_arg1)
+ *****************************************************************************/
+bool SCScanOptMINOnDyadicFn (node *arg1, node *arg2, bool *result_is_arg1)
+{
+    prf fun;
+    node *y;
+    bool is_left;
+    bool can = FALSE;
+
+    DBUG_ENTER ();
+    if (matchesDyadicWithGivenArg (arg1, arg2, &fun, &y, &is_left)) {
+        /*
+         * min (arg1 == (arg2 fun y), arg2)    | is_left
+         * min (arg1 == (y fun arg2), arg2)    | otherwise
+         */
+        if (fun == F_max_SxS) {
+            can = TRUE;
+            *result_is_arg1 = FALSE;
+        }
+    } else if (matchesDyadicWithGivenArg (arg2, arg1, &fun, &y, &is_left)) {
+        /*
+         * min (arg1, (arg1 fun y))     | is_left
+         * min (arg1, (y fun arg1))     | otherwise
+         */
+        if (fun == F_max_SxS) {
+            can = TRUE;
+            *result_is_arg1 = TRUE;
+        }
+    }
+    DBUG_RETURN (can);
+}
+
 
 /** <!--********************************************************************-->
  *
@@ -2657,8 +2726,7 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
 
     // Case 7
     if ((NULL == res)
-        && SCSisRelationalOnDyadicFn (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
-                                      PRF_ARG2 (arg_node), arg_info, &z)) {
+        && SCScanOptMAXOnDyadicFn (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), &z)) {
         if (z) {
             res = DUPdoDupNode (PRF_ARG1 (arg_node));
         } else {
@@ -2749,8 +2817,7 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
 
     // Case 7
     if ((NULL == res)
-        && SCSisRelationalOnDyadicFn (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
-                                      PRF_ARG2 (arg_node), arg_info, &z)) {
+        && SCScanOptMINOnDyadicFn (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), &z)) {
         if (z) {
             res = DUPdoDupNode (PRF_ARG1 (arg_node));
         } else {
@@ -2782,8 +2849,7 @@ SCSprf_min_VxV (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_lege( node *arg_node, info *arg_info)
  * If (X == Y), then TRUE.
- * Implements SCSprf_ge_SxS, SCSprf_ge_VxV, SCSprf_le_SxS, SCSprf_ge_VxV,
- *            SCSprf_eq_SxS, SCSprf_eq_VxV
+ * Implements SCSprf_ge_SxS, SCSprf_ge_VxV, SCSprf_le_SxS, SCSprf_ge_VxV
  *
  *****************************************************************************/
 node *
@@ -2794,12 +2860,12 @@ SCSprf_lege (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
     if (SCSisMatchPrfargs (arg_node, arg_info)) {
+        // (x <prf> x)  
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
-    }
-
-    if ((NULL == res)
-        && SCSisRelationalOnDyadicFn (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
-                                      PRF_ARG2 (arg_node), arg_info, &z)) {
+    } else if ( ((TULSgetPrfFamilyName (PRF_PRF (arg_node)) == F_ge_SxS)
+             && SCScanOptGEOnDyadicFn (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), &z))
+             || (TULSgetPrfFamilyName ((PRF_PRF (arg_node)) == F_le_SxS)
+                && canOptLEOnDyadicFn (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), &z)) ) {
         if (z) {
             res = SCSmakeTrue (PRF_ARG1 (arg_node));
         } else {
@@ -2835,11 +2901,10 @@ SCSprf_nlege (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     if (SCSisMatchPrfargs (arg_node, arg_info)) {
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
-    }
-
-    if ((NULL == res)
-        && SCSisRelationalOnDyadicFn (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
-                                      PRF_ARG2 (arg_node), arg_info, &z)) {
+    } else if ( ((TULSgetPrfFamilyName (PRF_PRF (arg_node)) == F_lt_SxS)
+             && canOptLTOnDyadicFn (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), &z))
+             || (TULSgetPrfFamilyName ((PRF_PRF (arg_node)) == F_gt_SxS)
+                && canOptGTOnDyadicFn (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), &z)) ) {
         if (z) {
             res = SCSmakeTrue (PRF_ARG1 (arg_node));
         } else {
@@ -2861,11 +2926,13 @@ SCSprf_nlege (node *arg_node, info *arg_info)
 node *
 SCSprf_eq_SxS (node *arg_node, info *arg_info)
 {
-    node *res;
+    node *res=NULL;
 
     DBUG_ENTER ();
 
-    res = SCSprf_lege (arg_node, arg_info);
+    if (SCSisMatchPrfargs (arg_node, arg_info)) {
+        res = SCSmakeTrue (PRF_ARG1 (arg_node));
+    }
 
     if ((NULL == res) && isNotEqualPrf (arg_node, arg_info)) {
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
@@ -2924,11 +2991,13 @@ SCSprf_eq_VxS (node *arg_node, info *arg_info)
 node *
 SCSprf_eq_VxV (node *arg_node, info *arg_info)
 {
-    node *res;
+    node *res=NULL;
 
     DBUG_ENTER ();
 
-    res = SCSprf_lege (arg_node, arg_info);
+    if (SCSisMatchPrfargs (arg_node, arg_info)) {
+        res = SCSmakeTrue (PRF_ARG1 (arg_node));
+    }
 
     if ((NULL == res) && isNotEqualPrf (arg_node, arg_info)) {
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
@@ -3575,8 +3644,7 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     }
 
     if ((NULL == res)
-        && SCSisRelationalOnDyadicFn (F_lt_SxS, PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
-                                      arg_info, &flg)) {
+        && canOptLTOnDyadicFn (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), &flg)) {
         if (flg) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
@@ -3772,8 +3840,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     }
 
     if ((NULL == res)
-        && SCSisRelationalOnDyadicFn (F_le_SxS, PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
-                                      arg_info, &flg)) {
+        && canOptLEOnDyadicFn (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), &flg)) {
         if (flg) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
@@ -3910,8 +3977,7 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
     }
 
     if ((NULL == res)
-        && SCSisRelationalOnDyadicFn (F_le_VxV, PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
-                                      arg_info, &flg)) {
+        && canOptLEOnDyadicFn (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), &flg)) {
         if (flg) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));

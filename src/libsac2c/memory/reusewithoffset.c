@@ -84,35 +84,6 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 
-#ifdef DEADCODE // poop. hard to compute abs().
-/** <!--********************************************************************-->
- *
- * @fn  bool isGE( node *arg1, node *arg2)
- * @brief performs abs( arg1) >= arg2
- *
- * @param arg1 and arg2 are numeric
- *
- * @return TRUE ONLY if we know for sure, return FALSE.
- *         I.e., caller must NOT make any assumption about arguments
- *         when we return FALSE - it could just mean Do Not Know!
- *
- *****************************************************************************/
-static bool
-isGEabs (node *arg1, node *arg2)
-{
-    bool z = FALSE;
-    bool relres = FALSE;
-
-    DBUG_ENTER ();
-
-    if (SCSisRelationalOnDyadicFn (F_ge_SxS, arg1, arg2, NULL, &relres)) {
-        z = relres;
-    }
-
-    DBUG_RETURN (info);
-}
-#endif // DEADCODE  // poop. hard to compute abs().
-
 /** <!--********************************************************************-->
  *
  * @fn node *RWOidentifyNoopArray( node *wl)
