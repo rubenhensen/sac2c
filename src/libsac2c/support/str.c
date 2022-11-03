@@ -1092,8 +1092,9 @@ STRreplaceSpecialCharacters (const char *name)
 
 /**
  * @brief Converts its argument into a string that can be safely used when
- *        printing C code. It does so by replacing all occurences of '"'
- *        by '\"' and of '\' by '\\'.
+ *        printing C code. It does so by replacing all occurrences of '"'
+ *        by '\"' , all occurrences of '\' by '\\', and all occurrences of
+ *        '\n' by '\\n' .
  *
  * @param string a string.
  * @return a safe string
@@ -1121,6 +1122,9 @@ STRstring2SafeCEncoding (const char *string)
                 break;
             case '\\':
                 tmp += sprintf (tmp, "\\\\");
+                break;
+            case '\n':
+                tmp += sprintf (tmp, "\\n");
                 break;
             default:
                 *tmp = string[i];

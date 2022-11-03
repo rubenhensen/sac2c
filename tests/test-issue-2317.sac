@@ -1,0 +1,19 @@
+// runtime type error was generated wrongly.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS +=
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -noprelude -v0
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>./$<
+
+noinline
+int foo (int x)
+{
+   return (_eq_SxS_(x,0) ? _sel_VxA_([1], [1]) : 0 );
+}
+
+int main()
+{
+   return foo (42);
+}
