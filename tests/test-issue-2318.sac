@@ -9,5 +9,5 @@
 
 int main()
 {
-    return _reshape_VxA_ (_take_SxV_ (0, []), 42);
+    return _reshape_VxA_ (_take_SxV_ (0, []), 0);
 }
