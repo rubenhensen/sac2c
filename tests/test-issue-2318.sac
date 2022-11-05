@@ -1,0 +1,13 @@
+// SCCF failed on 0 take []
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS +=
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -noprelude -v0
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>./$<
+
+int main()
+{
+    return _reshape_VxA_ (_take_SxV_ (0, []), 0);
+}

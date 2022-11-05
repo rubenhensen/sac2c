@@ -1798,9 +1798,9 @@ TCtakeDropExprs (int takecount, size_t dropcount, node *exprs)
     DBUG_ENTER ();
     DBUG_ASSERT (takecount >= 0,
                  "TCtakeDropExprs take or drop count < 0");
-    DBUG_ASSERT (N_exprs == NODE_TYPE (exprs),
-                 "TCtakeDropExprs disappointed at not getting N_exprs");
     if (0 != takecount) {
+        DBUG_ASSERT ((exprs != NULL) && (N_exprs == NODE_TYPE (exprs)),
+                    "TCtakeDropExprs disappointed at not getting N_exprs");
         /* This does too much work, but I'm not sure of a nice way to fix it. */
         res = DUPdoDupTree (TCgetNthExprsNext (dropcount, exprs));  /* do drop */
         tail = TCgetNthExprsNext ((size_t)MATHmax (0, takecount - 1), res); /* do take */

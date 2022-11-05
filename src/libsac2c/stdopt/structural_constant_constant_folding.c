@@ -426,6 +426,7 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
                   PMarray (1, PMAgetNode (&arg2array), 1, PMskip (0)));
 
     if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
+        DBUG_PRINT ("checking _take_SxV_ (%s, %s)...", ID_NAME (arg1), ID_NAME (arg2));
         /* Case 1 */
         if ((NULL != AVIS_SHAPE (ID_AVIS (arg2)))
             && (PMmatchFlat (pat2, AVIS_SHAPE (ID_AVIS (arg2))))) {
@@ -439,6 +440,7 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
 
         /* Case 2 */
         if ((NULL == res) && (PMmatchFlatSkipExtrema (pat4, arg_node))) {
+            DBUG_PRINT ("  ...%s is constant", ID_NAME (arg1));
             argxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2array));
             takecount = COconst2Int (con);
             resxrho = abs (takecount);
