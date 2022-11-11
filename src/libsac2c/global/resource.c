@@ -407,16 +407,13 @@ SetupConfigMacros (void)
     DBUG_ENTER ();
 
     buf = SBUFcreate ( 1024);
-    buf = SBUFprintf (buf, "-DSACRC_TARGET='\"%s\"' ", global.target_name);
 
     for (i = 0; resource_table[i].name[0] != '\0'; i++) {
         switch (resource_table[i].tag) {
         case str:
-            buf = SBUFprintf (buf, "-DSACRC_%s='\"%s\"' ", resource_table[i].name,
-                    *((char **)(resource_table[i].store)));
             break;
         case num:
-            buf = SBUFprintf (buf, "-DSACRC_%s=%d ", resource_table[i].name,
+            buf = SBUFprintf (buf, "-DSAC_RC_%s=%d ", resource_table[i].name,
                     *((int *)(resource_table[i].store)));
             break;
         default:
