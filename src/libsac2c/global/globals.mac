@@ -1310,6 +1310,8 @@ GLOBAL (target_list_t *, target_list, NULL, xfree_dummy, )
  */
 
 GLOBAL (configuration_t, config, config_init, xfree_configuration, )
+GLOBAL (const char *, config_macros, NULL, xfree_dummy, )
+
 /*
  * This global variable permanently stores the desired configuration
  * which is read from the sac2crc file.

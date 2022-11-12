@@ -43,8 +43,12 @@ CreateInfoMacroCommandLine (void)
 
     DBUG_ENTER ();
 
-    res = STRcatn (2 * 3 + 1, " ", "-DSAC_BUILD_STYLE=", build_style, " ",
-                   "-DSAC_BACKEND_", global.backend_string[global.backend], " ");
+    res = STRcatn (5 * 3 + 1, " ",
+                   "-DSAC_BUILD_STYLE=", build_style, " ",
+                   "-DSAC_BACKEND_", global.backend_string[global.backend], " ",
+                   "-DSAC_BACKEND_STRING='\"", global.backend_string[global.backend], "\"' ",
+                   "-DSAC_TARGET_", global.target_name, " ",
+                   "-DSAC_TARGET_STRING='\"", global.target_name, "\"' ");
 
     DBUG_RETURN (res);
 }
@@ -62,10 +66,11 @@ SPdoRunPreProcessor (node *syntax_tree)
     /* The sed command is needed to remove a pragma that is inserted by the
        Apple GCC 3.3 on Panther   */
 
-    SYScall ("%s %s %s %s >'%s'/source.tmp && sed '/^#pragma GCC set_debug_pwd/d' < "
+    SYScall ("%s %s %s %s %s >'%s'/source.tmp && sed '/^#pragma GCC set_debug_pwd/d' < "
              "'%s'/source.tmp > '%s'/source",
              (pathname == NULL) ? global.config.cpp_stdin : global.config.cpp_file,
-             define, (global.cpp_options == NULL) ? " " : global.cpp_options,
+             define, global.config_macros, 
+             (global.cpp_options == NULL) ? " " : global.cpp_options,
              (pathname == NULL) ? " " : pathname, global.tmp_dirname, global.tmp_dirname,
              global.tmp_dirname);
 

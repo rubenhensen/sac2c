@@ -205,6 +205,7 @@ CCTperformTask (ccm_task_t task)
     SBUFprintf (cppflags_buf, " %s", global.cppflags);
     SBUFprintf (cppflags_buf, " %s", global.config.sacincludes);
     SBUFprintf (cppflags_buf,
+                " -DSAC_TARGET_%s"
                 " -DSAC_TARGET_STRING=\\\"%s\\\""
                 " -DSAC_MODEXT_STRING=\\\"%s\\\""
                 " -DSAC_TARGET_ENV_STRING=\\\"%s\\\""
@@ -216,6 +217,7 @@ CCTperformTask (ccm_task_t task)
                 " -DSAC_DO_RTSPEC=%d"
                 " -DSAC_DO_CUDA_ALLOC=SAC_CA_%s"
                 " -DSAC_DO_CUDA_SYNC=%d",
+                global.target_name, 
                 global.target_name, global.config.modext, global.config.target_env,
                 global.config.sbi, global.config.rc_method,
                 global.backend_string[global.backend], global.config.mt_lib,

@@ -72,6 +72,7 @@
 #include "globals.h"
 #include "ctinfo.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "memory.h"
 #include "sacdirs.h"
 #include "filemgr.h"
@@ -381,6 +382,47 @@ PrintResources (void)
             CTIabort (EMPTY_LOC, "Internal data structure resource_table corrupted");
         }
     }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  void SetupConfigMacros()
+ *
+ * description:
+ *  This function puts all resources into string which the preprocessor
+ *  can use to preset SACRC-macros.
+ *
+ ******************************************************************************/
+
+static
+void
+SetupConfigMacros (void)
+{
+    int i;
+    str_buf *buf=NULL;
+
+    DBUG_ENTER ();
+
+    buf = SBUFcreate ( 1024);
+
+    for (i = 0; resource_table[i].name[0] != '\0'; i++) {
+        switch (resource_table[i].tag) {
+        case str:
+            break;
+        case num:
+            buf = SBUFprintf (buf, "-DSAC_RC_%s=%d ", resource_table[i].name,
+                    *((int *)(resource_table[i].store)));
+            break;
+        default:
+            CTIabort (EMPTY_LOC, "Internal data structure resource_table corrupted");
+        }
+    }
+
+    global.config_macros = SBUF2strAndFree (&buf);
+    DBUG_PRINT ("global.config_macros is set to: %s\n", global.config_macros);
 
     DBUG_RETURN ();
 }
@@ -896,6 +938,8 @@ RSCevaluateConfiguration ()
 
     // This target gets evaluated twice if print_tagets is active.
     EvaluateConfig(global.target_name,global.target_list);
+
+    SetupConfigMacros ();
 
     if (global.print_resources) {
         // This is the scenario for the user printing ONE target's data.

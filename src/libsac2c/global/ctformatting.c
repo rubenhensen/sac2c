@@ -143,6 +143,7 @@ CTFcheckHeaderConsistency (char *header)
         initialized = true; // Avoid initializing again for no reason
         CTIabort (EMPTY_LOC, "%s", error_msg);
     }
+    DBUG_RETURN ();
 }
 
 void
