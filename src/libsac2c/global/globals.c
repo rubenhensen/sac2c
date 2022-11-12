@@ -641,7 +641,7 @@ get_terminal_size (void)
     if (!isatty (STDERR_FILENO))
         // If we are writing to a file, return a length of 0, which in turn
         // disables line wrapping to avoid unexpected issues.
-        return 0;  
+        return 0;
 
     ioctl (STDERR_FILENO, TIOCGWINSZ, &ws);
     return (unsigned short)(ws.ws_col > 4 ? ws.ws_col - 4 : 1);
@@ -681,7 +681,7 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname)
     global.cwd = getcwd (0, 0);
     if (!global.cwd)
         CTIabort (EMPTY_LOC, "getcwd: %s", strerror (errno));
-    
+
     global.cti_primary_header_format = STRcpy (CTF_DEFAULT_FIRST_LINE_HEADER);
     global.cti_continuation_header_format = STRcpy (CTF_DEFAULT_MULTI_LINE_HEADER);
 

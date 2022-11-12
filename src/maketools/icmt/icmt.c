@@ -309,7 +309,7 @@ CreateTmpFileName (void)
 {
     char *tmp_file;
 
-#ifdef HAVE_MKDTEMP
+#if HAVE_MKDTEMP
     /* mkdtemp is safer than tempnam and recommended */
     /* on linux/bsd platforms.                       */
 

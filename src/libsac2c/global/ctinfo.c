@@ -514,7 +514,7 @@ CTIerror(const struct location loc, const char *format, ...)
  *
  *          This allows preparing error messages in advance and activating
  *          them when needed.
- * 
+ *
  *          Afterwards, an abort can be triggered with CTIabortOnError ();
  *
  *   @param line    line number to use in error message
@@ -604,10 +604,10 @@ CTIerrorContinued (const char *format, ...)
  *
  ******************************************************************************/
 void
-CTIerrorEnd (void) 
+CTIerrorEnd (void)
 {
     str_buf *message;
-    
+
     DBUG_ENTER ();
 
     PRINT_MESSAGE_END ();
@@ -789,7 +789,7 @@ CTIabortOnError ()
 /** <!--********************************************************************-->
  *
  * @fn void CTIwarn( const struct location loc, const char *format, ...)
- * 
+ *
  *   @brief   Produces a warning message with the file name, line number and
  *            column if they are available.
  *
