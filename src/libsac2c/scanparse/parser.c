@@ -1271,6 +1271,7 @@ token_is_reserved (struct token *tok)
                    || token_is_keyword (tok, PROPAGATE) || token_is_keyword (tok, ALL)
                    || token_is_keyword (tok, EXCEPT)
                    || token_is_keyword (tok, CUDALINKNAME)
+                   || token_is_keyword (tok, GPUMEM)
                    || token_is_keyword (tok, LINKWITH) || token_is_keyword (tok, LINKOBJ)
                    || token_is_keyword (tok, LINKSIGN)
                    || token_is_keyword (tok, REFCOUNTING)
@@ -4879,6 +4880,33 @@ handle_pragmas (struct parser *parser, enum pragma_type ptype)
             CHECK_PRAGMA (REFCOUNTING, ptype != pragma_fundec,
                           PRAGMA_REFCOUNTING (pragmas) != NULL);
             PRAGMA_REFCOUNTING (pragmas) = nums;
+        } else if (token_is_keyword (tok, GPUMEM)) {
+            node *nums;
+
+            if (parser_expect_tval (parser, tv_lsquare))
+                parser_get_token (parser);
+            else {
+                parse_error = true;
+                continue;
+            }
+
+            if (error_mark_node == (nums = handle_num_list (parser))) {
+                parser_get_until_tval (parser, tv_rsquare);
+                parse_error = true;
+                continue;
+            }
+
+            if (parser_expect_tval (parser, tv_rsquare))
+                parser_get_token (parser);
+            else {
+                free_node (nums);
+                parse_error = true;
+                continue;
+            }
+
+            CHECK_PRAGMA (GPUMEM, ptype != pragma_fundec,
+                          PRAGMA_GPUMEM (pragmas) != NULL);
+            PRAGMA_GPUMEM (pragmas) = nums;
         } else if (token_is_keyword (tok, REFCOUNTDOTS)) {
             CHECK_PRAGMA (REFCOUNTDOTS, ptype != pragma_fundec, false);
             PRAGMA_REFCOUNTDOTS (pragmas) = true;

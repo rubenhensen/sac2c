@@ -194,11 +194,14 @@ INLfundef (node *arg_node, info *arg_info)
         /*
          * Once we have finished inlining, we reset this flag to prepare the
          * inlining mechanism for subsequent applications in the optimization
-         * cycle.
+         * cycle. This was deactivated by Clemens in 2005. I assumed that this 
+         * was meant to improve optimisation performance. However, this is not
+         * the case! It needs to be left at TRUE as otherwise INLap will NOT
+         * inline that function itself!
+         * If we create a situation where further inlining is possible, we need
+         * to specifically set FUNDEF_ISINLINECOMPLETED to FALSE *prior* to calling
+         * inlining!
          */
-        /*
-        FUNDEF_ISINLINECOMPLETED( arg_node) = FALSE;
-        */
     }
 
     DBUG_RETURN (arg_node);

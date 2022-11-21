@@ -449,6 +449,14 @@
           <node name="Generator" />
         </travuser>
       </traversal>
+      <traversal id="EGF" name="Embed GPU Functions" default="sons" include="embed_gpu_functions.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Ret" />
+        </travuser>
+      </traversal>
       <traversal id="ACP" name="Annotate CUDA partitions with pragmas" default="sons" include="annotate_cuda_pragmas.h" >
         <travuser>
           <node name="With" />
@@ -5989,6 +5997,9 @@ N_tfarg :
         <flag name="IsCudaDevicefun" default="FALSE">
           <description>This is a cuda device function (called within a global kernel function).</description>
         </flag>
+        <flag name="IsGpuFunction" default="FALSE">
+          <description> This function can only be run on a GPU backend as it expects either an argument to be located on a GPU device (corresponding ARG_ISGPUMEM set!) or it returns a value that is located on a GPU (corresponding RET_GPUMEM set!). </description>
+        </flag>
         <flag name="IsWrapperfun" />
         <flag name="IsWrapperEntryfun" default="FALSE"/>
         <flag name="IsIndirectWrapperfun" default="FALSE"/>
@@ -6172,14 +6183,17 @@ N_tfarg :
         <flag name="IsPadded" />
         <flag name="IsAliasing" default="TRUE" />
         <flag name="IsRefcounted" default="TRUE" />
+        <flag name="IsGpuMem" default="FALSE">
+          <description> If true, this function argument is expected to be located on a GPU device. This implies that the function IsGpuFunction and can only be executed / used by a GPU-back-end.</description>
+        </flag>
         <flag name="HasLinksignInfo" />
 	<flag name="IsUnique" />
-  <flag name="DistMemIsUniqueLeaf" default="FALSE" >
+        <flag name="DistMemIsUniqueLeaf" default="FALSE" >
 	  <description> Indicates that this argument is unique and that it is not passed to another function. </description>
-    <phases>
-      <range from="dm_dmisef" to="dm_dmisef" />
-    </phases>
-  </flag>
+          <phases>
+            <range from="dm_dmisef" to="dm_dmisef" />
+          </phases>
+        </flag>
 	<flag name="IsInUse" default="FALSE" >
 	  <description> Used to mark unused function arguments in DeadCodeRemoval. Marked arguments are removed in signature simplification.
 	  </description>
@@ -8305,6 +8319,17 @@ N_tfarg :
             </target>
           </targets>
 	</son>
+       <son name="GpuMem" default="NULL">
+          <description>identifies ret/arg positions that expect device memory</description>
+          <targets>
+            <target mandatory="no">
+              <node name="Nums" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
 	<son name="Effect" default="NULL">
           <targets>
             <target mandatory="no">
@@ -12116,6 +12141,9 @@ N_tfarg :
 	  </description>
 	</flag>
         <flag name="IsRefcounted" default="TRUE" />
+        <flag name="IsGpuMem" default="FALSE">
+          <description> If true, this function return value is expected to be located on a GPU device. This implies that the function IsGpuFunction and can only be executed / used by a GPU-back-end.</description>
+        </flag>
         <flag name="HasLinksignInfo" />
         <flag name="IsCReturn" />
         <flag name="WasRemoved" default="FALSE" />

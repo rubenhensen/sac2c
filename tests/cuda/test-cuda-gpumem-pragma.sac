@@ -1,0 +1,23 @@
+// This tests makes sure that external functions with gpumem-pragma annotations are being 
+// transformed correctly by cuda:egf and that the subsequent memtran optimisation cycle
+// elide the complementary transfers correctly.
+
+// REQFEATURES|ENABLE_CUDA
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -t cuda -v1 -noprelude
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -bcuda:icsmem $< | $(GREP_COMMAND_OUTPUT) 'device2host' 1
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -bcuda:egf $< | $(GREP_COMMAND_OUTPUT) 'device2host' 2
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -bcuda:egf $< | $(GREP_COMMAND_OUTPUT) 'host2device' 1
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -bcuda $< | grep -A200 'MAIN::main' | $(GREP_COMMAND_OUTPUT) 'device2host' 0
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -bcuda $< | grep -A200 'MAIN::main' | $(GREP_COMMAND_OUTPUT) 'host2device' 0
+
+external int[1000], int f (int[1000] a, int[2] b);
+#pragma gpumem [0,2]
+
+int main()
+{
+   a = with {} : genarray ([1000], 0);
+   b, c = f (a, [21,42]);
+   return c;
+}
