@@ -17,12 +17,13 @@
  * INFO structure
  */
 
-enum travmode_t { RSP_default, RSP_refcnt, RSP_linksign };
+enum travmode_t { RSP_default, RSP_refcnt, RSP_linksign, RSP_gpumem };
 
 struct INFO {
     node *nums;
     node *module;
     int counter;
+    bool annotated;
     enum travmode_t travmode;
 };
 
@@ -33,6 +34,7 @@ struct INFO {
 #define INFO_MODULE(n) ((n)->module)
 #define INFO_COUNTER(n) ((n)->counter)
 #define INFO_TRAVMODE(n) ((n)->travmode)
+#define INFO_ANNOTATED(n) ((n)->annotated)
 
 /*
  * INFO functions
@@ -80,7 +82,7 @@ CheckRefReadNums (struct location loc, int size, node *nums)
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) >= size)) {
             CTIerror (loc,
-                      "Invalid argument of pragma 'readonly` or 'refcounting`: "
+                      "Invalid argument of pragma 'readonly`, 'refcounting`, or 'gpumem`: "
                       "Entry no. %d with value %d does not match a function parameter",
                       i, NUMS_VAL (tmp));
         }
@@ -149,6 +151,7 @@ InitFundefRetsForExtern (node *rets)
         DBUG_ASSERT (NODE_TYPE (rets) == N_ret, "found a non N_ret node");
 
         RET_ISREFCOUNTED (rets) = FALSE;
+        RET_ISGPUMEM (rets) = FALSE;
 
         RET_NEXT (rets) = InitFundefRetsForExtern (RET_NEXT (rets));
     }
@@ -165,6 +168,7 @@ InitFundefArgsForExtern (node *args)
         DBUG_ASSERT (NODE_TYPE (args) == N_arg, "found a non N_arg node");
 
         ARG_ISREFCOUNTED (args) = FALSE;
+        ARG_ISGPUMEM (args) = FALSE;
 
         ARG_NEXT (args) = InitFundefArgsForExtern (ARG_NEXT (args));
     }
@@ -188,6 +192,35 @@ AnnotateRefcounting (node *arg_node, info *arg_info, node *nums)
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
+    INFO_COUNTER (arg_info) = 0;
+    INFO_NUMS (arg_info) = NULL;
+    INFO_TRAVMODE (arg_info) = RSP_default;
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+AnnotateGpuMem (node *arg_node, info *arg_info, node *nums)
+{
+    DBUG_ENTER ();
+
+    INFO_COUNTER (arg_info) = 0;
+    INFO_ANNOTATED (arg_info) = FALSE;
+    INFO_NUMS (arg_info) = nums;
+    INFO_TRAVMODE (arg_info) = RSP_gpumem;
+
+    if (FUNDEF_RETS (arg_node) != NULL) {
+        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+    }
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    FUNDEF_ISGPUFUNCTION (arg_node) = INFO_ANNOTATED (arg_info);
+    DBUG_PRINT ("setting FUNDEF_ISGPUFUNCTION () to %s",
+                 (INFO_ANNOTATED (arg_info)? "TRUE" : "FALSE"));
+
+    INFO_ANNOTATED (arg_info) = FALSE;
     INFO_COUNTER (arg_info) = 0;
     INFO_NUMS (arg_info) = NULL;
     INFO_TRAVMODE (arg_info) = RSP_default;
@@ -228,6 +261,14 @@ RSPret (node *arg_node, info *arg_info)
         }
 
         INFO_COUNTER (arg_info)++;
+    } else if (INFO_TRAVMODE (arg_info) == RSP_gpumem) {
+        if (TCnumsContains (INFO_COUNTER (arg_info), INFO_NUMS (arg_info))) {
+
+            RET_ISGPUMEM (arg_node) = TRUE;
+            INFO_ANNOTATED (arg_info) = TRUE;
+        }
+
+        INFO_COUNTER (arg_info)++;
     } else if (INFO_TRAVMODE (arg_info) == RSP_linksign) {
         RET_LINKSIGN (arg_node) = NUMS_VAL (INFO_NUMS (arg_info));
         RET_HASLINKSIGNINFO (arg_node) = TRUE;
@@ -251,6 +292,14 @@ RSParg (node *arg_node, info *arg_info)
         if (TCnumsContains (INFO_COUNTER (arg_info), INFO_NUMS (arg_info))) {
 
             ARG_ISREFCOUNTED (arg_node) = TRUE;
+        }
+
+        INFO_COUNTER (arg_info)++;
+    } else if (INFO_TRAVMODE (arg_info) == RSP_gpumem) {
+        if (TCnumsContains (INFO_COUNTER (arg_info), INFO_NUMS (arg_info))) {
+
+            ARG_ISGPUMEM (arg_node) = TRUE;
+            INFO_ANNOTATED (arg_info) = TRUE;
         }
 
         INFO_COUNTER (arg_info)++;
@@ -405,6 +454,17 @@ RSPfundef (node *arg_node, info *arg_info)
               = AnnotateRefcounting (arg_node, arg_info, PRAGMA_REFCOUNTING (pragma));
 
             PRAGMA_REFCOUNTING (pragma) = FREEdoFreeTree (PRAGMA_REFCOUNTING (pragma));
+        }
+
+        if (PRAGMA_GPUMEM (pragma) != NULL) {
+            DBUG_PRINT ("...processing gpumem pragma");
+            CheckRefReadNums (NODE_LOCATION (arg_node), PRAGMA_NUMPARAMS (pragma),
+                              PRAGMA_GPUMEM (pragma));
+
+            arg_node
+              = AnnotateGpuMem (arg_node, arg_info, PRAGMA_GPUMEM (pragma));
+
+            PRAGMA_GPUMEM (pragma) = FREEdoFreeTree (PRAGMA_GPUMEM (pragma));
         }
 
         if (PRAGMA_REFCOUNTDOTS (pragma)) {

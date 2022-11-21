@@ -1051,6 +1051,11 @@ SUBPHASE (icsmem, "CUDA Insert CUDA memory transfer primitives for cudasts (non-
           ICSMEMdoInsertCudastMemtran,
           (global.optimize.doexpar && global.backend == BE_cuda), cuda)
 
+SUBPHASE (egf, "Embedding GPU functions", EGFdoEmbedGpuFunctions,
+          (global.backend == BE_cuda), cuda)
+
+SUBPHASE (gfinl, "Applying inlining for GPU functions", INLdoInlining, global.optimize.doinl, cuda)
+
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, ALWAYS, cuda)
 
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, ALWAYS, cuda)
