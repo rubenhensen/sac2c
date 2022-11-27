@@ -197,10 +197,14 @@ ACUWLfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* During the main traversal, we only look at non-lac functions */
-    if (!FUNDEF_ISLACFUN (arg_node) && !FUNDEF_ISSTICKY (arg_node)) {
+    if (!FUNDEF_ISLACFUN (arg_node)
+        && (!FUNDEF_ISSTICKY (arg_node) || FUNDEF_ISPROVIDED (arg_node)
+                                        || FUNDEF_ISEXPORTED (arg_node))) {
         /* Functions in prelude are all sticky and we do not want
-         * cudarize withloops in those functions */
+         * cudarize withloops in those functions; however, we do want
+         * to cudarize exported and provided functions */
         INFO_FUNDEF (arg_info) = arg_node;
+        DBUG_PRINT ("examining function %s...", FUNDEF_NAME (arg_node));
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
 

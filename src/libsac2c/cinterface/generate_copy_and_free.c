@@ -305,8 +305,12 @@ GCFmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    INFO_COPYFILE (arg_info) = FMGRwriteOpen ("%s/sacargcopy.c", global.tmp_dirname);
-    INFO_FREEFILE (arg_info) = FMGRwriteOpen ("%s/sacargfree.c", global.tmp_dirname);
+    INFO_COPYFILE (arg_info) = FMGRwriteOpen ("%s/sacargcopy%s",
+                                              global.tmp_dirname,
+                                              global.config.ccp_cext);
+    INFO_FREEFILE (arg_info) = FMGRwriteOpen ("%s/sacargfree%s",
+                                              global.tmp_dirname,
+                                              global.config.ccp_cext);
 
     PrintFileHeader (INFO_COPYFILE (arg_info));
     PrintFileHeader (INFO_FREEFILE (arg_info));

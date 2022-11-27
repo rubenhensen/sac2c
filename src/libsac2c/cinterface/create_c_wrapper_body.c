@@ -153,7 +153,8 @@ CCWBdoCreateCWrapperBody (node *syntax_tree)
 
     info = MakeInfo ();
 
-    INFO_FILE (info) = FMGRwriteOpen ("%s/interface.c", global.tmp_dirname);
+    INFO_FILE (info) = FMGRwriteOpen ("%s/interface%s", global.tmp_dirname,
+                                      global.config.ccp_cext);
 
     PrintFileHeader (info);
 
