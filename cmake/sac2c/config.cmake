@@ -18,7 +18,7 @@
 ## CMAKE INCLUDES
 INCLUDE (CheckIncludeFiles)
 INCLUDE (CheckCSourceCompiles)
-INCLUDE (CheckFunctionExists)
+INCLUDE (CheckSymbolExists)
 INCLUDE (CheckLibraryExists)
 INCLUDE (CheckCSourceRuns)
 INCLUDE (CheckCCompilerFlag)
@@ -141,9 +141,9 @@ CHECK_INCLUDE_FILES (malloc.h HAVE_MALLOC_H)
 CHECK_INCLUDE_FILES (memory.h HAVE_MEMORY_H)
 
 # Check functions
-CHECK_FUNCTION_EXISTS (strtok HAVE_STRTOK)
-CHECK_FUNCTION_EXISTS (strrchr HAVE_STRRCHR)
-CHECK_FUNCTION_EXISTS (mkdtemp HAVE_MKDTEMP)
+CHECK_SYMBOL_EXISTS (strtok "string.h" HAVE_STRTOK)
+CHECK_SYMBOL_EXISTS (strrchr "string.h" HAVE_STRRCHR)
+CHECK_SYMBOL_EXISTS (mkdtemp "stdlib.h;unistd.h" HAVE_MKDTEMP)
 
 # Check if we have clock_gettime and whether we need -lrt
 LIB_NEEDED ("rt" "clock_gettime" "
@@ -336,7 +336,7 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   MESSAGE (NOTICE   "PHM has been disabled for Darwin-based systems!")
 ENDIF ()
 IF (PHM)
-  CHECK_FUNCTION_EXISTS ("sbrk" HAVE_SBRK)
+  CHECK_SYMBOL_EXISTS ("sbrk" "unistd.h" HAVE_SBRK)
   IF (HAVE_SBRK)
     SET (ENABLE_PHM ON)
     SET (CAN_USE_PHM "1")
@@ -479,7 +479,7 @@ IF (CUDA)
 ENDIF ()
 
 # Indenting the code
-SET (CB "${PROJECT_BINARY_DIR}/cb")
+SET (CB "${PROJECT_BINARY_DIR}/cb${CMAKE_EXECUTABLE_SUFFIX}")
 FIND_PROGRAM (INDENT_EXEC
   NAME        indent  gindent
   HINTS       ENV PATH

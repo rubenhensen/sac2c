@@ -13,4 +13,6 @@ extern void SYSstopTracking (void);
 
 extern int SYSexec_and_read_output (char *cmd, char **out);
 
+extern char *SYSsanitizePath (const char *);
+
 #endif /* _SYSTEM_H_ */

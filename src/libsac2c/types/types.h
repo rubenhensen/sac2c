@@ -714,6 +714,7 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (TREEPATH, treepath, char *, str)                                       \
     DEF_RESOURCE (RMDIR, rmdir, char *, str)                                             \
     DEF_RESOURCE (MKDIR, mkdir, char *, str)                                             \
+    DEF_RESOURCE (SED, sed, char *, str)                                                 \
     DEF_RESOURCE (TREE_OUTPUTDIR, tree_outputdir, char *, str)                           \
     DEF_RESOURCE (LIB_OUTPUTDIR, lib_outputdir, char *, str)                             \
     DEF_RESOURCE (SACINCLUDES, sacincludes, char *, str)                                 \

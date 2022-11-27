@@ -147,6 +147,9 @@
  *  RMDIR           RMDIR specifies how to remove a directory including its contents.
  *                  Usage: <RMDIR> <directory>
  *
+ *  SED             SED specifies an external tool to perform string manipulations.
+ *                  Usage: <SED> /<pattern>/<replacement>/<flags>
+ *
  *  CPP_STDIN       CPP_STDIN specifies how to call the C preprocessor if SAC code
  *                  is to be read from stdin. The preprocessed code must be sent
  *                  to stdout.
@@ -384,6 +387,7 @@ target default:
 /* SBI-independent resources */
 RMDIR            :=  "rm -rf"
 MKDIR            :=  "mkdir -p"
+SED              :=  "sed"
 
 CPP_STDIN        :=  "@CPPFILE@ -"
 CPP_FILE         :=  "@CPPFILE@"

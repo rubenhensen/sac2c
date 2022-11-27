@@ -57,22 +57,29 @@ node *
 SPdoRunPreProcessor (node *syntax_tree)
 {
     char *define;
+    char *spathname, *stmpdir;
 
     DBUG_ENTER ();
 
     global.filename = global.puresacfilename;
     define = CreateInfoMacroCommandLine ();
+    spathname = SYSsanitizePath (pathname);
+    stmpdir = SYSsanitizePath (global.tmp_dirname);
 
     /* The sed command is needed to remove a pragma that is inserted by the
        Apple GCC 3.3 on Panther   */
 
-    SYScall ("%s %s %s %s %s >'%s'/source.tmp && sed '/^#pragma GCC set_debug_pwd/d' < "
-             "'%s'/source.tmp > '%s'/source",
-             (pathname == NULL) ? global.config.cpp_stdin : global.config.cpp_file,
-             define, global.config_macros, 
+    SYScall ("%s %s %s %s %s > %s/source.tmp && %s '/^#pragma GCC set_debug_pwd/d' < "
+             "%s/source.tmp > %s/source",
+             (spathname == NULL) ? global.config.cpp_stdin : global.config.cpp_file,
+             define, global.config_macros,
              (global.cpp_options == NULL) ? " " : global.cpp_options,
-             (pathname == NULL) ? " " : pathname, global.tmp_dirname, global.tmp_dirname,
-             global.tmp_dirname);
+             (spathname == NULL) ? " " : spathname, stmpdir, global.config.sed,
+             stmpdir, stmpdir);
+
+    MEMfree (spathname);
+    MEMfree (stmpdir);
+    MEMfree (define);
 
     DBUG_RETURN (syntax_tree);
 }

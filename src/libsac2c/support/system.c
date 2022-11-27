@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief Call system command conviently
+ *
+ */
 #include <stdarg.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -29,16 +35,9 @@
 static FILE *syscalltrack = NULL;
 static bool syscalltrack_active = FALSE;
 
-/******************************************************************************
- *
- * Function:
- *   void SYSstartTracking( void)
- *
- * Description:
- *   Initiates tracking of system calls for -d gencccall option
- *
- ******************************************************************************/
-
+/**
+ * @brief Initiates tracking of system calls for -d gencccall option
+ */
 void
 SYSstartTracking (void)
 {
@@ -59,16 +58,9 @@ SYSstartTracking (void)
     DBUG_RETURN ();
 }
 
-/******************************************************************************
- *
- * Function:
- *   void SYSstopTracking( void)
- *
- * Description:
- *   Stops tracking of system calls for -d gencccall option
- *
- ******************************************************************************/
-
+ /**
+  * @briefStops tracking of system calls for -d gencccall option
+ */
 void
 SYSstopTracking (void)
 {
@@ -83,16 +75,37 @@ SYSstopTracking (void)
     DBUG_RETURN ();
 }
 
-/******************************************************************************
+/**
+ * @brief Santize path, removing blanks characters front and back, and
+ *        escaping spaces.
  *
- * Function:
- *   void TrackSystemCall( const char *call)
- *
- * Description:
- *   Reports system call to file
- *
- ******************************************************************************/
+ * @param p path
+ * @return new string
+ */
+char *
+SYSsanitizePath (const char *p)
+{
+    char *tmp, *res = NULL;
+    DBUG_ENTER ();
 
+    if (p != NULL)
+    {
+        tmp = STRcpy (p);
+        tmp = STRstrip (tmp);
+
+        // escape all spaces
+        res = STRsubstToken (tmp, " ", "\\ ");
+        MEMfree (tmp);
+    }
+
+    DBUG_RETURN (res);
+}
+
+ /**
+  * @brief Reports system call to file
+  *
+  * @param call call to print
+  */
 static void
 TrackSystemCall (const char *call)
 {
@@ -106,18 +119,14 @@ TrackSystemCall (const char *call)
     DBUG_RETURN ();
 }
 
-/******************************************************************************
+/**
+ * @brief Evaluates the given string and executes the respective system call.
+ *        If the system call fails, an error message occurs and compilation is
+ *        aborted.
  *
- * Function:
- *   void SYScall( char *format, ...)
- *
- * Description:
- *   Evaluates the given string and executes the respective system call.
- *   If the system call fails, an error message occurs and compilation is
- *   aborted.
- *
- ******************************************************************************/
-
+ * @param format string format
+ * @param ... format inputs
+ */
 void
 SYScall (char *format, ...)
 {
@@ -176,18 +185,14 @@ SYScall (char *format, ...)
     DBUG_RETURN ();
 }
 
-/******************************************************************************
+/**
+ * @brief Evaluates the given string and executes the respective system call.
+ *        In contrast to SYScall() no error message is printed upon failure but
+ *        the exit code is returned.
  *
- * Function:
- *   int SYScallNoErr( char *format, ...)
- *
- * Description:
- *   Evaluates the given string and executes the respective system call.
- *   In contrast to SYScall() no error message is printed upon failure but
- *   the exit code is returned.
- *
- ******************************************************************************/
-
+ * @param format string format
+ * @param ... format inputs
+ */
 int
 SYScallNoErr (char *format, ...)
 {
@@ -214,18 +219,15 @@ SYScallNoErr (char *format, ...)
     DBUG_RETURN (system (SBUF2strAndFree (&syscall)));
 }
 
-/******************************************************************************
+/**
+ * @brief Evaluates the given string and executes the respective system call.
+ *        If the system call fails, an error message occurs and compilation is
+ *        aborted.
  *
- * Function:
- *   int SYStest( char *format, ...)
- *
- * Description:
- *   Evaluates the given string and executes the respective system call.
- *   If the system call fails, an error message occurs and compilation is
- *   aborted.
- *
- ******************************************************************************/
-
+ * @param format string format
+ * @param ... format inputs
+ * @return status code of syscall
+ */
 int
 SYStest (char *format, ...)
 {
@@ -259,6 +261,13 @@ SYStest (char *format, ...)
     DBUG_RETURN (exit_code);
 }
 
+/**
+ * @brief evaluate command and capture the output
+ *
+ * @param cmd command to be run
+ * @param out command output
+ * @return exit status of command
+ */
 int
 SYSexec_and_read_output (char *cmd, char **out)
 {
