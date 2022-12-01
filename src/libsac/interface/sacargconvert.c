@@ -4,6 +4,11 @@
  * and SACarg objects. The interface only exists as part of 
  * sacinterface.h which lives in sac2c/include !
  */
+
+#ifndef SAC_C_EXTERN
+#define SAC_C_EXTERN extern
+#endif /* SAC_C_EXTERN */
+
 #include "sacinterface.h" // serves as superset of the own interface
 #include "runtime/essentials_h/types.h"   // byte,...
 #include "libsac/essentials/message.h"    // SAC_RuntimeError,...

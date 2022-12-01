@@ -193,6 +193,7 @@ CCWBfunbundle (node *arg_node, info *arg_info)
     size_t noargs;
     size_t norets;
     size_t pos;
+    int i;
 
     DBUG_ENTER ();
 
@@ -203,21 +204,28 @@ CCWBfunbundle (node *arg_node, info *arg_info)
        the versions to call */
     if (!FUNBUNDLE_ISXTBUNDLE (arg_node) && !FUNBUNDLE_ISSTBUNDLE (arg_node)) {
         /*
-         * function header
+         * extern declaration (needed for nvcc) and function header:
          */
-        fprintf (INFO_FILE (arg_info), "void %s(", FUNBUNDLE_EXTNAME (arg_node));
+        fprintf (INFO_FILE (arg_info), "SAC_C_EXTERN ");
+        for (i=0; i<2; i++) {
+            fprintf (INFO_FILE (arg_info), "void %s(", FUNBUNDLE_EXTNAME (arg_node));
 
-        //norets - pos + noargs > 1 ==> norets + noargs > pos + 1 
-        for (pos = 0; pos < norets; pos++) {
-            fprintf (INFO_FILE (arg_info), "void **ret%zu%s", pos,
-                     (norets + noargs > pos + 1) ? ", " : "");
-        }
-        for (pos = 0; pos < noargs; pos++) {
-            fprintf (INFO_FILE (arg_info), "void *arg%zu%s", pos,
-                     (noargs > pos + 1) ? ", " : "");
-        }
+            //norets - pos + noargs > 1 ==> norets + noargs > pos + 1 
+            for (pos = 0; pos < norets; pos++) {
+                fprintf (INFO_FILE (arg_info), "void **ret%zu%s", pos,
+                         (norets + noargs > pos + 1) ? ", " : "");
+            }
+            for (pos = 0; pos < noargs; pos++) {
+                fprintf (INFO_FILE (arg_info), "void *arg%zu%s", pos,
+                         (noargs > pos + 1) ? ", " : "");
+            }
 
-        fprintf (INFO_FILE (arg_info), ")\n{\n");
+            fprintf (INFO_FILE (arg_info), ")");
+            if (i==0)
+                fprintf (INFO_FILE (arg_info), ";\n");
+            else
+                fprintf (INFO_FILE (arg_info), "\n{\n");
+        }
 
         /*
          * allocate arg descriptors and declare ret descriptors

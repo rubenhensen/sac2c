@@ -1,3 +1,7 @@
+#ifndef SAC_C_EXTERN
+#define SAC_C_EXTERN extern
+#endif /* SAC_C_EXTERN */
+
 /* Public stuff */
 #include "sacinterface.h"
 
