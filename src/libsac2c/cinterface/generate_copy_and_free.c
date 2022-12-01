@@ -138,10 +138,11 @@ PrintFreeHead (FILE *file)
 {
     DBUG_ENTER ();
 
-    fprintf (file, "extern void SACARGfreeDataInternal( int btype, void *data);\n"
+    fprintf (file, "SAC_C_EXTERN void SACARGfreeDataInternal( int btype, void *data);\n"
                    "\n");
 
-    fprintf (file, "void SACARGfreeDataUdt( int btype, void *data)\n"
+    fprintf (file, "SAC_C_EXTERN void SACARGfreeDataUdt( int btype, void *data);\n"
+                   "void SACARGfreeDataUdt( int btype, void *data)\n"
                    "{ \n"
                    "  switch( btype) {\n");
 
@@ -168,10 +169,11 @@ PrintCopyHead (FILE *file)
     DBUG_ENTER ();
 
     fprintf (file,
-             "extern void *SACARGcopyDataInternal( int btype, int size, void *data);\n"
+             "SAC_C_EXTERN void *SACARGcopyDataInternal( int btype, int size, void *data);\n"
              "\n");
 
-    fprintf (file, "void *SACARGcopyDataUdt( int btype, int size, void *data)\n"
+    fprintf (file, "SAC_C_EXTERN void *SACARGcopyDataUdt( int btype, int size, void *data);\n"
+                   "void *SACARGcopyDataUdt( int btype, int size, void *data)\n"
                    "{\n"
                    "  void *result = (void *) 0;\n"
                    "\n"
