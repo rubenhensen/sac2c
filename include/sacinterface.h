@@ -22,7 +22,7 @@ typedef struct SAC_SACARG SACarg;
  *
  * @return dimensionality
  ******************************************************************************/
-extern int SACARGgetDim (SACarg *arg);
+SAC_C_EXTERN int SACARGgetDim (SACarg *arg);
 
 /** <!-- ****************************************************************** -->
  * @brief Returns the shape of the given argument at the given position.
@@ -32,7 +32,7 @@ extern int SACARGgetDim (SACarg *arg);
  *
  * @return shape
  ******************************************************************************/
-extern int SACARGgetShape (SACarg *arg, int pos);
+SAC_C_EXTERN int SACARGgetShape (SACarg *arg, int pos);
 
 /** <!-- ****************************************************************** -->
  * @brief Returns the basetype of the given argument.
@@ -41,7 +41,7 @@ extern int SACARGgetShape (SACarg *arg, int pos);
  *
  * @return basetype
  ******************************************************************************/
-extern int SACARGgetBasetype (SACarg *arg);
+SAC_C_EXTERN int SACARGgetBasetype (SACarg *arg);
 
 /** <!-- ****************************************************************** -->
  * @brief Returns a new reference to the given argument. This can be used
@@ -52,7 +52,7 @@ extern int SACARGgetBasetype (SACarg *arg);
  *
  * @return new SACarg containing the same data
  ******************************************************************************/
-extern SACarg *SACARGnewReference (SACarg *arg);
+SAC_C_EXTERN SACarg *SACARGnewReference (SACarg *arg);
 
 /** <!-- ****************************************************************** -->
  * @brief Converts a given SACarg datastructure into a C vector of the
@@ -64,11 +64,11 @@ extern SACarg *SACARGnewReference (SACarg *arg);
  *
  * @return pointer to contained data
  ******************************************************************************/
-extern int *SACARGconvertToIntArray (SACarg *arg);
-extern double *SACARGconvertToDoubleArray (SACarg *arg);
-extern float *SACARGconvertToFloatArray (SACarg *arg);
-extern int *SACARGconvertToBoolArray (SACarg *arg);
-extern char *SACARGconvertToCharArray (SACarg *arg);
+SAC_C_EXTERN int *SACARGconvertToIntArray (SACarg *arg);
+SAC_C_EXTERN double *SACARGconvertToDoubleArray (SACarg *arg);
+SAC_C_EXTERN float *SACARGconvertToFloatArray (SACarg *arg);
+SAC_C_EXTERN int *SACARGconvertToBoolArray (SACarg *arg);
+SAC_C_EXTERN char *SACARGconvertToCharArray (SACarg *arg);
 
 /** <!-- ****************************************************************** -->
  * @brief Converts a given C data vector into a SACarg structure.
@@ -85,11 +85,11 @@ extern char *SACARGconvertToCharArray (SACarg *arg);
  *
  * @return SACarg structure
  ******************************************************************************/
-extern SACarg *SACARGconvertFromIntPointer (int *data, int dim, ...);
-extern SACarg *SACARGconvertFromDoublePointer (double *data, int dim, ...);
-extern SACarg *SACARGconvertFromFloatPointer (float *data, int dim, ...);
-extern SACarg *SACARGconvertFromBoolPointer (int *data, int dim, ...);
-extern SACarg *SACARGconvertFromCharPointer (char *data, int dim, ...);
+SAC_C_EXTERN SACarg *SACARGconvertFromIntPointer (int *data, int dim, ...);
+SAC_C_EXTERN SACarg *SACARGconvertFromDoublePointer (double *data, int dim, ...);
+SAC_C_EXTERN SACarg *SACARGconvertFromFloatPointer (float *data, int dim, ...);
+SAC_C_EXTERN SACarg *SACARGconvertFromBoolPointer (int *data, int dim, ...);
+SAC_C_EXTERN SACarg *SACARGconvertFromCharPointer (char *data, int dim, ...);
 
 /** <!-- ****************************************************************** -->
  * @brief Converts a given C vector into a SACarg data structure.
@@ -108,11 +108,11 @@ extern SACarg *SACARGconvertFromCharPointer (char *data, int dim, ...);
  *
  * @return corresponding SACarg structure
  ******************************************************************************/
-extern SACarg *SACARGconvertFromIntPointerVect (int *data, int dim, int *shape);
-extern SACarg *SACARGconvertFromDoublePointerVect (double *data, int dim, int *shape);
-extern SACarg *SACARGconvertFromFloatPointerVect (float *data, int dim, int *shape);
-extern SACarg *SACARGconvertFromBoolPointerVect (int *data, int dim, int *shape);
-extern SACarg *SACARGconvertFromCharPointerVect (char *data, int dim, int *shape);
+SAC_C_EXTERN SACarg *SACARGconvertFromIntPointerVect (int *data, int dim, int *shape);
+SAC_C_EXTERN SACarg *SACARGconvertFromDoublePointerVect (double *data, int dim, int *shape);
+SAC_C_EXTERN SACarg *SACARGconvertFromFloatPointerVect (float *data, int dim, int *shape);
+SAC_C_EXTERN SACarg *SACARGconvertFromBoolPointerVect (int *data, int dim, int *shape);
+SAC_C_EXTERN SACarg *SACARGconvertFromCharPointerVect (char *data, int dim, int *shape);
 
 /** <!-- ****************************************************************** -->
  * @brief Converts a scalar C value into an SACarg. The resulting SACarg
@@ -122,11 +122,11 @@ extern SACarg *SACARGconvertFromCharPointerVect (char *data, int dim, int *shape
  *
  * @return corresponding SACarg structure
  ******************************************************************************/
-extern SACarg *SACARGconvertFromIntScalar (int value);
-extern SACarg *SACARGconvertFromDoubleScalar (double value);
-extern SACarg *SACARGconvertFromFloatScalar (float value);
-extern SACarg *SACARGconvertFromBoolScalar (int value);
-extern SACarg *SACARGconvertFromCharScalar (char value);
+SAC_C_EXTERN SACarg *SACARGconvertFromIntScalar (int value);
+SAC_C_EXTERN SACarg *SACARGconvertFromDoubleScalar (double value);
+SAC_C_EXTERN SACarg *SACARGconvertFromFloatScalar (float value);
+SAC_C_EXTERN SACarg *SACARGconvertFromBoolScalar (int value);
+SAC_C_EXTERN SACarg *SACARGconvertFromCharScalar (char value);
 
 /** <!-- ****************************************************************** -->
  * @brief Converts the given void pointer into an external SACarg with
@@ -138,7 +138,7 @@ extern SACarg *SACARGconvertFromCharScalar (char value);
  *
  * @return
  ******************************************************************************/
-extern SACarg *SACARGconvertFromVoidPointer (int basetype, void *data);
+SAC_C_EXTERN SACarg *SACARGconvertFromVoidPointer (int basetype, void *data);
 
 /** <!-- ****************************************************************** -->
  * @brief Converts an external SACarg with the given basetype into a
@@ -149,14 +149,14 @@ extern SACarg *SACARGconvertFromVoidPointer (int basetype, void *data);
  *
  * @return
  ******************************************************************************/
-extern void *SACARGconvertToVoidPointer (int basetype, SACarg *arg);
+SAC_C_EXTERN void *SACARGconvertToVoidPointer (int basetype, SACarg *arg);
 
 #define EXTERN_DECL(type, alias)                                                         \
-    extern type *SACARGconvertTo##alias##Array (SACarg *arg);                            \
-    extern SACarg *SACARGconvertFrom##alias##Pointer (type *data, int dim, ...);         \
-    extern SACarg *SACARGconvertFrom##alias##PointerVect (type *data, int dim,           \
+    SAC_C_EXTERN type *SACARGconvertTo##alias##Array (SACarg *arg);                      \
+    SAC_C_EXTERN SACarg *SACARGconvertFrom##alias##Pointer (type *data, int dim, ...);   \
+    SAC_C_EXTERN SACarg *SACARGconvertFrom##alias##PointerVect (type *data, int dim,     \
                                                           int *shape);                   \
-    extern SACarg *SACARGconvertFrom##alias##Scalar (type value);
+    SAC_C_EXTERN SACarg *SACARGconvertFrom##alias##Scalar (type value);
 
 EXTERN_DECL (char, Byte)
 EXTERN_DECL (short, Short)
@@ -175,7 +175,7 @@ EXTERN_DECL (unsigned long long, Ulonglong)
  * @brief Runtime initialization. Currently implemented only for MT.
  *
  *****************************************************************************/
-extern void SAC_InitRuntimeSystem (void);
+SAC_C_EXTERN void SAC_InitRuntimeSystem (void);
 
 /** <!--********************************************************************-->
  *
@@ -184,7 +184,7 @@ extern void SAC_InitRuntimeSystem (void);
  * @brief Runtime freeing.
  *
  *****************************************************************************/
-extern void SAC_FreeRuntimeSystem (void);
+SAC_C_EXTERN void SAC_FreeRuntimeSystem (void);
 
 /**
  * SAChive is an opaque type used to construct typed pointers.
@@ -219,7 +219,7 @@ typedef struct SAC_SAChive SAChive;
  * @return A handle to a new hive.
  *
  *****************************************************************************/
-extern SAChive *SAC_AllocHive (unsigned int num_bees, int num_schedulers,
+SAC_C_EXTERN SAChive *SAC_AllocHive (unsigned int num_bees, int num_schedulers,
                                const int *places, void *thdata);
 
 /** <!--********************************************************************-->
@@ -232,7 +232,7 @@ extern SAChive *SAC_AllocHive (unsigned int num_bees, int num_schedulers,
  *                        The handle is invalid after the call.
  *
  *****************************************************************************/
-extern void SAC_ReleaseHive (SAChive *hive);
+SAC_C_EXTERN void SAC_ReleaseHive (SAChive *hive);
 
 /** <!--********************************************************************-->
  *
@@ -250,7 +250,7 @@ extern void SAC_ReleaseHive (SAChive *hive);
  *                        context (thread or task).
  *
  *****************************************************************************/
-extern void SAC_AttachHive (SAChive *hive);
+SAC_C_EXTERN void SAC_AttachHive (SAChive *hive);
 
 /** <!--********************************************************************-->
  *
@@ -265,7 +265,7 @@ extern void SAC_AttachHive (SAChive *hive);
  *         The hive can be re-attached to a different context or released.
  *
  *****************************************************************************/
-extern SAChive *SAC_DetachHive (void);
+SAC_C_EXTERN SAChive *SAC_DetachHive (void);
 
 /** <!--********************************************************************-->
  *
@@ -279,6 +279,6 @@ extern SAChive *SAC_DetachHive (void);
  *        will create a new stub.
  *
  *****************************************************************************/
-extern void SAC_ReleaseQueen (void);
+SAC_C_EXTERN void SAC_ReleaseQueen (void);
 
 #endif /* _SAC_SACINTERFACE_H_ */

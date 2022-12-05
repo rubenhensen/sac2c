@@ -10,6 +10,10 @@
 
 #ifdef INCLUDED_FROM_LIBSAC
 
+#ifndef SAC_C_EXTERN
+#define SAC_C_EXTERN extern
+#endif /* SAC_C_EXTERN */
+
 #include "config.h"
 #include "sacinterface.h"
 #include "runtime/essentials_h/std.h"
