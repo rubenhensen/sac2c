@@ -170,12 +170,18 @@ EXTERN_DECL (unsigned long long, Ulonglong)
 
 /** <!--********************************************************************-->
  *
- * @fn void SAC_InitRuntimeSystem ( void);
+ * @fn void SAC_InitRuntimeSystem ( int argc, char *argv[],
+                                         unsigned int num_threads,
+                                         int num_schedulers,
+                                         unsigned int do_trace);
  *
- * @brief Runtime initialization. Currently implemented only for MT.
+ * @brief Runtime initialization. Currently only for MT something happens.
  *
  *****************************************************************************/
-SAC_C_EXTERN void SAC_InitRuntimeSystem (void);
+SAC_C_EXTERN void SAC_InitRuntimeSystem (int argc, char *argv[],
+                                         unsigned int num_threads,
+                                         int num_schedulers,
+                                         unsigned int do_trace);
 
 /** <!--********************************************************************-->
  *

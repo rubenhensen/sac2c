@@ -223,6 +223,8 @@ SAC_C_EXTERN unsigned int SAC_MT_Internal_CurrentThreadId (void);
 
 #else /* SAC_DO_MULTITHREAD && SAC_DO_MULTITHREAD && SAC_DO_MT_PTHREAD */
 
+SAC_C_EXTERN void SAC_MT_PTH_SetupStandalone (int num_schedulers);
+
 SAC_C_EXTERN int SAC_MT_self_bee_key;
 
 #endif /* SAC_DO_MULTITHREAD && SAC_DO_MULTITHREAD && SAC_DO_MT_PTHREAD */

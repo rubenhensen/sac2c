@@ -18,6 +18,8 @@
 
 #include "libsac/mt/mt_beehive.h"   // SAC_MT_SetupAsLibraryInitial, ...
 #include "libsac/essentials/message.h" // SAC_RuntimeWarning, ...
+#include "libsac/mt/mt.h"  // SAC_MT_barrier_type, ...
+#include "libsac/mt/mt_pth.h"  // SAC_MT_PTH_SetupStandalone
 
 /** --------------------------------------------------------------------------------------
  *
@@ -28,16 +30,26 @@
 
 /** <!--********************************************************************-->
  *
- * @fn void SAC_InitRuntimeSystem ( int argc, char *argv[], unsigned int num_threads);
+ * @fn void SAC_InitRuntimeSystem ( int argc, char *argv[],
+ *                                  unsigned int num_threads,
+ *                                  int num_schedulers, bool do_trace)
  *
  * @brief Runtime initialization. For sacinterface.h.
  *
  *****************************************************************************/
 
 void
-SAC_InitRuntimeSystem (void)
+SAC_InitRuntimeSystem ( int argc, char *argv[], unsigned int num_threads,
+                        int num_schedulers, unsigned int do_trace)
 {
-    SAC_MT_SetupAsLibraryInitial ();
+    SAC_MT_barrier_type = 0;       // using spin-locks
+    SAC_MT_cpu_bind_strategy = 0;  // assuming hwloc off!
+    SAC_MT_do_trace = do_trace;
+    SAC_MT_SetupInitial (argc, argv, num_threads, 1024);
+    SAC_MT_globally_single = 0;   // In a library we're never alone!
+
+    SAC_MT_PTH_SetupStandalone (num_schedulers);
+    SAC_MT_singleton_queen = NULL;  // we are not in standalone mode!
 }
 
 /** <!--********************************************************************-->
@@ -50,6 +62,12 @@ SAC_InitRuntimeSystem (void)
 void
 SAC_FreeRuntimeSystem (void)
 {
+    SAChive *hive;
+
+    hive = SAC_DetachHive ();
+    SAC_ReleaseHive (hive);
+    SAC_ReleaseQueen ();
+
     /* check there are no hives/bees left behind */
     unsigned orphan_hives = SAC_MT_cnt_hives;
     unsigned orphan_queens = SAC_MT_cnt_queen_bees;
@@ -93,4 +111,34 @@ SAC_ReleaseQueen (void)
 }
 
 #endif
+
+#else
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_InitRuntimeSystem ( int argc, char *argv[],
+ *                                  unsigned int num_threads,
+ *                                  int num_schedulers, bool do_trace)
+ *
+ * @brief Runtime initialization. For sacinterface.h.
+ *
+ *****************************************************************************/
+
+void
+SAC_InitRuntimeSystem ( int argc, char *argv[], unsigned int num_threads,
+                        int num_schedulers, unsigned int do_trace)
+{
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_FreeRuntimeSystem ();
+ *
+ * @brief Runtime freeing. For sacinterface.h.
+ *
+ *****************************************************************************/
+void
+SAC_FreeRuntimeSystem (void)
+{
+}
+
 #endif
