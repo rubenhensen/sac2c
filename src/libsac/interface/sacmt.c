@@ -130,7 +130,6 @@ void
 SAC_InitRuntimeSystem ( int argc, char *argv[], unsigned int num_threads,
                         int num_schedulers, unsigned int do_trace)
 {
-
 }
 
 /** <!--********************************************************************-->
