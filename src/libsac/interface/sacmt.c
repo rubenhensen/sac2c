@@ -42,8 +42,6 @@ void
 SAC_InitRuntimeSystem ( int argc, char *argv[], unsigned int num_threads,
                         int num_schedulers, unsigned int do_trace)
 {
-    SAChive *hive;
-
     SAC_MT_barrier_type = 0;       // using spin-locks
     SAC_MT_cpu_bind_strategy = 0;  // assuming hwloc off!
     SAC_MT_do_trace = do_trace;
@@ -52,7 +50,6 @@ SAC_InitRuntimeSystem ( int argc, char *argv[], unsigned int num_threads,
 
     SAC_MT_PTH_SetupStandalone (num_schedulers);
     SAC_MT_singleton_queen = NULL;  // we are not in standalone mode!
-    
 }
 
 /** <!--********************************************************************-->
