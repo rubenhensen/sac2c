@@ -565,9 +565,11 @@ ACPjingGeneratePragma (bool ext, info *inner)
  * note: The constant values used here are actually constant variables
  *       defined in global.config. The currently used values are the values
  *       defined for the sm_61 architecture.
- *   - 1: (1/32 | 32)
- *   - 2: (1/1024 | 32, 32)
+ *   - 1: (1/1024 | 1024) using   [ CUDA_1D_BLOCK_LG ]
+ *   - 2: (1/1024 | 32, 32) using [ CUDA_2D_BLOCK_Y, CUDA_2D_BLOCK_X]
  *   - >2: (2048, 1/2048/1024 | 32, 32)
+ *             using [ CUDA_2D_BLOCK_Y, CUDA_2D_BLOCK_X] for the blocks
+ *             and   CUDA_3D_THREAD_Y for the outermost grid dimension
  *****************************************************************************/
 
 /**
@@ -589,7 +591,11 @@ ACPfoldallGeneratePragma (info *inner)
         inner = ACPmakeFoldLast2 (inner);
 
     // Split first dimension to (1/32 | 32)
-    inner = ACPmakeSplitLast (global.config.cuda_2d_block_x, inner);
+    if (dims == 1) {
+        inner = ACPmakeSplitLast (global.config.cuda_1d_block_lg, inner);
+    } else {
+        inner = ACPmakeSplitLast (global.config.cuda_2d_block_x, inner);
+    }
 
     // Split second dimension to (1/1024 | 32, 32)
     if (dims >= 2) {
