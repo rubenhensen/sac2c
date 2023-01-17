@@ -1235,6 +1235,11 @@ COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem)
  *
  *               offset ← +/ iv × ⌽×\⌽(1↓shp),1
  *
+ *             Note here, that we allow iv to be arbitrary valued!
+ *             Elements can be negative and the can exceed the corresponding
+ *             shape components. While this may seem counter-intuitive, it
+ *             is something IVESLI relies on! (see issue 2322) for details!
+ *
  * NB. Do NOT place this function in prf_info.mac. At present,
  *     AWLF, WLF, and several other optimizations rely on the
  *     ability to find IV ( or I,J,K, in the case of _idxs2offset)
@@ -1272,7 +1277,6 @@ COvect2offset (constant *shp, constant *iv, constant *nothing)
         offset = 0;
     }
     for (i = 1; i < leniv; i++) {
-        DBUG_ASSERT (cviv[i] < cvshp[i], "Index error: iv[%d] >= shp[%d]", i, i);
         offset = (offset * cvshp[i]) + cviv[i];
     }
     for (; i < lenshp; i++) { /* padding of trailing iv elements */
