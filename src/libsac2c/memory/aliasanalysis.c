@@ -2,7 +2,7 @@
  *
  * @defgroup aa Alias Analysis
  *
- * Annotates potentially aliased variables with the AVIS_ALIAS flag.
+ * Annotates potentially aliased variables with the AVIS_ISALIAS flag.
  *
  * @ingroup mm
  *

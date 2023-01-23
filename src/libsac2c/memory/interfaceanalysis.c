@@ -14,6 +14,103 @@
  *
  * Prefix: IA
  *
+ *
+ * This traversal sets the attributes ARG_ISALIASING and RET_ISALIASING.
+ * They help to identify argument positions that are possibly returned in
+ * *unmodified* form! NB: it is *not* about possible memory reuse here,
+ * but it is about equality of MemVals! Consequently, 
+ *    a = b;            introduces aliasing, whereas
+ *    a = _reuse_(b);   does NOT!
+ *
+ * ARG_ISALIASING indicates that the corresponding argument MAY be returned.
+ * RET_ISALIASING indicates that the return value MAY have an alias.
+ *
+ * Per default (ast.xml) both these attributes are set to TRUE.
+ * Consequently, this phase tries to set as many of them as possible to FALSE!
+ *
+ * The basic idea is simple: Assuming the worst case, ie., all functions
+ * alias all args to all rets, we try to find args or rets that are 
+ * definitely NOT aliased. Once we find those, we can try again, taking 
+ * the new "unaliased" args/rets into accound. We do this until a fixed
+ * point is reached, ie., until no further unaliasing is possible.
+ *
+ * Consider a function
+ *
+ *    bool p(int x)
+ *    {
+ *        res = _eq_SxS_(x,3);
+ *        return res;
+ *    }
+ *
+ * We start with (<*> indicate aliasing, < > indicates NO aliasing)
+ *
+ *    bool<*> p(int x<*>)
+ *    {
+ *        res = _eq_SxS_(x,3);
+ *        return res;
+ *    }
+ *
+ * After traversing the function, we find out that the return value
+ * cannot be an alias of the argument, so we unalias the entire signature:
+ *
+ *    bool< > p(int x< >)
+ *    {
+ *        res = _eq_SxS_(x,3);
+ *        return res;
+ *    }
+ *
+ * How do we find this out? While we traverse the body, we identify
+ * potential aliasing sets for all args/local variables. Once we 
+ * reach the return statement, we check the sets of the return
+ * variables. If these do not intersect with *any* arguments, we
+ * mark them unaliasing. Any argument that does not appear in any
+ * of the return variable's alias-sets are marked unaliasing as well.
+ *
+ * The aliasing-sets are initialised just by the variable itself.
+ * Whenever we find an aliasing operation we expand them by computing
+ * the union of the set. The detected potential aliasings are:
+ *
+ * a = b;                                     // a and b alias!
+ * ..., ri<*>, ... = foo (..., aj<*>, ...)    // ri and aj alias!
+ * a = (p?b:c);                               // a, b, and c alias!
+ *
+ * Coming back to our example above, we see that the aliasing sets
+ * after the traversal of the body are:
+ * 
+ * A[x] = {x}    and
+ * A[res] = {res}
+ * 
+ * Consequently, we unalias the entire signature!
+ * Now consider a second function
+ *
+ *   int[.] rec( int[.] aa, int[.] bb)
+ *   {
+ *       if( p(2))
+ * (1)       cc = bb;
+ *       else
+ * (2)       cc = with {} :modarray(aa);
+ *   
+ *       if( p(1))
+ * (3)       dd = rec (aa, cc);
+ *       else
+ * (4)       dd = cc;
+ *       return dd;
+ *   }
+ *
+ * with its initial signature:
+ *
+ *   int[.]<*> rec( int[.] aa<*>, int[.] bb<*>)
+ *
+ * Our traversal yiels the following aliasing sets:
+ *
+ * A[aa] = {aa}
+ * A[bb] = {bb}
+ * A[cc] = {cc, bb(1)}
+ * A[dd] = {dd, aa(3), cc(3), bb(3)}
+ *
+ * which implies that the initial aliasing signature needs to remain.
+ *
+ *
  *****************************************************************************/
 #include "interfaceanalysis.h"
 
@@ -46,6 +143,7 @@ typedef enum {
     IA_begin,
     IA_end,
     IA_let,
+    IA_prf,
     IA_ap,
     IA_neutral,
     IA_funcond,
@@ -178,7 +276,7 @@ EMIAdoInterfaceAnalysis (node *syntax_tree)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT_TAG ("EMIA", "Starting interface alias analysis...");
+    DBUG_PRINT ("Starting interface alias analysis...");
 
 #ifndef DBUG_OFF
     counter = 0;
@@ -187,18 +285,18 @@ EMIAdoInterfaceAnalysis (node *syntax_tree)
 
     while (unaliased != 0) {
         unaliased = 0;
-        DBUG_PRINT_TAG ("EMIA", "Starting interface analysis traversal...");
+        DBUG_PRINT ("Starting interface analysis traversal...");
         TRAVpush (TR_emia);
         syntax_tree = TRAVdo (syntax_tree, NULL);
         TRAVpop ();
-        DBUG_PRINT_TAG ("EMIA", "Interface analysis traversal complete.");
+        DBUG_PRINT ("Interface analysis traversal complete.");
 #ifndef DBUG_OFF
         counter += unaliased;
 #endif
     }
 
-    DBUG_PRINT_TAG ("EMIA", "%d interfaces unaliased.", counter);
-    DBUG_PRINT_TAG ("EMIA", "Interface alias analysis complete.");
+    DBUG_PRINT ("%d interfaces unaliased.", counter);
+    DBUG_PRINT ("Interface alias analysis complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -298,6 +396,8 @@ EMIAap (node *arg_node, info *arg_info)
     INFO_CONTEXT (arg_info) = IA_ap;
     INFO_APFUNDEF (arg_info) = AP_FUNDEF (arg_node);
     INFO_APFUNARGS (arg_info) = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+    DBUG_PRINT ("   application of %s found",
+                 FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
@@ -328,7 +428,7 @@ EMIAarg (node *arg_node, info *arg_info)
         DFMsetMaskEntrySet (AVIS_ALIASMASK (ARG_AVIS (arg_node)), NULL,
                             ARG_AVIS (arg_node));
 
-        DBUG_PRINT ("Mask created for %s", ARG_NAME (arg_node));
+        DBUG_PRINT_TAG ("IA_M", "   Mask created for %s", ARG_NAME (arg_node));
         break;
 
     case IA_end:
@@ -337,7 +437,7 @@ EMIAarg (node *arg_node, info *arg_info)
          */
         AVIS_ALIASMASK (ARG_AVIS (arg_node))
           = DFMremoveMask (AVIS_ALIASMASK (ARG_AVIS (arg_node)));
-        DBUG_PRINT ("Mask removed for %s", ARG_NAME (arg_node));
+        DBUG_PRINT_TAG ("IA_M", "   Mask removed for %s", ARG_NAME (arg_node));
         break;
 
     case IA_unqargs:
@@ -479,11 +579,11 @@ EMIAfundef (node *arg_node, info *arg_info)
             FUNDEF_VARDECS (arg_node) = TRAVdo (FUNDEF_VARDECS (arg_node), arg_info);
         }
 
-        DBUG_PRINT ("Going into function %s", FUNDEF_NAME (arg_node));
+        DBUG_PRINT ("traversing function %s", FUNDEF_NAME (arg_node));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        DBUG_PRINT ("Coming from function %s", FUNDEF_NAME (arg_node));
+        DBUG_PRINT ("finished traversing function %s", FUNDEF_NAME (arg_node));
 
         /*
          * Traverse vardecs/args to remove ALIASMASKS
@@ -547,11 +647,20 @@ EMIAid (node *arg_node, info *arg_info)
     case IA_funcond:
     case IA_neutral:
     case IA_let:
+    case IA_prf:
         /*
          * ALIASING OPERATION a = b
          */
+        DBUG_PRINT ("   alias %s = %s found",
+                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                    AVIS_NAME (ID_AVIS (arg_node)));
         DFMsetMaskOr (AVIS_ALIASMASK (IDS_AVIS (INFO_LHS (arg_info))),
                       AVIS_ALIASMASK (ID_AVIS (arg_node)));
+        DBUG_EXECUTE (fprintf (stderr, "                     => A[ %s ] = ",
+                               AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+                      DFMprintMask (stderr, "%s, ",
+                                    AVIS_ALIASMASK (
+                                        IDS_AVIS (INFO_LHS (arg_info)))); );
         break;
 
     case IA_ap:
@@ -560,17 +669,31 @@ EMIAid (node *arg_node, info *arg_info)
          */
         if ((INFO_APFUNARGS (arg_info) == NULL)
             || (ARG_ISALIASING (INFO_APFUNARGS (arg_info)))) {
+            DBUG_PRINT ("      argument %s is in aliasing parameter position"
+                        " (may be returned)!", ID_NAME (arg_node));
             int retcount = 0;
             node *lhs = INFO_LHS (arg_info);
+            DBUG_PRINT ("         adding it to the aliasing rets!");
             while (lhs != NULL) {
                 if (GetRetAlias (INFO_APFUNDEF (arg_info), retcount)) {
+                    DBUG_PRINT ("            ret #%d (%s) is in aliasing"
+                                " return position!",
+                                retcount, IDS_NAME (lhs));
                     DFMsetMaskOr (AVIS_ALIASMASK (IDS_AVIS (lhs)),
                                   AVIS_ALIASMASK (ID_AVIS (arg_node)));
+                    DBUG_EXECUTE (
+                        fprintf (stderr,
+                                 "                              => A[ %s ] = ",
+                                 IDS_NAME (lhs));
+                        DFMprintMask (stderr, "%s, ", AVIS_ALIASMASK (
+                                          IDS_AVIS (lhs))); );\
                 }
 
                 lhs = IDS_NEXT (lhs);
                 retcount += 1;
             }
+        } else {
+            DBUG_PRINT ("      arg %s is not aliasing!", ID_NAME (arg_node));
         }
 
         if (INFO_APFUNARGS (arg_info) != NULL) {
@@ -655,18 +778,23 @@ EMIAreturn (node *arg_node, info *arg_info)
     argmask = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
     /*
-     * 1. Arguments cannot return as aliases iff none of the return values
-     * is an alias of an argument
+     * 1. An argument cannot return as aliases iff none of the return values
+     * is an alias of that very argument.
      */
     retexprs = RETURN_EXPRS (arg_node);
     while (retexprs != NULL) {
         DFMsetMaskOr (retmask, AVIS_ALIASMASK (ID_AVIS (EXPRS_EXPR (retexprs))));
         retexprs = EXPRS_NEXT (retexprs);
     }
+    
+    DBUG_PRINT ("   The union of all alias-lists of all return values is:");
+    DBUG_EXECUTE (fprintf (stderr, "                     => ");
+                  DFMprintMask (stderr, "%s, ", retmask););
 
     funargs = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
     while (funargs != NULL) {
         if (!DFMtestMaskEntry (retmask, NULL, ARG_AVIS (funargs))) {
+            DBUG_PRINT ("      unaliasing argument %s", ARG_NAME (funargs));
             funargs = SetArgAlias (funargs, FALSE);
         }
         funargs = ARG_NEXT (funargs);
@@ -682,6 +810,7 @@ EMIAreturn (node *arg_node, info *arg_info)
         DFMsetMaskEntrySet (argmask, NULL, ARG_AVIS (funargs));
         funargs = ARG_NEXT (funargs);
     }
+    // argmask denotes the set of all arguments!
 
     retexprs = RETURN_EXPRS (arg_node);
     retcount = 0;
@@ -695,10 +824,20 @@ EMIAreturn (node *arg_node, info *arg_info)
             }
             retexprs2 = EXPRS_NEXT (retexprs2);
         }
+        DBUG_PRINT ("   considering return position %d:", retcount);
+        DBUG_PRINT ("      The union of all alias-lists of the *other* return values"
+                    " and *all* arguments is:");
+        DBUG_EXECUTE (fprintf (stderr, "                        => ");
+                      DFMprintMask (stderr, "%s, ", retmask););
+        DBUG_PRINT ("      the alias list of the current return value is:");
+        DBUG_EXECUTE (fprintf (stderr, "                        => ");
+                      DFMprintMask (stderr, "%s, ", AVIS_ALIASMASK (
+                          ID_AVIS (EXPRS_EXPR (retexprs)))););
 
         DFMsetMaskAnd (retmask, AVIS_ALIASMASK (ID_AVIS (EXPRS_EXPR (retexprs))));
 
         if (DFMtestMask (retmask) == 0) {
+            DBUG_PRINT ("      unaliasing return position %d", retcount);
             INFO_FUNDEF (arg_info)
               = SetRetAlias (INFO_FUNDEF (arg_info), retcount, FALSE);
         }
@@ -735,7 +874,7 @@ EMIAvardec (node *arg_node, info *arg_info)
 
         DFMsetMaskEntrySet (AVIS_ALIASMASK (VARDEC_AVIS (arg_node)), NULL,
                             VARDEC_AVIS (arg_node));
-        DBUG_PRINT ("Mask created for %s", VARDEC_NAME (arg_node));
+        DBUG_PRINT_TAG ("IA_M", "   Mask created for %s", VARDEC_NAME (arg_node));
         break;
 
     case IA_end:
@@ -744,7 +883,7 @@ EMIAvardec (node *arg_node, info *arg_info)
          */
         AVIS_ALIASMASK (VARDEC_AVIS (arg_node))
           = DFMremoveMask (AVIS_ALIASMASK (VARDEC_AVIS (arg_node)));
-        DBUG_PRINT ("Mask removed for %s", VARDEC_NAME (arg_node));
+        DBUG_PRINT_TAG ("IA_M", "   Mask removed for %s", VARDEC_NAME (arg_node));
         break;
 
     default:
