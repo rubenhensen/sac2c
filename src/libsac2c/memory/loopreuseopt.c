@@ -14,6 +14,151 @@
  *
  * Prefix: EMLR
  *
+ * The idea:
+ * ---------
+ *
+ * This traversal tries to improve loops that iteratively modify arrays.
+ * The simplest example is:
+ *
+ *    i = 0;
+ *    do {
+ *      a[iv] = 29;
+ *      i++;
+ *    } while (i<20);
+ *
+ * Without LRO, the loop function body would contain code similar to this:
+ *
+ *   _emal_2615__emec_2599_a = _alloc_or_reuse_( 1, 1, [ 100 ], a);
+ *   _emrb_3052_mem = _alloc_( 1, 0, [:int]);
+ *   _emrb_3053_val = _fill_( _isreused_( _emal_2615__emec_2599_a, a), _emrb_3052_mem);
+ *   _emec_2599_a = _MAIN::main__Loop_0__ReuseCond_4( _emrb_3053_val, _emal_2615__emec_2599_a, a) ;
+ *   a__SSA0_1 = _fill_( _idx_modarray_AxSxS_( _emec_2599_a, i, _flat_11), _emec_2599_a);
+ *
+ * Since an alias of 'a' may be used below the loop, the loop body first checks
+ * whether 'a' can be reused. depending on whether it can be reused, either the non-
+ * modified elements of 'a' need to be copied into the new 'a' (_emec_2599_a) or
+ * not. This need for distinction leads to the cond-function main__Loop_0__ReuseCond_4.
+ * Thereafter, the actual in-place modification is performed (_idx_modarray_AxSxS_).
+ *
+ * The observation that gives rise to this optimisation is: at most the very first
+ * iteration will require allocating and copying. Thereafter, this new array is
+ * "unique" (RC==1) and will be reused all 19 iterations thereafter.
+ * The idea of this optimisation is to ensure that 'a' will be unique in the
+ * very first iteration as well. This is achieved by modifying the code of
+ * the outside call to the loop function into somthing like this:
+ *
+ *   _emlr_3020_a = _alloc_or_reuse_( _dim_A_( a), _shape_A_( a), a);
+ *   _emlr_3021_a = _fill_( _copy_( a), _emlr_3020_a);
+ *   a__SSA0_1 = _MAIN::main__Loop_0( _emlr_3021_a, i) ;
+ *
+ * This, combined with an annotation of '_emlr_3021_a' being non-aliased, 
+ * suffices for the remaining mem-phases to end up with a loop body like this:
+ *
+ *   _emal_2615__emec_2599_a = a;
+ *   _emec_2599_a = _fill_( _noop_( a), _emal_2615__emec_2599_a);
+ *   a__SSA0_1 = _fill_( _idx_modarray_AxSxS_( _emec_2599_a, i, _flat_11), _emec_2599_a);
+ *
+ * IE, we now statically reuse 'a' within all 20 iterations, no RC checks or
+ * alternative code variants needed.
+ *
+ *
+ *
+ *
+ * The algorithm:
+ * --------------
+ *
+ * In general, we look for loop funs whose parameters are being arguments to
+ * _alloc_or_reuse_. However, not all of those qualify. Consider a case similar
+ * to the one above. It would look like this:
+ *
+ *   <t> loop( a, i)
+ *   {
+ *       ...
+ *       b = _alloc_or_reuse_ (a);
+ *       ...
+ *       if (p) {
+ *          rec = loop (b, j);
+ *       } else {
+ *       }
+ *       res = (p? rec: b);
+ *       return res;
+ *   }
+ *      
+ *   Notice here, that the argument 'a' which we want to make unique also 
+ *   serves as first argument in the recursive call. This is essential as
+ *   it guarantees that in the next iteration, it will be unique again!
+ *
+ *   In essence this means we are looking for parameters that are being 
+ *   used in _alloc_or_reuse_ *and* that are being fed a guaranteed unique
+ *   argument in the recursive call.
+ *   In order to decide whether 'b' is unique there, we need to have 
+ *   aliasing analysis. Unfortunately, AA has not yet been run and even
+ *   if it was, that would not help, since standard AA always assumes that 
+ *   all function parameters are aliases and, thus would infer 'b' to 
+ *   be aliased.
+ *   What needs to be done is to start out with an assumption that all 
+ *   those parameters that we intend to make unique are marked as 
+ *   non-aliased, then run an AA and check whether the corresponding
+ *   recursive call arguments are non-aliased. If any one of them turns 
+ *   out to be aliased, we have to restart again, now marking the
+ *   corresponding parameter as aliased. We repeat this exercise
+ *   until a fixedpoint is reached.
+ *
+ *   The case described in issue #2323 is an excellent example of a case
+ *   where successive refinements of the reuse-set happen. Essentially,
+ *   the example there looks like this:
+ *
+ *   <t> loop( a, b, i)
+ *   {
+ *       ...
+ *       c = _alloc_or_reuse_ (b);
+ *       j = _alloc_or_reuse_ (i);
+ *       ...
+ *       if (p) {
+ *          rec = loop (c, a, j);
+ *       } else {
+ *       }
+ *       res = (p? rec: a);
+ *       return res;
+ *   }
+ *      
+ *   In the initial round, we assume {a,b,i} to be non-aliased. While
+ *   traversing the body, we find that {b,i} are possible reuse-set 
+ *   candidates. When looking at the recursive call AA sees that {a,b,i}
+ *   all are non-aliased so we conclude that {b,i} could be the the reuse-set
+ *   since neither 'a' nor 'j' are aliased.
+ *   Now, we update the alias anotation of the parameters [NB: this was missing
+ *   prior to bug #2323 being fixed :-)]; assuming that only {b,i} are 
+ *   non-aliased. Upon our second iteration, we now find out that 'a' in the
+ *   recursive call is classifies as aliased which results in 'b' being taken
+ *   out of the reuse-set, leaving us with 'i' only.
+ *   Again, we change the alias annotation of 'b' to aliased and rerun our
+ *   inference, just to find that the fixpoint has been reached.
+ *
+ *   Note here that it might be considered crazy that we actually lift 
+ *   scalar values such as 'i' here. However, that is ok as the entire
+ *   mem phase treats all values equaly and eventualy strips out all
+ *   potential overheads here!
+ *
+ *
+ *
+ *
+ *
+ * Implementation:
+ * ---------------
+ *
+ * This traversal actually houses 2 traversals! EMLR and EMLRO!
+ * EMLR is responsible for identifying loop functions. Once done,
+ * it starts an EMLRO traversal on the body of that loop function.
+ * The sole function of the EMLRO traversal is to compute the
+ * ARG_ISALIAS flags of the loop function, i.e., the fixpoint iteration
+ * explained above!
+ * Once that is done, EMLR takes over again and it performs the code
+ * transformation for making the actual parameters of the external
+ * loop fun call unique. It uses the ARG_ISALIAS flags set by EMLRO
+ * to identify those arguments that need modification.
+ *
+ *
  *****************************************************************************/
 #include "loopreuseopt.h"
 
@@ -413,6 +558,10 @@ EMLROap (node *arg_node, info *arg_info)
         /*
          * Clean up reusable arguments
          */
+        DBUG_PRINT ("   checking recursive loop call");
+        DBUG_PRINT ("   current reuse candidates are:");
+        DBUG_EXECUTE (DFMprintMask (global.outfile, "%s, ",
+                      INFO_REUSEMASK (arg_info)));
         if (FUNDEF_ARGS (INFO_FUNDEF (arg_info)) != NULL) {
             INFO_CONTEXT (arg_info) = LR_recap;
             INFO_APARGS (arg_info) = AP_ARGS (arg_node);
@@ -464,7 +613,12 @@ EMLROarg (node *arg_node, info *arg_info)
         break;
 
     case LR_recap:
+        DBUG_PRINT ("      argument %s is %s",
+                    ID_NAME (EXPRS_EXPR (INFO_APARGS (arg_info))),
+                    AVIS_ISALIAS (ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))))?
+                    "alias => elide" : "ok");
         if (AVIS_ISALIAS (ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))))) {
+            DBUG_PRINT ("      eliding %s from reuse-mask", ARG_NAME (arg_node));
             DFMsetMaskEntryClear (INFO_REUSEMASK (arg_info), NULL, ARG_AVIS (arg_node));
         }
 
@@ -499,6 +653,9 @@ node *
 EMLROfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+#ifndef DBUG_OFF
+    int fix_iter;
+#endif
 
     DBUG_ASSERT (FUNDEF_ISLACFUN (arg_node),
                  "EMLROfundef is only applicable for LAC-functions");
@@ -530,7 +687,7 @@ EMLROfundef (node *arg_node, info *arg_info)
         arg_node = FRCdoFilterReuseCandidates (arg_node);
 
         /*
-         * Initialize arguments' AVIS_ALIAS with values from REUSEMASK
+         * Initialize arguments' AVIS_ALIAS with FALSE
          */
         if (FUNDEF_ARGS (arg_node) != NULL) {
             INFO_CONTEXT (info) = LR_doargs;
@@ -546,9 +703,18 @@ EMLROfundef (node *arg_node, info *arg_info)
         INFO_REUSEMASK (info) = DFMgenMaskClear (maskbase);
         oldmask = DFMgenMaskClear (maskbase);
 
+#ifndef DBUG_OFF
+        fix_iter = 0;
+#endif
+        DBUG_PRINT ("starting fixpoint iteration of loop body");
         while (TRUE) {
             DFMsetMaskCopy (oldmask, INFO_REUSEMASK (info));
 
+#ifndef DBUG_OFF
+        fix_iter += 1;
+#endif
+
+            DBUG_PRINT ("iteration %d:", fix_iter);
             /*
              * Traverse body in order to determine REUSEMASK
              */
@@ -562,13 +728,24 @@ EMLROfundef (node *arg_node, info *arg_info)
              * Perform alias analysis
              */
             arg_node = EMAAdoAliasAnalysis (arg_node);
+
+            /*
+             * Update arguments' AVIS_ALIAS with values from REUSEMASK
+             */
+            if (FUNDEF_ARGS (arg_node) != NULL) {
+                INFO_CONTEXT (info) = LR_doargs;
+                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
+                INFO_CONTEXT (info) = LR_undef;
+            }
+
         }
 
         /*
          * Print statically resusable variables
          */
+        DBUG_PRINT ("Fixpoint reached!");
         DBUG_PRINT ("The following variables can be statically reused:");
-        DBUG_EXECUTE (DFMprintMask (global.outfile, "%s\n", INFO_REUSEMASK (info)));
+        DBUG_EXECUTE (DFMprintMask (global.outfile, "%s, ", INFO_REUSEMASK (info)));
 
         /*
          * Initialize arguments' AVIS_ALIAS with values from REUSEMASK
