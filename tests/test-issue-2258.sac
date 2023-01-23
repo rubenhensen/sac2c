@@ -1,0 +1,33 @@
+// Errorneous mem:ia missing F_type_conv support
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS +=
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>@$(CHECK_RETURN_STATUS) $< 5
+
+noinline
+int[10000], int[10000] foo (int len)
+{
+    a =  with {
+              } : genarray( [len], 2);
+
+    if( _eq_SxS_( len, 10000)) {
+        c = a;
+    } else {
+        c = with {
+              } : genarray( [len], 4);
+    }
+
+    return (a, c);
+}
+
+int main()
+{
+    a,c = foo (10000);
+
+    b = {iv-> _add_SxS_( _sel_VxA_(iv, a),1)};
+
+    return _add_SxS_( _sel_VxA_([2], b), _sel_VxA_([2], c));
+}
