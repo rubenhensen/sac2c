@@ -71,6 +71,7 @@
  * the union of the set. The detected potential aliasings are:
  *
  * a = b;                                     // a and b alias!
+ * a = _type_conv_ (type, b);                 // a and b alias!
  * ..., ri<*>, ... = foo (..., aj<*>, ...)    // ri and aj alias!
  * a = (p?b:c);                               // a, b, and c alias!
  *
@@ -993,6 +994,26 @@ EMIAmodarray (node *arg_node, info *arg_info)
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node* EMIAprf( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMIAprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    INFO_CONTEXT (arg_info) = IA_prf;
+    if (PRF_PRF (arg_node) == F_type_conv) {
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

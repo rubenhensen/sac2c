@@ -26,6 +26,7 @@ extern node *EMIAgenarray (node *arg_node, info *arg_info);
 extern node *EMIAid (node *arg_node, info *arg_info);
 extern node *EMIAlet (node *arg_node, info *arg_info);
 extern node *EMIAmodarray (node *arg_node, info *arg_info);
+extern node *EMIAprf (node *arg_node, info *arg_info);
 extern node *EMIAret (node *arg_node, info *arg_info);
 extern node *EMIAreturn (node *arg_node, info *arg_info);
 extern node *EMIAvardec (node *arg_node, info *arg_info);
@@ -36,7 +37,6 @@ extern node *EMIAwith2 (node *arg_node, info *arg_info);
  *
  * Nodes which MUST NOT be traversed
  *
- * - N_prf
  * - N_icm
  * - N_array
  * - N_objdef
