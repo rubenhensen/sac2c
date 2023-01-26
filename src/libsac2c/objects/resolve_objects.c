@@ -9,6 +9,9 @@
  * reference arguments to the function applications.
  * Furthermore, this phase adds propagate()
  * calls to with-loops for objects added in this way as well.
+ *
+ * Furthermore, this phase also adds prop_obj_in and prop_obj_out
+ * calls to all partitions in case we have or add a propagate WLOP.
  */
 
 /*
@@ -158,6 +161,10 @@ FindPropagateGoalExpr (node *prop, info *arg_info)
 
     while ((wlop != NULL) && (wlop != prop)) {
         wlop = WITHOP_NEXT (wlop);
+        DBUG_ASSERT (wlop != NULL, "failed to find N_propagate that we started on");
+        if (EXPRS_NEXT (wlexpr) == NULL) {
+            CTIabort (NODE_LOCATION (wlexpr), "missing return value(s) in WL partition");
+        } 
         wlexpr = EXPRS_NEXT (wlexpr);
     }
 
