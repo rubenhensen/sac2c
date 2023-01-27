@@ -1604,7 +1604,7 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_ALLOC__DESC__AUD_C99__DEFAULT(var_NT, dim)                                \
     {                                                                                    \
-        SAC_ASSURE_TYPE ((dim >= 0),                                                     \
+        SAC_ASSURE_TYPE ((dim >= (0)),                                                   \
                          ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
         SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim),                  \
                        SAC_ND_DESC_BASETYPE (var_NT))                                    \
@@ -1620,7 +1620,7 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_ALLOC__DESC__AUD_C99__DIS(var_NT, dim)                                    \
     {                                                                                    \
-        SAC_ASSURE_TYPE ((dim >= 0),                                                     \
+        SAC_ASSURE_TYPE ((dim >= (0)),                                                   \
                          ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
         SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT),                                           \
                        BYTE_SIZE_OF_DIS_DESC (SAC_ND_A_IS_DIST (var_NT), dim),           \
@@ -1641,7 +1641,7 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_DESC_ALLOC__DEFAULT(ndesc, dim)                                              \
     {                                                                                    \
-        SAC_ASSURE_TYPE ((dim >= 0),                                                     \
+        SAC_ASSURE_TYPE ((dim >= (0)),                                                   \
                          ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
         SAC_HM_MALLOC (ndesc, BYTE_SIZE_OF_DESC (dim), SAC_ND_DESC_BASETYPE (ndesc))     \
         DESC_RC (ndesc) = 0;                                                             \
@@ -1653,7 +1653,7 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_DESC_ALLOC__DIS(ndesc, dim)                                                  \
     {                                                                                    \
-        SAC_ASSURE_TYPE ((dim >= 0),                                                     \
+        SAC_ASSURE_TYPE ((dim >= (0)),                                                   \
                          ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
         SAC_HM_MALLOC (ndesc, BYTE_SIZE_OF_DIS_DESC (SAC_ND_A_IS_DIST (var_NT), dim),    \
                        SAC_ND_DESC_BASETYPE (ndesc))                                     \
@@ -2210,7 +2210,7 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_COPY__DATA( %s, %s, %s)", NT_STR (to_NT), #from_NT, #copyfun))            \
-        SAC_ASSURE_TYPE ((SAC_ND_A_DIM (from_NT) == 0),                                  \
+        SAC_ASSURE_TYPE ((SAC_ND_A_DIM (from_NT) == (0)),                                \
                          ("Assignment with incompatible types found!"));                 \
         SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
     }
@@ -2219,7 +2219,7 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_COPY__DATA( %s, %s, %s)", NT_STR (to_NT), #from_NT, #copyfun))            \
-        SAC_ASSURE_TYPE ((SAC_ND_A_DIM (to_NT) == 0),                                    \
+        SAC_ASSURE_TYPE ((SAC_ND_A_DIM (to_NT) == (0)),                                  \
                          ("Assignment with incompatible types found!"));                 \
         SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
     }

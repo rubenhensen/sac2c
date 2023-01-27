@@ -194,7 +194,7 @@
 
 #define SAC_MUTC_LOCAL_ALLOC__DESC__AUD(var_NT, dim)                                     \
     {                                                                                    \
-        SAC_ASSURE_TYPE ((dim >= 0),                                                     \
+        SAC_ASSURE_TYPE ((dim >= (0)),                                                   \
                          ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
         SAC_MUTC_LOCAL_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim), int)     \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \

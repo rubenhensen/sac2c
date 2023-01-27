@@ -120,7 +120,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_id_arr (char *to_NT, int to_sdim, char *shp_NT,
     indout ("SAC_TR_PRF_PRINT( (\"ND_WL_GENARRAY__SHAPE( %s, %d, %s, ...)\"))\n", to_NT,
             to_sdim, shp_NT);
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", shp_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", shp_NT),
                  ASSURE_TEXT ("Shape of genarray with-loop has (dim != 1)!"));
 
     /*
@@ -130,7 +130,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_id_arr (char *to_NT, int to_sdim, char *shp_NT,
      */
     for (i = 0; i < val_size; i++) {
         if (vals_ANY[i][0] == '(') {
-            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", vals_ANY[i]),
+            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", vals_ANY[i]),
                          ASSURE_TEXT ("Shape of genarray with-loop has (dim != 1)!"));
         }
     }
@@ -172,7 +172,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_id_id (char *to_NT, int to_sdim, char *shp_NT,
             " (\"ND_WL_GENARRAY__SHAPE( %s, %d, ..., %s, %d)\"))\n",
             to_NT, to_sdim, val_NT, val_sdim);
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", shp_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", shp_NT),
                  ASSURE_TEXT ("Shape of genarray with-loop has (dim != 1)!"));
 
     Set_Shape (to_NT, to_sdim, shp_NT, -1, SizeId, NULL, ReadId, val_NT, val_dim, DimId,
@@ -221,7 +221,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim, int shp_size,
 
     for (i = 0; i < shp_size; i++) {
         if (shp_ANY[i][0] == '(') {
-            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", shp_ANY[i]),
+            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", shp_ANY[i]),
                          ASSURE_TEXT ("Shape of genarray with-loop has (dim != 1)!"));
         }
     }
