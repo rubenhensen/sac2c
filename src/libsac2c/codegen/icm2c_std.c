@@ -2614,7 +2614,7 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_NT, int to_sdim, int val_size, char *
                 DBUG_ASSERT (ICUGetShapeClass (vals_ANY[i]) == C_aud,
                              "tagged id is no scalar!");
 
-                ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", vals_ANY[i]),
+                ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", vals_ANY[i]),
                              ASSURE_TEXT ("Scalar expected but array "
                                           "with (dim > 0) found!"));
             }

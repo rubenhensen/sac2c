@@ -132,11 +132,11 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                    It also seems that it is never being executed.  */
                 ASSURE_TYPE_HEADER ()
                     ;
-                    out ("(%d < ", i);
+                    out ("((%d) < ", i);
                     shp1_size_fun (shp1);
                     out (" && SAC_ND_A_SHAPE( %s, %d) == ", to_NT, i);
                     shp1_read_fun (shp1, NULL, i);
-                    out (") || (%d >= ", i);
+                    out (") || ((%d) >= ", i);
                     /* XXX Shouldn't it be shp2 here?  */
                     shp1_size_fun (shp1);
                     out (" && SAC_ND_A_SHAPE( %s, %d) == ", to_NT, i);
@@ -718,7 +718,7 @@ GetAttr (void *v, int v_attr, void (*v_attr_fun) (void *))
         DBUG_ASSERT (v_attr_fun != NULL, "access function not found!");
         v_attr_fun (v);
     } else {
-        out ("%d", v_attr);
+        out ("(%d)", v_attr);
     }
 
     DBUG_RETURN ();

@@ -758,7 +758,7 @@ ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdim, char *fro
 #undef CUDA_PRF_IDX_MODARRAY_AxSxA__DATA
 
     if (idx_ANY[0] == '(') {
-        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idx_ANY),
+        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", idx_ANY),
                      ASSURE_TEXT ("2nd argument of %s is not a scalar!",
                                   global.prf_name[F_idx_modarray_AxSxS]));
     }

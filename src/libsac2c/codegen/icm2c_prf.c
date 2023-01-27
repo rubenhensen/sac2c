@@ -117,7 +117,7 @@ ICMCompileND_PRF_RESHAPE_VxA__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
     indout ("SAC_TR_PRF_PRINT( (\"ND_PRF_RESHAPE_VxA__SHAPE( %s, %d, ...)\"))\n", to_NT,
             to_sdim);
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", shp_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", shp_NT),
                  ASSURE_TEXT ("1st argument of %s is not a vector!",
                               global.prf_name[F_reshape_VxA]));
 
@@ -160,7 +160,7 @@ ICMCompileND_PRF_RESHAPE_VxA__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
 
     for (int i = 0; i < shp_size; i++) {
         if (shp_ANY[i][0] == '(') {
-            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", shp_ANY[i]),
+            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", shp_ANY[i]),
                          ASSURE_TEXT ("1st argument of %s is not a vector!",
                                       global.prf_name[F_reshape_VxA]));
         }
@@ -350,7 +350,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT,
          *
          * Hence, F_sel_VxA is implemented for scalar results only!
          */
-        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == %d", from_NT, idx_size),
+        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (%d)", from_NT, idx_size),
                      ASSURE_TEXT ("Result of %s is not a scalar!",
                                   global.prf_name[F_sel_VxA]));
 
@@ -449,7 +449,7 @@ ICMCompileND_PRF_SIMD_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT,
     indout ("SAC_TR_PRF_PRINT( (\"ND_PRF_SIMD_SEL_VxA__DATA( %s, %d, %s, %d, ...)\"))\n",
             to_NT, to_sdim, from_NT, from_sdim);
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", idx_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", idx_NT),
                  ASSURE_TEXT ("1st argument of %s is not a vector!",
                               global.prf_name[F_simd_sel_VxA]));
 
@@ -486,13 +486,13 @@ ICMCompileND_PRF_SIMD_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT
 
     for (int i = 0; i < idx_size; i++) {
         if (idxs_ANY[i][0] == '(') {
-            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idxs_ANY[i]),
+            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", idxs_ANY[i]),
                          ASSURE_TEXT ("1st argument of %s is not a vector!",
                                       global.prf_name[F_simd_sel_VxA]));
         }
     }
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == %d", from_NT, idx_size),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (%d)", from_NT, idx_size),
                  ASSURE_TEXT ("Length of index vector used for %s does not "
                               "match rank of argument array!",
                               global.prf_name[F_simd_sel_VxA]));
@@ -588,7 +588,7 @@ ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT, int 
     indout ("SAC_TR_PRF_PRINT( (\"ND_PRF_SEL_VxA__DATA( %s, %d, %s, %d, ...)\"))\n",
             to_NT, to_sdim, from_NT, from_sdim);
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", idx_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", idx_NT),
                  ASSURE_TEXT ("1st argument of %s is not a vector!",
                               global.prf_name[F_sel_VxA]));
 
@@ -698,13 +698,13 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
 
     for (int i = 0; i < idx_size; i++) {
         if (idxs_ANY[i][0] == '(') {
-            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idxs_ANY[i]),
+            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", idxs_ANY[i]),
                          ASSURE_TEXT ("1st argument of %s is not a vector!",
                                       global.prf_name[F_sel_VxA]));
         }
     }
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == %d", from_NT, idx_size),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (%d)", from_NT, idx_size),
                  ASSURE_TEXT ("Length of index vector used for %s does not "
                               "match rank of argument array!",
                               global.prf_name[F_sel_VxA]));
@@ -988,7 +988,7 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim, char *from_N
             "( %s, %d, %s, %d, ..., %s)\"))\n",
             to_NT, to_sdim, from_NT, from_sdim, val_scalar);
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", idx_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", idx_NT),
                  ASSURE_TEXT ("2nd argument of %s is not a vector!",
                               global.prf_name[F_modarray_AxVxS]));
 
@@ -1045,13 +1045,13 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr (char *to_NT, int to_sdim, char *from_
 
     for (int i = 0; i < idx_size; i++) {
         if (idxs_ANY[i][0] == '(') {
-            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idxs_ANY[i]),
+            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", idxs_ANY[i]),
                          ASSURE_TEXT ("2nd argument of %s is not a vector",
                                       global.prf_name[F_modarray_AxVxS]));
         }
     }
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) >= %d", from_NT, idx_size),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) >= (%d)", from_NT, idx_size),
                  ASSURE_TEXT ("2nd argument of %s has illegal size!",
                               global.prf_name[F_modarray_AxVxS]));
 
@@ -1100,7 +1100,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA__DATA_id (char *to_NT, int to_sdim, char *from_N
             " (\"ND_PRF_MODARRAY_AxVxA__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
             to_NT, to_sdim, from_NT, from_sdim, val_array);
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", idx_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", idx_NT),
                  ASSURE_TEXT ("2nd argument of %s is not a vector!",
                               global.prf_name[F_modarray_AxVxA]));
 
@@ -1161,13 +1161,13 @@ ICMCompileND_PRF_MODARRAY_AxVxA__DATA_arr (char *to_NT, int to_sdim, char *from_
 
     for (i = 0; i < idx_size; i++) {
         if (idxs_ANY[i][0] == '(') {
-            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idxs_ANY[i]),
+            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", idxs_ANY[i]),
                          ASSURE_TEXT ("2nd argument of %s is not a vector",
                                       global.prf_name[F_modarray_AxVxA]));
         }
     }
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) >= %d", from_NT, idx_size),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) >= (%d)", from_NT, idx_size),
                  ASSURE_TEXT ("2nd argument of %s has illegal size!",
                               global.prf_name[F_modarray_AxVxA]));
 
@@ -1354,7 +1354,7 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
             to_NT, to_sdim, from_NT, from_sdim, idx_ANY);
 
     if (idx_ANY[0] == '(') {
-        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idx_ANY),
+        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", idx_ANY),
                      ASSURE_TEXT ("1st argument of %s is not a scalar!",
                                   global.prf_name[F_idx_sel]));
     }
@@ -1420,7 +1420,7 @@ ICMCompileND_PRF_IDX_SHAPE_SEL__DATA (char *to_NT, int to_sdim, char *from_NT,
             to_NT, to_sdim, from_NT, from_sdim, idx_ANY);
 
     if (idx_ANY[0] == '(') {
-        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idx_ANY),
+        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", idx_ANY),
                      ASSURE_TEXT ("1st argument of %s is not a scalar!",
                                   global.prf_name[F_idx_shape_sel]));
     }
@@ -1497,7 +1497,7 @@ ICMCompileND_PRF_IDX_MODARRAY_AxSxS__DATA (char *to_NT, int to_sdim, char *from_
             to_NT, to_sdim, from_NT, from_sdim, idx_ANY, val_scalar);
 
     if (idx_ANY[0] == '(') {
-        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idx_ANY),
+        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", idx_ANY),
                      ASSURE_TEXT ("2nd argument of %s is not a scalar!",
                                   global.prf_name[F_idx_modarray_AxSxS]));
     }
@@ -1551,7 +1551,7 @@ ICMCompileND_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdim, char *from_
             to_NT, to_sdim, from_NT, from_sdim, idx_ANY, val_array);
 
     if (idx_ANY[0] == '(') {
-        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idx_ANY),
+        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", idx_ANY),
                      ASSURE_TEXT ("2nd argument of %s is not a scalar!",
                                   global.prf_name[F_idx_modarray_AxSxA]));
     }
@@ -1599,12 +1599,12 @@ ICMCompileND_PRF_TAKE_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int f
             to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
     if (cnt_ANY[0] == '(') {
-        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", cnt_ANY),
+        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", cnt_ANY),
                      ASSURE_TEXT ("1st argument of %s is not a scalar!",
                                   global.prf_name[F_take_SxV]));
     }
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", from_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", from_NT),
                  ASSURE_TEXT ("2nd argument of %s is not a vector!",
                               global.prf_name[F_take_SxV]));
 
@@ -1730,12 +1730,12 @@ ICMCompileND_PRF_DROP_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int f
             to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
     if (cnt_ANY[0] == '(') {
-        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", cnt_ANY),
+        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (0)", cnt_ANY),
                      ASSURE_TEXT ("1st argument of %s is not a scalar!",
                                   global.prf_name[F_drop_SxV]));
     }
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", from_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", from_NT),
                  ASSURE_TEXT ("2nd argument of %s is not a vector!",
                               global.prf_name[F_drop_SxV]));
 
@@ -1806,7 +1806,7 @@ ICMCompileND_PRF_DROP_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int fr
         IF_BEGIN ("SAC_cond")
             ;
             indout ("SAC_cnt = SAC_ND_A_SIZE( %s) + SAC_off;\n", from_NT);
-            ASSURE_TYPE (ASSURE_COND ("SAC_off <= 0"),
+            ASSURE_TYPE (ASSURE_COND ("SAC_off <= (0)"),
                          ASSURE_TEXT ("1st argument of %s is out of range!",
                                       global.prf_name[F_drop_SxV]));
             indout ("SAC_off = 0;\n");
@@ -1814,7 +1814,7 @@ ICMCompileND_PRF_DROP_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int fr
         ELSE_BEGIN ()
             ;
             indout ("SAC_cnt = SAC_ND_A_SIZE( %s) - SAC_off;\n", from_NT);
-            ASSURE_TYPE (ASSURE_COND ("-SAC_off <= 0"),
+            ASSURE_TYPE (ASSURE_COND ("-SAC_off <= (0)"),
                          ASSURE_TEXT ("1st argument of %s is out of range!",
                                       global.prf_name[F_drop_SxV]));
         ELSE_END ();
@@ -1865,11 +1865,11 @@ ICMCompileND_PRF_CAT_VxV__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int f
             " (\"ND_PRF_CAT_VxV__SHAPE( %s, %d, %s, %d, %s, %d)\"))\n",
             to_NT, to_sdim, from1_NT, from1_sdim, from2_NT, from2_sdim);
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", from1_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", from1_NT),
                  ASSURE_TEXT ("1st argument of %s is not a vector!",
                               global.prf_name[F_cat_VxV]));
 
-    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", from2_NT),
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == (1)", from2_NT),
                  ASSURE_TEXT ("2nd argument of %s is not a vector!",
                               global.prf_name[F_cat_VxV]));
 
