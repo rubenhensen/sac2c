@@ -161,18 +161,6 @@ jupyter_parse_from_string (const char *s)
         } \
     } while (0)
 
-#define HANDLE_USEIMPORTS(__parser, __num) \
-    do { \
-        struct token *tok = parser_get_token (jup_parser); \
-        parser_unget (jup_parser); \
-        if (token_is_keyword (tok, USE)) \
-            n = handle_interface (jup_parser, int_use); \
-        else if (token_is_keyword (tok, IMPORT)) \
-            n = handle_interface (jup_parser, int_import); \
-        else if (token_is_keyword (tok, TYPEDEF)) \
-            n = handle_typedef (jup_parser); \
-    } while (0)
-
     jup_parser->lex->file = fin;
     PARSER_RESET (jup_parser);
 
@@ -227,15 +215,38 @@ jupyter_parse_from_string (const char *s)
                   && ft == fun_fundef
                   && tok_eof == token_class (parser_get_token (jup_parser)), 3, STRcpy (FUNDEF_NAME (n)));
 
-    // Is it a use/import/typedef?
+    // Is it a typedef?
     CTIresetErrorCount ();
-    fprintf (local_stderr, "======= parsing as use/import/typedef\n");
-    HANDLE_USEIMPORTS (jup_parser, -1);
+    fprintf (local_stderr, "======= parsing as typedef\n");
+    n = handle_typedef (jup_parser);
     RET_OR_RESET (jup_parser,
                   n
                   && n != error_mark_node
                   && CTIgetErrorCount () == 0
-                  && tok_eof == token_class (parser_get_token (jup_parser)), 4, "");
+                  && tok_eof == token_class (parser_get_token (jup_parser)), 4, STRcpy (TYPEDEF_NAME (n)));
+
+    // Is it an import?
+    CTIresetErrorCount ();
+    fprintf (local_stderr, "======= parsing as import\n");
+    struct token *tok = parser_get_token (jup_parser);
+    parser_unget (jup_parser);
+    if (token_is_keyword (tok, IMPORT)) {
+        n = handle_interface (jup_parser, int_import);
+        RET_OR_RESET (jup_parser,
+                      n
+                      && n != error_mark_node
+                      && CTIgetErrorCount () == 0
+                      && tok_eof == token_class (parser_get_token (jup_parser)), 5, STRcpy (IMPORT_MOD (n)));
+    }
+
+    if (token_is_keyword (tok, USE)) {
+        n = handle_interface (jup_parser, int_use);
+        RET_OR_RESET (jup_parser,
+                      n
+                      && n != error_mark_node
+                      && CTIgetErrorCount () == 0
+                      && tok_eof == token_class (parser_get_token (jup_parser)), 6, STRcpy (USE_MOD (n)));
+    }
 
 cleanup:
     if (n && n != error_mark_node)
