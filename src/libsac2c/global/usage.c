@@ -125,11 +125,18 @@ PrintFeatureSet (void)
     DBUG_ENTER ();
 
     printf ("\n\nINSTALLATION-SPECIFIC FEATURE SET:\n\n"
-            " - default path to sac2crc: %s\n"
-            " - default path to libsac2c: %s\n\n",
+            " - default path to sac2crc:  %s\n"
+            " - build path to sac2crc:    %s\n"
+            " - default path to libsac2c: %s\n"
+            " - build path to libsac2c:   %s\n\n",
             global.global_sac2crc_location == NULL ? "???"
                                                    : global.global_sac2crc_location,
-            global.config.tree_outputdir == NULL ? "???" : global.config.tree_outputdir);
+            global.build_sac2crc_location == NULL ? "???"
+                                                  : global.build_sac2crc_location,
+            global.global_sac2clib_location == NULL ? "???"
+                                                    : global.global_sac2clib_location,
+            global.build_sac2clib_location == NULL ? "???"
+                                                   : global.build_sac2clib_location);
 
     DBUG_RETURN ();
 }
@@ -159,6 +166,7 @@ PrintSpecialOptions (void)
       "\n"
       "    -libstat        Print status information of the given SAC library file.\n"
       "    -prsc           Print resource settings.\n"
+      "    -plibsac2c      Print libsac2c default and build paths.\n"
       "\n"
       "    -M              Makes sac2c print a list of dependencies of the given\n"
       "                    file and exit.  Dependencies are objects and libraries that\n"

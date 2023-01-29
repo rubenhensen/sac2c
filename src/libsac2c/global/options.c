@@ -1179,6 +1179,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with ppppppppppppppppppppppppppppppppppppppppppp
      */
 
+    ARGS_FLAG ("plibsac2c", global.print_libsac2c = TRUE);
+
     ARGS_OPTION ("printstart", PHOinterpretStartPhase (ARG))
 
     ARGS_OPTION ("printstop", PHOinterpretStopPhase (ARG))
