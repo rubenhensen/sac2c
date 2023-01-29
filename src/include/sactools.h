@@ -127,8 +127,11 @@ launch_function_from_library (const char *library, const char *sac2crc,
     sacmain_u mainptr;
     version_u libversion;
     sac2crc_u set_sac2crc_location;
+    sac2crc_u set_sac2clib_location;
     char global_sac2crc_path[PATH_MAX];
     char build_sac2crc_path[PATH_MAX];
+    char global_sac2clib_path[PATH_MAX];
+    char build_sac2clib_path[PATH_MAX];
     int ret;
 
     /**
@@ -151,6 +154,14 @@ launch_function_from_library (const char *library, const char *sac2crc,
         exit (20);
     }
 
+    // call     setLibsac2cInfo    from libsac2c/global/main.c
+    set_sac2clib_location.v
+      = get_pointer_to_symbol (libsac2c, library, "setLibsac2cInfo");
+    snprintf (global_sac2clib_path, sizeof (global_sac2clib_path), "%s", SAC2CRC_DIR);
+    snprintf (build_sac2clib_path, sizeof (build_sac2clib_path), "%s", DLL_BUILD_DIR);
+    set_sac2clib_location.f (global_sac2clib_path, build_sac2clib_path);
+
+    // call     setLibsac2cInfo    from libsac2c/global/resource.c
     set_sac2crc_location.v
       = get_pointer_to_symbol (libsac2c, library, "RSCsetSac2crcLocations");
     snprintf (global_sac2crc_path, sizeof (global_sac2crc_path), "%s/%s", SAC2CRC_DIR,
@@ -159,6 +170,7 @@ launch_function_from_library (const char *library, const char *sac2crc,
               sac2crc);
     set_sac2crc_location.f (global_sac2crc_path, build_sac2crc_path);
 
+    // call     SACrunSac2c/SACrun...    from libsac2c/global/main.c
     mainptr.v = get_pointer_to_symbol (libsac2c, library, mainfun);
     ret = mainptr.f (argc, argv);
 

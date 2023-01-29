@@ -939,6 +939,11 @@ GLOBAL (bool, libstat, FALSE, xfree_dummy, )
  * Don't actually compile, but display library information.
  */
 
+GLOBAL (bool, print_libsac2c, FALSE, xfree_dummy, )
+/*
+ * Don't actually compile, but print default and build path of libsac2c
+ */
+
 GLOBAL (bool, print_resources, FALSE, xfree_dummy, )
 /*
  * Don't actually compile, but display resource information.
@@ -1329,6 +1334,13 @@ GLOBAL_NOINIT (char *, build_sac2crc_location, NULL, xfree_dummy, )
  * in sactools.h *before* we call the main function.
  */
 
+GLOBAL_NOINIT (char *, global_sac2clib_location, NULL, xfree_dummy, )
+GLOBAL_NOINIT (char *, build_sac2clib_location, NULL, xfree_dummy, )
+/*
+ * These variables keep the default and the build location of this 
+ * library helping other programs such as jupyter to find the library
+ * once they have found the executable.
+ */
 /*
  * Storing module dependencies
  */

@@ -23,6 +23,13 @@
 
 /*! Here we handle special options that do not initiate any
     compilation process.  */
+
+void printLibsac2cInfo (void)
+{
+    printf ("%s:%s\n", global.global_sac2clib_location
+                     , global.build_sac2clib_location);
+}
+
 static void
 HandleSpecialOptions (void)
 {
@@ -33,6 +40,9 @@ HandleSpecialOptions (void)
         CTIexit (EXIT_SUCCESS);
     } else if (global.libstat) {
         LIBSprintLibStat ();
+        CTIexit (EXIT_SUCCESS);
+    } else if (global.print_libsac2c) {
+        printLibsac2cInfo ();
         CTIexit (EXIT_SUCCESS);
     } else if (global.do_clink != DO_C_none) {
         CCTperformTask (CCT_clinkonly);
@@ -171,5 +181,13 @@ getLibsac2cVersion (void)
 {
     return SAC2C_VERSION;
 }
+
+void
+setLibsac2cInfo (char *global_path, char * build_path)
+{
+    global.global_sac2clib_location = global_path;
+    global.build_sac2clib_location = build_path;
+}
+
 
 #undef DBUG_PREFIX
