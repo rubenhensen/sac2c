@@ -192,6 +192,11 @@ static const zipcvfunptr zipcv_mod_init[] = {
 #include "type_info.mac"
 };
 
+static const zipcvfunptr zipcv_aplmod_init[] = {
+#define TYP_IFzipcv(fun) fun##AplMod
+#include "type_info.mac"
+};
+
 static const zipcvfunptr zipcv_min_init[] = {
 #define TYP_IFzipcv(fun) fun##Min
 #include "type_info.mac"
