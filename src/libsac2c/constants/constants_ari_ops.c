@@ -344,7 +344,7 @@ COaplmod (constant *a, constant *b, constant *tmp1)
     constant *res;
 
     DBUG_ENTER ();
-    res = COzip (global.zipcv_mod, a, b, T_unknown);
+    res = COzip (global.zipcv_aplmod, a, b, T_unknown);
     DBUG_EXECUTE (COINTdbugPrintBinOp ("COaplmod", a, b, res));
     DBUG_RETURN (res);
 }
