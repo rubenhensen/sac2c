@@ -6,6 +6,7 @@
 extern node *MOIfundef (node *arg_node, info *arg_info);
 extern node *MOIassign (node *arg_node, info *arg_info);
 extern node *MOIid (node *arg_node, info *arg_info);
+extern node *MOIprf (node *arg_node, info *arg_info);
 
 extern node *MOIdoManageObjectInitialisers (node *syntax_tree);
 

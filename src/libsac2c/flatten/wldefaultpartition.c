@@ -471,6 +471,7 @@ WLDPgenarray (node *arg_node, info *arg_info)
             /* set correct backref to defining assignment */
             AVIS_SSAASSIGN (IDS_AVIS (ids)) = INFO_WLPREASS (arg_info);
 
+            GENARRAY_DEFAULT (arg_node) = TBmakeId (avis);
             INFO_DEFEXPR (arg_info)
               = TBmakeExprs (TBmakeId (avis), INFO_DEFEXPR (arg_info));
 
