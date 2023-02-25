@@ -1,3 +1,56 @@
+/**
+ *
+ * MOI handles the special case of object initialisers.
+ *
+ * global objects need to be initialised somewhere. To do so,
+ * we need to have some code that knows about the global object
+ * and that performs the necessary allocations, if needed. To 
+ * reuse existing code generation, in SaC, we generate a special
+ * INIT function which expects the global object as a reference
+ * parameter. Inside that function, we generate the actual 
+ * object including potentially needed memory allocations and
+ * we assign it to the global variable by "returning" it 
+ * through the reference parameter.
+ * While this approach ensures that the usual reference-parameter 
+ * mechanism sorts almost everything, there is one little catch:
+ * the "incoming" object, in contrast to the normal reference
+ * parameter case, does not yet exist / is not yet allocated or
+ * initialised. Therefore, we must make sure that these artificial
+ * parameters are not being used. THIS is the purpose of this
+ * traversal. It traverses through the object init functions and
+ * blindly eliminates all assignments whose RHS refers to the
+ * incoming reference parameter. The only special case are
+ * occurances of alloc_or_reuse which are replaced by _alloc_.
+ *
+ * Example:
+ *
+ * class X;
+ * classtype int[10]
+ * objdef myX = createX();
+ *
+ * Before this phase, we have a function:
+ *
+ * X:_INIT::init_myX (int[10] & _OI_object)   which has the code of 
+ *                                            createX() inlined
+ *
+ * Because the compiler "thinks" that this is a normal function,
+ * it will try to "consume" its argument, either through DEC_RC
+ * or through _alloc_or_reuse. Given that we plan to call this function
+ * with an uninitialisd global variable, we have to elide the DEC_RC 
+ * and we have to replace a potential alloc_or_reuse by an _alloc.
+ *
+ * Note that we also have a wrapper function for this thingy:
+ *
+ * X::init_myX (int[10] & _OI_object)     which calls the one above
+ *                                        with its reference parameter.
+ * Consequently, this traversal elides that call, ending in an
+ * (as far as I can tell) unused function.
+ *
+ * Any program that wants to use this global object will call
+ * X:_INIT::init_myX with a pointer to the global variable as argument!
+ *
+ */
+
 #include "manage_object_initialisers.h"
 
 #include "traverse.h"
@@ -9,8 +62,10 @@
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "namespaces.h"
 #include "ctinfo.h"
+#include "print.h"
 
 /*
  * INFO structure
@@ -96,6 +151,9 @@ MOIassign (node *arg_node, info *arg_info)
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_DELETE (arg_info)) {
+        DBUG_PRINT ("    found global object reference on RHS,"
+                    " deleting the following assignment:");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
         arg_node = FREEdoFreeNode (arg_node);
         INFO_DELETE (arg_info) = FALSE;
     }
@@ -111,6 +169,27 @@ MOIid (node *arg_node, info *arg_info)
     INFO_DELETE (arg_info)
       = INFO_DELETE (arg_info)
         || ArgsContainAvis (INFO_ARGS (arg_info), ID_AVIS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+MOIprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
+
+    if (INFO_DELETE (arg_info) && (PRF_PRF (arg_node) == F_alloc_or_reuse)) {
+        DBUG_PRINT ("    found global object reference in F_alloc_or_reuse,"
+                    " modifying:");
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, arg_node));
+        DBUG_PRINT ("    into:");
+        PRF_EXPRS4 (arg_node) = FREEdoFreeTree (PRF_EXPRS4 (arg_node));
+        PRF_PRF (arg_node) = F_alloc;
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, arg_node));
+        INFO_DELETE (arg_info) = FALSE;
+    }
 
     DBUG_RETURN (arg_node);
 }
