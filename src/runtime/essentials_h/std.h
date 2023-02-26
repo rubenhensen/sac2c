@@ -2210,7 +2210,7 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_COPY__DATA( %s, %s, %s)", NT_STR (to_NT), #from_NT, #copyfun))            \
-        SAC_ASSURE_TYPE ((SAC_ND_A_DIM (from_NT) == (0)),                                \
+        SAC_ASSURE_TYPE ((SAC_ND_A_SIZE (from_NT) == (1)),                               \
                          ("Assignment with incompatible types found!"));                 \
         SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
     }
@@ -2219,7 +2219,7 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_COPY__DATA( %s, %s, %s)", NT_STR (to_NT), #from_NT, #copyfun))            \
-        SAC_ASSURE_TYPE ((SAC_ND_A_DIM (to_NT) == (0)),                                  \
+        SAC_ASSURE_TYPE ((SAC_ND_A_SIZE (to_NT) == (1)),                                 \
                          ("Assignment with incompatible types found!"));                 \
         SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
     }
