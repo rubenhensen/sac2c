@@ -157,7 +157,7 @@ launch_function_from_library (const char *library, const char *sac2crc,
     // call     setLibsac2cInfo    from libsac2c/global/main.c
     set_sac2clib_location.v
       = get_pointer_to_symbol (libsac2c, library, "setLibsac2cInfo");
-    snprintf (global_sac2clib_path, sizeof (global_sac2clib_path), "%s", SAC2CRC_DIR);
+    snprintf (global_sac2clib_path, sizeof (global_sac2clib_path), "%s", DLL_DIR);
     snprintf (build_sac2clib_path, sizeof (build_sac2clib_path), "%s", DLL_BUILD_DIR);
     set_sac2clib_location.f (global_sac2clib_path, build_sac2clib_path);
 
