@@ -1252,7 +1252,7 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
             indout ("const int SAC_ND_A_MIRROR_SHAPE( %s, %d) = %d;\n", var_NT, i,
                     shp[i]);
             size *= shp[i];
-            DBUG_ASSERT (size >= 0, "array with size <0 found!");
+            DBUG_ASSERT (size >= 0, "array with size %d<0 found; component in dim %d is %d!", size, i, shp[i]);
         }
 
         indout ("const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT, size);
