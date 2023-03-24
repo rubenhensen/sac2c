@@ -1,0 +1,34 @@
+//
+// This tests makes sure that the MT backend code-generation is working.
+//
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -t mt_pth
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|TMP := $(shell mktemp)
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(CALL_SAC2C) -bmt -printfun main $< > $(TMP)
+// SAC_TEST|<tab>cat $(TMP) | $(GREP_COMMAND_OUTPUT) "_mtspmdf_" 1
+// SAC_TEST|<tab>cat $(TMP) | $(GREP_COMMAND_OUTPUT) "_dec_rc_" 0
+// SAC_TEST|<tab>$(RM) $(TMP)
+// SAC_TEST|<tab>$(CALL_SAC2C) -trace rm $< -o <file-name-we>
+// SAC_TEST|<tab>./<file-name-we> -mt 4 2>&1 | fgrep "now" | tail -n 1 | $(GREP_COMMAND_OUTPUT) "now: 0" 1
+
+#include "mini-stdlib.sac"
+
+int main ()
+{
+    neutr = [0,0,0,0,0,0,0,0,0,0,0,0];
+    def = [1,1,1,1,1,1,1,1,1,1,1,1];
+    a = with {
+            ([0] <= [j] < [500] ) {
+                b = with {
+                        ([0] <= [i] < [10]) : [j,j,j,j,j,j,i,i,i,i,i,i];
+                    } : fold (+, neutr);
+            } : b;
+        } : genarray ([500], def);
+
+    return _sel_VxA_( [0,0], a);
+}
