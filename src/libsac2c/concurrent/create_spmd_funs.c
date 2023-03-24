@@ -154,6 +154,14 @@
  *         return a;
  *      }
  *
+ *   Another aspect to notice here is that this adjustment is ONLY needed
+ *   if the fold-WL is on the outermost level! If the fold-WL is inside a
+ *   modarray or genarray WL, the RCI phase in mem "understands" that the
+ *   neutral element will not be reused but the result of the fold will
+ *   be copied into the overall result! It therefore, injects the dec_rc
+ *   or free operation after the outer WL. In that case, this adjustment
+ *   must not happen! See the test "test-mt-fold-non-scalar-nested.sac"
+ *   for an example!
  *
  * implementation:
  *   Most of the analysis is happening in MTSPMDFid and in MTSPMDFids. Here,
@@ -185,6 +193,8 @@
  *
  *   To facilitate the fold with loop memory adjustment, we generate that
  *   code when traversing N_fold and put it into INFO_NEUTRALS.
+ *   As this only has to happen for top-level fold-WLs, we use INFO_TOPLEVEL
+ *   as an indicator to decide whether to adjust or not.
  *   This code is eventually inserted after the spmd function call in 
  *   MTSPMDFassign.
  *
@@ -222,6 +232,7 @@ struct INFO {
     node *retexprs;
     node *neutrals;
     bool collect :1;
+    bool toplevel :1;
     bool lift:1;
     bool withid :1;
     bool isxtfun :1;
@@ -242,6 +253,7 @@ struct INFO {
 #define INFO_RETEXPRS(n) ((n)->retexprs)
 #define INFO_NEUTRALS(n) ((n)->neutrals)
 #define INFO_COLLECT(n) ((n)->collect)
+#define INFO_TOPLEVEL(n) ((n)->toplevel)
 #define INFO_LIFT(n) ((n)->lift)
 #define INFO_WITHID(n) ((n)->withid)
 #define INFO_ISXTFUN(n) ((n)->isxtfun)
@@ -270,6 +282,7 @@ MakeInfo (void)
     INFO_RETEXPRS (result) = NULL;
     INFO_NEUTRALS (result) = NULL;
     INFO_COLLECT (result) = FALSE;
+    INFO_TOPLEVEL (result) = TRUE;
     INFO_LIFT (result) = FALSE;
     INFO_WITHID (result) = FALSE;
     INFO_ISXTFUN (result) = FALSE;
@@ -763,6 +776,7 @@ MTSPMDFwiths (node *arg_node, info *arg_info)
 node *
 MTSPMDFwith2 (node *arg_node, info *arg_info)
 {
+    bool toplevel;
     DBUG_ENTER ();
 
     /*
@@ -776,12 +790,15 @@ MTSPMDFwith2 (node *arg_node, info *arg_info)
          * Start collecting data flow information
          */
         INFO_COLLECT (arg_info) = TRUE;
+        toplevel = INFO_TOPLEVEL (arg_info);
 
         WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
         WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
 
+        INFO_TOPLEVEL (arg_info) = FALSE;
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+        INFO_TOPLEVEL (arg_info) = toplevel;
 
         INFO_COLLECT (arg_info) = FALSE;
         /*
@@ -903,12 +920,14 @@ MTSPMDFfold (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     
     if (INFO_COLLECT (arg_info)) {
-        neutr = FOLD_NEUTRAL (arg_node);
-        DBUG_ASSERT ((NODE_TYPE (neutr) == N_id),
-                     "non N_id neutral element in fold found");
-        dec_rc = TCmakePrf2 (F_dec_rc, TBmakeId (ID_AVIS (neutr)), TBmakeNum (1));
-        INFO_NEUTRALS (arg_info) = TBmakeAssign (TBmakeLet (NULL, dec_rc),
-                                                 INFO_NEUTRALS (arg_info));
+        if (INFO_TOPLEVEL (arg_info)) {
+            neutr = FOLD_NEUTRAL (arg_node);
+            DBUG_ASSERT ((NODE_TYPE (neutr) == N_id),
+                         "non N_id neutral element in fold found");
+            dec_rc = TCmakePrf2 (F_dec_rc, TBmakeId (ID_AVIS (neutr)), TBmakeNum (1));
+            INFO_NEUTRALS (arg_info) = TBmakeAssign (TBmakeLet (NULL, dec_rc),
+                                                     INFO_NEUTRALS (arg_info));
+        }
         
         // Finally we traverse all sons (including the neutral!)
         arg_node = TRAVcont (arg_node, arg_info);
