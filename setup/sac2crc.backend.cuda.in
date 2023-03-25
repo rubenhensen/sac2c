@@ -75,6 +75,10 @@ target cuda_sm_75 :: cuda_core :: arch_sm_75:
 target arch_sm_75 :: arch_sm_super:
 CUDA_ARCH        := "sm_75"
 
+target cuda_sm_80 :: cuda_core :: arch_sm_80:
+target arch_sm_80 :: arch_sm_super:
+CUDA_ARCH        := "sm_80"
+
 target cuda_sm_86 :: cuda_core :: arch_sm_86:
 target arch_sm_86 :: arch_sm_super:
 CUDA_ARCH        := "sm_86"
