@@ -1098,7 +1098,7 @@ PRApart (node *arg_node, info *arg_info)
             if (COisConstant (EXPRS_EXPR (lb))) {
                 IE_EXPRS (INFO_IE (arg_info), LOWER_BOUND)
                   = TBmakeCudaIndex (IDX_CONSTANT,
-                                     -COconst2Int (COaST2Constant (EXPRS_EXPR (lb))),
+                                     -COconst2IntAndFree (COaST2Constant (EXPRS_EXPR (lb))),
                                      NULL, 0, IE_EXPRS (INFO_IE (arg_info), LOWER_BOUND));
             } else {
                 INFO_DIM (arg_info) = LOWER_BOUND;
@@ -1110,7 +1110,7 @@ PRApart (node *arg_node, info *arg_info)
             if (COisConstant (EXPRS_EXPR (ub))) {
                 IE_EXPRS (INFO_IE (arg_info), UPPER_BOUND)
                   = TBmakeCudaIndex (IDX_CONSTANT,
-                                     COconst2Int (COaST2Constant (EXPRS_EXPR (ub))), NULL,
+                                     COconst2IntAndFree (COaST2Constant (EXPRS_EXPR (ub))), NULL,
                                      0, IE_EXPRS (INFO_IE (arg_info), UPPER_BOUND));
             } else {
                 INFO_DIM (arg_info) = UPPER_BOUND;
@@ -1562,7 +1562,7 @@ PRAprf (node *arg_node, info *arg_info)
             if (COisConstant (operand1)) {
                 AddIndex (IDX_CONSTANT,
                           INFO_COEFFICIENT (arg_info)
-                            * COconst2Int (COaST2Constant (operand1)),
+                            * COconst2IntAndFree (COaST2Constant (operand1)),
                           NULL, 0, INFO_DIM (arg_info), arg_info);
             } else {
                 ActOnId (ID_AVIS (operand1), arg_info);
@@ -1571,7 +1571,7 @@ PRAprf (node *arg_node, info *arg_info)
             if (COisConstant (operand2)) {
                 AddIndex (IDX_CONSTANT,
                           INFO_COEFFICIENT (arg_info)
-                            * COconst2Int (COaST2Constant (operand2)),
+                            * COconst2IntAndFree (COaST2Constant (operand2)),
                           NULL, 0, INFO_DIM (arg_info), arg_info);
             } else {
                 ActOnId (ID_AVIS (operand2), arg_info);
@@ -1586,7 +1586,7 @@ PRAprf (node *arg_node, info *arg_info)
             if (COisConstant (operand1)) {
                 AddIndex (IDX_CONSTANT,
                           INFO_COEFFICIENT (arg_info)
-                            * COconst2Int (COaST2Constant (operand1)),
+                            * COconst2IntAndFree (COaST2Constant (operand1)),
                           NULL, 0, INFO_DIM (arg_info), arg_info);
             } else {
                 ActOnId (ID_AVIS (operand1), arg_info);
@@ -1597,7 +1597,7 @@ PRAprf (node *arg_node, info *arg_info)
                 INFO_COEFFICIENT (arg_info) *= -1;
                 AddIndex (IDX_CONSTANT,
                           INFO_COEFFICIENT (arg_info)
-                            * COconst2Int (COaST2Constant (operand2)),
+                            * COconst2IntAndFree (COaST2Constant (operand2)),
                           NULL, 0, INFO_DIM (arg_info), arg_info);
                 INFO_COEFFICIENT (arg_info) = old_coefficient;
             } else {
@@ -1619,19 +1619,19 @@ PRAprf (node *arg_node, info *arg_info)
                 INFO_IS_AFFINE (arg_info) = FALSE;
             } else if (!COisConstant (operand1) && COisConstant (operand2)) {
                 old_coefficient = INFO_COEFFICIENT (arg_info);
-                INFO_COEFFICIENT (arg_info) *= COconst2Int (COaST2Constant (operand2));
+                INFO_COEFFICIENT (arg_info) *= COconst2IntAndFree (COaST2Constant (operand2));
                 ActOnId (ID_AVIS (operand1), arg_info);
                 INFO_COEFFICIENT (arg_info) = old_coefficient;
             } else if (COisConstant (operand1) && !COisConstant (operand2)) {
                 old_coefficient = INFO_COEFFICIENT (arg_info);
-                INFO_COEFFICIENT (arg_info) *= COconst2Int (COaST2Constant (operand1));
+                INFO_COEFFICIENT (arg_info) *= COconst2IntAndFree (COaST2Constant (operand1));
                 ActOnId (ID_AVIS (operand2), arg_info);
                 INFO_COEFFICIENT (arg_info) = old_coefficient;
             } else {
                 AddIndex (IDX_CONSTANT,
                           INFO_COEFFICIENT (arg_info)
-                            * COconst2Int (COaST2Constant (operand1))
-                            * COconst2Int (COaST2Constant (operand2)),
+                            * COconst2IntAndFree (COaST2Constant (operand1))
+                            * COconst2IntAndFree (COaST2Constant (operand2)),
                           NULL, 0, INFO_DIM (arg_info), arg_info);
             }
         }
@@ -1645,7 +1645,7 @@ PRAprf (node *arg_node, info *arg_info)
                 INFO_COEFFICIENT (arg_info) *= -1;
                 AddIndex (IDX_CONSTANT,
                           INFO_COEFFICIENT (arg_info)
-                            * COconst2Int (COaST2Constant (operand1)),
+                            * COconst2IntAndFree (COaST2Constant (operand1)),
                           NULL, 0, INFO_DIM (arg_info), arg_info);
                 INFO_COEFFICIENT (arg_info) = old_coefficient;
             } else {
@@ -1668,7 +1668,7 @@ PRAprf (node *arg_node, info *arg_info)
 
             INFO_DIM (arg_info) = 0;
             if (COisConstant (operand1)) {
-                AddIndex (IDX_CONSTANT, COconst2Int (COaST2Constant (operand1)), NULL, 0,
+                AddIndex (IDX_CONSTANT, COconst2IntAndFree (COaST2Constant (operand1)), NULL, 0,
                           INFO_DIM (arg_info), arg_info);
             } else {
                 INFO_COEFFICIENT (arg_info) = 1;
@@ -1676,7 +1676,7 @@ PRAprf (node *arg_node, info *arg_info)
             }
 
             if (COisConstant (operand2)) {
-                AddIndex (IDX_CONSTANT, -COconst2Int (COaST2Constant (operand2)), NULL, 0,
+                AddIndex (IDX_CONSTANT, -COconst2IntAndFree (COaST2Constant (operand2)), NULL, 0,
                           INFO_DIM (arg_info), arg_info);
             } else {
                 INFO_COEFFICIENT (arg_info) = -1;

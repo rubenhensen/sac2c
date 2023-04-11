@@ -11,12 +11,14 @@
  * - whenever a constant is given as argument, it will be inspected only!
  *   Neither the pointer to it nor any pointer to a sub structure will be
  *   returned or used within a data structure that serves as a result!
- *   There are EXACTLY ONE CLASSE OF FUNCTIONS that is an EXEPTION OF
- *   THIS RULE: - the GETxyz - functions for extracting components of constants
- * - The only function for freeing a shape structure is COFreeConstant!
- * - If the result is a shape structure, it has been freshly allocated!
- *   IMPORTANT: THIS RULE DOES NOT HOLD FOR COGetShape, WHICH RETURNS A
- *              POINTER TO THE INTERNAL SHAPE STRUCTURE
+ *   These are the exceptions:
+ *    - COconst2IntAndFree frees the given constant.
+ *    - The GETxyz-functions for extracting components of constants.
+ *   Notes:
+ *    - The only function for freeing a shape structure is COFreeConstant!
+ *    - If the result is a shape structure, it has been freshly allocated!
+ *      IMPORTANT: THIS RULE DOES NOT HOLD FOR COGetShape.
+ *                 IT RETURNS A POINTER TO THE INTERNAL SHAPE STRUCTURE
  *
  */
 
@@ -88,6 +90,7 @@ extern char *COconstantData2String (size_t max_char, constant *a);
 extern char *COconstant2String (constant *a);
 extern shape *COconstant2Shape (constant *a);
 extern int COconst2Int (constant *a);
+extern int COconst2IntAndFree (constant *a);
 extern void COprintConstant (FILE *file, constant *a);
 extern constant *COfreeConstant (constant *a);
 extern void COtouchConstant (constant *a, info *arg_info);

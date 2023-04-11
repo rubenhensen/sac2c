@@ -1553,4 +1553,24 @@ COconst2Int (constant *c)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn: int COconst2IntAndFree( constant *c)
+ *
+ * @brief: Create integer from scalar constant c and free the constant.
+ *
+ ******************************************************************************/
+int
+COconst2IntAndFree (constant *c)
+{
+    int res;
+
+    DBUG_ENTER ();
+    
+    res = COconst2Int (c);
+    COfreeConstant (c);
+
+    DBUG_RETURN (res);
+}
+
 #undef DBUG_PREFIX
