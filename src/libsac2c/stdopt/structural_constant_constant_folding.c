@@ -1762,12 +1762,17 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
     pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
                   PMvar (1, PMAgetNode (&iv), 0));
 
+    
     if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat3, offset))
         && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv)))) && (0 != ARRAY_AELEMS (aelems))
         && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
             == COgetExtent (frameshape, 0))) {
         if (NAUTisAllElemsSame (aelems)) {
-            DBUG_PRINT ("Removed idx_sel()");
+            DBUG_PRINT ("replacing idx_sel (%s, %s)",
+                        ID_NAME (PRF_ARG1 (arg_node)),
+                        ID_NAME (PRF_ARG2 (arg_node))
+                        );
+            DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, aelems););
             res = DUPdoDupTree (EXPRS_EXPR (ARRAY_AELEMS (aelems)));
         }
     }
