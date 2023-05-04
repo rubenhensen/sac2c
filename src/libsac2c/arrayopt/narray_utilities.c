@@ -78,6 +78,7 @@ NAUTisAllElemsSame (node *arg_node)
         && (PMmatchFlat (patcon2, EXPRS_EXPR (ARRAY_AELEMS (arg_node))))) {
         coz = COeq (con1, con2, NULL);
         z = COisTrue (coz, TRUE);
+        coz = COfreeConstant (coz);
     } else {
         aelems = ARRAY_AELEMS (arg_node);
         PMmatchFlat (pat1, EXPRS_EXPR (aelems));
@@ -91,7 +92,6 @@ NAUTisAllElemsSame (node *arg_node)
 
     con1 = (NULL != con1) ? COfreeConstant (con1) : NULL;
     con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
-    coz = (NULL != coz) ? COfreeConstant (coz) : NULL;
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     patcon1 = PMfree (patcon1);
