@@ -25,6 +25,7 @@
 #include "tree_compound.h"
 #include "free.h"
 #include "pattern_match.h"
+#include "print.h"
 #include "constants.h"
 #include "shape.h"
 #include "type_utils.h"
@@ -69,23 +70,28 @@ NAUTisAllElemsSame (node *arg_node)
     patcon1 = PMconst (1, PMAgetVal (&con1));
     patcon2 = PMconst (1, PMAgetVal (&con2));
 
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_array,
+                 "NAUTisAllElemsSame called with other than N_array node");
+    DBUG_PRINT ("checking:");
+    DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node););
     if ((PMmatchFlat (patcon1, arg_node))
         && (PMmatchFlat (patcon2, EXPRS_EXPR (ARRAY_AELEMS (arg_node))))) {
         coz = COeq (con1, con2, NULL);
         z = COisTrue (coz, TRUE);
-        con1 = (NULL != con1) ? COfreeConstant (con1) : NULL;
-        con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
-        coz = (NULL != coz) ? COfreeConstant (coz) : NULL;
+        coz = COfreeConstant (coz);
     } else {
-        z = TRUE;
         aelems = ARRAY_AELEMS (arg_node);
         PMmatchFlat (pat1, EXPRS_EXPR (aelems));
-        while (z && (NULL != elem) && (NULL != aelems)) {
+        z = (elem != NULL);
+        while (z && (NULL != aelems)) {
             z = PMmatchFlat (pat2, EXPRS_EXPR (aelems));
             aelems = EXPRS_NEXT (aelems);
         }
     }
+    DBUG_PRINT ("%s", z?"identical!":"possibly not identical!");
 
+    con1 = (NULL != con1) ? COfreeConstant (con1) : NULL;
+    con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     patcon1 = PMfree (patcon1);
