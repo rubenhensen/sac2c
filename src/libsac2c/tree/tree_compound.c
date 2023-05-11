@@ -1758,8 +1758,9 @@ TCgetNthExprsExprOrNull (size_t n, node *exprs)
     node *result;
 
     DBUG_ENTER ();
-
-    result = EXPRS_EXPR (TCgetNthExprsOrNull (n, exprs));
+    
+    exprs = TCgetNthExprsOrNull (n, exprs);
+    result = exprs == NULL ? NULL : EXPRS_EXPR (exprs);
     
     DBUG_RETURN (result);
 }
