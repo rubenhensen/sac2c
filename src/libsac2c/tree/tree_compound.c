@@ -1661,7 +1661,7 @@ TCcreateExprsFromArgs (node *args)
  * @return N_exprs if n < chain length
  *         NULL if n >= chain length
  ******************************************************************************/
-static node *
+node *
 TCgetNthExprsOrNull (size_t n, node *exprs)
 {
     DBUG_ENTER ();
@@ -1678,20 +1678,22 @@ TCgetNthExprsOrNull (size_t n, node *exprs)
  *
  * @brief Given an N_exprs chain, return the Nth N_exprs node
  *        in the chain, where n = 0 refers to the given exprs argument.
- *        Aborts if NEXT (NULL) is called, i.e. if n > chain length.
+ *        Aborts if n >= chain length.
  *
  * @param n     - number indicating which exprs to return.
  * @param exprs - N_exprs chain
  *
  * @return N_exprs if n < chain length
- *         NULL if n == chain length
- *         Aborts if n > chain length
+ *         Aborts if n >= chain length
  ******************************************************************************/
 node *
 TCgetNthExprs (size_t n, node *exprs)
 {
     DBUG_ENTER ();
-    DBUG_ASSERT (n <= TCcountExprs (exprs),
+    // If you trigger this assertion, consider using an OrNull variant of
+    // this or the calling function, such as TCgetNthExprsOrNull
+    // and TCgetNthExprsExprOrNull
+    DBUG_ASSERT (n < TCcountExprs (exprs),
                  "Expected at least %zuth exprs but found %zu expressions.",
                  n + 1, TCcountExprs (exprs));
 
@@ -1708,7 +1710,7 @@ TCgetNthExprs (size_t n, node *exprs)
  * @brief Given an N_exprs chain, replace the expr of the Nth N_exprs node
  *        in the chain with val IN PLACE, where n = 0 refers to the given 
  *        old_exprs argument.
- *        Aborts if the exprs to be replaced is NULL.
+ *        Aborts if n >= chain length.
  *
  * @param n         - number indicating which Exprs' expr to replace.
  * @param old_exprs - N_exprs chain
@@ -1742,7 +1744,32 @@ TCputNthExprs (size_t n, node *old_exprs, node *val)
  *
  * @brief Given an N_exprs chain, return the Nth EXPRS' EXPR node.
  *        in the chain, where n = 0 refers to the given exprs argument.
- *        Aborts if EXPRS_EXPR (NULL) is called, i.e. if n >= chain length.
+ *        If the n >= chain length, returns NULL.
+ *
+ * @param n     - number indicating which exprs' expr to return.
+ * @param exprs - N_exprs chain
+ *
+ * @return N_expr if n < chain length
+ *         NULL if n >= chain length
+ ******************************************************************************/
+node *
+TCgetNthExprsExprOrNull (size_t n, node *exprs)
+{
+    node *result;
+
+    DBUG_ENTER ();
+
+    result = EXPRS_EXPR (TCgetNthExprsOrNull (n, exprs));
+    
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCgetNthExprsExpr( size_t n, node *exprs)
+ *
+ * @brief Given an N_exprs chain, return the Nth EXPRS' EXPR node.
+ *        in the chain, where n = 0 refers to the given exprs argument.
+ *        Aborts if n >= chain length.
  *
  * @param n     - number indicating which exprs' expr to return.
  * @param exprs - N_exprs chain
@@ -1757,9 +1784,6 @@ TCgetNthExprsExpr (size_t n, node *exprs)
 
     DBUG_ENTER ();
 
-    // If EXISTING code fails here because EXPRS_EXPR (NULL) is being evaluated,
-    // then create a TCgetNthExprsExprOrNull function using TCgetNthExprsOrNull.
-    // If NEW code fails here, consider whether you really want nullability.
     result = EXPRS_EXPR (TCgetNthExprs (n, exprs));
     
     DBUG_RETURN (result);
