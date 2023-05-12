@@ -583,13 +583,13 @@ IVEXItmpIds (node *curpart, node *iavis, size_t k, node **preassignspart, node *
     DBUG_PRINT ("Working on %s", AVIS_NAME (iavis));
 
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (curpart));
-    b1 = WLUTfindArrayForBound (b1); /* crash in next says we didn't find it */
+    b1 = WLUTfindArrayForBound (b1);
     b1 = TCgetNthExprsExpr (k, ARRAY_AELEMS (b1));
     b1 = FLATGexpression2Avis (DUPdoDupNode (b1), vardecs, preassignspart,
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (curpart));
-    b2 = WLUTfindArrayForBound (b2); /* crash in next says we didn't find it */
+    b2 = WLUTfindArrayForBound (b2);
     b2 = TCgetNthExprsExpr (k, ARRAY_AELEMS (b2));
     b2 = FLATGexpression2Avis (DUPdoDupNode (b2), vardecs, preassignspart,
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));

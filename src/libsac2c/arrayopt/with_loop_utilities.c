@@ -104,38 +104,49 @@ WLUTisIdsMemberPartition (node *arg_node, node *partn)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLUTfindArrayForBound( node *bnd)
+ * @fn node *WLUTfindArrayForBound( node *bound)
  *
- * @brief Assuming that bnd is GENERATOR_BOUND1/2 for a WL generator,
- *        try to find the N_array that gives its elements.
+ * @brief Assuming that bound is GENERATOR_BOUND1/2/STEP/WIDTH for a WL
+ *        generator, try to find the N_array that gives its elements.
+ *        Reasons for failing and returning NULL include:
+ *        1. The bound is NULL.
+ *        2. The bound is an N_id that is or points to a function argument.
  *
- * @param:  N_id or N_array
- * @result: N_array, or NULL if we can't find an N_array.
+ * @param bound: An N_id or N_array node, or NULL.
+ *
+ * @result: N_array if one is found, NULL otherwise.
  *
  *****************************************************************************/
 node *
-WLUTfindArrayForBound (node *bnd)
+WLUTfindArrayForBound (node *bound)
 {
-    node *z = NULL;
+    node *res;
     pattern *pat;
 
     DBUG_ENTER ();
-
-    if (NULL != bnd) {
-        if (N_array == NODE_TYPE (bnd)) {
-            z = bnd;
-        }
-
-        if ((NULL == z) && (N_id == NODE_TYPE (bnd))) {
-            pat = PMarray (1, PMAgetNode (&z), 1, PMskip (0));
-            PMmatchFlat (pat, bnd);
-            pat = PMfree (pat);
-        }
+    
+    if (bound == NULL) {
+        DBUG_RETURN (NULL);
     }
 
-    DBUG_ASSERT ((NULL == z) || N_array == NODE_TYPE (z), "result node type wrong");
-
-    DBUG_RETURN (z);
+    switch (NODE_TYPE (bound)) {
+    case N_array:
+        res = bound;
+        break;
+    case N_id:
+        // Note that we can't use ASSIGN_RHS (ID_SSAASSIGN (bound)
+        // because ID_SSAASSIGN doesn't exist for fun args and index variables.
+        // Additionally, B would match A instead of [5] for A = [5]; B = A;
+        pat = PMarray (1, PMAgetNode (&res), 0);
+        PMmatchFlat (pat, bound);
+        pat = PMfree (pat);
+        break;
+    default:
+        DBUG_UNREACHABLE ("Got unexpected node type %s!", NODE_TEXT (bound));
+    }
+    DBUG_ASSERT (res == NULL || NODE_TYPE (res) == N_array,
+                 "Array conversion failed!");
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
