@@ -182,7 +182,7 @@ StructOpSelHelper (node *prfarg1, node *prfarg2, info *arg_info)
         con2 = COtake (take_vec, con1, NULL);
         offset = Idx2OffsetArray (con2, arg2);
         con2 = COfreeConstant (con2);
-        tmpXid = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
+        tmpXid = DUPdoDupNode (TCgetNthExprsExprOrNull (offset, ARRAY_AELEMS (arg2)));
         if (iv_len == X_dim) {
             // Case 1 : Exact selection: do the sel operation now.
             DBUG_PRINT ("Exact selection performed for %s = _sel_VxA_( %s, %s)",
@@ -357,7 +357,7 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
             if (prodarg1 == timesrhoarg2) {
                 /* If result is a scalar, return that. Else, create an N_array. */
                 if (0 == SHgetDim (resshape)) {
-                    res = DUPdoDupNode (TCgetNthExprsExpr (0, ARRAY_AELEMS (structcon)));
+                    res = DUPdoDupNode (TCgetNthExprsExprOrNull (0, ARRAY_AELEMS (structcon)));
                 } else {
                     res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (structcon)), resshape,
                                        DUPdoDupTree (ARRAY_AELEMS (structcon)));
@@ -1014,7 +1014,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                         offset = COconst2Int (offsetcon);
                         res = DUPdoDupNode (X);
                         DBUG_ASSERT (offset >= 0, "offset cannot be < 0");
-                        exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
+                        exprs = TCgetNthExprsOrNull (offset, ARRAY_AELEMS (res));
                         val_exprs = ARRAY_AELEMS (val);
                         while (val_exprs != NULL) {
                             EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
