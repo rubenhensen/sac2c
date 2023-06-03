@@ -304,8 +304,8 @@ UsedVar (info *arg_info, node *avis)
 
     DBUG_ASSERT (N_avis == NODE_TYPE (avis), "avis expected");
 
-    DFMsetMaskEntrySet (INFO_IN (arg_info), NULL, avis);
-    DFMsetMaskEntryClear (INFO_LOCAL (arg_info), NULL, avis);
+    DFMsetMaskEntrySet (INFO_IN (arg_info), avis);
+    DFMsetMaskEntryClear (INFO_LOCAL (arg_info), avis);
 
     DBUG_RETURN (arg_info);
 }
@@ -399,11 +399,11 @@ DefinedVar (info *arg_info, node *avis)
          */
         arg_info = UsedVar (arg_info, avis);
     } else {
-        DFMsetMaskEntryClear (INFO_IN (arg_info), NULL, avis);
-        if (DFMtestMaskEntry (INFO_NEEDED (arg_info), NULL, avis)) {
-            DFMsetMaskEntrySet (INFO_OUT (arg_info), NULL, avis);
+        DFMsetMaskEntryClear (INFO_IN (arg_info), avis);
+        if (DFMtestMaskEntry (INFO_NEEDED (arg_info), avis)) {
+            DFMsetMaskEntrySet (INFO_OUT (arg_info), avis);
         }
-        DFMsetMaskEntrySet (INFO_LOCAL (arg_info), NULL, avis);
+        DFMsetMaskEntrySet (INFO_LOCAL (arg_info), avis);
     }
 
     DBUG_RETURN (arg_info);
@@ -613,7 +613,7 @@ EnsureDFMbase (node *fundef)
         FUNDEF_DFM_BASE (fundef)
           = DFMgenMaskBase (FUNDEF_ARGS (fundef), FUNDEF_VARDECS (fundef));
 
-        DBUG_PRINT ("no DFM base found -> created (" F_PTR ")",
+        DBUG_PRINT ("no DFM base found -> created (%p)",
                     (void *)FUNDEF_DFM_BASE (fundef));
     } else {
         FUNDEF_DFM_BASE (fundef) = DFMupdateMaskBase (old_dfm_base, FUNDEF_ARGS (fundef),
@@ -622,7 +622,7 @@ EnsureDFMbase (node *fundef)
         DBUG_ASSERT (FUNDEF_DFM_BASE (fundef) == old_dfm_base,
                      "address of DFM base has changed during update!");
 
-        DBUG_PRINT ("DFM base found -> updated (" F_PTR ")",
+        DBUG_PRINT ("DFM base found -> updated (%p)",
                     (void *)FUNDEF_DFM_BASE (fundef));
     }
 

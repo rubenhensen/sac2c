@@ -426,7 +426,7 @@ EMIAarg (node *arg_node, info *arg_info)
          */
         AVIS_ALIASMASK (ARG_AVIS (arg_node)) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
-        DFMsetMaskEntrySet (AVIS_ALIASMASK (ARG_AVIS (arg_node)), NULL,
+        DFMsetMaskEntrySet (AVIS_ALIASMASK (ARG_AVIS (arg_node)),
                             ARG_AVIS (arg_node));
 
         DBUG_PRINT_TAG ("IA_M", "   Mask created for %s", ARG_NAME (arg_node));
@@ -794,7 +794,7 @@ EMIAreturn (node *arg_node, info *arg_info)
 
     funargs = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
     while (funargs != NULL) {
-        if (!DFMtestMaskEntry (retmask, NULL, ARG_AVIS (funargs))) {
+        if (!DFMtestMaskEntry (retmask, ARG_AVIS (funargs))) {
             DBUG_PRINT ("      unaliasing argument %s", ARG_NAME (funargs));
             funargs = SetArgAlias (funargs, FALSE);
         }
@@ -808,7 +808,7 @@ EMIAreturn (node *arg_node, info *arg_info)
      */
     funargs = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
     while (funargs != NULL) {
-        DFMsetMaskEntrySet (argmask, NULL, ARG_AVIS (funargs));
+        DFMsetMaskEntrySet (argmask, ARG_AVIS (funargs));
         funargs = ARG_NEXT (funargs);
     }
     // argmask denotes the set of all arguments!
@@ -873,7 +873,7 @@ EMIAvardec (node *arg_node, info *arg_info)
         AVIS_ALIASMASK (VARDEC_AVIS (arg_node))
           = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
-        DFMsetMaskEntrySet (AVIS_ALIASMASK (VARDEC_AVIS (arg_node)), NULL,
+        DFMsetMaskEntrySet (AVIS_ALIASMASK (VARDEC_AVIS (arg_node)),
                             VARDEC_AVIS (arg_node));
         DBUG_PRINT_TAG ("IA_M", "   Mask created for %s", VARDEC_NAME (arg_node));
         break;

@@ -327,7 +327,7 @@ MTDCRprf (node *arg_node, info *arg_info)
     if (INFO_CHECK (arg_info)) {
         switch (PRF_PRF (arg_node)) {
         case F_alloc:
-            if (DFMtestMaskEntry (INFO_DFMALLOC (arg_info), NULL,
+            if (DFMtestMaskEntry (INFO_DFMALLOC (arg_info),
                                   IDS_AVIS (INFO_LHS (arg_info)))) {
                 /*
                  * The variable is already in the alloc set, so we are here in a second
@@ -335,36 +335,36 @@ MTDCRprf (node *arg_node, info *arg_info)
                  * block set already, we raise an exception because three levels of
                  * nesting must not occur.
                  */
-                DBUG_ASSERT (!DFMtestMaskEntry (INFO_DFMBLOCK (arg_info), NULL,
+                DBUG_ASSERT (!DFMtestMaskEntry (INFO_DFMBLOCK (arg_info),
                                                 IDS_AVIS (INFO_LHS (arg_info))),
                              "More than two levels of alloc/free to same identifier "
                              "found");
-                DFMsetMaskEntrySet (INFO_DFMBLOCK (arg_info), NULL,
+                DFMsetMaskEntrySet (INFO_DFMBLOCK (arg_info),
                                     IDS_AVIS (INFO_LHS (arg_info)));
             } else {
                 /*
                  * The variable has not been found yet, so we put it into the alloc set.
                  */
-                DFMsetMaskEntrySet (INFO_DFMALLOC (arg_info), NULL,
+                DFMsetMaskEntrySet (INFO_DFMALLOC (arg_info),
                                     IDS_AVIS (INFO_LHS (arg_info)));
             }
             INFO_IGNORE (arg_info) = TRUE;
             break;
         case F_free:
-            if (DFMtestMaskEntry (INFO_DFMBLOCK (arg_info), NULL,
+            if (DFMtestMaskEntry (INFO_DFMBLOCK (arg_info),
                                   ID_AVIS (PRF_ARG1 (arg_node)))) {
                 /*
                  * The variable is in the block set, so we have reached the end of the
                  * inner instance life time and clear it from the block set.
                  */
-                DFMsetMaskEntryClear (INFO_DFMBLOCK (arg_info), NULL,
+                DFMsetMaskEntryClear (INFO_DFMBLOCK (arg_info),
                                       ID_AVIS (PRF_ARG1 (arg_node)));
             } else {
                 /*
                  * We have found the outer free and collect the variable in the free
                  * set.
                  */
-                DFMsetMaskEntrySet (INFO_DFMFREE (arg_info), NULL,
+                DFMsetMaskEntrySet (INFO_DFMFREE (arg_info),
                                     ID_AVIS (PRF_ARG1 (arg_node)));
             }
             break;
@@ -377,21 +377,21 @@ MTDCRprf (node *arg_node, info *arg_info)
     if (INFO_KILL (arg_info)) {
         switch (PRF_PRF (arg_node)) {
         case F_alloc:
-            if (DFMtestMaskEntry (INFO_DFMALLOC (arg_info), NULL,
+            if (DFMtestMaskEntry (INFO_DFMALLOC (arg_info),
                                   IDS_AVIS (INFO_LHS (arg_info)))
-                && DFMtestMaskEntry (INFO_DFMFREE (arg_info), NULL,
+                && DFMtestMaskEntry (INFO_DFMFREE (arg_info),
                                      IDS_AVIS (INFO_LHS (arg_info)))
-                && !DFMtestMaskEntry (INFO_DFMBLOCK (arg_info), NULL,
+                && !DFMtestMaskEntry (INFO_DFMBLOCK (arg_info),
                                       IDS_AVIS (INFO_LHS (arg_info)))) {
                 INFO_DOKILL (arg_info) = TRUE;
             }
             break;
         case F_free:
-            if (DFMtestMaskEntry (INFO_DFMALLOC (arg_info), NULL,
+            if (DFMtestMaskEntry (INFO_DFMALLOC (arg_info),
                                   ID_AVIS (PRF_ARG1 (arg_node)))
-                && DFMtestMaskEntry (INFO_DFMFREE (arg_info), NULL,
+                && DFMtestMaskEntry (INFO_DFMFREE (arg_info),
                                      ID_AVIS (PRF_ARG1 (arg_node)))
-                && !DFMtestMaskEntry (INFO_DFMBLOCK (arg_info), NULL,
+                && !DFMtestMaskEntry (INFO_DFMBLOCK (arg_info),
                                       ID_AVIS (PRF_ARG1 (arg_node)))) {
                 INFO_DOKILL (arg_info) = TRUE;
             }
@@ -416,8 +416,8 @@ MTDCRids (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_CHECK (arg_info)) {
-        if (!DFMtestMaskEntry (INFO_DFMBLOCK (arg_info), NULL, IDS_AVIS (arg_node))) {
-            DFMsetMaskEntryClear (INFO_DFMALLOC (arg_info), NULL, IDS_AVIS (arg_node));
+        if (!DFMtestMaskEntry (INFO_DFMBLOCK (arg_info), IDS_AVIS (arg_node))) {
+            DFMsetMaskEntryClear (INFO_DFMALLOC (arg_info), IDS_AVIS (arg_node));
         }
 
         IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -438,8 +438,8 @@ MTDCRid (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_CHECK (arg_info)) {
-        if (!DFMtestMaskEntry (INFO_DFMBLOCK (arg_info), NULL, ID_AVIS (arg_node))) {
-            DFMsetMaskEntryClear (INFO_DFMALLOC (arg_info), NULL, ID_AVIS (arg_node));
+        if (!DFMtestMaskEntry (INFO_DFMBLOCK (arg_info), ID_AVIS (arg_node))) {
+            DFMsetMaskEntryClear (INFO_DFMALLOC (arg_info), ID_AVIS (arg_node));
         }
     }
 

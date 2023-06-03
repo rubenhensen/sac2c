@@ -300,7 +300,7 @@ MCSTRANprf (node *arg_node, info *arg_info)
         lhs_avis = IDS_AVIS (INFO_LETIDS (arg_info));
         rhs_avis = ID_AVIS (PRF_ARG1 (arg_node));
         if (INFO_INCUDAST (arg_info)
-            && DFMtestMaskEntry (INFO_IN_MASK (arg_info), NULL, rhs_avis)) {
+            && DFMtestMaskEntry (INFO_IN_MASK (arg_info), rhs_avis)) {
             INFO_PREASSIGNS (arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (lhs_avis, NULL),
                                          TBmakePrf (F_host2device,
@@ -316,7 +316,7 @@ MCSTRANprf (node *arg_node, info *arg_info)
         lhs_avis = IDS_AVIS (INFO_LETIDS (arg_info));
         rhs_avis = ID_AVIS (PRF_ARG1 (arg_node));
         if (INFO_INCUDAST (arg_info)
-            && DFMtestMaskEntry (INFO_OUT_MASK (arg_info), NULL, lhs_avis)) {
+            && DFMtestMaskEntry (INFO_OUT_MASK (arg_info), lhs_avis)) {
             INFO_POSTASSIGNS (arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (lhs_avis, NULL),
                                          TBmakePrf (F_device2host,

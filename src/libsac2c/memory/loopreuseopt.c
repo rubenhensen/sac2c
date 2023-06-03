@@ -599,13 +599,13 @@ EMLROarg (node *arg_node, info *arg_info)
             AVIS_ISALIAS (ARG_AVIS (arg_node)) = FALSE;
         } else {
             AVIS_ISALIAS (ARG_AVIS (arg_node))
-              = !DFMtestMaskEntry (INFO_REUSEMASK (arg_info), NULL, ARG_AVIS (arg_node));
+              = !DFMtestMaskEntry (INFO_REUSEMASK (arg_info), ARG_AVIS (arg_node));
         }
         break;
 
     case LR_condargs:
-        if (DFMtestMaskEntry (INFO_REUSEMASK (arg_info), NULL, ARG_AVIS (arg_node))) {
-            DFMsetMaskEntrySet (INFO_APMASK (arg_info), NULL,
+        if (DFMtestMaskEntry (INFO_REUSEMASK (arg_info), ARG_AVIS (arg_node))) {
+            DFMsetMaskEntrySet (INFO_APMASK (arg_info),
                                 ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))));
         }
 
@@ -619,7 +619,7 @@ EMLROarg (node *arg_node, info *arg_info)
                     "alias => elide" : "ok");
         if (AVIS_ISALIAS (ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))))) {
             DBUG_PRINT ("      eliding %s from reuse-mask", ARG_NAME (arg_node));
-            DFMsetMaskEntryClear (INFO_REUSEMASK (arg_info), NULL, ARG_AVIS (arg_node));
+            DFMsetMaskEntryClear (INFO_REUSEMASK (arg_info), ARG_AVIS (arg_node));
         }
 
         INFO_APARGS (arg_info) = EXPRS_NEXT (INFO_APARGS (arg_info));
@@ -821,7 +821,7 @@ EMLROid (node *arg_node, info *arg_info)
     switch (INFO_CONTEXT (arg_info)) {
     case LR_allocorreuse:
         if (!AVIS_ISALIAS (ID_AVIS (arg_node))) {
-            DFMsetMaskEntrySet (INFO_REUSEMASK (arg_info), NULL, ID_AVIS (arg_node));
+            DFMsetMaskEntrySet (INFO_REUSEMASK (arg_info), ID_AVIS (arg_node));
         }
         break;
 

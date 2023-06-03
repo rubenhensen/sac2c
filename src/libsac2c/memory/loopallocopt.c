@@ -311,7 +311,7 @@ EMLAOarg (node *arg_node, info *arg_info)
         AVIS_ISALIAS (ARG_AVIS (arg_node)) = FALSE;
     } else {
         AVIS_ISALIAS (ARG_AVIS (arg_node))
-          = !DFMtestMaskEntry (INFO_REUSEMASK (arg_info), NULL, ARG_AVIS (arg_node));
+          = !DFMtestMaskEntry (INFO_REUSEMASK (arg_info), ARG_AVIS (arg_node));
     }
 
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
@@ -572,7 +572,7 @@ EMLAOprf (node *arg_node, info *arg_info)
             INFO_NEW_DOARGS (arg_info)
               = TBmakeArg (reuse_avis, INFO_NEW_DOARGS (arg_info));
 
-            DFMsetMaskEntryClear (INFO_REUSEMASK (arg_info), NULL, INFO_DOARG (arg_info));
+            DFMsetMaskEntryClear (INFO_REUSEMASK (arg_info), INFO_DOARG (arg_info));
 
             /* Change F_alloc to F_reuse */
             PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));

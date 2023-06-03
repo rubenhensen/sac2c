@@ -399,12 +399,12 @@ LVAids (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     DBUG_PRINT ("Traversing Ids node: %s", AVIS_NAME (IDS_AVIS (arg_node)));
 
-    DFMsetMaskEntrySet (INFO_LIVE (arg_info), NULL, IDS_AVIS (arg_node));
+    DFMsetMaskEntrySet (INFO_LIVE (arg_info), IDS_AVIS (arg_node));
 
     // Always add result from spawned ap to task frame
     if (INFO_INSPAWN (arg_info)) {
         DBUG_PRINT ("Adding Ids to funion");
-        DFMsetMaskEntrySet (INFO_FUNION (arg_info), NULL, IDS_AVIS (arg_node));
+        DFMsetMaskEntrySet (INFO_FUNION (arg_info), IDS_AVIS (arg_node));
     }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -430,7 +430,7 @@ LVAid (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     DBUG_PRINT ("Traversing Id node: %s", AVIS_NAME (ID_AVIS (arg_node)));
 
-    DFMsetMaskEntrySet (INFO_LIVE (arg_info), NULL, ID_AVIS (arg_node));
+    DFMsetMaskEntrySet (INFO_LIVE (arg_info), ID_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);
 }

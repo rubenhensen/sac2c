@@ -262,7 +262,7 @@ CWLEarg (node *arg_node, info *arg_info)
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     DBUG_PRINT ("Setting DFM for argument %s", AVIS_NAME (ARG_AVIS (arg_node)));
-    DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, ARG_AVIS (arg_node));
+    DFMsetMaskEntrySet (INFO_DFM (arg_info), ARG_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -338,7 +338,7 @@ CWLEids (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("Setting DFM for %s", AVIS_NAME (IDS_AVIS (arg_node)));
-    DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, IDS_AVIS (arg_node));
+    DFMsetMaskEntrySet (INFO_DFM (arg_info), IDS_AVIS (arg_node));
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
@@ -479,7 +479,7 @@ CWLEcode (node *arg_node, info *arg_info)
         DBUG_PRINT ("checking if target is legitimate and known");
 
         if ((NULL == INFO_PAVIS (arg_info) || srcwl == INFO_PAVIS (arg_info))
-            && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, srcwl)) {
+            && DFMtestMaskEntry (INFO_DFM (arg_info), srcwl)) {
             DBUG_PRINT ("srcwl is valid. saving");
 
             INFO_PAVIS (arg_info) = srcwl;

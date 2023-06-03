@@ -105,7 +105,7 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
 
         /* Add the prediacte variable to the in mask */
         in_mask = INFDFMSdoInferInDfmAssignChain (assigns, fundef);
-        DFMsetMaskEntrySet (in_mask, NULL, predicate);
+        DFMsetMaskEntrySet (in_mask, predicate);
 
         /* Put all args into the loop up table */
         fundef_args = DFMUdfm2Args (in_mask, INFO_DUPLUT (arg_info));
@@ -186,9 +186,9 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
 
         /* Add the prediacte variable to the in mask */
         in_mask = INFDFMSdoInferInDfmAssignChain (assigns, fundef);
-        DFMsetMaskEntrySet (in_mask, NULL, iterator);
-        DFMsetMaskEntrySet (in_mask, NULL, loop_bound);
-        DFMsetMaskEntrySet (in_mask, NULL, in_mem);
+        DFMsetMaskEntrySet (in_mask, iterator);
+        DFMsetMaskEntrySet (in_mask, loop_bound);
+        DFMsetMaskEntrySet (in_mask, in_mem);
 
         /* Put all args into the look up table */
         fundef_args = DFMUdfm2Args (in_mask, INFO_DUPLUT (arg_info));

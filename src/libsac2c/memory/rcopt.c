@@ -326,7 +326,7 @@ EMRCOprf (node *arg_node, info *arg_info)
              * Mark reused variable in NOFREEMASK such that it will not be
              * statically freed
              */
-            DFMsetMaskEntrySet (INFO_NOFREEMASK (arg_info), NULL,
+            DFMsetMaskEntrySet (INFO_NOFREEMASK (arg_info),
                                 ID_AVIS (PRF_ARG2 (arg_node)));
 
             /*
@@ -340,7 +340,7 @@ EMRCOprf (node *arg_node, info *arg_info)
              * Mark reused variable in NOFREEMASK such that it will not be
              * statically freed
              */
-            DFMsetMaskEntrySet (INFO_NOFREEMASK (arg_info), NULL,
+            DFMsetMaskEntrySet (INFO_NOFREEMASK (arg_info),
                                 ID_AVIS (PRF_ARG4 (arg_node)));
 
             /*
@@ -354,7 +354,7 @@ EMRCOprf (node *arg_node, info *arg_info)
              * Mark reused variable in NOFREEMASK such that it will not be
              * statically freed
              */
-            DFMsetMaskEntrySet (INFO_NOFREEMASK (arg_info), NULL,
+            DFMsetMaskEntrySet (INFO_NOFREEMASK (arg_info),
                                 ID_AVIS (PRF_ARG4 (arg_node)));
 
             /*
@@ -380,7 +380,7 @@ EMRCOprf (node *arg_node, info *arg_info)
              *  - b has not been reused ( marked in NOFREEMASK)
              */
             if ((!AVIS_ISALIAS (ID_AVIS (PRF_ARG1 (arg_node))))
-                && (!DFMtestMaskEntry (INFO_NOFREEMASK (arg_info), NULL,
+                && (!DFMtestMaskEntry (INFO_NOFREEMASK (arg_info),
                                        ID_AVIS (PRF_ARG1 (arg_node))))) {
                 node *new_node = TCmakePrf1 (F_free, DUPdoDupNode (PRF_ARG1 (arg_node)));
                 arg_node = FREEdoFreeNode (arg_node);

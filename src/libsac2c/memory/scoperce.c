@@ -188,7 +188,7 @@ SRCEarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DFMsetMaskEntrySet (INFO_RCMASK (arg_info), NULL, ARG_AVIS (arg_node));
+    DFMsetMaskEntrySet (INFO_RCMASK (arg_info), ARG_AVIS (arg_node));
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -245,7 +245,7 @@ SRCEids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DFMsetMaskEntrySet (INFO_RCMASK (arg_info), NULL, IDS_AVIS (arg_node));
+    DFMsetMaskEntrySet (INFO_RCMASK (arg_info), IDS_AVIS (arg_node));
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -279,9 +279,9 @@ SRCEap (node *arg_node, info *arg_info)
         apargs = AP_ARGS (arg_node);
 
         while (funargs != NULL) {
-            if (DFMtestMaskEntry (INFO_RCMASK (arg_info), NULL,
+            if (DFMtestMaskEntry (INFO_RCMASK (arg_info),
                                   ID_AVIS (EXPRS_EXPR (apargs)))) {
-                DFMsetMaskEntrySet (INFO_RCMASK (info), NULL, ARG_AVIS (funargs));
+                DFMsetMaskEntrySet (INFO_RCMASK (info), ARG_AVIS (funargs));
             }
 
             funargs = ARG_NEXT (funargs);
@@ -373,7 +373,7 @@ SRCEexprs (node *arg_node, info *arg_info)
             EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
         }
 
-        if (!DFMtestMaskEntry (INFO_RCMASK (arg_info), NULL,
+        if (!DFMtestMaskEntry (INFO_RCMASK (arg_info),
                                ID_AVIS (EXPRS_EXPR (arg_node)))) {
             arg_node = FREEdoFreeNode (arg_node);
         }

@@ -74,7 +74,7 @@ TEST_F (DFMTest, CreateMaskBase)
 
     base = DFMgenMaskBase (args, vardecs);
 
-    ASSERT_EQ (DFMnumIds (base), NUM_AVIS * 2);
+    ASSERT_EQ (DFMnumDecls (base), NUM_AVIS * 2);
     ASSERT_EQ (DFMnumBitFields (base), (NUM_AVIS / (sizeof (unsigned int) * 8)) + 1);
 
     DFMremoveMaskBase (base);
@@ -98,33 +98,8 @@ TEST_F (DFMTest, UpdateMaskBase)
 
     base = DFMupdateMaskBase (base, nargs, nvardecs);
 
-    ASSERT_EQ (DFMnumIds (base), (NUM_AVIS + 1) * 2);
+    ASSERT_EQ (DFMnumDecls (base), (NUM_AVIS + 1) * 2);
     ASSERT_EQ (DFMnumBitFields (base), ((NUM_AVIS + 1) / (sizeof (unsigned int) * 8)) + 1);
-
-    DFMremoveMaskBase (base);
-    freeNodes (nargs, nvardecs);
-}
-
-TEST_F (DFMTest, UpdateMaskBaseRename)
-{
-    dfmask_base_t *base;
-    node *avis, *nargs, *nvardecs;
-
-    // copy nodes and update them
-    nargs = DUPdoDupTree (args);
-    nvardecs = DUPdoDupTree (vardecs);
-
-    base = DFMgenMaskBase (nargs, nvardecs);
-    ASSERT_STREQ (DFMgetId (base, 0), "val_9");
-
-    MEMfree (ARG_NAME (nargs));
-    ARG_NAME (nargs) = STRcpy ("test");
-
-    base = DFMupdateMaskBaseAfterRenaming (base, nargs, nvardecs);
-
-    ASSERT_STREQ (DFMgetId (base, 0), "test");
-    ASSERT_EQ (DFMnumIds (base), NUM_AVIS * 2);
-    ASSERT_EQ (DFMnumBitFields (base), (NUM_AVIS / (sizeof (unsigned int) * 8)) + 1);
 
     DFMremoveMaskBase (base);
     freeNodes (nargs, nvardecs);
