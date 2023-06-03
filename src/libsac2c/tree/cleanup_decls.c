@@ -90,7 +90,7 @@ CUDids (node *arg_node, info *arg_info)
         DBUG_ASSERT (AVIS_DECL (IDS_AVIS (arg_node)) != NULL,
                      "Variable declaration missing! "
                      "CleanupDecls() can be used after type checking only!");
-        DFMsetMaskEntryClear (INFO_CUD_REF (arg_info), NULL, IDS_AVIS (arg_node));
+        DFMsetMaskEntryClear (INFO_CUD_REF (arg_info), IDS_AVIS (arg_node));
 
         if (IDS_NEXT (arg_node) != NULL) {
             IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -192,7 +192,7 @@ CUDblock (node *arg_node, info *arg_info)
          */
         vardec = BLOCK_VARDECS (arg_node);
         while (VARDEC_NEXT (vardec) != NULL) {
-            if (DFMtestMaskEntry (mask, NULL, VARDEC_AVIS (VARDEC_NEXT (vardec)))) {
+            if (DFMtestMaskEntry (mask, VARDEC_AVIS (VARDEC_NEXT (vardec)))) {
                 DBUG_PRINT ("Variable %s removed in function %s",
                             VARDEC_NAME (VARDEC_NEXT (vardec)),
                             FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info)));
@@ -201,7 +201,7 @@ CUDblock (node *arg_node, info *arg_info)
                 vardec = VARDEC_NEXT (vardec);
             }
         }
-        if (DFMtestMaskEntry (mask, NULL, VARDEC_AVIS (BLOCK_VARDECS (arg_node)))) {
+        if (DFMtestMaskEntry (mask, VARDEC_AVIS (BLOCK_VARDECS (arg_node)))) {
             DBUG_PRINT ("Variable %s removed in function %s",
                         VARDEC_NAME (BLOCK_VARDECS (arg_node)),
                         FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info)));
@@ -229,7 +229,7 @@ CUDvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DFMsetMaskEntrySet (INFO_CUD_REF (arg_info), NULL, VARDEC_AVIS (arg_node));
+    DFMsetMaskEntrySet (INFO_CUD_REF (arg_info), VARDEC_AVIS (arg_node));
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
@@ -254,7 +254,7 @@ CUDid (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_CUD_REF (arg_info) != NULL) {
-        DFMsetMaskEntryClear (INFO_CUD_REF (arg_info), NULL, ID_AVIS (arg_node));
+        DFMsetMaskEntryClear (INFO_CUD_REF (arg_info), ID_AVIS (arg_node));
     }
 
     DBUG_RETURN (arg_node);

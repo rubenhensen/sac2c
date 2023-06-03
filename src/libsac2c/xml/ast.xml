@@ -9068,6 +9068,26 @@ N_tfarg :
           <description>Used by Interface Analysis in order to 
             obtain the transitive hull of variable aliases.</description>
         </attribute>
+        <attribute name="MaskBaseBackref" inconstructor="no" >
+          <description>
+            Used by DataFlowMask to keep track of the location of the avis in 
+            the maskbase.
+            In rare cases there may be multiple mask bases at once, but this
+            attribute can only hold one backreference. In this situation,
+            the backreferences have to be repaired before being able to use
+            the older mask bases.
+          </description>
+          <type name="Sizet">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
 	<attribute name="UniqueRef" inconstructor="no" >
 	  <description>First reference to this unique object declaration. Used to generate useful error messages in case of uniqueness violation.</description>
 	  <type name="Link">

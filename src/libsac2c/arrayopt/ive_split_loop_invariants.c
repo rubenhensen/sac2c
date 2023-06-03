@@ -591,7 +591,7 @@ InsertIntoLevel (int pos, node *value, bool invert, indexlevel_t *levels,
     DBUG_ENTER ();
 
     if ((NODE_TYPE (value) != N_id)
-        || ((DFMtestMaskEntry (MASKCHAIN_LOCALS (masks), NULL, ID_AVIS (value)))
+        || ((DFMtestMaskEntry (MASKCHAIN_LOCALS (masks), ID_AVIS (value)))
             || (MASKCHAIN_NEXT (masks) == NULL))) {
         /*
          * the variable is defined at the current level  -OR-

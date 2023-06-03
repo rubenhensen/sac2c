@@ -238,7 +238,7 @@ FilterTrav (node *arg_node, info *arg_info)
         EXPRS_NEXT (arg_node) = FilterTrav (EXPRS_NEXT (arg_node), arg_info);
     }
 
-    if (DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL,
+    if (DFMtestMaskEntry (INFO_USEMASK (arg_info),
                           ID_AVIS (EXPRS_EXPR (arg_node)))) {
         DBUG_PRINT ("Invalid reuse candidate removed: %s",
                     ID_NAME (EXPRS_EXPR (arg_node)));
@@ -355,7 +355,7 @@ FRCap (node *arg_node, info *arg_info)
              */
             while (args != NULL)
             {
-                if (DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL,
+                if (DFMtestMaskEntry (INFO_USEMASK (arg_info),
                                       ID_AVIS (EXPRS_EXPR (args)))) {
                     DBUG_PRINT ("Invalid function reuse candidate removed: %s <ap-fundef> %s",
                                 ID_NAME (EXPRS_EXPR (args)),
@@ -391,10 +391,10 @@ FRCarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (DFMtestMaskEntry (INFO_OLDMASK (arg_info), NULL,
+    if (DFMtestMaskEntry (INFO_OLDMASK (arg_info),
                           ID_AVIS (EXPRS_EXPR (INFO_CONDARGS (arg_info))))) {
         DBUG_PRINT ("Variable used in calling context: %s", ARG_NAME (arg_node));
-        DFMsetMaskEntrySet (INFO_USEMASK (arg_info), NULL, ARG_AVIS (arg_node));
+        DFMsetMaskEntrySet (INFO_USEMASK (arg_info), ARG_AVIS (arg_node));
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -576,11 +576,11 @@ FRCid (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("... looking at N_id %s", ID_NAME (arg_node));
 
-    if (!DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL, ID_AVIS (arg_node))) {
+    if (!DFMtestMaskEntry (INFO_USEMASK (arg_info), ID_AVIS (arg_node))) {
 
         DBUG_PRINT ("Used Variable: %s", ID_NAME (arg_node));
 
-        DFMsetMaskEntrySet (INFO_USEMASK (arg_info), NULL, ID_AVIS (arg_node));
+        DFMsetMaskEntrySet (INFO_USEMASK (arg_info), ID_AVIS (arg_node));
     }
 
     DBUG_RETURN (arg_node);

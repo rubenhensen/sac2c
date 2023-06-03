@@ -1026,7 +1026,7 @@ RCIcode (node *arg_node, info *arg_info)
      */
     avis = NLUTgetNonZeroAvis (INFO_ENV (arg_info));
     while (avis != NULL) {
-        DFMsetMaskEntrySet (withmask, NULL, avis);
+        DFMsetMaskEntrySet (withmask, avis);
         avis = NLUTgetNonZeroAvis (NULL);
     }
 
@@ -1086,7 +1086,7 @@ RCIrange (node *arg_node, info *arg_info)
      */
     avis = NLUTgetNonZeroAvis (INFO_ENV (arg_info));
     while (avis != NULL) {
-        DFMsetMaskEntrySet (withmask, NULL, avis);
+        DFMsetMaskEntrySet (withmask, avis);
         avis = NLUTgetNonZeroAvis (NULL);
     }
 

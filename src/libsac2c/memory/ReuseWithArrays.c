@@ -481,10 +481,10 @@ REUSEmodarray (node *arg_node, info *arg_info)
      * we can possibly reuse the modarray-array.
      */
     if ((NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id)
-        && (!DFMtestMaskEntry (INFO_NEGMASK (arg_info), NULL,
+        && (!DFMtestMaskEntry (INFO_NEGMASK (arg_info),
                                ID_AVIS (MODARRAY_ARRAY (arg_node))))) {
 
-        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL,
+        DFMsetMaskEntrySet (INFO_MASK (arg_info),
                             ID_AVIS (MODARRAY_ARRAY (arg_node)));
     }
 
@@ -560,7 +560,7 @@ REUSEprf (node *arg_node, info *arg_info)
     if ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel)) {
         DBUG_PRINT ("selection found into %s", AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         if (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id) {
-            if (!DFMtestMaskEntry (INFO_NEGMASK (arg_info), NULL,
+            if (!DFMtestMaskEntry (INFO_NEGMASK (arg_info),
                                    ID_AVIS (PRF_ARG2 (arg_node)))) {
                 DBUG_PRINT ("%s not yet in DF mask",
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
@@ -574,14 +574,14 @@ REUSEprf (node *arg_node, info *arg_info)
                      * elements of the sub-pane of the current iteration
                      *  -> we can possibly reuse this array
                      */
-                    DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL,
+                    DFMsetMaskEntrySet (INFO_MASK (arg_info),
                                         ID_AVIS (PRF_ARG2 (arg_node)));
                 } else {
                     DBUG_PRINT ("%s has invalid index: not suitable for reuse",
                                 AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
-                    DFMsetMaskEntryClear (INFO_MASK (arg_info), NULL,
+                    DFMsetMaskEntryClear (INFO_MASK (arg_info),
                                           ID_AVIS (PRF_ARG2 (arg_node)));
-                    DFMsetMaskEntrySet (INFO_NEGMASK (arg_info), NULL,
+                    DFMsetMaskEntrySet (INFO_NEGMASK (arg_info),
                                         ID_AVIS (PRF_ARG2 (arg_node)));
                 }
             }
@@ -607,8 +607,8 @@ REUSEids (node *arg_node, info *arg_info)
      * remove left hand side ids from the reuse-mask
      */
     DBUG_PRINT ("%s is lhs ids: removed from DFM", AVIS_NAME (IDS_AVIS (arg_node)));
-    DFMsetMaskEntryClear (INFO_MASK (arg_info), NULL, IDS_AVIS (arg_node));
-    DFMsetMaskEntrySet (INFO_NEGMASK (arg_info), NULL, IDS_AVIS (arg_node));
+    DFMsetMaskEntryClear (INFO_MASK (arg_info), IDS_AVIS (arg_node));
+    DFMsetMaskEntrySet (INFO_NEGMASK (arg_info), IDS_AVIS (arg_node));
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
@@ -633,8 +633,8 @@ REUSEid (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("%s is ref on rhs: removed from DFM", AVIS_NAME (ID_AVIS (arg_node)));
-    DFMsetMaskEntryClear (INFO_MASK (arg_info), NULL, ID_AVIS (arg_node));
-    DFMsetMaskEntrySet (INFO_NEGMASK (arg_info), NULL, ID_AVIS (arg_node));
+    DFMsetMaskEntryClear (INFO_MASK (arg_info), ID_AVIS (arg_node));
+    DFMsetMaskEntrySet (INFO_NEGMASK (arg_info), ID_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);
 }

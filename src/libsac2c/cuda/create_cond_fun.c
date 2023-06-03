@@ -101,7 +101,7 @@ CCFdoCreateCondFun (node *fundef, node *then_assigns, node *else_assigns,
 
     /* Add the prediacte variable to the in mask */
     in_mask = INFDFMSdoInferInDfmAssignChain (then_assigns, fundef);
-    DFMsetMaskEntrySet (in_mask, NULL, predicate);
+    DFMsetMaskEntrySet (in_mask, predicate);
 
     if (else_assigns != NULL) {
         DFMsetMaskOr (in_mask, INFDFMSdoInferInDfmAssignChain (else_assigns, fundef));

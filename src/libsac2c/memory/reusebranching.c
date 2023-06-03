@@ -40,7 +40,6 @@ struct INFO {
     node *fundef;
     node *branches;
     node *memvars;
-    dfmask_base_t *maskbase;
     dfmask_t *drcs;
     dfmask_t *localvars;
     node *precode;
@@ -52,7 +51,6 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_BRANCHES(n) ((n)->branches)
 #define INFO_MEMVARS(n) ((n)->memvars)
-#define INFO_MASKBASE(n) ((n)->maskbase)
 #define INFO_DRCS(n) ((n)->drcs)
 #define INFO_LOCALVARS(n) ((n)->localvars)
 #define INFO_PRECODE(n) ((n)->precode)
@@ -72,7 +70,6 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_BRANCHES (result) = NULL;
     INFO_MEMVARS (result) = NULL;
-    INFO_MASKBASE (result) = NULL;
     INFO_DRCS (result) = NULL;
     INFO_LOCALVARS (result) = NULL;
     INFO_PRECODE (result) = NULL;
@@ -183,7 +180,7 @@ GetReuseBranches (dfmask_t *drcs, node *memop)
         while (rcs != NULL) {
             node *rc = EXPRS_EXPR (rcs);
 
-            if (DFMtestMaskEntry (drcs, NULL, ID_AVIS (rc))) {
+            if (DFMtestMaskEntry (drcs, ID_AVIS (rc))) {
                 res = TCappendExprs (res, TBmakeExprs (DUPdoDupNode (rc), NULL));
             }
             rcs = EXPRS_NEXT (rcs);
@@ -549,8 +546,6 @@ EMRBassign (node *arg_node, info *arg_info)
             INFO_BRANCHES (arg_info) = FREEdoFreeTree (INFO_BRANCHES (arg_info));
             INFO_MEMVARS (arg_info) = FREEdoFreeTree (INFO_MEMVARS (arg_info));
 
-            FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info))
-              = DFMremoveMaskBase (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
             inmask = DFMremoveMask (inmask);
             lut = LUTremoveLut (lut);
 
@@ -610,12 +605,12 @@ EMRBfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("Traversing function %s", FUNDEF_NAME (arg_node));
 
         INFO_FUNDEF (arg_info) = arg_node;
-        INFO_MASKBASE (arg_info)
+        FUNDEF_DFM_BASE (arg_node)
           = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        INFO_MASKBASE (arg_info) = DFMremoveMaskBase (INFO_MASKBASE (arg_info));
+        FUNDEF_DFM_BASE (arg_node) = DFMremoveMaskBase (FUNDEF_DFM_BASE (arg_node));
 
         DBUG_PRINT ("Traversal of function %s complete", FUNDEF_NAME (arg_node));
     }
@@ -644,7 +639,7 @@ EMRBids (node *arg_node, info *arg_info)
      * Mark declared variables in LOCALMASK
      */
     if (INFO_LOCALVARS (arg_info) != NULL) {
-        DFMsetMaskEntrySet (INFO_LOCALVARS (arg_info), NULL, IDS_AVIS (arg_node));
+        DFMsetMaskEntrySet (INFO_LOCALVARS (arg_info), IDS_AVIS (arg_node));
     }
 
     if (IDS_NEXT (arg_node) != NULL) {
@@ -689,8 +684,8 @@ EMRBprf (node *arg_node, info *arg_info)
                  *
                  * b is the only data reuse candidate
                  */
-                drcs = DFMgenMaskClear (INFO_MASKBASE (arg_info));
-                DFMsetMaskEntrySet (drcs, NULL, ID_AVIS (PRF_ARG1 (prf)));
+                drcs = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
+                DFMsetMaskEntrySet (drcs, ID_AVIS (PRF_ARG1 (prf)));
 
                 branches
                   = GetReuseBranches (drcs, ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (mem))));
@@ -760,7 +755,7 @@ handleCodeBlock (node *cexprs, info *arg_info)
                         cval = PRF_ARG1 (val);
                         memop = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (mem))));
                         if ((PRF_PRF (memop) == F_suballoc)
-                            && (DFMtestMaskEntry (INFO_LOCALVARS (arg_info), NULL,
+                            && (DFMtestMaskEntry (INFO_LOCALVARS (arg_info),
                                                   ID_AVIS (cval)))
                             && ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
                                  == N_with)
@@ -798,7 +793,7 @@ handleCodeBlock (node *cexprs, info *arg_info)
                             && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
                             && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel_VxA)
                                 || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {
-                            DFMsetMaskEntrySet (INFO_DRCS (arg_info), NULL,
+                            DFMsetMaskEntrySet (INFO_DRCS (arg_info),
                                                 ID_AVIS (PRF_ARG2 (PRF_ARG1 (memval))));
                         }
                     }
@@ -826,7 +821,8 @@ EMRBrange (node *arg_node, info *arg_info)
      * stack local indentifiers
      */
     oldlocals = INFO_LOCALVARS (arg_info);
-    INFO_LOCALVARS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
+    INFO_LOCALVARS (arg_info) = 
+        DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
     RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
 
@@ -872,7 +868,8 @@ EMRBcode (node *arg_node, info *arg_info)
      * stack local indentifiers
      */
     oldlocals = INFO_LOCALVARS (arg_info);
-    INFO_LOCALVARS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
+    INFO_LOCALVARS (arg_info) = 
+        DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
     if (CODE_CBLOCK (arg_node) != NULL) {
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
@@ -921,7 +918,8 @@ EMRBwith (node *arg_node, info *arg_info)
      * Stack outer data reuse candidates
      */
     olddrcs = INFO_DRCS (arg_info);
-    INFO_DRCS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
+    INFO_DRCS (arg_info) = 
+        DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
@@ -962,7 +960,8 @@ EMRBwith2 (node *arg_node, info *arg_info)
      * Stack outer data reuse candidates
      */
     olddrcs = INFO_DRCS (arg_info);
-    INFO_DRCS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
+    INFO_DRCS (arg_info) = 
+        DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
     WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
@@ -1002,7 +1001,8 @@ EMRBwith3 (node *arg_node, info *arg_info)
      * Stack outer data reuse candidates
      */
     olddrcs = INFO_DRCS (arg_info);
-    INFO_DRCS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
+    INFO_DRCS (arg_info) = 
+        DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
     WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
     WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);

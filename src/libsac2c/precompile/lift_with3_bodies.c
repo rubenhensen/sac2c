@@ -188,7 +188,7 @@ void AddVardec2DFM( dfmask_t *mask, node *vardec)
   DBUG_ENTER ();
 
   if ( vardec != NULL){
-    DFMsetMaskEntrySet( mask, NULL, VARDEC_AVIS( vardec));
+    DFMsetMaskEntrySet( mask, VARDEC_AVIS( vardec));
     AddVardec2DFM( mask, VARDEC_NEXT( vardec));
   }
 
@@ -720,9 +720,9 @@ CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
      */
     ret_mask = DFMgenMaskMinus (BLOCK_OUT_MASK (block), BLOCK_IN_MASK (block));
     arg_mask = DFMgenMaskCopy (BLOCK_IN_MASK (block));
-    DFMsetMaskEntryClear (arg_mask, NULL, index);
+    DFMsetMaskEntryClear (arg_mask, index);
     local_mask = DFMgenMaskCopy (BLOCK_LOCAL_MASK (block));
-    DFMsetMaskEntrySet (local_mask, NULL, index);
+    DFMsetMaskEntrySet (local_mask, index);
 
     args = DFMUdfm2Args (arg_mask, lut);
     rets = DFMUdfm2Rets (ret_mask);

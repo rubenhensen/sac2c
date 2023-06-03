@@ -193,7 +193,7 @@ MarkAllIdsAliasing (node *ids, dfmask_t *mask)
     DBUG_ENTER ();
 
     while (ids != NULL) {
-        DFMsetMaskEntrySet (mask, NULL, IDS_AVIS (ids));
+        DFMsetMaskEntrySet (mask, IDS_AVIS (ids));
         ids = IDS_NEXT (ids);
     }
 
@@ -206,7 +206,7 @@ MarkIdAliasing (node *id, dfmask_t *mask)
     DBUG_ENTER ();
 
     if (NODE_TYPE (id) == N_id) {
-        DFMsetMaskEntrySet (mask, NULL, ID_AVIS (id));
+        DFMsetMaskEntrySet (mask, ID_AVIS (id));
     }
 
     DBUG_RETURN ();
@@ -264,7 +264,7 @@ EMAAap (node *arg_node, info *arg_info)
 
     while (_ids != NULL) {
         if (GetRetAlias (AP_FUNDEF (arg_node), argc)) {
-            DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (_ids));
+            DFMsetMaskEntrySet (INFO_MASK (arg_info), IDS_AVIS (_ids));
         }
         _ids = IDS_NEXT (_ids);
         argc += 1;
@@ -290,21 +290,21 @@ EMAAarg (node *arg_node, info *arg_info)
     case AA_begin:
         if (INFO_APARGS (arg_info) != NULL) {
             node *id = EXPRS_EXPR (INFO_APARGS (arg_info));
-            if (DFMtestMaskEntry (INFO_APMASK (arg_info), NULL, ID_AVIS (id))) {
+            if (DFMtestMaskEntry (INFO_APMASK (arg_info), ID_AVIS (id))) {
 
-                DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ARG_AVIS (arg_node));
+                DFMsetMaskEntrySet (INFO_MASK (arg_info), ARG_AVIS (arg_node));
             }
             INFO_APARGS (arg_info) = EXPRS_NEXT (INFO_APARGS (arg_info));
         } else {
             if (AVIS_ISALIAS (ARG_AVIS (arg_node))) {
-                DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ARG_AVIS (arg_node));
+                DFMsetMaskEntrySet (INFO_MASK (arg_info), ARG_AVIS (arg_node));
             }
         }
         break;
 
     case AA_end:
         ARG_AVIS (arg_node) = SetAvisAlias (ARG_AVIS (arg_node),
-                                            DFMtestMaskEntry (INFO_MASK (arg_info), NULL,
+                                            DFMtestMaskEntry (INFO_MASK (arg_info),
                                                               ARG_AVIS (arg_node)));
         break;
 
@@ -430,10 +430,10 @@ EMAAfold (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (!FOLD_ISPARTIALFOLD (arg_node)) {
-        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (INFO_LHS (arg_info)));
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
     }
 
-    DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (FOLD_NEUTRAL (arg_node)));
+    DFMsetMaskEntrySet (INFO_MASK (arg_info), ID_AVIS (FOLD_NEUTRAL (arg_node)));
 
     if (FOLD_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -503,10 +503,10 @@ EMAAfuncond (node *arg_node, info *arg_info)
     /*
      * Arguments must themselves not be aliases
      */
-    if ((DFMtestMaskEntry (INFO_MASK (arg_info), NULL, ID_AVIS (thenid)))
-        || (DFMtestMaskEntry (INFO_MASK (arg_info), NULL, ID_AVIS (elseid)))) {
+    if ((DFMtestMaskEntry (INFO_MASK (arg_info), ID_AVIS (thenid)))
+        || (DFMtestMaskEntry (INFO_MASK (arg_info), ID_AVIS (elseid)))) {
 
-        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (INFO_LHS (arg_info)));
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
     }
 
     DBUG_RETURN (arg_node);
@@ -566,7 +566,7 @@ EMAAfundef (node *arg_node, info *arg_info)
                         if (apargs != apargs2) {
                             if (ID_AVIS (EXPRS_EXPR (apargs))
                                 == ID_AVIS (EXPRS_EXPR (apargs2))) {
-                                DFMsetMaskEntrySet (INFO_MASK (info), NULL,
+                                DFMsetMaskEntrySet (INFO_MASK (info),
                                                     ARG_AVIS (funargs));
                             }
                         }
@@ -633,18 +633,18 @@ EMAAid (node *arg_node, info *arg_info)
          * ALIASING OPERATION a = b
          * mark a and b as aliases
          */
-        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (arg_node));
-        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (INFO_LHS (arg_info)));
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), ID_AVIS (arg_node));
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
         break;
 
     case AA_ap:
         if (INFO_FUNARGS (arg_info) != NULL) {
             if (ARG_ISALIASING (INFO_FUNARGS (arg_info))) {
-                DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (arg_node));
+                DFMsetMaskEntrySet (INFO_MASK (arg_info), ID_AVIS (arg_node));
             }
             INFO_FUNARGS (arg_info) = ARG_NEXT (INFO_FUNARGS (arg_info));
         } else {
-            DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (arg_node));
+            DFMsetMaskEntrySet (INFO_MASK (arg_info), ID_AVIS (arg_node));
         }
         break;
 
@@ -677,7 +677,7 @@ EMAAlet (node *arg_node, info *arg_info)
      */
     _ids = LET_IDS (arg_node);
     while (_ids != NULL) {
-        DFMsetMaskEntrySet (INFO_LOCALMASK (arg_info), NULL, IDS_AVIS (_ids));
+        DFMsetMaskEntrySet (INFO_LOCALMASK (arg_info), IDS_AVIS (_ids));
         _ids = IDS_NEXT (_ids);
     }
 
@@ -832,12 +832,12 @@ EMAAvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (DFMtestMaskEntry (INFO_MASK (arg_info), NULL, VARDEC_AVIS (arg_node))) {
+    if (DFMtestMaskEntry (INFO_MASK (arg_info), VARDEC_AVIS (arg_node))) {
         DBUG_PRINT ("%s could not be unaliased", VARDEC_NAME (arg_node));
     }
 
     VARDEC_AVIS (arg_node) = SetAvisAlias (VARDEC_AVIS (arg_node),
-                                           DFMtestMaskEntry (INFO_MASK (arg_info), NULL,
+                                           DFMtestMaskEntry (INFO_MASK (arg_info),
                                                              VARDEC_AVIS (arg_node)));
 
     if (VARDEC_NEXT (arg_node) != NULL) {

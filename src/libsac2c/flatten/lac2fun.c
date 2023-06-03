@@ -223,6 +223,9 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
        * the arg-node is a new one not contained in the relevant DFM-base!
        * Therefore we must search for ARG_NAME instead of the pointer itself!
        */
+       // NOTE: The functionality to search for the name has been removed
+       //       for performance reasons. If this code is ever to be revived,
+       //       the avis has to be passed instead of the name
       if (! DFMtestMaskEntry( out, ARG_NAME( tmp), NULL)) {
         AVIS_ISUNIQUE( ARG_AVIS( tmp)) = TRUE;
       }

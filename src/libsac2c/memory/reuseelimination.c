@@ -341,7 +341,7 @@ EMREprf (node *arg_node, info *arg_info)
         /*
          * 1. Mark b in MASK
          */
-        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, bavis);
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), bavis);
 
         if ((FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)))
             && (AVIS_SSAASSIGN (bavis) == NULL)) {
@@ -381,7 +381,7 @@ EMREprf (node *arg_node, info *arg_info)
          *
          * Mark b in MASK
          */
-        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (PRF_ARG4 (arg_node)));
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), ID_AVIS (PRF_ARG4 (arg_node)));
         break;
 
     case F_resize:
@@ -390,7 +390,7 @@ EMREprf (node *arg_node, info *arg_info)
          *
          * Mark b in MASK
          */
-        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (PRF_ARG4 (arg_node)));
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), ID_AVIS (PRF_ARG4 (arg_node)));
         break;
 
     case F_wl_assign:
@@ -438,7 +438,7 @@ EMREprf (node *arg_node, info *arg_info)
         /*
          * remove dec_rcs of reused variables
          */
-        if (DFMtestMaskEntry (INFO_MASK (arg_info), NULL,
+        if (DFMtestMaskEntry (INFO_MASK (arg_info),
                               ID_AVIS (PRF_ARG1 (arg_node)))) {
             INFO_REMASSIGN (arg_info) = TRUE;
         }

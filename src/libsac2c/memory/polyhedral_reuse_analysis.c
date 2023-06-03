@@ -467,15 +467,15 @@ ActOnId (node *avis, info *arg_info)
                           INFO_DIM (arg_info), arg_info);
 
                 /* If this external id has not been come across before */
-                if (!DFMtestMaskEntry (INFO_MASK (arg_info), NULL, avis)) {
-                    DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, avis);
+                if (!DFMtestMaskEntry (INFO_MASK (arg_info), avis)) {
+                    DFMsetMaskEntrySet (INFO_MASK (arg_info), avis);
                     INFO_NR_EXTIDS (arg_info)++;
                     NLUTsetNum (INFO_NLUT (arg_info), avis, INFO_NR_EXTIDS (arg_info));
                 }
             }
         }
         /* This is a withloop ids. We search for the exact ids */
-        else if (DFMtestMaskEntry (INFO_MASK (arg_info), NULL, avis)) {
+        else if (DFMtestMaskEntry (INFO_MASK (arg_info), avis)) {
             AddIndex (IDX_WITHIDS, INFO_COEFFICIENT (arg_info), avis, 0,
                       INFO_DIM (arg_info), arg_info);
         } else {
@@ -496,8 +496,8 @@ ActOnId (node *avis, info *arg_info)
                   0, INFO_DIM( arg_info), arg_info);
 
 	/* If this external id has not been come across before */
-	if( !DFMtestMaskEntry( INFO_MASK( arg_info), NULL, avis)) {
-	  DFMsetMaskEntrySet( INFO_MASK( arg_info), NULL, avis);
+	if( !DFMtestMaskEntry( INFO_MASK( arg_info), avis)) {
+	  DFMsetMaskEntrySet( INFO_MASK( arg_info), avis);
 	  INFO_NR_EXTIDS( arg_info)++;
 	  NLUTsetNum( INFO_NLUT( arg_info), avis, INFO_NR_EXTIDS( arg_info));
 	}
@@ -1081,7 +1081,7 @@ PRApart (node *arg_node, info *arg_info)
         i = 1;
         ids_iter = ids;
         while (ids_iter != NULL) {
-            DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (ids_iter));
+            DFMsetMaskEntrySet (INFO_MASK (arg_info), IDS_AVIS (ids_iter));
 
             /* store the nest level of the withloop ids */
             NLUTsetNum (INFO_NLUT (arg_info), IDS_AVIS (ids_iter),

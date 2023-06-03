@@ -537,12 +537,12 @@ WLSWcode (node *arg_node, info *arg_info)
          * Mark all variables in OUTERWITHID as the inner generators
          * must not depend on them
          */
-        DFMsetMaskEntrySet (INFO_DEPMASK (arg_info), NULL,
+        DFMsetMaskEntrySet (INFO_DEPMASK (arg_info),
                             IDS_AVIS (WITHID_VEC (INFO_OUTERWITHID (arg_info))));
 
         ids = WITHID_IDS (INFO_OUTERWITHID (arg_info));
         while (ids != NULL) {
-            DFMsetMaskEntrySet (INFO_DEPMASK (arg_info), NULL, IDS_AVIS (ids));
+            DFMsetMaskEntrySet (INFO_DEPMASK (arg_info), IDS_AVIS (ids));
             ids = IDS_NEXT (ids);
         }
 
@@ -722,7 +722,7 @@ WLSWid (node *arg_node, info *arg_info)
     /*
      * If the current id is marked in DEPMASK, all LHS identifiers depend on it
      */
-    if (DFMtestMaskEntry (INFO_DEPMASK (arg_info), NULL, ID_AVIS (arg_node))) {
+    if (DFMtestMaskEntry (INFO_DEPMASK (arg_info), ID_AVIS (arg_node))) {
         node *tmp;
 
         /*
@@ -730,7 +730,7 @@ WLSWid (node *arg_node, info *arg_info)
          */
         tmp = INFO_DEPSTACK (arg_info);
         while (tmp != NULL) {
-            DFMsetMaskEntrySet (INFO_DEPMASK (arg_info), NULL,
+            DFMsetMaskEntrySet (INFO_DEPMASK (arg_info),
                                 ID_AVIS (EXPRS_EXPR (tmp)));
 
             tmp = EXPRS_NEXT (tmp);
@@ -875,7 +875,7 @@ WLSWwith (node *arg_node, info *arg_info)
              */
             if (((WITH_TYPE (arg_node) == N_genarray)
                  || (WITH_TYPE (arg_node) == N_modarray))
-                && (!DFMtestMaskEntry (INFO_DEPMASK (arg_info), NULL,
+                && (!DFMtestMaskEntry (INFO_DEPMASK (arg_info),
                                        ID_AVIS (INFO_CEXPR (arg_info))))) {
                 INFO_MUSTCOPY (arg_info) = FALSE;
             }
