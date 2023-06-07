@@ -327,7 +327,8 @@ DFMgenMaskBase (node *arguments, node *vardecs)
         DBUG_ASSERT (VARDEC_OR_ARG_AVIS (cur_decl) != NULL,
                      "Got a declaration without an avis");
         DBUG_PRINT_TAG ("DFM_GEN", "Adding %s %s as element #%zu",
-                        NODE_TEXT (cur_decl), AVIS_NAME (ARG_AVIS (cur_decl)),
+                        NODE_TEXT (cur_decl), 
+                        AVIS_NAME (VARDEC_OR_ARG_AVIS (cur_decl)),
                         i);
 
         // Assign forward and backreference
