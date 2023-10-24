@@ -299,6 +299,7 @@ CCTperformTask (ccm_task_t task)
     // Normally this should only be called by sac4c
     if (task == CCT_linkflags) {
         MEMfree (opt_subst);
+        MEMfree (cflags_subst);
         MEMfree (cppflags_subst);
         MEMfree (cuda_arch_subst);
         MEMfree (extlibdirs_subst);

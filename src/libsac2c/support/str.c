@@ -1353,9 +1353,14 @@ STRsubstTokens (const char *str, size_t n, ...)
 
     DBUG_ENTER ();
 
-    patterns = MEMmalloc (n * sizeof (char *));
-    values = MEMmalloc (n * sizeof (char *));
-    sizes = MEMmalloc (n * sizeof (size_t));
+    void *memory = MEMmalloc(n *
+                (sizeof(char *) + sizeof(char *) + sizeof(size_t)));
+    /* (char *) patterns[n]; */
+    patterns = (const char **)memory;
+    /* (char *) values[n]; */
+    values = (const char **)((uintptr_t)memory + n  * sizeof(char *));
+    /* size_t sizes[n]; */
+    sizes = (size_t *)((uintptr_t)memory + 2 * n * sizeof(char *));
 
     va_start (arg_list, n);
 
@@ -1381,6 +1386,7 @@ STRsubstTokens (const char *str, size_t n, ...)
             SBUFprintf (buf, "%c", str[i]);
     }
 
+    MEMfree(memory);
     result = SBUF2str (buf);
     buf = SBUFfree (buf);
 
