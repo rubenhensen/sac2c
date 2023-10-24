@@ -440,7 +440,12 @@ static node *
 freeStack (node *stack)
 {
     DBUG_ENTER ();
-    if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
+    if ((stack == NULL) || (stack == (node *)FAIL)) {
+        stack = NULL;
+    } else if (NODE_TYPE(stack) == N_set) {
+        /* It is important stack != (node *)FAIL as in that case
+         * NODE_TYPE(stack) will attempt to read bogus memory (and
+         * FAIL will generally not be properly aligned also). */
         stack = FREEdoFreeTree (stack);
     } else {
         stack = NULL;

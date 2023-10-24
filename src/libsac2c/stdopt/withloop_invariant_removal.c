@@ -155,6 +155,7 @@ MakeInfo (void)
     INFO_WITHDEPTH (result) = 0;
     INFO_TOPBLOCK (result) = FALSE;
     INFO_DEPTHMASK (result) = (bool *)MEMmalloc (sizeof (bool) * 1);
+    INFO_DEPTHMASK (result)[0] = FALSE;
     INFO_SETDEPTH (result) = 0;
     INFO_INSLIST (result) = NULL;
 

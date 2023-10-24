@@ -552,6 +552,8 @@ CTFcreateMessageContinued (str_buf *remaining_lines)
     }
     
     SBUFprint (message, SBUFgetBuffer (remaining_lines));
+
+    SBUFfree(remaining_lines);
     
     if (!global.cti_single_line) {
         SBUFprint (message, "\n");

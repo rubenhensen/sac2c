@@ -62,6 +62,7 @@ MakeInfo (void)
     INFO_LHS (result) = NULL;
     INFO_REMASSIGN (result) = FALSE;
     INFO_THENASS (result) = NULL;
+    INFO_APPENDELSE (result) = FALSE;
     INFO_ELSEASS (result) = NULL;
 
     DBUG_RETURN (result);
