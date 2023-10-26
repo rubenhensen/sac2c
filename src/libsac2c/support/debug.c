@@ -71,7 +71,7 @@ set_debug_exit_function (void (*func) (int))
     __exit_func = func;
 }
 
-void (*get_debug_exit_function ()) (int)
+void (*get_debug_exit_function (void)) (int)
 {
     return __exit_func;
 }

@@ -1394,7 +1394,7 @@ PrintContact (void)
 }
 
 void
-USGprintUsage ()
+USGprintUsage (void)
 {
     DBUG_ENTER ();
 
@@ -1480,7 +1480,7 @@ USGprintUsage ()
 }
 
 void
-USGprintVersion ()
+USGprintVersion (void)
 {
     DBUG_ENTER ();
 
@@ -1496,7 +1496,7 @@ USGprintVersion ()
 }
 
 void
-USGprintVersionVerbose ()
+USGprintVersionVerbose (void)
 {
     DBUG_ENTER ();
 
@@ -1521,7 +1521,7 @@ USGprintVersionVerbose ()
 }
 
 void
-USGprintCopyright ()
+USGprintCopyright (void)
 {
     DBUG_ENTER ();
 

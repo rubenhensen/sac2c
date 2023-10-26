@@ -412,7 +412,7 @@ TRAVgetName (void)
 #define MAX_VAR_BUFFER_SIZE 30
 
 const char *
-TRAVgetName ()
+TRAVgetName (void)
 {
     travstack_t *tmp;
     bool anonymous;

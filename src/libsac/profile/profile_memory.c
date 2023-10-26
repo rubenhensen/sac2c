@@ -89,7 +89,7 @@ SAC_PF_MEM_FreeDescnt (size_t size)
  * @brief Increments the reuse counter.
  */
 void
-SAC_PF_MEM_ReuseMemcnt ()
+SAC_PF_MEM_ReuseMemcnt (void)
 {
     SAC_PF_MEM_reuse_memcnt += 1;
 }
@@ -187,7 +187,7 @@ SAC_PF_MEM_PrintFunStats (const char *func_name, unsigned num_ap,
  * @brief Call to print memory profiling statistics.
  */
 void
-SAC_PF_MEM_PrintStats ()
+SAC_PF_MEM_PrintStats (void)
 {
     SAC_PF_PrintHeader ("Memory Profile");
 

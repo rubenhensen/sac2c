@@ -25,6 +25,95 @@
  *   - For all N_withid nodes of a single with-loop is hold:
  *       - the same VEC and IDS names are used.
  *
+ *
+ *
+ * Implementation:
+ * ===============
+ *
+ * The implementation is organised into several subsequent steps / substeps. The names
+ * of the steps refer to the names of the local functions that implement them. These are:
+ *
+ * Step 1.1: Parts2Strides
+ * -----------------------
+ *
+ * This function translates the partitions represented through N_part chains into
+ * the loop-like structure which is represented by N_wlstride chains.
+ *
+ * Each N_part results in an N_wlstride / N_wlgrid chain (one pair per dim).
+ * These stride/grid chains are connected through WLSTRIDE_CONTENT followed
+ * by WLGRID_NEXTDIM.
+ *
+ * Subsequent partitions are chained through the outermost N_wlstride
+ * using WLSTRIDE_NEXT.
+ *
+ * The translation of partitions works as follows:
+ * For each dimension, we translate (lb, ub, step, width) into 
+ *
+ * WLSTRIDE_BOUND1 := lb
+ * WLSTRIDE_BOUND2 := ub
+ * WLSTRIDE_STEP := step
+ * 
+ * WLSTRIDE_ISDYNAMIC is set if any of the 4 values is non constant
+ * 
+ * WLGRID_BOUND1 := 0
+ * WLGRID_BOUND2 := width (default:1)
+ * 
+ * WLGRID_ISDYNAMIC is set if width is an N_id 
+ * 
+ * 
+ * Step 1.2 CheckDisjointness
+ * --------------------------
+ *
+ * Checks that a stride chain contains disjoint stride/grid chains.
+ * 
+ * Step 1.3 ConvertWith
+ * ------------------------
+ *
+ * Converts N_with into N_with2 without the partition / stride info.
+ * 
+ * Step 2 BuildCubes
+ * -----------------
+ *
+ * Step 2.1 NormalizeAllStrides
+ * ----------------------------
+ *
+ * The key functionality here is implemented in NormalizeStride1,
+ * which is mapped onto all N_wlstride / N_wlgrid pairs.
+ *
+ * Given an N_wlstride/ Ngrid pair with
+ * 
+ * WLSTRIDE_BOUND1 := lb
+ * WLSTRIDE_BOUND2 := ub
+ * WLSTRIDE_STEP := step
+ * 
+ * WLGRID_BOUND1 := 0
+ * WLGRID_BOUND2 := width (default:1)
+ * 
+ * we try to simplify width & step to 1 whenever possible.
+ * 1) If the overall range is smaller than the step, we can
+ *    get rid of the step/width entirely!
+ *    Consider (0 -> 8) step 5
+ *                 (4 ->> 6)
+ *    we can replace this by (4 -> 6) step 1
+ *                              (0 ->> 1)
+ * 2) If we have a full grid, i.e., width == step, we can
+ *    set both to 1:
+ *    Consider (lb -> ub) step n
+ *                  (0 ->> n)
+ *    we can replace this by (b -> ub) step 1
+ *                              (0 ->> 1)
+ *
+ * We also try to maximise the outline:
+ *          (3 -> 8) step 2 
+ *             (0 ->> 1):
+ *    can be transformed into:
+ *          (2 -> 9) step 2     <- decreased lb && increased ub!
+ *             (1 ->> 2):       <- shifted grid
+ * 
+ * 
+ * Step 2.2 ComputeCubes
+ * ---------------------
+ * 
  ******************************************************************************/
 
 #include "tree_basic.h"
@@ -1718,7 +1807,7 @@ CheckStride (int bound1, int bound2, int step, int grid_b1, int grid_b2,
  *   This normalization has two major goals:
  *     * every stride has a unambiguous form
  *        -> two strides represent the same index set
- *           if and only if there attribute values are equal.
+ *           if and only if their attribute values are equal.
  *     * maximize the outline of strides
  *        -> two strides of the same cube do not split each other in several
  *           parts when intersected
@@ -1763,7 +1852,15 @@ NormalizeStride1 (node *stride)
     CheckStride (bound1, bound2, step, grid_b1, grid_b2, TRUE);
 
     /*
-     * if (bound2 - bound1 - grid_b1 <= step), we can set (step = 1)
+     * if (bound2 - bound1 - grid_b1 <= step), we can set (step = 1) and (width = 1 )
+     * as well!
+     * Rationale: (bound2 - bound1 - grid_b1) is the total range when starting from 
+     * the first element where we want to compute (bound1 + grid_b1). If that is less
+     * than or equal to the step, we only have 1 step to look into.
+     * => we can make it a dense grid from (bound1 + grid_b1)
+     *    to max (bound1 + grid_b2, bound2).
+     * For example, (0 -> 8) step 5 (4 ->> 6) can be turned into
+     * (4 -> 6) step 1 (0 ->> 1).
      */
     if (bound2 - bound1 - grid_b1 <= step) {
         bound2 = MATHmin (bound2, bound1 + grid_b2);
@@ -1777,7 +1874,9 @@ NormalizeStride1 (node *stride)
      * assure: ([grid_b1; grid_b2] < [0; step]) or (grid_b2 = step = 1);
      * in other terms: (width < step) or (width = step = 1)
      */
-    if (grid_b2 > step) {
+    if (grid_b2 > step) { // SBS 2023: I think this can never happen....
+                          // CheckStride guarantees it before the previous
+                          // conditional!
         grid_b2 = step;
     }
     if ((step > 1) && (grid_b1 == 0) && (grid_b2 == step)) {
@@ -1786,6 +1885,7 @@ NormalizeStride1 (node *stride)
 
     /*
      * assure, that the stride is still legal!
+     * SBS 2023: again this seems to be implicitly corrrect!
      */
     CheckStride (bound1, bound2, step, grid_b1, grid_b2, TRUE);
 
@@ -1793,11 +1893,19 @@ NormalizeStride1 (node *stride)
      * maximize the outline
      */
 
-    /* calculate minimum for 'bound1' */
+    /* calculate minimum for 'bound1':
+     *     |000/xx/00| ... |000/xx/00|00
+     * =>
+     *   |00000/xx/| ... |00000/xx/|0000
+     */
     new_bound1 = bound1 - (step - grid_b2);
     new_bound1 = MATHmax (0, new_bound1);
 
-    /* calculate maximum for 'bound2' */
+    /* calculate maximum for 'bound2':
+     *   |00000/xx/| ... |00000/xx/|0000
+     * =>
+     *   |00000/xx/| ... |00000/xx/|00000
+     */
     new_bound2 = ((bound2 - bound1 - grid_b1) % step >= grid_b2 - grid_b1)
                    ? (bound2 + step - ((bound2 - bound1 - grid_b1) % step))
                    : (bound2);
@@ -2607,6 +2715,8 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT_TAG ("WLTp2s", "transforming parts:");
+    DBUG_EXECUTE_TAG ("WLTp2s", PRTdoPrintFile (stderr, parts););
     parts_stride = NULL;
     while (parts != NULL) {
         code = PART_CODE (parts);
@@ -2715,6 +2825,9 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
     }
     while (parts != NULL)
         ;
+
+    DBUG_PRINT_TAG ("WLTp2s", "into strides:");
+    DBUG_EXECUTE_TAG ("WLTp2s", PRTdoPrintFile (stderr, parts_stride););
 
     DBUG_RETURN (parts_stride);
 }
@@ -2862,6 +2975,9 @@ CheckDisjointness (node *strides)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT_TAG ("WLTcd", "CheckDisjointness of:");
+    DBUG_EXECUTE_TAG ("WLTcd", PRTdoPrintFile (stderr, strides););
+
     while ((strides != NULL) && disjoint) {
         stride2 = WLSTRIDE_NEXT (strides);
         while ((stride2 != NULL) && disjoint) {
@@ -2872,6 +2988,8 @@ CheckDisjointness (node *strides)
         }
         strides = WLSTRIDE_NEXT (strides);
     }
+
+    DBUG_PRINT_TAG ("WLTcd", "   found %s", disjoint ? "disjoint" : "non disjoint");
 
     DBUG_RETURN (disjoint);
 }
@@ -2918,9 +3036,13 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
     node *trav_d_stride1a, *trav_d_stride1b, *trav_d_stride2a, *trav_d_stride2b;
     node *divided_stride1a, *divided_stride1b, *divided_stride2a, *divided_stride2b;
     int bound11, bound21, grid1_b1, grid1_b2, bound12, bound22, grid2_b1, grid2_b2;
+    int step1, step2;
     int head1, rear1, head2, rear2;
     int i_bound1, i_bound2, i_offset1, i_offset2, offset;
     int result = 0;
+#ifndef DBUG_OFF
+    int dim =0;
+#endif
 
     DBUG_ENTER ();
 
@@ -2934,7 +3056,13 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
     trav_d_stride2a = divided_stride2a = DUPdoDupNode (stride2);
     trav_d_stride2b = divided_stride2b = DUPdoDupNode (stride2);
 
+    DBUG_PRINT_TAG ("WLTcubes", "Trying to intersect");
+    DBUG_EXECUTE_TAG ("WLTcubes", PRTdoPrintFile (stderr, stride1););
+    DBUG_PRINT_TAG ("WLTcubes", "with");
+    DBUG_EXECUTE_TAG ("WLTcubes", PRTdoPrintFile (stderr, stride1););
+
     while (stride1 != NULL) {
+        DBUG_PRINT_TAG ("WLTcubes", "  handling dim %d", dim);
         DBUG_ASSERT (stride2 != NULL, "missing dim in second stride!");
 
         DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (stride1),
@@ -2964,6 +3092,14 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
         grid2_b1 = NUM_VAL (WLGRID_BOUND1 (grid2));
         grid2_b2 = NUM_VAL (WLGRID_BOUND2 (grid2));
 
+        step1 = NUM_VAL (WLSTRIDE_STEP (stride1));
+        step2 = NUM_VAL (WLSTRIDE_STEP (stride2));
+
+        DBUG_PRINT_TAG ("WLTcubes", "    stride1: (%d -> %d) step %d (%d ->> %d)",
+                        bound11, bound21, step1, grid1_b1, grid1_b2);
+        DBUG_PRINT_TAG ("WLTcubes", "    stride2: (%d -> %d) step %d (%d ->> %d)",
+                        bound12, bound22, step2, grid2_b1, grid2_b2);
+
         head1 = IndexHeadStride (stride1);
         rear1 = IndexRearStride (stride1);
         head2 = IndexHeadStride (stride2);
@@ -2972,10 +3108,20 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
         i_bound1 = MATHmax (bound11, bound12);
         i_bound2 = MATHmin (bound21, bound22);
 
-        i_offset1 = WLTRAgridOffset (i_bound1, bound11, NUM_VAL (WLSTRIDE_STEP (stride1)),
-                                     grid1_b2);
-        i_offset2 = WLTRAgridOffset (i_bound1, bound12, NUM_VAL (WLSTRIDE_STEP (stride2)),
-                                     grid2_b2);
+        i_offset1 = WLTRAgridOffset (i_bound1, bound11, step1, grid1_b2);
+        i_offset2 = WLTRAgridOffset (i_bound1, bound12, step2, grid2_b2);
+
+        DBUG_PRINT_TAG ("WLTcubes",
+                        "    outline (stride1)  and   outline (stride2) are %sdisjoint!",
+                        ((head1 < rear2) && (head2 < rear1) ? "not " : ""));
+        DBUG_PRINT_TAG ("WLTcubes",
+                        "    stride1  and   stride2 decend from %s N_part node(s)!",
+                        (WLSTRIDE_PART (stride1) != WLSTRIDE_PART (stride2) ?
+                         "different" : "the same"));
+        DBUG_PRINT_TAG ("WLTcubes",
+                        "    stride1  and   stride2 have %scompatible grids!",
+                        ((i_offset1 <= grid1_b1) && (i_offset2 <= grid2_b1)?
+                         "" : "in-"));
 
         if (/* are the outlines of 'stride1' and 'stride2' not disjoint? */
             (head1 < rear2) && (head2 < rear1) &&
@@ -3015,6 +3161,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                              " as well as"
                              " the intersection of stride2 with the outline of stride1"
                              " are empty!");
+                DBUG_PRINT_TAG ("WLTcubes", "    stride1 does not intersect outline(stride2)"
+                                            " => dividing stride1");
                 NUM_VAL (WLSTRIDE_BOUND2 (trav_d_stride1a)) = bound12;
 
                 NUM_VAL (WLSTRIDE_BOUND1 (trav_d_stride1b)) = bound22;
@@ -3024,9 +3172,15 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                 NUM_VAL (WLGRID_BOUND1 (WLSTRIDE_CONTENTS (trav_d_stride1b))) -= offset;
                 NUM_VAL (WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_d_stride1b))) -= offset;
 
+                DBUG_PRINT_TAG ("WLTcubes", "    stride1a: (%d -> %d) s %d (%d ->> %d)",
+                                            bound11, bound12, step1, grid1_b1, grid1_b2);
+                DBUG_PRINT_TAG ("WLTcubes", "    stride1b: (%d -> %d) s %d (%d ->> %d)",
+                                            bound22, bound21, step1, grid1_b1-offset, grid1_b2-offset);
                 result = 1;
                 trav_d_stride1a = NormalizeStride1 (trav_d_stride1a);
                 trav_d_stride1b = NormalizeStride1 (trav_d_stride1b);
+
+                DBUG_PRINT_TAG ("WLTcubes", "    skipping inner dims!");
 
                 /* we can stop here */
                 break;
@@ -3035,6 +3189,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                  * the intersection of 'stride2' with the outline of 'stride1' is empty
                  *   -> dividing stride2
                  */
+                DBUG_PRINT_TAG ("WLTcubes", "    stride2 does not intersect outline(stride1)"
+                                            " => dividing stride2");
                 NUM_VAL (WLSTRIDE_BOUND2 (trav_d_stride2a)) = bound11;
 
                 NUM_VAL (WLSTRIDE_BOUND1 (trav_d_stride2b)) = bound21;
@@ -3044,14 +3200,21 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                 NUM_VAL (WLGRID_BOUND1 (WLSTRIDE_CONTENTS (trav_d_stride2b))) -= offset;
                 NUM_VAL (WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_d_stride2b))) -= offset;
 
+                DBUG_PRINT_TAG ("WLTcubes", "    stride2a: (%d -> %d) s %d (%d ->> %d)",
+                                            bound12, bound11, step2, grid2_b1, grid2_b2);
+                DBUG_PRINT_TAG ("WLTcubes", "    stride2b: (%d -> %d) s %d (%d ->> %d)",
+                                            bound21, bound22, step2, grid2_b1-offset, grid2_b2-offset);
                 result = 2;
                 trav_d_stride2a = NormalizeStride1 (trav_d_stride2a);
                 trav_d_stride2b = NormalizeStride1 (trav_d_stride2b);
                 trav_d_stride1b = NormalizeStride1 (trav_d_stride1b);
 
+                DBUG_PRINT_TAG ("WLTcubes", "    skipping inner dims!");
+
                 /* we can stop here */
                 break;
             } else {
+                DBUG_PRINT_TAG ("WLTcubes", "    no splitting required; investigaing next dim!");
                 /* next dim */
                 stride1 = WLGRID_NEXTDIM (grid1);
                 stride2 = WLGRID_NEXTDIM (grid2);
@@ -3065,6 +3228,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
              * the outlines are disjoint
              *  -> free the useless data in 'divided_stride?'
              */
+            
+            DBUG_PRINT_TAG ("WLTcubes", "    strides are disjoint; skipping inner dims!");
             divided_stride1a = FREEdoFreeTree (divided_stride1a);
             divided_stride1b = FREEdoFreeTree (divided_stride1b);
             divided_stride2a = FREEdoFreeTree (divided_stride2a);
@@ -3075,6 +3240,7 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
             /* we can give up here */
             break;
         }
+        DBUG_EXECUTE_TAG ("WLTcubes", dim++;);
     }
 
     if (result != 0) {
@@ -3587,42 +3753,53 @@ ComputeCubes (node *strides)
      * -----------
      *
      * divide strides
-     *  -> for every two strides (stride1, stride2) the following property is
-     *     hold:
-     *     if outline(stride1) and outline(stride2) are not disjoint,
+     *  -> for every two strides (stride1, stride2) we try to establish the
+     *     following property:
+     *     if outline(stride1) and outline(stride2) intersect,
      *     then the intersection of stride1 with outline(stride2) is non-empty!
      *  (this property is exploited in the second step)
      *
-     * this property is *not* hold in general!!!!
+     * this property does *not* hold in general!!!!
      * example:
      *
      *   stride1: 0->5 step 2          stride2: 2->3 step 1
      *                   1->2: ...                     0->1: ...
      *
-     * The outlines of these two strides are not disjoint.
-     * Nevertheless the intersection of stride1 with outline(stride2) is empty:
+     * The outlines of these two strides intersect:
+     *     {0,1,2,3,4}  is superset of {2} !
      *
-     *            2->3 step 2
-     *                   1->2: ???
+     * Nevertheless the intersection of stride1 ({1,3}) with outline(stride2) ({2}) is empty:
+     *     {1,3}  intersect   {2}  =  {}
+     *
+     ************
      *
      ************
      *
      * Attention:
      *   In general a single round (test-and-divide all pairs of strides) is
-     *   *not* sufficient! Example:
+     *   *not* sufficient! Example (1D):
      *
-     *     0->4 step 2            0: ( op1 )
-     *            0->1: op1       1: ( op2 )
-     *     0->5 step 3            2: ( op1 )
-     *            1->2: op2       3: ( op3 )
-     *     3->4 step 1:           4: ( op2 )
-     *            0->1: op3       5:
+     *     strides            indices      operations
      *
+     *     0->4 step 2                     0: ( op1 )
+     *            0->1: op1   {0,2}        1: ( op2 )
+     *     0->5 step 3                     2: ( op1 )
+     *            1->2: op2   {1,4}        3: ( op3 )
+     *     3->4 step 1:                    4: ( op2 )
+     *            0->1: op3   {3}          5:
+     *
+     *   ---> in first round:
+     *     outline(op1) intersect outline(op2)
+     *         && stride(op1) intersect outline(op2)
+     *     outline(op1) intersect outline(op3)
+     *         && stride(op1) ! intersect outline(op3)
      *   ---> in first round: split op2 because of op3 --->
+     *
+     *     strides                indices 
      *
      *     0->4 step 2            0: ( op1  )
      *            0->1: op1       1: ( op2a )
-     *     1->2 step 1            2: ( op1  )
+     *     1->2 step 1            2: ( op1  )       
      *            0->1: op2a      3: ( op3  )
      *     3->4 step 1:           4: ( op2b )
      *            0->1: op3       5:
@@ -3644,52 +3821,65 @@ ComputeCubes (node *strides)
      *
      *  Therefore fixpoint-iteration is needed!
      */
+    /* check WLSTRIDE_ISMODIFIED */
+    stride1 = strides;
+    while (stride1 != NULL) {
+        DBUG_ASSERT (!WLSTRIDE_ISMODIFIED (stride1), "stride was modified");
+        stride1 = WLSTRIDE_NEXT (stride1);
+    }
+
     do {
         fixpoint = TRUE;
         new_strides = NULL;
 
-        /* check WLSTRIDE_ISMODIFIED */
-        stride1 = strides;
-        while (stride1 != NULL) {
-            DBUG_ASSERT (!WLSTRIDE_ISMODIFIED (stride1), "stride was modified");
-            stride1 = WLSTRIDE_NEXT (stride1);
-        }
-
         /* test-and-divide the elements of 'strides' pairwise */
         stride1 = strides;
         while (stride1 != NULL) {
-            stride2 = WLSTRIDE_NEXT (stride1);
-            while (stride2 != NULL) {
-                res = TestAndDivideStrides (stride1, stride2, &divided_stridea,
-                                            &divided_strideb);
+            if (!WLSTRIDE_ISMODIFIED (stride1)) {
 
-                if (res == 1) {
-                    fixpoint = FALSE;
-                    WLSTRIDE_ISMODIFIED (stride1) = TRUE;
-                } else {
-                    if (res == 2) {
-                        fixpoint = FALSE;
-                        WLSTRIDE_ISMODIFIED (stride2) = TRUE;
-                    } else {
-                        DBUG_ASSERT (((divided_stridea == NULL)
-                                      && (divided_strideb == NULL)),
-                                     "results of TestAndDivideStrides() are "
-                                     "inconsistent!");
+                stride2 = WLSTRIDE_NEXT (stride1);
+                while (stride2 != NULL) {
+                    /*
+                     * ignore strides that have been modified in previous tests!
+                     * These will be deleted by the outer loop (progressing stride1)
+                     * cf. bug 2344!
+                     */
+                    if (!WLSTRIDE_ISMODIFIED (stride2)) {
+                        res = TestAndDivideStrides (stride1, stride2, &divided_stridea,
+                                                    &divided_strideb);
+
+                        if (res == 1) {
+                            fixpoint = FALSE;
+                            WLSTRIDE_ISMODIFIED (stride1) = TRUE;
+                        } else if (res == 2) {
+                            fixpoint = FALSE;
+                            WLSTRIDE_ISMODIFIED (stride2) = TRUE;
+                        } else {
+                            DBUG_ASSERT (((divided_stridea == NULL)
+                                          && (divided_strideb == NULL)),
+                                         "results of TestAndDivideStrides() are "
+                                         "inconsistent!");
+                        }
+
+                        new_strides = WLTRAinsertWlNodes (new_strides, divided_stridea);
+                        new_strides = WLTRAinsertWlNodes (new_strides, divided_strideb);
                     }
+                    stride2 = WLSTRIDE_NEXT (stride2);
                 }
 
-                new_strides = WLTRAinsertWlNodes (new_strides, divided_stridea);
-                new_strides = WLTRAinsertWlNodes (new_strides, divided_strideb);
-                stride2 = WLSTRIDE_NEXT (stride2);
-            }
+                /* was 'stride1' not modified? */
+                if (!WLSTRIDE_ISMODIFIED (stride1)) {
+                    /* insert 'stride1' in 'new_strides' */
+                    tmp = stride1;
+                    stride1 = WLSTRIDE_NEXT (stride1);
+                    WLSTRIDE_NEXT (tmp) = NULL;
+                    new_strides = WLTRAinsertWlNodes (new_strides, tmp);
+                } else {
+                    /* 'stride1' is no longer needed */
+                    stride1 = FREEdoFreeNode (stride1);
+                    /* 'stride1' points to his successor now! */
+                }
 
-            /* was 'stride1' not modified? */
-            if (!WLSTRIDE_ISMODIFIED (stride1)) {
-                /* insert 'stride1' in 'new_strides' */
-                tmp = stride1;
-                stride1 = WLSTRIDE_NEXT (stride1);
-                WLSTRIDE_NEXT (tmp) = NULL;
-                new_strides = WLTRAinsertWlNodes (new_strides, tmp);
             } else {
                 /* 'stride1' is no longer needed */
                 stride1 = FREEdoFreeNode (stride1);
@@ -3876,17 +4066,12 @@ BuildCubes (node *strides, int iter_dims, shape *iter_shp, bool *do_naive_comp)
     DBUG_ENTER ();
 
     all_const = WLTRAallStridesAreConstant (strides, TRUE, TRUE);
-    DBUG_EXECUTE (
-      CTInote (EMPTY_LOC, all_const 
-                          ? "  constant-bounds with-loop: TRUE"
-                          : "  constant-bounds with-loop: FALSE");
-      CTInote (EMPTY_LOC, (iter_shp != NULL) 
-                          ? "  known-shape with-loop: TRUE"
-                          : "  known-shape with-loop: FALSE (dim = %d)",
-               iter_dims);
-      CTInote (EMPTY_LOC, (WLSTRIDE_NEXT (strides) != NULL) 
-                          ? "  multi-generator with-loop: TRUE"
-                          : "  multi-generator with-loop: FALSE"));
+    DBUG_PRINT_TAG ("WLTcubes", "constant-bounds with-loop: %s",
+                                all_const ? "TRUE" : "FALSE");
+    DBUG_PRINT_TAG ("WLTcubes", "known-shape with-loop: %s",
+                                (iter_shp != NULL) ? "TRUE" : "FALSE");
+    DBUG_PRINT_TAG ("WLTcubes", "multi-generator with-loop: %s",
+                                (WLSTRIDE_NEXT (strides) != NULL) ? "TRUE" : "FALSE");
 
     if (!all_const) {
         /*
@@ -3905,7 +4090,12 @@ BuildCubes (node *strides, int iter_dims, shape *iter_shp, bool *do_naive_comp)
              */
             cubes = strides;
         } else {
+            DBUG_PRINT_TAG ("WLTcubes", "Normalizing strides:");
+            DBUG_EXECUTE_TAG ("WLTcubes", PRTdoPrintFile (stderr, strides););
             strides = NormalizeAllStrides (strides);
+            DBUG_PRINT_TAG ("WLTcubes", "into:");
+            DBUG_EXECUTE_TAG ("WLTcubes", PRTdoPrintFile (stderr, strides););
+
             cubes = ComputeCubes (strides);
         }
     }
@@ -6816,6 +7006,8 @@ CheckWith (node *arg_node, node *res_ids)
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_with, "no N_with node found!");
 
+    DBUG_PRINT ("CheckWith ...");
+
     cexprs = CODE_CEXPRS (WITH_CODE (arg_node));
     withop = WITH_WITHOP (arg_node);
 
@@ -6877,6 +7069,7 @@ CheckWith (node *arg_node, node *res_ids)
         withop = WITHOP_NEXT (withop);
         res_ids = IDS_NEXT (res_ids);
     }
+    DBUG_PRINT (" ... ok!");
 
     DBUG_RETURN (arg_node);
 }
@@ -6915,21 +7108,16 @@ WLTRAwith (node *arg_node, info *arg_info)
     arg_info = FreeInfo (arg_info);
     arg_info = info_tmp;
 
-    DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
+    DBUG_PRINT ("Looking at %s = with ...", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
     arg_node = CheckWith (arg_node, INFO_WL_LHS (arg_info));
 
     idx_type = TYeliminateAKV (IDS_NTYPE (WITH_VEC (arg_node)));
 
     if (!TYisAKS (idx_type)) {
-
-        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
-        DBUG_EXECUTE (
-          CTInote (EMPTY_LOC, "found With-loop s without full partition (line %zu)", global.linenum));
+        DBUG_PRINT ("found With-loop without full partition (line %zu)", global.linenum);
         new_node = arg_node;
     } else if (WITH_CUDARIZABLE (arg_node)) {
-        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
-        DBUG_EXECUTE (CTInote (EMPTY_LOC, "Cudarizable with-loop found (line %zu). Won't touch.",
-                               global.linenum));
+        DBUG_PRINT ("Cudarizable with-loop found (line %zu). Won't touch.", global.linenum);
         new_node = arg_node;
     } else {
         /*
@@ -6940,9 +7128,7 @@ WLTRAwith (node *arg_node, info *arg_info)
         int iter_dims;   /* >= 0 */
         shape *iter_shp; /* may be NULL! */
 
-        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
-        DBUG_EXECUTE (
-          CTInote (EMPTY_LOC, "with-loop with AKS withid found (line %zu)", global.linenum));
+        DBUG_PRINT ("with-loop with AKS withid found (line %zu)", global.linenum);
 
 #if 0
     DBUG_ASSERT ( WITH_PARTS( arg_node) > 0, "With-loop with AKS index vector is not fully partitioned!");
@@ -6952,10 +7138,11 @@ WLTRAwith (node *arg_node, info *arg_info)
          * check whether WITHID_VEC, WITHID_IDS of all parts have identical
          * names
          */
-        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
+        DBUG_PRINT ("CheckWithids ...");
         DBUG_ASSERT (CheckWithids (WITH_PART (arg_node)),
                      "Not all N_withid nodes of the with-loop have identical names!\n"
                      "This is probably due to an error during with-loop-folding.");
+        DBUG_PRINT ("... ok!");
 
         iter_shp = GetWlIterShape (arg_node, INFO_WL_LHS (arg_info));
 
@@ -6967,7 +7154,6 @@ WLTRAwith (node *arg_node, info *arg_info)
              * this shouldn`t happen for multioperator with-loops,
              * because with-loops with empty iteration space are not fused
              */
-            DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
             DBUG_UNREACHABLE ("with-loop with empty iteration space found!\n");
         } else {
             node *cubes = NULL;
@@ -6977,20 +7163,23 @@ WLTRAwith (node *arg_node, info *arg_info)
             /*
              * convert parts of with-loop into new format
              */
-            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 1.1: convert parts into strides"));
+            DBUG_PRINT ("step 1.1: convert parts into strides (WLTp2s for detail)");
             strides = Parts2Strides (WITH_PART (arg_node), iter_dims, iter_shp);
 
             /*
              * consistence check: ensures that the strides are pairwise disjoint
              */
-            DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
-            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 1.2: check disjointness of strides"));
+            DBUG_PRINT ("step 1.2: check disjointness of strides (WLTcd for detail)");
             DBUG_ASSERT (CheckDisjointness (strides),
                          "Consistence check failed:"
                          " Not all strides are pairwise disjoint!\n"
                          "This is probably due to an error during with-loopfolding.");
 
+            DBUG_PRINT ("step 1.3: generate N_with2 skeleton: (WLTskel for details)");
+
             new_node = ConvertWith (arg_node, iter_dims);
+
+            DBUG_EXECUTE_TAG ("WLTskel", PRTdoPrintFile (stderr, new_node););
 
             DBUG_ASSERT (strides != NULL, "No non-empty strides found.");
 
@@ -7017,7 +7206,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             /*
              * build the cubes
              */
-            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 2: build cubes"));
+            DBUG_PRINT ("step 2: build cubes (WLTcubes for detail)");
 
             cubes = BuildCubes (strides, iter_dims, iter_shp, &do_naive_comp);
 
@@ -7043,7 +7232,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             /*
              * normalize grids and fill gaps
              */
-            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 3: fill gaps (grids)"));
+            DBUG_PRINT ("step 3: fill gaps (grids) (WLTgaps for detail)");
             cubes = InsertNoopGrids (cubes);
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
@@ -7061,7 +7250,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 #endif
 #endif
 
-            DBUG_EXECUTE (CTInote (EMPTY_LOC, "step 4: choose segments"));
+            DBUG_PRINT ("step 4: choose segments");
             if (do_naive_comp) {
                 /* naive compilation  ->  put each stride in a separate segment */
                 segs = WLCOMP_Cubes (NULL, NULL, cubes, iter_dims, global.linenum);

@@ -11,7 +11,7 @@
 
 /* Allocate a new empty trie.  */
 struct trie *
-trie_new ()
+trie_new (void)
 {
     struct trie *trie = (struct trie *)malloc (sizeof (struct trie));
     trie->children_size = TRIE_CHILDREN;

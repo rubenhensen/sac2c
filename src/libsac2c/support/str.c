@@ -151,7 +151,7 @@ STRsubStr (const char *string, size_t start, ssize_t len)
  * @return empty "" string
  */
 char *
-STRnull ()
+STRnull (void)
 {
     char *ret = NULL;
     DBUG_ENTER ();
@@ -169,7 +169,7 @@ STRnull ()
  * @return size of int in string
  */
 size_t
-STRsizeInt ()
+STRsizeInt (void)
 {
     size_t size = 0;
     int s = sizeof (int) * 8;

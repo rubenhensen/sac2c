@@ -117,7 +117,7 @@ PrintLibStatCode (module_t *module, const sttable_t *table)
 }
 
 void
-LIBSprintLibStat ()
+LIBSprintLibStat (void)
 {
     module_t *module;
     const sttable_t *table;

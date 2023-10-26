@@ -137,7 +137,7 @@ SAC_PF_OPS_PrintFunStats (const char *func_name, unsigned num_ap,
  * @brief Call to print arithmetic and relational profiling statistics.
  */
 void
-SAC_PF_OPS_PrintStats ()
+SAC_PF_OPS_PrintStats (void)
 {
     SAC_PF_PrintHeader ("Operations Profile");
 

@@ -2506,7 +2506,7 @@ CheckEndPrint (strvec *TS_ID, strvec *TS_IN_SPACE, strvec *TS_IN_GRID, char *TS_
  * value of its iv by one.
  */
 void
-GKCOcompCheckEnd ()
+GKCOcompCheckEnd (void)
 {
     DBUG_ENTER ();
 

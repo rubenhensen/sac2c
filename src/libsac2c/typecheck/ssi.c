@@ -197,7 +197,7 @@ AddHandle (tvar *var, sig_dep *handle)
 /******************************************************************************
  *
  * function:
- *    tvar  * SSImakeVariable()
+ *    tvar  * SSImakeVariable(void)
  *
  * description:
  *
@@ -205,7 +205,7 @@ AddHandle (tvar *var, sig_dep *handle)
  ******************************************************************************/
 
 tvar *
-SSImakeVariable ()
+SSImakeVariable (void)
 {
     tvar *res;
 
@@ -239,7 +239,7 @@ SSImakeVariable ()
 }
 
 void
-SSIfreeAllTvars ()
+SSIfreeAllTvars (void)
 {
     DBUG_ENTER ();
 

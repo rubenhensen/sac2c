@@ -921,7 +921,7 @@ EvaluateConfig (char *input, target_list_t *target_list)
 /******************************************************************************
  *
  * function:
- *  void RSCevaluateConfiguration ()
+ *  void RSCevaluateConfiguration (void)
  *
  * description:
  *  This function triggers the whole process of evaluating the configuration
@@ -930,7 +930,7 @@ EvaluateConfig (char *input, target_list_t *target_list)
  ******************************************************************************/
 
 void
-RSCevaluateConfiguration ()
+RSCevaluateConfiguration (void)
 {
     DBUG_ENTER ();
 
