@@ -354,7 +354,7 @@ RemovePatternElement (pattern_t *element)
 /*****************************************************************************
  *
  * function:
- *   static void SortAccesses()
+ *   static void SortAccesses(void)
  *
  * description:
  *   sort accesses within each conflict group in lexicographical order
@@ -441,7 +441,7 @@ SortAccesses (void)
 /*****************************************************************************
  *
  * function:
- *   static void RemoveSingleAccessPatterns()
+ *   static void RemoveSingleAccessPatterns(void)
  *
  * description:
  *   remove conflict groups containing only one access pattern
@@ -513,7 +513,7 @@ RemoveSingleAccessPatterns (void)
 /*****************************************************************************
  *
  * function:
- *   static void RemoveDuplicateAccesses()
+ *   static void RemoveDuplicateAccesses(void)
  *
  * description:
  *   remove duplicate accesses within one conflict group
@@ -573,7 +573,7 @@ RemoveDuplicateAccesses (void)
 /*****************************************************************************
  *
  * function:
- *   static void RemoveIdenticalConflictGroups()
+ *   static void RemoveIdenticalConflictGroups(void)
  *
  * description:
  *   remove duplicate conflict groups (groups with identical access patterns)
@@ -833,7 +833,7 @@ PrintPadInfoElement (pad_info_t *pi_ptr)
 /*****************************************************************************
  *
  * function:
- *   void PIinit()
+ *   void PIinit(void)
  *
  * description:
  *   initialize abstract data structure
@@ -842,7 +842,7 @@ PrintPadInfoElement (pad_info_t *pi_ptr)
  *****************************************************************************/
 
 void
-PIinit ()
+PIinit (void)
 {
 
     DBUG_ENTER ();
@@ -939,7 +939,7 @@ PIaddAccessPattern (simpletype type, int dim, shape *shp, shape *group,
 /*****************************************************************************
  *
  * function:
- *   void PIprintAccessPatterns()
+ *   void PIprintAccessPatterns(void)
  *
  * description:
  *   print complete contents of structure array_type to outfile
@@ -948,7 +948,7 @@ PIaddAccessPattern (simpletype type, int dim, shape *shp, shape *group,
  *****************************************************************************/
 
 void
-PIprintAccessPatterns ()
+PIprintAccessPatterns (void)
 {
 
     array_type_t *at_ptr;
@@ -1064,7 +1064,7 @@ PIisUnsupportedShape (ntype *array_type)
 /*****************************************************************************
  *
  * function:
- *   void PIprintUnsupportedShapes()
+ *   void PIprintUnsupportedShapes(void)
  *
  * description:
  *   print complete contents of structure unsupported_shape to outfile
@@ -1072,7 +1072,7 @@ PIisUnsupportedShape (ntype *array_type)
  *****************************************************************************/
 
 void
-PIprintUnsupportedShapes ()
+PIprintUnsupportedShapes (void)
 {
 
     unsupported_shape_t *us_ptr;
@@ -1125,7 +1125,7 @@ PIlinearizeVector (int dim, shape *shp, shape *vect)
 /*****************************************************************************
  *
  * function:
- *   void PItidyAccessPattern()
+ *   void PItidyAccessPattern(void)
  *
  * description:
  *   removes all information that is not required for inferring new shapes
@@ -1137,7 +1137,7 @@ PIlinearizeVector (int dim, shape *shp, shape *vect)
  *****************************************************************************/
 
 void
-PItidyAccessPattern ()
+PItidyAccessPattern (void)
 {
 
     DBUG_ENTER ();
@@ -1164,7 +1164,7 @@ PItidyAccessPattern ()
 /*****************************************************************************
  *
  * function:
- *   void PIremoveUnsupportedShapes()
+ *   void PIremoveUnsupportedShapes(void)
  *
  * description:
  *   remove unsupported shapes from list of inferred shapes
@@ -1174,7 +1174,7 @@ PItidyAccessPattern ()
  *****************************************************************************/
 
 void
-PIremoveUnsupportedShapes ()
+PIremoveUnsupportedShapes (void)
 {
 
     unsupported_shape_t *us_ptr;
@@ -1319,7 +1319,7 @@ PIgetPatternShape (pattern_t *pt_ptr)
  *****************************************************************************/
 
 array_type_t *
-PIgetFirstArrayType ()
+PIgetFirstArrayType (void)
 {
 
     DBUG_ENTER ();
@@ -1548,7 +1548,7 @@ PIpaddingOverhead (int dim, shape *orig_shape, shape *padding)
 /*****************************************************************************
  *
  * function:
- *   void PInoteResults()
+ *   void PInoteResults(void)
  *
  * description:
  *
@@ -1557,7 +1557,7 @@ PIpaddingOverhead (int dim, shape *orig_shape, shape *padding)
  *****************************************************************************/
 
 void
-PInoteResults ()
+PInoteResults (void)
 {
     pad_info_t *pi_ptr;
     char *basetype, *old, *xnew, *pad;
@@ -1591,7 +1591,7 @@ PInoteResults ()
 /*****************************************************************************
  *
  * function:
- *   void PIprintPadInfo()
+ *   void PIprintPadInfo(void)
  *
  * description:
  *   print complete contents of structure pad_info to outfile
@@ -1599,7 +1599,7 @@ PInoteResults ()
  *****************************************************************************/
 
 void
-PIprintPadInfo ()
+PIprintPadInfo (void)
 {
 
     pad_info_t *pi_ptr;
@@ -1739,7 +1739,7 @@ PIgetFundefUnpad (ntype *old_type)
 /*****************************************************************************
  *
  * function:
- *   void PIfree()
+ *   void PIfree(void)
  *
  * description:
  *   free abstract data structures 'array_type', 'unsupported_shape' and 'pad_info'
@@ -1748,7 +1748,7 @@ PIgetFundefUnpad (ntype *old_type)
  *****************************************************************************/
 
 void
-PIfree ()
+PIfree (void)
 {
 
     pad_info_t *current_pi;

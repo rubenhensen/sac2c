@@ -35,7 +35,7 @@
 
 /*
  * BEGIN: The folowing variables are declared as extern in the
- * ´cachesim.h´-file. Changes here have to be done there
+ * 'cachesim.h'-file. Changes here have to be done there
  * too!!!
  */
 char SAC_CS_separator[]
@@ -1060,7 +1060,7 @@ UnregisterArray (void *baseaddress)
                     free (cl->shadowarrays[j]);
                     cl->shadowarrays[j] = cl->shadowarrays[lastused];
                     cl->shadowarrays[lastused] = NULL;
-                    /* so the following free doesn´t kill the new j  */
+                    /* so the following free doesn't kill the new j  */
                     cl->shadowbases[j] = cl->shadowbases[lastused];
                     cl->shadowalignedtop[j] = cl->shadowalignedtop[lastused];
                     cl->shadowmaxindices[j] = cl->shadowmaxindices[lastused];

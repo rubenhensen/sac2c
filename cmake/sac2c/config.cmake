@@ -786,6 +786,17 @@ ELSEIF (MACC)
   # we SHOULD investigate this further!
   CHECK_CC_FLAG ("-Wno-atomic-implicit-seq-cst" MACCC_FLAGS)
 
+  # complaining about pre C99 compatability requiring all decls
+  # to happen before any assignments.
+  CHECK_CC_FLAG ("-Wno-declaration-after-statement" MACCC_FLAGS)
+
+  # we should be able to get rid of this! For the time being (2023), it only
+  # conflicts the need to define 'bool' on some rare platforms....
+  CHECK_CC_FLAG ("-Wno-c2x-compat" MACCC_FLAGS)
+
+  # not sure we can do without this:
+  CHECK_CC_FLAG ("-Wno-gnu-line-marker" MACCC_FLAGS)
+
   #Turn this if you want to be cruel
   #CHECK_CC_FLAG ("-Wconversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" MACCC_NATIVE_FLAGS)

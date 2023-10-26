@@ -140,7 +140,7 @@ foldmemcheck (void *init, void *key, void *value)
 }
 
 void
-CHKMcheckLeakedMemory ()
+CHKMcheckLeakedMemory (void)
 {
     mallocinfo_t *iter, *tmp;
     global.memcheck = FALSE;

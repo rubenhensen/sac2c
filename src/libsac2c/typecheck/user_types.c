@@ -254,7 +254,7 @@ UTfindUserType (const char *name, const namespace_t *ns)
 /******************************************************************************
  *
  * function:
- *    int UTgetNumberOfUserTypes()
+ *    int UTgetNumberOfUserTypes(void)
  *
  * description:
  *   returns the number of user defined types currently allocated.
@@ -262,7 +262,7 @@ UTfindUserType (const char *name, const namespace_t *ns)
  ******************************************************************************/
 
 int
-UTgetNumberOfUserTypes ()
+UTgetNumberOfUserTypes (void)
 {
     DBUG_ENTER ();
 

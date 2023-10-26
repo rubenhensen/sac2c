@@ -312,7 +312,7 @@ TEmakeInfoPrf (size_t linenum, const char *file, te_kind_t kind, const char *nam
 }
 
 void
-TEfreeAllTypeErrorInfos ()
+TEfreeAllTypeErrorInfos (void)
 {
     DBUG_ENTER ();
 
@@ -473,7 +473,7 @@ TEhandleError (size_t line, const char *file, const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn char *TEfetchErrors( )
+ * @fn char *TEfetchErrors(void)
  *
  *   @brief  retrieve the collected errors as string and reset errors.
  *
@@ -482,7 +482,7 @@ TEhandleError (size_t line, const char *file, const char *format, ...)
  ******************************************************************************/
 
 char *
-TEfetchErrors ()
+TEfetchErrors (void)
 {
     char *res;
     DBUG_ENTER ();
@@ -494,7 +494,7 @@ TEfetchErrors ()
 }
 
 void
-TEextendedAbort ()
+TEextendedAbort (void)
 {
     // SHOULD ONLY BE CALLED IMMEDIATELY AFTER CTIerrorBegin!
     node *assign;

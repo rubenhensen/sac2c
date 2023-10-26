@@ -296,7 +296,7 @@ NSgetNamespace (const char *module)
 }
 
 namespace_t *
-NSgetRootNamespace ()
+NSgetRootNamespace (void)
 {
     static namespace_t *result = NULL;
 
@@ -309,7 +309,7 @@ NSgetRootNamespace ()
 }
 
 namespace_t *
-NSgetInitNamespace ()
+NSgetInitNamespace (void)
 {
     static namespace_t *initns;
 
@@ -322,7 +322,7 @@ NSgetInitNamespace ()
 }
 
 namespace_t *
-NSgetCWrapperNamespace ()
+NSgetCWrapperNamespace (void)
 {
     static namespace_t *result;
 
@@ -660,7 +660,7 @@ GenerateNamespaceMappingHeader (FILE *file)
 }
 
 void
-NSgenerateNamespaceMap ()
+NSgenerateNamespaceMap (void)
 {
     FILE *file;
 
@@ -709,7 +709,7 @@ xfree_namespace (namespace_t *xnamespace)
 }
 
 void
-xfree_namespace_pool ()
+xfree_namespace_pool (void)
 {
     int i;
     nspool_t *p = pool;

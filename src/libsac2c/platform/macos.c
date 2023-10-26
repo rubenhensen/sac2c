@@ -24,7 +24,7 @@
  * @return path to MacOSX.sdk, or NULL on failure.
  */
 char *
-MACOSgetSysroot ()
+MACOSgetSysroot (void)
 {
 #ifdef __APPLE__
     int ret;
@@ -53,7 +53,7 @@ MACOSgetSysroot ()
  * @return string of version number, or NULL if not on APPLE system
  */
 char *
-MACOSgetSDKVer ()
+MACOSgetSDKVer (void)
 {
     char *v;
 

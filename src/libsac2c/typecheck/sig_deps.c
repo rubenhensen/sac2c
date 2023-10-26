@@ -109,7 +109,7 @@ MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, bool strict, ntype *resul
 }
 
 void
-SDfreeAllSignatureDependencies ()
+SDfreeAllSignatureDependencies (void)
 {
     DBUG_ENTER ();
 

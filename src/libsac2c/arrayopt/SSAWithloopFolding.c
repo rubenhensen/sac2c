@@ -695,14 +695,12 @@ node *
 WLFinternGen2Tree (node *wln, intern_gen *ig)
 {
     node **part, *withidn, *genn, *b1n, *b2n, *stepn, *widthn;
-    int no_parts; /* number of N_Npart nodes */
 
     DBUG_ENTER ();
 
     withidn = DUPdoDupTree (PART_WITHID (WITH_PART (wln)));
     FREEdoFreeTree (WITH_PART (wln));
     part = &(WITH_PART (wln));
-    no_parts = 0;
 
     /* create type for N_array nodes*/
     while (ig) {
@@ -718,7 +716,6 @@ WLFinternGen2Tree (node *wln, intern_gen *ig)
 
         ig = ig->next;
         part = &(PART_NEXT ((*part)));
-        no_parts++;
     }
 
     FREEdoFreeTree (withidn);

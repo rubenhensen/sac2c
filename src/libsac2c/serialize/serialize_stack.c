@@ -20,7 +20,7 @@ struct SERSTACK_T {
 };
 
 serstack_t *
-SSinit ()
+SSinit (void)
 {
     serstack_t *result;
 

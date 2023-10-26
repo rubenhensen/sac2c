@@ -283,13 +283,13 @@ static pm_mode_t pmm_flatPrf[3]
   = {{PMMskipPrf, (intptr_t)NULL}, {PMMskipId, (intptr_t)NULL}, {NULL, (intptr_t)NULL}};
 
 pm_mode_t *
-PMMexact ()
+PMMexact (void)
 {
     return (pmm_exact);
 }
 
 pm_mode_t *
-PMMflat ()
+PMMflat (void)
 {
     pmm_flat[0].param = (intptr_t)NULL;
     return (pmm_flat);

@@ -1824,7 +1824,7 @@ ComputePadding (cache_t *cache_L1, cache_t *cache_L2, cache_t *cache_L3, int dim
 /*****************************************************************************
  *
  * function:
- *   void APinfer ()
+ *   void APinfer (void)
  *
  * description:
  *
@@ -1833,7 +1833,7 @@ ComputePadding (cache_t *cache_L1, cache_t *cache_L2, cache_t *cache_L3, int dim
  *****************************************************************************/
 
 void
-APinfer ()
+APinfer (void)
 {
     shape *padding;
     shape *initial_padding;

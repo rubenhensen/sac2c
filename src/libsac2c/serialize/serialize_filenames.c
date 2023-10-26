@@ -61,7 +61,7 @@ SFNgetId (const char *filename)
 }
 
 void
-SFNgenerateFilenameTable ()
+SFNgenerateFilenameTable (void)
 {
     FILE *filec;
     FILE *fileh;

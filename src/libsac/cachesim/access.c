@@ -263,10 +263,10 @@ GetPosWithinSet (int *pWas_invalid, tCacheLevel *act_cl, ULINT *pElm0, ULINT ali
  * description:
  *   Generally speaking this procedure does the detailed analysis by
  *   classifying the misses as cold-start, self- or crossiterference.
- *   Therefor it uses the additional information provided by the entry ´E´
+ *   Therefor it uses the additional information provided by the entry 'E'
  *   of the shadowarray, which corresponds to the given aligned_addr.
  *   Furthermore all enties of the shadowarrays, which correspond to the
- *   same cacheline as ´E´, will be updated.
+ *   same cacheline as 'E', will be updated.
  *
  *****************************************************************************/
 #if DETAILED
@@ -291,8 +291,8 @@ void SAC_CS_DETAILEDANALYSIS (SAC_CS_READORWRITE) (tCacheLevel *act_cl, void *ba
     i = 0;
     while (i < MAX_SHADOWARRAYS && act_cl->shadowarrays[i] != NULL) {
         act_sh_ary = act_cl->shadowarrays[i];
-        /* set ´idx´ to index of the first affected entry
-         * within ´act_sh_ary´ */
+        /* set 'idx' to index of the first affected entry
+         * within 'act_sh_ary' */
         idx = (cacheline - GET_CACHELINE (act_cl, act_cl->shadowbases[i]) + nr_cachelines)
               % nr_cachelines; /* to get a positiv result */
         entry_addr = GET_ALIGNEDADDR (act_cl, act_cl->shadowbases[i])
@@ -333,7 +333,7 @@ void SAC_CS_DETAILEDANALYSIS (SAC_CS_READORWRITE) (tCacheLevel *act_cl, void *ba
 
 void SAC_CS_ACCESS_DMREAD (TYPE) (void *baseaddress, void *elemaddress)
 {
-    /* unsigned because of right-shift-operation ´>>´ */
+    /* unsigned because of right-shift-operation '>>' */
     unsigned int cacheline;
     tCacheLevel *act_cl;
     int was_invalid;
@@ -378,7 +378,7 @@ void SAC_CS_ACCESS_DMREAD (TYPE) (void *baseaddress, void *elemaddress)
 
 void SAC_CS_ACCESS_DMFOW (TYPE) (void *baseaddress, void *elemaddress)
 {
-    /* unsigned because of right-shift-operation ´>>´ */
+    /* unsigned because of right-shift-operation '>>' */
     unsigned int cacheline;
     tCacheLevel *act_cl;
     int was_invalid;
@@ -423,7 +423,7 @@ void SAC_CS_ACCESS_DMFOW (TYPE) (void *baseaddress, void *elemaddress)
 
 void SAC_CS_ACCESS_DMWV (TYPE) (void *baseaddress, void *elemaddress)
 {
-    /* unsigned because of right-shift-operation ´>>´ */
+    /* unsigned because of right-shift-operation '>>' */
     unsigned int cacheline;
     tCacheLevel *act_cl;
     int was_invalid;
@@ -466,7 +466,7 @@ void SAC_CS_ACCESS_DMWV (TYPE) (void *baseaddress, void *elemaddress)
 
 void SAC_CS_ACCESS_DMWA (TYPE) (void *baseaddress, void *elemaddress)
 {
-    /* unsigned because of right-shift-operation ´>>´ */
+    /* unsigned because of right-shift-operation '>>' */
     unsigned int cacheline;
     tCacheLevel *act_cl;
     int was_invalid;
@@ -502,7 +502,7 @@ void SAC_CS_ACCESS_DMWA (TYPE) (void *baseaddress, void *elemaddress)
 
 void SAC_CS_ACCESS_AS4READ (TYPE) (void *baseaddress, void *elemaddress)
 {
-    /* unsigned because of right-shift-operation ´>>´ */
+    /* unsigned because of right-shift-operation '>>' */
     unsigned int cacheline;
     tCacheLevel *act_cl;
     int pos, removepos, was_invalid;
@@ -551,7 +551,7 @@ void SAC_CS_ACCESS_AS4READ (TYPE) (void *baseaddress, void *elemaddress)
 
 void SAC_CS_ACCESS_AS4FOW (TYPE) (void *baseaddress, void *elemaddress)
 {
-    /* unsigned because of right-shift-operation ´>>´ */
+    /* unsigned because of right-shift-operation '>>' */
     unsigned int cacheline;
     tCacheLevel *act_cl;
     int pos, removepos, was_invalid;
@@ -600,7 +600,7 @@ void SAC_CS_ACCESS_AS4FOW (TYPE) (void *baseaddress, void *elemaddress)
 
 void SAC_CS_ACCESS_AS4WV (TYPE) (void *baseaddress, void *elemaddress)
 {
-    /* unsigned because of right-shift-operation ´>>´ */
+    /* unsigned because of right-shift-operation '>>' */
     unsigned int cacheline;
     tCacheLevel *act_cl;
     int pos, removepos, was_invalid;
@@ -649,7 +649,7 @@ void SAC_CS_ACCESS_AS4WV (TYPE) (void *baseaddress, void *elemaddress)
 
 void SAC_CS_ACCESS_AS4WA (TYPE) (void *baseaddress, void *elemaddress)
 {
-    /* unsigned because of right-shift-operation ´>>´ */
+    /* unsigned because of right-shift-operation '>>' */
     unsigned int cacheline;
     tCacheLevel *act_cl;
     int pos, was_invalid;

@@ -287,7 +287,7 @@ PHIisFunBased (compiler_phase_t phase)
 #undef CYCLEPHASEFUNname
 
 compiler_phase_t
-PHIfirstPhase ()
+PHIfirstPhase (void)
 {
     compiler_phase_t result = PH_undefined;
 
@@ -309,7 +309,7 @@ PHIfirstPhase ()
 }
 
 compiler_phase_t
-PHIlastPhase ()
+PHIlastPhase (void)
 {
     compiler_phase_t result = PH_undefined;
 

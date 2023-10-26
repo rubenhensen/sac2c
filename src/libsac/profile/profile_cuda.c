@@ -265,7 +265,7 @@ SAC_PF_MEM_CUDA_AddToMax (size_t size)
  * @brief Call to print CUDA memory profiling statistics.
  */
 void
-SAC_PF_MEM_CUDA_PrintStats ()
+SAC_PF_MEM_CUDA_PrintStats (void)
 {
     SAC_PF_PrintHeader ("CUDA Memory Profile");
 

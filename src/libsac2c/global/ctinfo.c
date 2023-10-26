@@ -147,14 +147,14 @@ CTIset_stderr (FILE *new_stderr)
 }
 
 FILE *
-CTIget_stderr ()
+CTIget_stderr (void)
 {
     return cti_stderr;
 }
 
 /** <!--********************************************************************-->
  *
- * @fn static void CleanUp()
+ * @fn static void CleanUp(void)
  *
  *   @brief  Does some cleanup upon termination.
  *
@@ -177,7 +177,7 @@ CleanUp (void)
 
 /** <!--********************************************************************-->
  *
- * @fn static void CleanUpInterrupted()
+ * @fn static void CleanUpInterrupted(void)
  *
  *   @brief  Does some clean up upon termination.
  *           This function is used by interrupt signal handlers.
@@ -220,7 +220,7 @@ CleanUpInterrupted (void)
 
 /** <!--********************************************************************-->
  *
- * @fn void AbortCompilation()
+ * @fn void AbortCompilation(void)
  *
  *   @brief  Terminates the compilation process with a suitable error message.
  *
@@ -447,14 +447,14 @@ UserForcedBreak (int sig)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIinstallInterruptHandlers()
+ * @fn void CTIinstallInterruptHandlers(void)
  *
  *   @brief  Installs interrupt handlers.
  *
  ******************************************************************************/
 
 void
-CTIinstallInterruptHandlers ()
+CTIinstallInterruptHandlers (void)
 {
     DBUG_ENTER ();
 
@@ -762,14 +762,14 @@ CTIabortOutOfMemory (size_t request)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIabortOnError()
+ * @fn void CTIabortOnError(void)
  *
  *   @brief  Terminates compilation process if errors have occurred.
  *
  ******************************************************************************/
 
 void
-CTIabortOnError ()
+CTIabortOnError (void)
 {
     DBUG_ENTER ();
 
