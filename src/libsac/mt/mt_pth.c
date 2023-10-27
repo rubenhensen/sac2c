@@ -720,7 +720,7 @@ SAC_MT_AttachHive (struct sac_hive_common_t *h)
 /******************************************************************************
  *
  * function:
- *   struct sac_hive_common_t* SAC_MT_DetachHive()
+ *   struct sac_hive_common_t* SAC_MT_DetachHive(void)
  *
  * description:
  *
@@ -729,7 +729,7 @@ SAC_MT_AttachHive (struct sac_hive_common_t *h)
  *
  ******************************************************************************/
 struct sac_hive_common_t *
-SAC_MT_DetachHive ()
+SAC_MT_DetachHive (void)
 {
     SAC_TR_LIBSAC_PRINT (("Detaching hive from a queen."));
 
@@ -765,13 +765,13 @@ SAC_MT_PTH_SetupStandalone (int num_schedulers)
 
 /******************************************************************************
  * function:
- *   struct sac_bee_common_t* SAC_MT_CurrentBee()
+ *   struct sac_bee_common_t* SAC_MT_CurrentBee(void)
  *
  * description:
  *
  ******************************************************************************/
 struct sac_bee_common_t *
-SAC_MT_CurrentBee ()
+SAC_MT_CurrentBee (void)
 {
     struct sac_bee_pth_t *bee = SAC_MT_PTH_determine_self ();
 
