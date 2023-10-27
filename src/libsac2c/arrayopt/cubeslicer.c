@@ -733,8 +733,8 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
     intersect_type_t z = INTERSECT_unknown;
     intersect_type_t intersecttype = INTERSECT_unknown;
     node *idx;
-    int producerPartno = 0;
 #ifndef DBUG_OFF
+    int producerPartno = 0;
     int intPartno = -1;
     char *nm;
 #endif
@@ -765,7 +765,9 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
 #endif
         }
         producerWLPart = PART_NEXT (producerWLPart);
+#ifndef DBUG_OFF
         producerPartno++;
+#endif
     }
 
 #ifndef DBUG_OFF

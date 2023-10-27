@@ -76,7 +76,7 @@ ADD_EXECUTABLE (hzip  src/maketools/hzip/hzip.c)
 # FIXME(artem) We don't really need those tools.
 ADD_EXECUTABLE (csd   src/maketools/csd/csd.c)
 ADD_EXECUTABLE (cse   src/maketools/cse/cse.c)
-ADD_EXECUTABLE (echo  src/maketools/echo/echo.c)
+# ADD_EXECUTABLE (echo  src/maketools/echo/echo.c) see source file for details!
 ADD_EXECUTABLE (icmt  src/maketools/icmt/icmt.c)
 # extra tool file...
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/saccc.in" "${PROJECT_BINARY_DIR}/saccc" @ONLY)

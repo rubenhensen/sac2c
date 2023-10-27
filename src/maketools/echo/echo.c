@@ -67,6 +67,39 @@ on System V systems with the -E option.
 /* The name this program was run with. */
 static char *program_name;
 
+#if 0
+/*
+ * This is missing on 
+ * Apple clang version 15.0.0 (clang-1500.0.40.1)
+ * Target: x86_64-apple-darwin23.1.0
+ * to compile echo with -O3 and only when using an 
+ * optimisation option.
+ * This seems weird on many accounts and since
+ * we believe echo is no longer needed (2023) 
+ * anyways, we decided to exclude echo entirely 
+ * from the build process but keep the sources
+ * for a little longer just in case we find that
+ * it is needed in some other context that 
+ * currently is only disabled.
+ * Reactivation currently only requires an
+ * un-comment in the top-level cmake file.
+ */
+void *
+memrchr(const void *s, int c, size_t n)
+{
+    const unsigned char *cp;
+
+    if (n != 0) {
+       cp = (unsigned char *)s + n;
+       do {
+           if (*(--cp) == (unsigned char)c)
+               return (void *)cp;
+       } while (--n != 0);
+    }
+    return (void *)0;
+}
+#endif
+
 void
 usage (int status)
 {

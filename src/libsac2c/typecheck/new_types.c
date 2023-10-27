@@ -1421,6 +1421,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
 
 #ifndef DBUG_OFF
     char *tmp = NULL;
+    int i = 0;
 #endif
 
     DBUG_ENTER ();
@@ -1430,12 +1431,13 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     DBUG_PRINT_TAG ("NTY", "rets: %zu", TCcountRets (FUNDEF_RETS (fundef)));
 
     node *r = FUNDEF_RETS (fundef);
-    int i = 0;
     while (r != NULL) {
         DBUG_PRINT_TAG ("NTY", "  arg %d: %s", i,
                         TYtype2DebugString (RET_TYPE (r), FALSE, 0));
         r = RET_NEXT (r);
+#ifndef DBUG_OFF
         i++;
+#endif
     }
 
     res = MakeNtype (TC_ires, 1);
