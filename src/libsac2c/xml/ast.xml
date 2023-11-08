@@ -2304,20 +2304,27 @@
         <node name="Genarray" />
       </travuser>
     </traversal>
-    <traversal id="WLIR" name="With-Loop Invariant Traversal" default="sons"
-      include="withloop_invariant_removal.h">
+    <traversal id="WLIRI" name="With-Loop Invariant Inference Traversal" default="sons"
+      include="withloop_invariant_removal_inference.h">
       <travuser>
         <node name="Ids" />
         <node name="Assign" />
         <node name="Fundef" />
         <node name="Arg" />
-        <node name="Vardec" />
-        <node name="Block" />
         <node name="Let" />
         <node name="Module" />
         <node name="Id" />
         <node name="With" />
         <node name="Withid" />
+      </travuser>
+    </traversal>
+    <traversal id="WLIR" name="With-Loop Invariant Traversal" default="sons"
+      include="withloop_invariant_removal.h">
+      <travuser>
+        <node name="Assign" />
+        <node name="Fundef" />
+        <node name="Module" />
+        <node name="With" />
       </travuser>
     </traversal>
     <traversal id="DLIRMOV" name="Loop Invariant Move Traversal" default="sons"
@@ -9320,12 +9327,13 @@ N_tfarg :
             Used by CompareTree to remember alpha conversion
           </description>
         </attribute>
-        <attribute name="DefDepth" inconstructor="no">
+        <attribute name="DefDepth" inconstructor="no" default="-1">
           <type name="Integer">
             <targets>
               <target mandatory="no">
                 <any />
                 <phases>
+                  <range from="wliri" to="wlir" />
                   <phase name="lir" />
                   <phase name="awlf" />
                 </phases>

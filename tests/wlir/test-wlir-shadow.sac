@@ -1,0 +1,35 @@
+// Test wlir for shadowed dependence; for details see WLIRI comment!
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noprelude -bopt:cyc:wliri:1 -print v
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "y /\* DEFDEPTH=1" 1
+
+noinline
+int expr (int a)
+{  return a; }
+
+noinline
+int expr (int a, int[*] b)
+{  return a; }
+
+noinline
+int expr (int a, int[*] b, int[*] c)
+{  return a; }
+
+int main ()
+{
+   c = expr(5);
+   x = with { (. <= [iv1] <= .) {
+         y = with { (. <= iv2 <= .) {
+               z = with { (. <= iv3 <= .) {
+                     q = expr(iv1, iv2);
+                     } : q;
+                   } : genarray([10]);
+               } : expr (5, z);
+             } :genarray([10]);
+         } : expr (5, y);
+       } :genarray([10]);
+
+   return _sel_VxA_([0], x);
+}
