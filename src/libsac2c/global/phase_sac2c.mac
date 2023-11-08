@@ -387,6 +387,9 @@ CYCLEPHASEFUNOLD (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining
 CYCLEPHASEFUN (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
                global.optimize.dodlir, opt, cyc)
 
+CYCLEPHASEFUN (wliri, "Applying with-loop invariant removal", WLIRIdoLoopInvariantRemovalInference,
+               global.optimize.dowlir, opt, cyc)
+
 CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
                global.optimize.dowlir, opt, cyc)
 
@@ -630,6 +633,10 @@ CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
 CYCLEPHASEFUN (cse2, "Eliminating common subexpressions",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
+CYCLEPHASEFUN (wliricubsl, "Applying with-loop invariant removal inference for CUBSL",
+               WLIRIdoLoopInvariantRemovalInference,
+               global.optimize.dowlir &&global.optimize.docubsl, opt, saacyc)
+
 CYCLEPHASEFUN (wlircubsl, "Applying with-loop invariant removal for CUBSL",
                WLIRdoLoopInvariantRemoval,
                global.optimize.dowlir &&global.optimize.docubsl, opt, saacyc)
@@ -651,6 +658,9 @@ CYCLEPHASEFUNOLD (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining
 
 CYCLEPHASEFUN (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
                global.optimize.dodlir, opt, saacyc)
+
+CYCLEPHASEFUN (wliri, "Applying with-loop invariant removal", WLIRIdoLoopInvariantRemovalInference,
+               global.optimize.dowlir, opt, saacyc)
 
 CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
                global.optimize.dowlir, opt, saacyc)
@@ -933,6 +943,9 @@ SUBPHASE (cfls, "Applying constant folding for LS/LACS", CFdoConstantFolding,
 SUBPHASE (dlirls, "Applying do-loop invariant removal for LS/LACS",
           DLIRdoLoopInvariantRemoval, global.optimize.dodlir, opt)
 
+SUBPHASE (wlirils, "Applying with-loop invariant removal inference for LS/LACS",
+          WLIRIdoLoopInvariantRemovalInference, global.optimize.dowlir, opt)
+
 SUBPHASE (wlirls, "Applying with-loop invariant removal for LS/LACS",
           WLIRdoLoopInvariantRemoval, global.optimize.dowlir, opt)
 
@@ -965,6 +978,9 @@ SUBPHASE (dcr6, "Removing dead code", DCRdoDeadCodeRemoval,
 /* TODO: lir perhaps should be run in a loop */
 SUBPHASE (dlir2, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
           global.optimize.dodlir, opt)
+
+SUBPHASE (wliri2, "Applying with-loop invariant removal inference", WLIRIdoLoopInvariantRemovalInference,
+          global.optimize.dowlir, opt)
 
 SUBPHASE (wlir2, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
           global.optimize.dowlir, opt)

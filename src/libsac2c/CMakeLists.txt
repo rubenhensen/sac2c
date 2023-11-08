@@ -490,6 +490,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/structural_constant_constant_folding.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/symbolic_constant_simplification.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/transform_gtge_to_ltle.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/variable_propagation.c
+${CMAKE_CURRENT_SOURCE_DIR}/stdopt/withloop_invariant_removal_inference.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/withloop_invariant_removal.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/wl_lock_optimization_marking.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/wl_lock_optimization_shifting.c
