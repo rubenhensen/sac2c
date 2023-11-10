@@ -304,7 +304,20 @@ RCIfundef (node *arg_node, info *arg_info)
 
                 arg = FUNDEF_ARGS (arg_node);
                 while (arg != NULL) {
-                    NLUTincNum (INFO_ENV (info), ARG_AVIS (arg), -1);
+                    /*
+                     * If unused argument removal (UAR) marked this argument as
+                     * not in use, it should be skipped. In the optimisation
+                     * phase applications of this function have been edited such
+                     * that a temporary dummy value is passed for this argument.
+                     * In the precompile phase this dummy argument will be
+                     * removed, and the argument will be removed from the
+                     * function definition. Therefore no reference counting
+                     * should be applied.
+                     */
+                    if (ARG_ISUSEDINBODY (arg)) {
+                        NLUTincNum (INFO_ENV (info), ARG_AVIS (arg), -1);
+                    }
+
                     arg = ARG_NEXT (arg);
                 }
                 BLOCK_ASSIGNS (FUNDEF_BODY (arg_node))
@@ -683,6 +696,7 @@ RCIprf (node *arg_node, info *arg_info)
         break;
 
     case F_accu:
+    case F_dummy_type:
     case F_prop_obj_in:
     case F_noop:
         /*

@@ -391,6 +391,14 @@ CYCLEPHASEFUN (wlf, "Applying with-loop folding", WLFdoWLF, global.optimize.dowl
 CYCLEPHASEFUNOLD (wlfssa, "Restoring SSA form after with-loop folding", SSATdoTransform,
                   global.optimize.dowlf, opt, cyc)
 
+CYCLEPHASEFUN (uaa, "Annotating unused function arguments",
+               UAAdoUnusedArgumentAnnotate,
+               global.optimize.douar, opt, cyc)
+
+CYCLEPHASEFUN (uaar, "Replacing unused arguments in applications by dummies",
+               UAARdoUnusedApplicationArgumentRemoval,
+               global.optimize.douar, opt, cyc)
+
 CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemoval,
                global.optimize.dodcr, opt, cyc)
 
@@ -1602,6 +1610,19 @@ SUBPHASE (rtspec, "Runtime Specialization create wrapper entry functions",
           pc)
 
 SUBPHASE (msc, "Make Slow Clones", MSCdoMakeSlowClones, global.fp, pc)
+
+SUBPHASE (rid, "Consistently renaming identifiers",
+          RIDdoRenameIdentifiers,
+          ALWAYS, pc)
+
+SUBPHASE (ddr, "Removing dummies from applications",
+          DDRdoDummyDefinitionRemoval,
+          global.optimize.douar, pc)
+
+SUBPHASE (ufar, "Removing unused arguments from function definitions",
+          UFARdoUnusedFunctionArgumentRemoval,
+          global.optimize.douar, pc)
+
 /*
  * WARNING: no phases that duplicate code below this line!
  *          FPC builds the argtabs which CANNOT be maintained
@@ -1613,8 +1634,6 @@ SUBPHASE (fpc, "Reorganising function prototypes", FPCdoFunctionPrecompile, ALWA
 SUBPHASE (tcp, "Applying type conversions", TCPdoTypeConversions, ALWAYS, pc)
 
 SUBPHASE (mng, "Mark NoOp Grids", MNGdoMarkNoopGrids, ALWAYS, pc)
-
-SUBPHASE (rid, "Consistently renaming identifiers", RIDdoRenameIdentifiers, ALWAYS, pc)
 
 SUBPHASE (ofp, "OpenMP find private variables", OFPdoFindPrivate,
           (global.backend == BE_omp), pc)

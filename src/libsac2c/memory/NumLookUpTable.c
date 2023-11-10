@@ -237,7 +237,14 @@ NLUTincNum (nlut_t *nlut, node *avis, int num)
 {
     DBUG_ENTER ();
 
-    NLUT_NUMS (nlut)[AVIS_VARNO (avis)] += num;
+    /**
+     * If this AVIS is marked as a dummy, that means that it only exists
+     * temporarily, and will be removed in a later phase. So we should skip
+     * dummies.
+     */
+    if (!AVIS_ISDUMMY (avis)) {
+        NLUT_NUMS (nlut)[AVIS_VARNO (avis)] += num;
+    }
 
     DBUG_RETURN ();
 }

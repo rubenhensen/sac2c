@@ -869,15 +869,27 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
    * Type conversion and assertion operations
    */
 
-  PRF (type_conv, (PA_x, PA_x, PA_x), 2, XXX, NTCCTprf_type_conv, NULL, COMPprfTypeConv,
-       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+  /**
+   * Returns a temporary dummy value, with the given type. Used by unused
+   * argument removal to temporarily replace actual arguments in function
+   * applications by dummy values, until they can be removed.
+   * Not indended to be used externally
+   */
+  PRF (dummy_type, (PA_x, PA_x, PA_x), 1, XXX, NTCCTprf_dummy_type, NULL,
+       COMPprfTypeError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
+       TEone, NULL, NULL),
 
-  PRF (type_error, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_id, NULL, COMPprfTypeError, NULL,
-       NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEn, NULL, NULL),
+  PRF (type_conv, (PA_x, PA_x, PA_x), 2, XXX, NTCCTprf_type_conv, NULL,
+       COMPprfTypeConv, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
+       TEone, NULL, NULL),
+
+  PRF (type_error, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_id, NULL,
+       COMPprfTypeError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
+       TEn, NULL, NULL),
 
   PRF (dispatch_error, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_dispatch_error, NULL,
-       COMPprfDispatchError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEval,
-       NULL, NULL),
+       COMPprfDispatchError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
+       TEval, NULL, NULL),
 
   /*******************************************************************************
    * Function for implementing the encoding of shape details in wrapper entry

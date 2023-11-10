@@ -416,6 +416,8 @@ ${CMAKE_CURRENT_SOURCE_DIR}/precompile/resolve_code_sharing.c
 ${CMAKE_CURRENT_SOURCE_DIR}/precompile/setlinksign.c
 ${CMAKE_CURRENT_SOURCE_DIR}/precompile/tag_main_fun_thread.c
 ${CMAKE_CURRENT_SOURCE_DIR}/precompile/typeconv_precompile.c
+${CMAKE_CURRENT_SOURCE_DIR}/precompile/dummy_definition_removal.c
+${CMAKE_CURRENT_SOURCE_DIR}/precompile/unused_function_argument_removal.c
 ${CMAKE_CURRENT_SOURCE_DIR}/print/convert.c
 ${CMAKE_CURRENT_SOURCE_DIR}/print/print.c
 ${CMAKE_CURRENT_SOURCE_DIR}/profile/annotate_fun_calls.c
@@ -495,6 +497,8 @@ ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/statistics.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/structural_constant_constant_folding.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/symbolic_constant_simplification.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/transform_gtge_to_ltle.c
+${CMAKE_CURRENT_SOURCE_DIR}/stdopt/unused_argument_annotate.c
+${CMAKE_CURRENT_SOURCE_DIR}/stdopt/unused_application_argument_removal.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/variable_propagation.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/withloop_invariant_removal_inference.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/withloop_invariant_removal.c
