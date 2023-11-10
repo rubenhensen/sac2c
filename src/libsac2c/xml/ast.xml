@@ -1,18 +1,12 @@
 <?xml-stylesheet href="ast2html.xsl" type="text/xsl" name="HTML" media="screen"?>
 <definition>
   <attributetypes>
-    <type name="IdagFun" ctype="idag_fun_t " init="NULL"
-      copy="function" />
-    <type name="Vertex" ctype="vertex*" init="NULL"
-      copy="function" />
-    <type name="Dag" ctype="dag*" init="NULL"
-      copy="function" />
-    <type name="String" ctype="char*" init="NULL"
-      copy="function" />
-    <type name="SharedString" ctype="const char*" init="NULL"
-      copy="function" />
-    <type name="Namespace" ctype="namespace_t*" init="NULL"
-      copy="function" />
+    <type name="IdagFun" ctype="idag_fun_t " init="NULL" copy="function" />
+    <type name="Vertex" ctype="vertex*" init="NULL" copy="function" />
+    <type name="Dag" ctype="dag*" init="NULL" copy="function" />
+    <type name="String" ctype="char*" init="NULL" copy="function" />
+    <type name="SharedString" ctype="const char*" init="NULL" copy="function" />
+    <type name="Namespace" ctype="namespace_t*" init="NULL" copy="function" />
     <type name="Integer" ctype="int" init="0" copy="literal" />
     <type name="Byte" ctype="char" vtype="int" init="0" copy="literal" />
     <type name="Short" ctype="short" vtype="int" init="0" copy="literal" />
@@ -23,16 +17,13 @@
     <type name="Ushort" ctype="unsigned short" vtype="unsigned int" init="0" copy="literal" />
     <type name="Uint" ctype="unsigned int" vtype="unsigned int" init="0" copy="literal" />
     <type name="Ulong" ctype="unsigned long" vtype="unsigned long int" init="0" copy="literal" />
-    <type name="Ulonglong" ctype="unsigned long long" vtype="unsigned long long int" init="0"
-      copy="literal" />
+    <type name="Ulonglong" ctype="unsigned long long" vtype="unsigned long long int" init="0" copy="literal" />
     <type name="Sizet" ctype="size_t" vtype="size_t" init="0" copy="literal" />
     <type name="Bool" ctype="bool" vtype="int" init="FALSE" copy="literal" />
     <type name="Float" ctype="float" vtype="double" init="0.0" copy="literal" />
-    <type name="Floatvec" ctype="floatvec" vtype="floatvec" init="(floatvec){0., 0., 0., 0.}"
-      copy="literal" />
+    <type name="Floatvec" ctype="floatvec" vtype="floatvec" init="(floatvec){0., 0., 0., 0.}" copy="literal" />
     <type name="Double" ctype="double" init="0.0" copy="literal" />
-    <type name="Char" ctype="char" vtype="int" init="'\0'"
-      copy="literal" />
+    <type name="Char" ctype="char" vtype="int" init="'\0'" copy="literal" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
     <!-- a Link pointing to a node within the tree -->
     <type name="Link" ctype="node*" init="NULL" copy="hash" persist="yes" />
@@ -41,60 +32,36 @@
     <type name="ExtLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
     <!-- a Link pointing from a N_part node to a N_code node -->
     <type name="CodeLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
-    <type name="FileType" ctype="file_type" init="FT_unknown"
-      copy="literal" />
+    <type name="FileType" ctype="file_type" init="FT_unknown" copy="literal" />
     <type name="LUT" ctype="lut_t*" init="NULL" copy="function" persist="no" />
     <type name="Prf" ctype="prf" init="(prf)0" copy="literal" />
-    <type name="NodeList" ctype="nodelist*" init="NULL"
-      copy="function" />
-    <type name="DFMask" ctype="dfmask_t*" init="NULL"
-      copy="function" persist="no" />
-    <type name="DFMaskBase" ctype="dfmask_base_t*" init="NULL"
-      copy="function" persist="no" />
-    <type name="NewType" ctype="ntype*" init="NULL"
-      copy="function" />
-    <type name="ArgTab" ctype="argtab_t*" init="NULL"
-      copy="function" />
-    <type name="Shape" ctype="shape*" init="NULL"
-      copy="function" />
-    <type name="SimpleType" ctype="simpletype" init="T_unknown"
-      copy="literal" />
-    <type name="AccessInfo" ctype="access_info_t*" init="NULL"
-      copy="function" persist="no" />
-    <type name="ReuseInfo" ctype="reuse_info_t*" init="NULL"
-      copy="function" persist="no" />
-    <type name="CudaAccessInfo" ctype="cuda_access_info_t*" init="NULL"
-      copy="function" persist="no" />
-    <type name="AccessFeature" ctype="feature_t" init="0"
-      copy="literal" />
-    <type name="Scheduling" ctype="sched_t*" init="NULL"
-      copy="function" persist="no" />
-    <type name="TaskSel" ctype="tasksel_t*" init="NULL"
-      copy="function" persist="no" />
+    <type name="NodeList" ctype="nodelist*" init="NULL" copy="function" />
+    <type name="DFMask" ctype="dfmask_t*" init="NULL" copy="function" persist="no" />
+    <type name="DFMaskBase" ctype="dfmask_base_t*" init="NULL" copy="function" persist="no" />
+    <type name="NewType" ctype="ntype*" init="NULL" copy="function" />
+    <type name="ArgTab" ctype="argtab_t*" init="NULL" copy="function" />
+    <type name="Shape" ctype="shape*" init="NULL" copy="function" />
+    <type name="SimpleType" ctype="simpletype" init="T_unknown" copy="literal" />
+    <type name="AccessInfo" ctype="access_info_t*" init="NULL" copy="function" persist="no" />
+    <type name="ReuseInfo" ctype="reuse_info_t*" init="NULL" copy="function" persist="no" />
+    <type name="CudaAccessInfo" ctype="cuda_access_info_t*" init="NULL" copy="function" persist="no" />
+    <type name="AccessFeature" ctype="feature_t" init="0" copy="literal" />
+    <type name="Scheduling" ctype="sched_t*" init="NULL" copy="function" persist="no" />
+    <type name="TaskSel" ctype="tasksel_t*" init="NULL" copy="function" persist="no" />
     <type name="BitField" ctype="int" init="0" copy="literal" />
-    <type name="Constant" ctype="constant*" init="NULL"
-      copy="function" />
-    <type name="MTExecMode" ctype="mtexecmode_t" init="MUTH_ANY"
-      copy="literal" />
-    <type name="CudaExecMode" ctype="cudaexecmode_t" init="CUDA_HOST_SINGLE"
-      copy="literal" />
-    <type name="StringSet" ctype="stringset_t*" init="NULL"
-      copy="function" />
-    <type name="IndexInfo" ctype="index_info*" init="NULL"
-      copy="function" persist="no" />
-    <type name="TypeCheckingStatus" ctype="NTC_stat" init="NTC_not_checked"
-      copy="literal" persist="yes" />
-    <type name="CompilerPhase" ctype="compiler_phase_t" init="PH_initial"
-      copy="literal" />
-    <type name="CompInfo" ctype="compinfo*" init="NULL"
-      copy="function" />
-    <type name="VertexWrapper" ctype="vertex*" init="NULL"
-      copy="function" />
-    <type name="OmpOP" ctype="omp_reduction_op" init="OMP_REDUCTION_NONE"
-      copy="literal" />
+    <type name="Constant" ctype="constant*" init="NULL" copy="function" />
+    <type name="MTExecMode" ctype="mtexecmode_t" init="MUTH_ANY" copy="literal" />
+    <type name="CudaExecMode" ctype="cudaexecmode_t" init="CUDA_HOST_SINGLE" copy="literal" />
+    <type name="StringSet" ctype="stringset_t*" init="NULL" copy="function" />
+    <type name="IndexInfo" ctype="index_info*" init="NULL" copy="function" persist="no" />
+    <type name="TypeCheckingStatus" ctype="NTC_stat" init="NTC_not_checked" copy="literal" persist="yes" />
+    <type name="CompilerPhase" ctype="compiler_phase_t" init="PH_initial" copy="literal" />
+    <type name="CompInfo" ctype="compinfo*" init="NULL" copy="function" />
+    <type name="VertexWrapper" ctype="vertex*" init="NULL" copy="function" />
+    <type name="OmpOP" ctype="omp_reduction_op" init="OMP_REDUCTION_NONE" copy="literal" />
   </attributetypes>
   <traversals>
-    <!-- id is the short id of the traversal 
+    <!-- id is the short id of the traversal
          name is a descriptive name
          default gives the default traversal mode
            user  a user defined function
@@ -103,16 +70,44 @@
            error TravError
          include the include file needed for the traversal
     -->
-
-    <!-- Added by Fangyong -->
-    <traversal id="IUCFB" name="Insert user-defined constraint to function body" default="sons"
-      include="insert_udc_funbody.h">
+    <traversal id="FFC" name="Filter fundef constraints" default="sons" include="filter_fundef_conditions.h">
       <travuser>
         <node name="Fundef" />
-        <node name="Udcs" />
+        <node name="Ret" />
+        <node name="Arg" />
+        <node name="SPAp" />
+        <node name="SPId" />
       </travuser>
     </traversal>
-
+    <traversal id="ATP" name="Analyse Type Pattern" default="sons" include="type_pattern_analyse.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Typedef" />
+        <node name="Structelem" />
+        <node name="Objdef" />
+        <node name="Array" />
+        <node name="Cast" />
+        <node name="Ret" />
+        <node name="Avis" />
+      </travuser>
+    </traversal>
+    <traversal id="RTPF" name="Resolve Type Pattern Fundefs" default="sons" include="type_pattern_resolve_fundefs.h">
+    <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Block" />
+        <node name="Ret" />
+      </travuser>
+    </traversal>
+    <traversal id="RTPE" name="Resolve External Type Patterns" default="sons" include="type_pattern_resolve_externals.h">
+    <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Ret" />
+      </travuser>
+    </traversal>
     <traversal id="ARMP" name="Add RC Mode PRF" default="sons" include="add_rc_mode_prf.h">
       <travuser>
         <node name="With3" />
@@ -1208,943 +1203,926 @@
         <node name="Generator" />
         <node name="Fold" />
 
-        <node name="Block" />
-        <node name="Assign" />
-        <node name="Let" />
-        <node name="Return" />
-        <node name="Cond" />
-        <node name="Do" />
-        <node name="Funcond" />
-        <node name="Exprs" />
-        <node name="With" />
-        <node name="Part" />
-        <node name="Withid" />
-        <node name="Code" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-      </travuser>
-    </traversal>
-    <traversal id="CHK" name="Check the Tree" default="user" ifndef="DBUG_OFF" include="check.h" />
-    <traversal id="CHKRST" name="Reset for Tree Check" default="user" ifndef="DBUG_OFF"
-      include="check_reset.h" />
-    <traversal id="CHKM" name="Check the memspace" default="user" ifndef="DBUG_OFF"
-      include="check_node.h" />
-    <traversal id="CHKLACF" name="Check LaC functions"
-      default="sons" include="check_lacfuns.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Block" />
-        <node name="Ap" />
-      </travuser>
-    </traversal>
-    <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h">
-      <travuser>
-        <node name="SPMop" />
-      </travuser>
-    </traversal>
-    <traversal id="HWLG" name="Handle multi-generator with-loops"
-      default="sons" include="handle_with_loop_generators.h">
-      <travuser>
-        <node name="Let" />
-        <node name="Assign" />
-        <node name="With" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-        <node name="SPFold" />
-        <node name="Propagate" />
-      </travuser>
-    </traversal>
-    <traversal id="HWLO" name="Handle multi-operator with-loops"
-      default="sons" include="handle_with_loop_operators.h">
-      <travuser>
-        <node name="Assign" />
-        <node name="Let" />
-        <node name="With" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-        <node name="SPFold" />
-        <node name="Propagate" />
-      </travuser>
-    </traversal>
-    <traversal id="HZGWL" name="Handle zero-generator withloops"
-      default="sons" include="handle_zero_generator_with_loops.h">
-      <travuser>
-        <node name="With" />
-        <node name="Modarray" />
-        <node name="Genarray" />
-        <node name="SPFold" />
-        <node name="Propagate" />
-        <node name="Let" />
-        <node name="Assign" />
-        <node name="Return" />
-      </travuser>
-    </traversal>
-    <traversal id="IUTC" name="Introduce User Trace Calls" default="sons"
-      include="introduce_user_tracing_calls.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Arg" />
-        <node name="SPIds" />
-        <node name="Assign" />
-        <node name="Return" />
-        <node name="Block" />
-      </travuser>
-      <travnone>
-        <node name="Withid" />
-      </travnone>
-    </traversal>
-    <traversal id="HWLD" name="Handle With Loop Dots" default="sons"
-      include="handle_with_loop_dots.h">
-      <travuser>
-        <node name="With" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-        <node name="Fold" />
-        <node name="Part" />
-        <node name="Withid" />
-        <node name="Generator" />
-      </travuser>
-    </traversal>
-    <traversal id="HSD" name="Handle Selection Dots" default="sons"
-      include="handle_selection_dots.h">
-      <travuser>
-        <node name="SPAp" />
-      </travuser>
-    </traversal>
-    <traversal id="SERI" name="Set Expression Range Inference" default="sons"
-      include="set_expression_range_inference.h">
-      <travuser>
-        <node name="SPAp" />
-        <node name="Prf" />
-        <node name="With" />
-        <node name="SetWL" />
-        <node name="Generator" />
-      </travuser>
-    </traversal>
-    <traversal id="HSED" name="Handle Set Expression Dots" default="sons"
-      include="handle_set_expression_dots.h">
-      <travuser>
-        <node name="With" />
-        <node name="SetWL" />
-        <node name="Generator" />
-      </travuser>
-    </traversal>
-    <traversal id="HSE" name="Handle Set Expressions" default="sons"
-      include="handle_set_expressions.h">
-      <travuser>
-        <node name="Generator" />
-        <node name="SetWL" />
-      </travuser>
-    </traversal>
-    <traversal id="CSGD" name="Check and Simplify Generic Definitions" default="sons"
-      include="check_and_simplify_generic_definitions.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Arg" />
-        <node name="Ret" />
-        <node name="Avis" />
-        <node name="Cast" />
-        <node name="Return" />
-        <node name="Assign" />
-      </travuser>
-    </traversal>
-    <traversal id="GNTC" name="Generate Nested Type Conversions" default="sons"
-      include="generate_nested_type_conversions.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Typedef" />
-      </travuser>
-    </traversal>
-    <traversal id="GGTC" name="Generate Generic Type Conversions" default="sons"
-      include="generate_generic_type_conversions.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Typedef" />
-        <node name="Export" />
-        <node name="Provide" />
-        <node name="Symbol" />
-      </travuser>
-    </traversal>
-    <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
-      <travuser>
-        <node name="Typedef" />
-        <node name="Objdef" />
-        <node name="Fundef" />
-        <node name="Module" />
-        <node name="Ret" />
-        <node name="Arg" />
-      </travuser>
-    </traversal>
-    <traversal id="W2D" name="While2do" default="sons" include="while2do.h">
-      <travuser>
-        <node name="While" />
-      </travuser>
-    </traversal>
-    <traversal id="HCE" name="Handle conditional expressions"
-      default="sons" include="handle_condexpr.h">
-      <travuser>
-        <node name="Assign" />
-        <node name="Code" />
-        <node name="Cond" />
-        <node name="Do" />
-        <node name="Funcond" />
-        <node name="With" />
-      </travuser>
-    </traversal>
-    <traversal id="FLAT" name="Flatten" default="sons" include="flatten.h">
-      <travuser>
-        <node name="Assign" />
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Cast" />
-        <node name="Exprs" />
-        <node name="SPAp" />
-        <node name="Block" />
-        <node name="Cond" />
-        <node name="Do" />
-        <node name="Array" />
-        <node name="Return" />
-        <node name="Prf" />
-        <node name="With" />
-        <node name="Withid" />
-        <node name="Part" />
-        <node name="Generator" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-        <node name="Propagate" />
-        <node name="SPFold" />
-        <node name="Code" />
-      </travuser>
-    </traversal>
-    <traversal id="FLATG" name="Flattengenerators" default="sons" include="flattengenerators.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="With" />
-        <node name="Part" />
-        <node name="Generator" />
-        <node name="Assign" />
-        <node name="Cond" />
-        <node name="Do" />
-        <node name="While" />
-        <node name="Funcond" />
-        <node name="Prf" />
-        <node name="Let" />
-        <node name="Exprs" />
-      </travuser>
-    </traversal>
-    <traversal id="L2F" name="Lac2Fun Traversal" default="sons" include="lac2fun.h">
-      <travuser>
-        <node name="Assign" />
-        <node name="Do" />
-        <node name="Fundef" />
-        <node name="Cond" />
-      </travuser>
-    </traversal>
-    <traversal id="SSAT" name="SSA Transform Traversal" default="sons" include="SSATransform.h">
-      <travuser>
-        <node name="Assign" />
-        <node name="Ap" />
-        <node name="Fundef" />
-        <node name="Cond" />
-        <node name="Block" />
-        <node name="Code" />
-        <node name="Let" />
-        <node name="Arg" />
-        <node name="Vardec" />
-        <node name="Id" />
-        <node name="With" />
-        <node name="With2" />
-        <node name="Part" />
-        <node name="Withid" />
-        <node name="Funcond" />
-        <node name="Return" />
-        <node name="Ids" />
-      </travuser>
-    </traversal>
-    <traversal id="RSA" name="Resolve All Flags" default="sons" include="resolveall.h">
-      <travuser>
-        <node name="Use" />
-        <node name="Import" />
-        <node name="Provide" />
-        <node name="Export" />
-        <node name="Module" />
-      </travuser>
-    </traversal>
-    <traversal id="GDP" name="Gather Dependencies" default="sons" include="gatherdependencies.h">
-      <travuser>
-        <node name="Use" />
-        <node name="Import" />
-        <node name="Typedef" />
-        <node name="Objdef" />
-        <node name="Avis" />
-        <node name="Ret" />
-        <node name="SPId" />
-        <node name="SPFold" />
-        <node name="Cast" />
-        <node name="Module" />
-      </travuser>
-    </traversal>
-    <traversal id="ANS" name="Annotate Namespaces" default="sons" include="annotatenamespace.h">
-      <travuser>
-        <node name="Symbol" />
-        <node name="Use" />
-        <node name="Import" />
-        <node name="Export" />
-        <node name="Provide" />
-        <node name="Fundef" />
-        <node name="Typedef" />
-        <node name="Objdef" />
-        <node name="While" />
-        <node name="Do" />
-        <node name="SPAp" />
-        <node name="SPMop" />
-        <node name="Avis" />
-        <node name="Array" />
-        <node name="Arg" />
-        <node name="Ret" />
-        <node name="Vardec" />
-        <node name="SPIds" />
-        <node name="SPId" />
-        <node name="Let" />
-        <node name="With" />
-        <node name="SPFold" />
-        <node name="Module" />
-        <node name="Cast" />
-      </travuser>
-    </traversal>
-    <traversal id="USS" name="Use Symbols" default="sons" include="usesymbols.h">
-      <travuser>
-        <node name="Typedef" />
-        <node name="Objdef" />
-        <node name="SPFold" />
-        <node name="Avis" />
-        <node name="Cast" />
-        <node name="Array" />
-        <node name="Ret" />
-        <node name="SPAp" />
-        <node name="SPId" />
-        <node name="SPMop" />
-        <node name="Module" />
-      </travuser>
-    </traversal>
-    <traversal id="IMP" name="Import Symbols" default="sons" include="importsymbols.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Import" />
-        <node name="Export" />
-        <node name="Use" />
-        <node name="Provide" />
-        <node name="Symbol" />
-      </travuser>
-    </traversal>
-    <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardec.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="SPAp" />
-        <node name="SPFold" />
-        <node name="SPId" />
-        <node name="SPIds" />
-        <node name="With" />
-        <node name="Let" />
-        <node name="Part" />
-        <node name="Code" />
-        <node name="Do" />
-      </travuser>
-    </traversal>
-    <traversal id="INSTC" name="Insert Type Conversions" default="sons" include="insert_type_conv.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Block" />
-        <node name="Avis" />
-        <node name="Assign" />
-        <node name="Ids" />
-        <node name="Id" />
-        <node name="With" />
-        <node name="Return" />
-      </travuser>
-    </traversal>
-    <traversal id="CRTWRP" name="Create Wrappers" default="sons" include="create_wrappers.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Let" />
-        <node name="SPAp" />
-        <node name="Genarray" />
-        <node name="SPFold" />
-      </travuser>
-    </traversal>
-    <traversal id="RST" name="Resolve Symbol Types" default="sons" include="resolvesymboltypes.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Arg" />
-        <node name="Ret" />
-        <node name="Avis" />
-        <node name="Array" />
-        <node name="Typedef" />
-        <node name="Objdef" />
-        <node name="Type" />
-        <node name="Cast" />
-      </travuser>
-    </traversal>
-    <traversal id="OI" name="Object Initializer" default="sons" include="object_init.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Objdef" />
-      </travuser>
-    </traversal>
-    <traversal id="OAN" name="Object Analysis" default="sons" include="object_analysis.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Globobj" />
-        <node name="Fundef" />
-        <node name="Ap" />
-        <node name="Objdef" />
-      </travuser>
-    </traversal>
-    <traversal id="GOI" name="Generating Object Initialiser" default="sons"
-      include="generate_object_initialiser.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Module" />
-      </travuser>
-    </traversal>
-    <traversal id="RSO" name="Resolve Objects" default="sons" include="resolve_objects.h">
-      <travuser>
-        <node name="Ap" />
-        <node name="Fundef" />
-        <node name="Globobj" />
-        <node name="Let" />
-        <node name="Module" />
-        <node name="Propagate" />
-        <node name="With" />
-      </travuser>
-    </traversal>
-    <traversal id="RRA" name="Resolve Reference Args" default="sons"
-      include="resolve_reference_args.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Return" />
-        <node name="Let" />
-        <node name="Ap" />
-        <node name="Module" />
-      </travuser>
-    </traversal>
-    <traversal id="EWT" name="Extend Wrapper Types" default="sons" include="extend_wrapper_types.h">
-      <travuser>
-        <node name="Fundef" />
-      </travuser>
-    </traversal>
-    <traversal id="ESP" name="Enforce Specialization" default="sons"
-      include="enforce_specialization.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-      </travuser>
-    </traversal>
-    <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Block" />
-        <node name="Vardec" />
-        <node name="Assign" />
-        <node name="Cond" />
-        <node name="Funcond" />
-        <node name="Let" />
-        <node name="Return" />
-        <node name="Ap" />
-        <node name="Prf" />
-        <node name="Array" />
-        <node name="Cast" />
-        <node name="Exprs" />
-        <node name="Id" />
-        <node name="Globobj" />
-        <node name="Type" />
-        <node name="Num" />
-        <node name="NumByte" />
-        <node name="NumShort" />
-        <node name="NumInt" />
-        <node name="NumLong" />
-        <node name="NumLonglong" />
-        <node name="NumUbyte" />
-        <node name="NumUshort" />
-        <node name="NumUint" />
-        <node name="NumUlong" />
-        <node name="NumUlonglong" />
-        <node name="Bool" />
-        <node name="Nested_init" />
-        <node name="Char" />
-        <node name="Double" />
-        <node name="Float" />
-        <node name="Floatvec" />
-        <node name="With" />
-        <node name="Generator" />
-        <node name="Part" />
-        <node name="Withid" />
-        <node name="Code" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-        <node name="Fold" />
-        <node name="Break" />
-        <node name="Propagate" />
-        <node name="Str" />
-      </travuser>
-    </traversal>
-    <traversal id="SWR" name="Split Wrappers" default="sons" include="split_wrappers.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Ap" />
-        <node name="With" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-        <node name="Fold" />
-        <node name="Propagate" />
-      </travuser>
-    </traversal>
-    <traversal id="CWC" name="Create Wrapper Code" default="sons" include="create_wrapper_code.h">
-      <travuser>
-        <node name="Fundef" />
-      </travuser>
-    </traversal>
-    <traversal id="DFC" name="Dispatch Funcalls and Create Foldfuns" default="sons"
-      include="dispatchfuncalls.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Ap" />
-        <node name="With" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-        <node name="Fold" />
-        <node name="Propagate" />
-        <node name="Let" />
-      </travuser>
-    </traversal>
-    <traversal id="ELF" name="Extend LaC funs" default="sons" include="extend_lac_funs.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="Ap" />
-      </travuser>
-    </traversal>
-    <traversal id="EAT" name="Eliminate type variables and do some cleanup" default="sons"
-      include="elim_alpha_types.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Ap" />
-        <node name="Avis" />
-        <node name="Array" />
-        <node name="Block" />
-        <node name="Let" />
-        <node name="Part" />
-        <node name="Withid" />
-        <node name="With" />
-      </travuser>
-    </traversal>
-    <traversal id="EBT" name="Eliminate bottom types" default="sons" include="elim_bottom_types.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Ap" />
-        <node name="Prf" />
-        <node name="Block" />
-        <node name="Ids" />
-        <node name="Vardec" />
-        <node name="Let" />
-        <node name="Assign" />
-        <node name="Cond" />
-        <node name="Funcond" />
-      </travuser>
-    </traversal>
-    <traversal id="FDI" name="Free Dispatch Information" default="sons"
-      include="free_dispatch_information.h">
-      <travuser>
-        <node name="Ap" />
-        <node name="Module" />
-        <node name="Fundef" />
-      </travuser>
-    </traversal>
-    <traversal id="PF" name="Annotate Function Calls " default="sons" include="annotate_fun_calls.h">
-      <travuser>
-        <node name="Ap" />
-        <node name="With" />
-        <node name="Assign" />
-        <node name="Fundef" />
-      </travuser>
-    </traversal>
-    <traversal id="EXP" name="Export Symbols" default="sons" include="export.h">
-      <travuser>
-        <node name="Use" />
-        <node name="Import" />
-        <node name="Provide" />
-        <node name="Export" />
-        <node name="Symbol" />
-        <node name="Fundef" />
-        <node name="Typedef" />
-        <node name="Objdef" />
-        <node name="Module" />
-      </travuser>
-    </traversal>
-    <traversal id="SER" name="Serialize Module" default="sons" include="serialize.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Typedef" />
-        <node name="Objdef" />
-      </travuser>
-    </traversal>
-    <traversal id="EA" name="Explicit Accumulate" default="sons" include="ExplicitAccumulate.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="Let" />
-        <node name="With" />
-        <node name="Propagate" />
-        <node name="Fold" />
-        <node name="Code" />
-      </travuser>
-    </traversal>
-    <traversal id="WLDP" name="With-Loop Default Partition" default="sons"
-      include="wldefaultpartition.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="With" />
-        <node name="Part" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-        <node name="Propagate" />
-      </travuser>
-    </traversal>
-    <traversal id="WLPG" name="With-Loop Partition Generation" default="sons"
-      include="WLPartitionGeneration.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="With" />
-      </travuser>
-    </traversal>
-    <traversal id="WLBSC" name="With-Loop Bounds 2 Structure Constants" default="sons"
-      include="wlbounds2structconsts.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="With" />
-        <node name="Part" />
-        <node name="Generator" />
-        <node name="Genarray" />
-      </travuser>
-    </traversal>
-    <traversal id="WLA" name="With-Loop Analysis" default="sons" include="wlanalysis.h">
-      <travuser>
-        <node name="With" />
-        <node name="Part" />
-        <node name="Generator" />
-        <node name="Genarray" />
-      </travuser>
-    </traversal>
-    <traversal id="CUA" name="Check uniqueness annotations" default="sons"
-      include="check_uniqueness_annotations.h">
-      <travuser>
-        <node name="Objdef" />
-        <node name="Arg" />
-        <node name="Ret" />
-      </travuser>
-    </traversal>
-    <traversal id="CU" name="Check uniqueness" default="sons" include="check_uniqueness.h">
-      <travuser>
-        <node name="Avis" />
-        <node name="Block" />
-        <node name="Code" />
-        <node name="Cond" />
-        <node name="Funcond" />
-        <node name="Fundef" />
-        <node name="Id" />
-        <node name="Ids" />
-        <node name="Code" />
-        <node name="Prf" />
-      </travuser>
-    </traversal>
-    <traversal id="LOF" name="Lift OptFlags" default="sons" include="liftoptflags.h">
-      <travuser>
-        <node name="Fundef" />
-      </travuser>
-    </traversal>
-    <traversal id="DMMLS" name="Mark local selects for distmem backend" default="sons"
-      include="mark_local_selects.h">
-      <travuser>
-        <node name="With" />
-        <node name="Part" />
-        <node name="Prf" />
-        <node name="Fundef" />
-      </travuser>
-    </traversal>
-    <traversal id="PPI" name="Prepare Inline" default="sons" include="prepareinline.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Module" />
-        <node name="Ap" />
-        <node name="Fold" />
-      </travuser>
-    </traversal>
-    <traversal id="DLFR" name="Dead Local Function Removal" default="sons"
-      include="dead_local_function_removal.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Ap" />
-      </travuser>
-    </traversal>
-    <traversal id="DFR" name="Dead Function Removal" default="sons" include="DeadFunctionRemoval.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Objdef" />
-        <node name="Fundef" />
-        <node name="Arg" />
-        <node name="Ap" />
-        <node name="Fold" />
-      </travuser>
-    </traversal>
-    <traversal id="APC" name="Array Padding Collect" default="sons" include="pad_collect.h">
-      <travuser>
-        <!-- <node name="Fundef" /> -->
-        <!-- <node name="Let" /> -->
-        <!-- <node name="Prf" /> -->
-        <!-- <node name="Ap" /> -->
-        <!-- <node name="With" /> -->
-        <!-- <node name="Genarray" /> -->
-        <!-- <node name="Modarray" /> -->
-        <!-- <node name="Fold" /> -->
-        <!-- <node name="Code" /> -->
-        <!-- <node name="Id" /> -->
-        <!-- <node name="Array" /> -->
-      </travuser>
-    </traversal>
-    <traversal id="APT" name="Array Padding Transform" default="sons" include="pad_transform.h">
-      <travuser>
-        <!-- <node name="Fundef" /> -->
-        <!-- <node name="Arg" /> -->
-        <!-- <node name="Block" /> -->
-        <!-- <node name="Let" /> -->
-        <!-- <node name="Vardec" /> -->
-        <!-- <node name="Assign" /> -->
-        <!-- <node name="Array" /> -->
-        <!-- <node name="With" /> -->
-        <!-- <node name="Genarray" /> -->
-        <!-- <node name="Modarray" /> -->
-        <!-- <node name="Fold" /> -->
-        <!-- <node name="Code" /> -->
-        <!-- <node name="Id" /> -->
-        <!-- <node name="Ap" /> -->
-        <!-- <node name="Prf" /> -->
-      </travuser>
-    </traversal>
-    <traversal id="ETC" name="TypeConv Elimination" default="sons" include="elimtypeconv.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Prf" />
-      </travuser>
-    </traversal>
-    <traversal id="INFNC" name="NeedCounter Inference" default="sons" include="inferneedcounters.h">
-      <travuser>
-        <node name="Block" />
-        <node name="Fundef" />
-        <node name="Prf" />
-        <node name="Avis" />
-        <node name="Id" />
-      </travuser>
-    </traversal>
-    <traversal id="AS" name="Arithmetic Simplification" default="sons"
-      include="arithmetic_simplification.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="Prf" />
-      </travuser>
-    </traversal>
-    <traversal id="AL" name="Associative Law Optimization" default="sons"
-      include="associative_law.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Arg" />
-        <node name="Block" />
-        <node name="Assign" />
-        <node name="Let" />
-        <node name="Ids" />
-        <node name="Prf" />
-        <node name="With" />
-        <node name="Part" />
-        <node name="Code" />
-      </travuser>
-    </traversal>
-    <traversal id="DL" name="Distributive Law Optimization" default="sons"
-      include="distributive_law.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Block" />
-        <node name="Assign" />
-        <node name="Let" />
-        <node name="Ids" />
-        <node name="Prf" />
-      </travuser>
-    </traversal>
-    <traversal id="LS" name="Loop Scalarization" default="sons" include="loop_scalarization.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Arg" />
-        <node name="Assign" />
-        <node name="Ap" />
-        <node name="Prf" />
-        <node name="Id" />
-      </travuser>
-      <travnone>
-        <node name="Withid" />
-      </travnone>
-    </traversal>
-    <traversal id="LACSI" name="Lacfun Argument Scalarization" default="sons"
-      include="loop_and_cond_scalarization_in.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Exprs" />
-        <node name="Assign" />
-        <node name="Ap" />
-        <node name="Id" />
-      </travuser>
-      <travnone>
-        <node name="Withid" />
-      </travnone>
-    </traversal>
-    <traversal id="LACSO" name="Lacfun Result Scalarization" default="sons"
-      include="loop_and_cond_scalarization_out.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="Let" />
-        <node name="Ap" />
-        <node name="Id" />
-        <node name="Return" />
-        <node name="Cond" />
-        <node name="Funcond" />
-      </travuser>
-      <travnone>
-        <node name="Withid" />
-      </travnone>
-    </traversal>
-    <traversal id="IDC" name="Insert Domain Constraints" default="sons"
-      include="insert_domain_constraints.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Block" />
-        <node name="Assign" />
-        <node name="Let" />
-        <node name="Ids" />
-        <node name="Cond" />
-        <node name="With" />
-        <node name="Part" />
-        <node name="Code" />
-        <node name="Id" />
-        <node name="Avis" />
-      </travuser>
-    </traversal>
-    <traversal id="ICC" name="Insert Conformity Checks" default="sons"
-      include="insert_conformity_checks.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="Prf" />
-        <node name="Let" />
-        <node name="With" />
-        <node name="Generator" />
-        <node name="Code" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-        <node name="Fold" />
-        <node name="Propagate" />
-        <node name="Block" />
-      </travuser>
-    </traversal>
-    <traversal id="SCC" name="Strip Conformity Checks" default="sons"
-      include="strip_conformity_checks.h">
-      <travuser>
-        <node name="Block" />
-        <node name="Assign" />
-        <node name="Prf" />
-        <node name="Let" />
-        <node name="Id" />
-        <node name="Vardec" />
-      </travuser>
-    </traversal>
-    <traversal id="USSAI" name="Undo SSAIV Transform" default="sons" include="undossaivtransform.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="With" />
-        <node name="Withid" />
-        <node name="Block" />
-        <node name="Vardec" />
-        <node name="Part" />
-        <node name="Id" />
-      </travuser>
-    </traversal>
-    <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Block" />
-        <node name="Assign" />
-        <node name="Cond" />
-        <node name="Let" />
-        <node name="Ids" />
-        <node name="Array" />
-        <node name="Prf" />
-        <node name="With" />
-        <node name="Code" />
-        <node name="Part" />
-        <node name="Funcond" />
-      </travuser>
-      <travnone>
-        <node name="Withid" />
-      </travnone>
-    </traversal>
-    <traversal id="CSE" name="Common Subexpression Elimination" default="sons" include="SSACSE.h">
-      <travuser>
-        <node name="Module" />
-        <node name="Fundef" />
-        <node name="Avis" />
-        <node name="Block" />
-        <node name="Assign" />
-        <node name="Let" />
-        <node name="Code" />
-        <node name="Cond" />
-        <node name="With" />
-        <node name="Ap" />
-        <node name="Ids" />
-        <node name="Id" />
-        <node name="Return" />
-      </travuser>
-      <travnone>
-        <node name="Withid" />
-      </travnone>
-    </traversal>
-    <traversal id="VP" name="Variable Propagation" default="sons" include="variable_propagation.h">
-      <travuser>
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="Id" />
-        <node name="Avis" />
-      </travuser>
+		  <node name="Block" />
+		  <node name="Assign" />
+		  <node name="Let" />
+		  <node name="Return" />
+		  <node name="Cond" />
+		  <node name="Do" />
+		  <node name="Funcond" />
+		  <node name="Exprs" />
+		  <node name="With" />
+		  <node name="Part" />
+		  <node name="Withid" />
+		  <node name="Code" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		</travuser>
+	      </traversal>
+	      <traversal id="CHK" name="Check the Tree" default="user" ifndef="DBUG_OFF" include="check.h" />
+	      <traversal id="CHKRST" name="Reset for Tree Check" default="user" ifndef="DBUG_OFF" include="check_reset.h" />
+	      <traversal id="CHKM" name="Check the memspace" default="user" ifndef="DBUG_OFF" include="check_node.h" />
+	      <traversal id="CHKLACF" name="Check LaC functions"
+		       default="sons" include="check_lacfuns.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Block" />
+		  <node name="Ap" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h" >
+		<travuser>
+		  <node name="SPMop" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HWLG" name="Handle multi-generator with-loops"
+			 default="sons" include="handle_with_loop_generators.h" >
+		<travuser>
+		  <node name="Let" />
+		  <node name="Assign" />
+		  <node name="With" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		  <node name="SPFold" />
+		  <node name="Propagate" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HWLO" name="Handle multi-operator with-loops"
+			 default="sons" include="handle_with_loop_operators.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="Let" />
+		  <node name="With" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		  <node name="SPFold" />
+		  <node name="Propagate" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HZGWL" name="Handle zero-generator withloops"
+			 default="sons" include="handle_zero_generator_with_loops.h" >
+		<travuser>
+		  <node name="With" />
+		  <node name="Modarray" />
+		  <node name="Genarray" />
+		  <node name="SPFold" />
+		  <node name="Propagate" />
+		  <node name="Let" />
+		  <node name="Assign" />
+		  <node name="Return" />
+		</travuser>
+	      </traversal>
+	      <traversal id="IUTC" name="Introduce User Trace Calls" default="sons" include="introduce_user_tracing_calls.h">
+		<travuser>
+		  <node name="Fundef" />
+		  <node name="Arg" />
+		  <node name="SPIds" />
+		  <node name="Assign" />
+		  <node name="Return" />
+		  <node name="Block" />
+		</travuser>
+		<travnone>
+		  <node name="Withid" />
+		</travnone>
+	      </traversal>
+	      <traversal id="HWLD" name="Handle With Loop Dots" default="sons" include="handle_with_loop_dots.h">
+		<travuser>
+		  <node name="With" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		  <node name="Fold" />
+		  <node name="Part" />
+		  <node name="Withid" />
+		  <node name="Generator" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HSD" name="Handle Selection Dots" default="sons" include="handle_selection_dots.h">
+		<travuser>
+		  <node name="SPAp" />
+		</travuser>
+	      </traversal>
+	      <traversal id="SERI" name="Set Expression Range Inference" default="sons" include="set_expression_range_inference.h">
+		<travuser>
+		  <node name="SPAp" />
+		  <node name="Prf" />
+		  <node name="With" />
+		  <node name="SetWL" />
+		  <node name="Generator" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HSED" name="Handle Set Expression Dots" default="sons" include="handle_set_expression_dots.h">
+		<travuser>
+		  <node name="With" />
+		  <node name="SetWL" />
+		  <node name="Generator" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HSE" name="Handle Set Expressions" default="sons" include="handle_set_expressions.h">
+		<travuser>
+		  <node name="Generator" />
+		  <node name="SetWL" />
+		</travuser>
+	      </traversal>
+	      <traversal id="CSGD" name="Check and Simplify Generic Definitions" default="sons" include="check_and_simplify_generic_definitions.h">
+		<travuser>
+		  <node name="Fundef" />
+		  <node name="Arg" />
+		  <node name="Ret" />
+		  <node name="Assign" />
+		  <node name="Cast" />
+		  <node name="Return" />
+		  <node name="Avis" />
+		</travuser>
+	      </traversal>
+	      <traversal id="GNTC" name="Generate Nested Type Conversions" default="sons" include="generate_nested_type_conversions.h">
+	      	<travuser>
+            <node name="Module" />
+		        <node name="Typedef" />
+      		</travuser>
+	      </traversal>
+	      <traversal id="GGTC" name="Generate Generic Type Conversions" default="sons" include="generate_generic_type_conversions.h">
+		<travuser>
+		  <node name="Module" />
+		  <node name="Typedef" />
+		  <node name="Export" />
+		  <node name="Provide" />
+		  <node name="Symbol" />
+		</travuser>
+	      </traversal>
+	      <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
+		<travuser>
+		  <node name="Typedef" />
+		  <node name="Objdef" />
+		  <node name="Fundef" />
+		  <node name="Module" />
+		  <node name="Ret" />
+		  <node name="Arg" />
+		</travuser>
+	      </traversal>
+	      <traversal id="W2D" name="While2do" default="sons" include="while2do.h" >
+		<travuser>
+		  <node name="While" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HCE" name="Handle conditional expressions"
+			 default="sons" include="handle_condexpr.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="Code" />
+		  <node name="Cond" />
+		  <node name="Do" />
+		  <node name="Funcond" />
+		  <node name="With" />
+		</travuser>
+	      </traversal>
+	      <traversal id="FLAT" name="Flatten" default="sons" include="flatten.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Cast" />
+		  <node name="Exprs" />
+		  <node name="SPAp" />
+		  <node name="Block" />
+		  <node name="Cond" />
+		  <node name="Do" />
+		  <node name="Array" />
+		  <node name="Return" />
+		  <node name="Prf" />
+		  <node name="With" />
+		  <node name="Withid" />
+		  <node name="Part" />
+		  <node name="Generator" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		  <node name="Propagate" />
+		  <node name="SPFold" />
+		  <node name="Code" />
+		</travuser>
+	      </traversal>
+	      <traversal id="FLATG" name="Flattengenerators" default="sons" include="flattengenerators.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="With" />
+		  <node name="Part" />
+		  <node name="Generator" />
+		  <node name="Assign" />
+		  <node name="Cond" />
+		  <node name="Do" />
+		  <node name="While" />
+		  <node name="Funcond" />
+		  <node name="Prf" />
+		  <node name="Let" />
+		  <node name="Exprs" />
+		</travuser>
+	      </traversal>
+	      <traversal id="L2F" name="Lac2Fun Traversal" default="sons" include="lac2fun.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="Do" />
+		  <node name="Fundef" />
+		  <node name="Cond" />
+		</travuser>
+	      </traversal>
+	      <traversal id="SSAT" name="SSA Transform Traversal" default="sons" include="SSATransform.h" >
+		<travuser>
+		  <node name="Assign" />
+		  <node name="Ap" />
+		  <node name="Fundef" />
+		  <node name="Cond" />
+		  <node name="Block" />
+		  <node name="Code" />
+		  <node name="Let" />
+		  <node name="Arg" />
+		  <node name="Vardec" />
+		  <node name="Id" />
+		  <node name="With" />
+		  <node name="With2" />
+		  <node name="Part" />
+		  <node name="Withid" />
+		  <node name="Funcond" />
+		  <node name="Return" />
+		  <node name="Ids" />
+		</travuser>
+	      </traversal>
+	      <traversal id="RSA" name="Resolve All Flags" default="sons" include="resolveall.h" >
+		<travuser>
+		  <node name="Use" />
+		  <node name="Import" />
+		  <node name="Provide" />
+		  <node name="Export" />
+		  <node name="Module" />
+		</travuser>
+	      </traversal>
+	      <traversal id="GDP" name="Gather Dependencies" default="sons" include="gatherdependencies.h">
+		<travuser>
+		  <node name="Use" />
+		  <node name="Import" />
+		  <node name="Typedef" />
+		  <node name="Objdef" />
+		  <node name="Avis" />
+		  <node name="Ret" />
+		  <node name="SPId" />
+		  <node name="SPFold" />
+		  <node name="Cast" />
+		  <node name="Module" />
+		</travuser>
+	      </traversal>
+	      <traversal id="ANS" name="Annotate Namespaces" default="sons" include="annotatenamespace.h">
+		<travuser>
+		  <node name="Symbol" />
+		  <node name="Use" />
+		  <node name="Import" />
+		  <node name="Export" />
+		  <node name="Provide" />
+		  <node name="Fundef" />
+		  <node name="Typedef" />
+		  <node name="Objdef" />
+		  <node name="While" />
+		  <node name="Do" />
+		  <node name="SPAp" />
+		  <node name="SPMop" />
+		  <node name="Avis" />
+		  <node name="Array" />
+		  <node name="Arg" />
+		  <node name="Ret" />
+		  <node name="Vardec" />
+		  <node name="SPIds" />
+		  <node name="SPId" />
+		  <node name="Let" />
+		  <node name="With" />
+		  <node name="SPFold" />
+		  <node name="Module" />
+		  <node name="Cast" />
+		</travuser>
+	      </traversal>
+	      <traversal id="USS" name="Use Symbols" default="sons" include="usesymbols.h" >
+		<travuser>
+		  <node name="Typedef" />
+		  <node name="Objdef" />
+		  <node name="SPFold" />
+		  <node name="Avis" />
+		  <node name="Cast" />
+		  <node name="Array" />
+		  <node name="Ret" />
+		  <node name="SPAp" />
+		  <node name="SPId" />
+		  <node name="SPMop" />
+		  <node name="Module" />
+		</travuser>
+	      </traversal>
+	      <traversal id="IMP" name="Import Symbols" default="sons" include="importsymbols.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Import" />
+		  <node name="Export" />
+		  <node name="Use" />
+		  <node name="Provide" />
+		  <node name="Symbol" />
+		</travuser>
+	      </traversal>
+	      <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardec.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="SPAp" />
+		  <node name="SPFold" />
+		  <node name="SPId" />
+		  <node name="SPIds" />
+		  <node name="With" />
+		  <node name="Let" />
+		  <node name="Part" />
+		  <node name="Code" />
+		  <node name="Do" />
+		</travuser>
+	      </traversal>
+	      <traversal id="INSTC" name="Insert Type Conversions" default="sons" include="insert_type_conv.h" >
+		<travuser>
+		  <node name="Fundef" />
+		  <node name="Block" />
+		  <node name="Avis" />
+		  <node name="Assign" />
+		  <node name="Ids" />
+		  <node name="Id" />
+		  <node name="With" />
+		  <node name="Return" />
+		</travuser>
+	      </traversal>
+	      <traversal id="CRTWRP" name="Create Wrappers" default="sons" include="create_wrappers.h">
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Let" />
+		  <node name="SPAp" />
+		  <node name="Genarray" />
+		  <node name="SPFold" />
+		</travuser>
+	      </traversal>
+	      <traversal id="RST" name="Resolve Symbol Types" default="sons" include="resolvesymboltypes.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Arg" />
+		  <node name="Ret" />
+		  <node name="Avis" />
+		  <node name="Array" />
+		  <node name="Typedef" />
+		  <node name="Objdef" />
+		  <node name="Type" />
+		  <node name="Cast" />
+		</travuser>
+	      </traversal>
+	      <traversal id="OI" name="Object Initializer" default="sons" include="object_init.h">
+		<travuser>
+		  <node name="Module" />
+		  <node name="Objdef" />
+		</travuser>
+	      </traversal>
+	      <traversal id="OAN" name="Object Analysis" default="sons" include="object_analysis.h">
+		<travuser>
+		  <node name="Module" />
+		  <node name="Globobj" />
+		  <node name="Fundef" />
+		  <node name="Ap" />
+		  <node name="Objdef" />
+		</travuser>
+	      </traversal>
+	      <traversal id="GOI" name="Generating Object Initialiser" default="sons" include="generate_object_initialiser.h" >
+		<travuser>
+		  <node name="Fundef" />
+		  <node name="Module" />
+		</travuser>
+	      </traversal>
+	      <traversal id="RSO" name="Resolve Objects" default="sons" include="resolve_objects.h" >
+		<travuser>
+		  <node name="Ap" />
+		  <node name="Fundef" />
+		  <node name="Globobj" />
+		  <node name="Let" />
+		  <node name="Module" />
+		  <node name="Propagate" />
+		  <node name="With" />
+		</travuser>
+	      </traversal>
+	      <traversal id="RRA" name="Resolve Reference Args" default="sons" include="resolve_reference_args.h" >
+		<travuser>
+		  <node name="Fundef" />
+		  <node name="Return" />
+		  <node name="Let" />
+		  <node name="Ap" />
+		  <node name="Module" />
+		</travuser>
+	      </traversal>
+	      <traversal id="EWT" name="Extend Wrapper Types" default="sons" include="extend_wrapper_types.h" >
+		<travuser>
+		  <node name="Fundef" />
+		</travuser>
+	      </traversal>
+	      <traversal id="ESP" name="Enforce Specialization" default="sons" include="enforce_specialization.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		</travuser>
+	      </traversal>
+	      <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
+		<travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+		  <node name="Block" />
+		  <node name="Vardec" />
+		  <node name="Assign" />
+		  <node name="Cond" />
+		  <node name="Funcond" />
+		  <node name="Let" />
+		  <node name="Return" />
+		  <node name="Ap" />
+		  <node name="Prf" />
+		  <node name="Array" />
+		  <node name="Cast" />
+		  <node name="Exprs" />
+		  <node name="Id" />
+		  <node name="Globobj" />
+		  <node name="Type" />
+		  <node name="Num" />
+		  <node name="NumByte" />
+		  <node name="NumShort" />
+		  <node name="NumInt" />
+		  <node name="NumLong" />
+		  <node name="NumLonglong" />
+		  <node name="NumUbyte" />
+		  <node name="NumUshort" />
+		  <node name="NumUint" />
+		  <node name="NumUlong" />
+		  <node name="NumUlonglong" />
+		  <node name="Bool" />
+      <node name="Nested_init" />
+		  <node name="Char" />
+		  <node name="Double" />
+          <node name="Float" />
+          <node name="Floatvec" />
+          <node name="With" />
+          <node name="Generator" />
+          <node name="Part" />
+          <node name="Withid" />
+          <node name="Code" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+          <node name="Break" />
+          <node name="Propagate" />
+          <node name="Str" />
+        </travuser>
+      </traversal>
+      <traversal id="SWR" name="Split Wrappers" default="sons" include="split_wrappers.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="With" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+          <node name="Propagate" />
+        </travuser>
+      </traversal>
+      <traversal id="CWC" name="Create Wrapper Code" default="sons" include="create_wrapper_code.h" >
+        <travuser>
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
+      <traversal id="DFC" name="Dispatch Funcalls and Create Foldfuns" default="sons" include="dispatchfuncalls.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="With" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+          <node name="Propagate" />
+          <node name="Let" />
+        </travuser>
+      </traversal>
+      <traversal id="ELF" name="Extend LaC funs" default="sons" include="extend_lac_funs.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Ap" />
+        </travuser>
+      </traversal>
+      <traversal id="EAT" name="Eliminate type variables and do some cleanup" default="sons" include="elim_alpha_types.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="Avis" />
+          <node name="Array" />
+          <node name="Block" />
+          <node name="Let" />
+          <node name="Part" />
+          <node name="Withid" />
+          <node name="With" />
+        </travuser>
+      </traversal>
+      <traversal id="EBT" name="Eliminate bottom types" default="sons" include="elim_bottom_types.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="Prf" />
+          <node name="Block" />
+          <node name="Ids" />
+          <node name="Vardec" />
+          <node name="Let" />
+          <node name="Assign" />
+          <node name="Cond" />
+          <node name="Funcond" />
+        </travuser>
+      </traversal>
+      <traversal id="FDI" name="Free Dispatch Information" default="sons" include="free_dispatch_information.h">
+        <travuser>
+          <node name="Ap" />
+          <node name="Module" />
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
+      <traversal id="PF" name="Annotate Function Calls " default="sons" include="annotate_fun_calls.h">
+        <travuser>
+          <node name="Ap" />
+          <node name="With" />
+          <node name="Assign" />
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
+      <traversal id="EXP" name="Export Symbols" default="sons" include="export.h">
+        <travuser>
+	  <node name="Use" />
+	  <node name="Import" />
+	  <node name="Provide" />
+	  <node name="Export" />
+	  <node name="Symbol" />
+	  <node name="Fundef" />
+	  <node name="Typedef" />
+	  <node name="Objdef" />
+	  <node name="Module" />
+	</travuser>
+      </traversal>
+      <traversal id="SER" name="Serialize Module" default="sons" include="serialize.h">
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Typedef" />
+	  <node name="Objdef" />
+	</travuser>
+      </traversal>
+      <traversal id="EA" name="Explicit Accumulate" default="sons" include="ExplicitAccumulate.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="With" />
+          <node name="Propagate" />
+          <node name="Fold" />
+          <node name="Code" />
+        </travuser>
+      </traversal>
+      <traversal id="WLDP" name="With-Loop Default Partition" default="sons" include="wldefaultpartition.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Propagate" />
+         </travuser>
+      </traversal>
+      <traversal id="WLPG" name="With-Loop Partition Generation" default="sons" include="WLPartitionGeneration.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="With" />
+        </travuser>
+      </traversal>
+      <traversal id="WLBSC" name="With-Loop Bounds 2 Structure Constants" default="sons" include="wlbounds2structconsts.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Generator" />
+          <node name="Genarray" />
+        </travuser>
+      </traversal>
+      <traversal id="WLA" name="With-Loop Analysis" default="sons" include="wlanalysis.h" >
+        <travuser>
+          <node name="With" />
+          <node name="Part" />
+          <node name="Generator" />
+          <node name="Genarray" />
+         </travuser>
+      </traversal>
+      <traversal id="CUA" name="Check uniqueness annotations" default="sons" include="check_uniqueness_annotations.h">
+        <travuser>
+	  <node name="Objdef" />
+	  <node name="Arg" />
+	  <node name="Ret" />
+	</travuser>
+      </traversal>
+      <traversal id="CU" name="Check uniqueness" default="sons" include="check_uniqueness.h">
+        <travuser>
+	  <node name="Avis" />
+	  <node name="Block" />
+    <node name="Code" />
+	  <node name="Cond" />
+	  <node name="Funcond" />
+	  <node name="Fundef" />
+	  <node name="Id" />
+	  <node name="Ids" />
+    <node name="Code" />
+    <node name="Prf" />
+	</travuser>
+      </traversal>
+      <traversal id="LOF" name="Lift OptFlags" default="sons" include="liftoptflags.h">
+        <travuser>
+	  <node name="Fundef" />
+	</travuser>
+      </traversal>
+   <traversal id="DMMLS" name="Mark local selects for distmem backend" default="sons" include="mark_local_selects.h">
+    <travuser>
+	    <node name="With" />
+	    <node name="Part" />
+	    <node name="Prf" />
+	    <node name="Fundef" />
+	  </travuser>
+   </traversal>
+      <traversal id="PPI" name="Prepare Inline" default="sons" include="prepareinline.h">
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Module" />
+	  <node name="Ap" />
+	  <node name="Fold" />
+	</travuser>
+      </traversal>
+      <traversal id="DLFR" name="Dead Local Function Removal" default="sons" include="dead_local_function_removal.h" >
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Ap" />
+	</travuser>
+      </traversal>
+      <traversal id="DFR" name="Dead Function Removal" default="sons" include="DeadFunctionRemoval.h" >
+        <travuser>
+	  <node name="Module" />
+	  <node name="Objdef" />
+	  <node name="Fundef" />
+	  <node name="Arg" />
+	  <node name="Ap" />
+	  <node name="Fold" />
+	</travuser>
+      </traversal>
+      <traversal id="APC" name="Array Padding Collect" default="sons" include="pad_collect.h" >
+        <travuser>
+          <!-- <node name="Fundef" /> -->
+          <!-- <node name="Let" /> -->
+          <!-- <node name="Prf" /> -->
+          <!-- <node name="Ap" /> -->
+          <!-- <node name="With" /> -->
+          <!-- <node name="Genarray" /> -->
+          <!-- <node name="Modarray" /> -->
+          <!-- <node name="Fold" /> -->
+          <!-- <node name="Code" /> -->
+          <!-- <node name="Id" /> -->
+          <!-- <node name="Array" /> -->
+        </travuser>
+      </traversal>
+      <traversal id="APT" name="Array Padding Transform" default="sons" include="pad_transform.h" >
+        <travuser>
+          <!-- <node name="Fundef" /> -->
+          <!-- <node name="Arg" /> -->
+          <!-- <node name="Block" /> -->
+          <!-- <node name="Let" /> -->
+          <!-- <node name="Vardec" /> -->
+          <!-- <node name="Assign" /> -->
+          <!-- <node name="Array" /> -->
+          <!-- <node name="With" /> -->
+          <!-- <node name="Genarray" /> -->
+          <!-- <node name="Modarray" /> -->
+          <!-- <node name="Fold" /> -->
+          <!-- <node name="Code" /> -->
+          <!-- <node name="Id" /> -->
+          <!-- <node name="Ap" /> -->
+          <!-- <node name="Prf" /> -->
+        </travuser>
+      </traversal>
+      <traversal id="ETC" name="TypeConv Elimination" default="sons" include="elimtypeconv.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="INFNC" name="NeedCounter Inference" default="sons" include="inferneedcounters.h" >
+	<travuser>
+	  <node name="Block" />
+	  <node name="Fundef" />
+	  <node name="Prf" />
+	  <node name="Avis" />
+	  <node name="Id" />
+	</travuser>
+      </traversal>
+      <traversal id="AS" name="Arithmetic Simplification" default="sons" include="arithmetic_simplification.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="Assign" />
+	  <node name="Prf" />
+	</travuser>
+      </traversal>
+      <traversal id="AL" name="Associative Law Optimization" default="sons" include="associative_law.h" >
+	<travuser>
+	  <node name="Module" />
+	  <node name="Fundef" />
+	  <node name="Arg" />
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Ids" />
+	  <node name="Prf" />
+	  <node name="With" />
+	  <node name="Part" />
+	  <node name="Code" />
+	</travuser>
+      </traversal>
+      <traversal id="DL" name="Distributive Law Optimization" default="sons" include="distributive_law.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Ids" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="LS" name="Loop Scalarization" default="sons" include="loop_scalarization.h" >
+        <travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Assign" />
+          <node name="Ap" />
+          <node name="Prf" />
+          <node name="Id" />
+        </travuser>
+        <travnone>
+          <node name="Withid" />
+        </travnone>
+      </traversal>
+      <traversal id="LACSI" name="Lacfun Argument Scalarization" default="sons" include="loop_and_cond_scalarization_in.h" >
+        <travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+          <node name="Exprs" />
+          <node name="Assign" />
+          <node name="Ap" />
+          <node name="Id" />
+        </travuser>
+        <travnone>
+          <node name="Withid" />
+        </travnone>
+      </traversal>
+      <traversal id="LACSO" name="Lacfun Result Scalarization" default="sons" include="loop_and_cond_scalarization_out.h" >
+        <travuser>
+		  <node name="Module" />
+		  <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Ap" />
+          <node name="Id" />
+          <node name="Return" />
+          <node name="Cond" />
+          <node name="Funcond" />
+        </travuser>
+        <travnone>
+          <node name="Withid" />
+        </travnone>
+      </traversal>
+      <traversal id="IDC" name="Insert Domain Constraints" default="sons" include="insert_domain_constraints.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Ids" />
+          <node name="Cond" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Code" />
+          <node name="Id" />
+          <node name="Avis" />
+        </travuser>
+      </traversal>
+      <traversal id="ICC" name="Insert Conformity Checks" default="sons" include="insert_conformity_checks.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Prf" />
+          <node name="Let" />
+          <node name="With" />
+          <node name="Generator" />
+          <node name="Code" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+          <node name="Propagate" />
+          <node name="Block" />
+        </travuser>
+      </traversal>
+      <traversal id="SCC" name="Strip Conformity Checks" default="sons" include="strip_conformity_checks.h" >
+        <travuser>
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="Prf" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="Vardec" />
+        </travuser>
+      </traversal>
+      <traversal id="STPC" name="Strip Type Pattern Checks" default="sons" include="strip_type_pattern_checks.h" >
+        <travuser>
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="Prf" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="Vardec" />
+        </travuser>
+      </traversal>
+      <traversal id="TPS" name="Print Type Pattern Statistics" default="sons" include="type_pattern_statistics.h" >
+        <travuser>
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="USSAI" name="Undo SSAIV Transform" default="sons" include="undossaivtransform.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="With" />
+	  <node name="Withid" />
+	  <node name="Block" />
+	  <node name="Vardec" />
+	  <node name="Part" />
+	  <node name="Id" />
+	</travuser>
+      </traversal>
+      <traversal id="CF" name="Constant Folding" default="sons" include="constant_folding.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="Cond" />
+          <node name="Let" />
+          <node name="Ids" />
+          <node name="Array" />
+          <node name="Prf" />
+          <node name="With" />
+          <node name="Code" />
+          <node name="Part" />
+          <node name="Funcond" />
+        </travuser>
+        <travnone>
+          <node name="Withid" />
+        </travnone>
+      </traversal>
+      <traversal id="CSE" name="Common Subexpression Elimination" default="sons" include="SSACSE.h" >
+	<travuser>
+	  <node name="Module" />
+	  <node name="Fundef" />
+          <node name="Avis" />
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Code" />
+	  <node name="Cond" />
+	  <node name="With" />
+	  <node name="Ap" />
+          <node name="Ids" />
+	  <node name="Id" />
+	  <node name="Return" />
+	</travuser>
+        <travnone>
+          <node name="Withid" />
+        </travnone>
+     </traversal>
+      <traversal id="VP" name="Variable Propagation" default="sons" include="variable_propagation.h" >
+	  <travuser>
+	  <node name="Fundef" />
+	  <node name="Assign" />
+	  <node name="Id" />
+      <node name="Avis" />
+	  </travuser>
     </traversal>
 
     <traversal id="REA" name="Reorder EqualityOperator arguments" default="sons"
@@ -4175,7 +4153,7 @@
 
   </nodesets>
   <syntaxtree version="1.0">
-    <!--
+<!--
 
   N_module :
 
@@ -4374,9 +4352,9 @@
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
-N_structdef :
+  N_structdef :
 
 -->
     <node name="Structdef">
@@ -4434,9 +4412,9 @@ N_structdef :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
-N_tfspec :
+  N_tfspec :
 
 -->
     <node name="Tfspec">
@@ -4471,9 +4449,9 @@ N_tfspec :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
-N_tfdag :
+  N_tfdag :
 
 -->
     <node name="Tfdag">
@@ -4534,9 +4512,9 @@ N_tfdag :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
-N_tfvertex :
+  N_tfvertex :
 
 -->
     <node name="Tfvertex">
@@ -4788,9 +4766,9 @@ N_tfvertex :
         <flag name="IsRowMarked" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
-N_tfrel :
+  N_tfrel :
 
 -->
     <node name="Tfrel">
@@ -4847,9 +4825,9 @@ N_tfrel :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
-N_tfexpr :
+  N_tfexpr :
 
 -->
     <node name="Tfexpr">
@@ -4918,9 +4896,9 @@ N_tfexpr :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
-N_tfedge :
+  N_tfedge :
 
 -->
     <node name="Tfedge">
@@ -4967,9 +4945,9 @@ N_tfedge :
         <flag name="WasClassified" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
-N_tfarg :
+  N_tfarg :
 
 -->
     <node name="TypeComponentArg">
@@ -5016,7 +4994,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_typedef :
 
@@ -5040,6 +5018,20 @@ N_tfarg :
               <node name="Typedef" />
               <phases>
                 <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="TypePattern" default="NULL">
+          <description>
+            A type specification as found by the scanner/parser; it contains
+            type variables and has not yet been checked for consistency.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="TypePattern" />
+              <phases>
+                <range from="scp_prs" to="pre" />
               </phases>
             </target>
           </targets>
@@ -5092,7 +5084,7 @@ N_tfarg :
         <attribute name="NType" inconstructor="yes">
           <type name="NewType">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
                   <all />
@@ -5198,7 +5190,7 @@ N_tfarg :
         <flag name="IsNested" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_objdef :
 
@@ -5225,12 +5217,26 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="TypePattern" default="NULL">
+          <description>
+            A type specification as found by the scanner/parser; it contains
+            type variables and has not yet been checked for consistency.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="TypePattern" />
+              <phases>
+                <range from="scp_prs" to="pre" />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="Type" inconstructor="yes">
           <type name="NewType">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
                   <all />
@@ -5385,7 +5391,7 @@ N_tfarg :
         <flag name="IsNeeded" default="TRUE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_fundef :
 
@@ -5419,15 +5425,32 @@ N_tfarg :
             </target>
           </targets>
         </son>
-        <son name="Asserts" default="NULL">
-          <!--Fangyong:
-          Assert expression. Means user defined constraints. -->
+        <son name="PreConds"  default="NULL">
+          <description>
+            List of boolean expressions that define arbitrarily complex
+            constraints that operate on the function's arguments and their type
+            patterns.
+          </description>
           <targets>
             <target mandatory="no">
-              <node name="Udcs" /> <!--Fangyong:Udcs-User-defined
-              constraints. -->
+              <node name="Exprs" />
               <phases>
-                <all />
+                <range from="initial" to="pre"/>
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="PostConds"  default="NULL">
+          <description>
+            List of boolean expressions that define arbitrarily complex
+            constraints that operate on the function's returned values and their
+            type patterns.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <range from="initial" to="pre"/>
               </phases>
             </target>
           </targets>
@@ -6173,6 +6196,13 @@ N_tfarg :
             referenced twice: Once from the context the loop was lifted from and once from the inner
             recursive application.</description>
         </flag>
+        <flag name="IsGuardFun">
+          <description>
+            This function containts the constraints introduced by type patterns.
+            Namely, it is a pre- or post-check function. We never want to create
+            wrappers for these functions as we always dispatch them manually.
+          </description>
+        </flag>
         <flag name="IsObjInitFun">
           <description>This function is a global object initialiser function derived from the objdef
             expression.</description>
@@ -6319,7 +6349,7 @@ N_tfarg :
         <check name="CHKfundefReturn" />
       </checks>
     </node>
-    <!--
+<!--
 
   N_arg :
 
@@ -6452,39 +6482,7 @@ N_tfarg :
       </checks>
     </node>
 
-
-    <!--
-
-  N_udcs :usr-defined constraints  Fangyong add
-
--->
-
-    <node name="Udcs">
-      <sons>
-        <son name="Udc">
-          <targets>
-            <target mandatory="no">
-              <set name="Expr" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Next">
-          <targets>
-            <target mandatory="no">
-              <node name="Udcs" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-    </node>
-
-    <!--
+<!--
 
   N_block :
 
@@ -6627,7 +6625,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_structelem :
 
@@ -6641,6 +6639,20 @@ N_tfarg :
               <node name="Structelem" />
               <phases>
                 <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="TypePattern" default="NULL">
+          <description>
+            A type specification as found by the scanner/parser; it contains
+            type variables and has not yet been checked for consistency.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="TypePattern" />
+              <phases>
+                <range from="scp_prs" to="pre" />
               </phases>
             </target>
           </targets>
@@ -6663,7 +6675,7 @@ N_tfarg :
           <description></description>
           <type name="NewType">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
                   <all />
@@ -6692,7 +6704,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_vardec :
 
@@ -6758,7 +6770,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_assign :
 
@@ -6935,7 +6947,7 @@ N_tfarg :
         <check name="CHKattribsAssign" />
       </checks>
     </node>
-    <!--
+<!--
 
   N_let :
 
@@ -7036,7 +7048,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_livevars :
 
@@ -7072,7 +7084,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_cast :
 
@@ -7089,12 +7101,26 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="TypePattern" default="NULL">
+          <description>
+            A type specification as found by the scanner/parser; it contains
+            type variables and has not yet been checked for consistency.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="TypePattern" />
+              <phases>
+                <range from="scp_prs" to="pre" />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="NType" inconstructor="yes">
           <type name="NewType">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
                   <all />
@@ -7108,7 +7134,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_return :
 
@@ -7144,7 +7170,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!-- 
+<!--
   N_cond :
 
 -->
@@ -7236,7 +7262,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_do :
 
@@ -7379,7 +7405,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_while :
 
@@ -7412,7 +7438,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_annotate :
 
@@ -7461,7 +7487,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_ap :
 
@@ -7569,7 +7595,7 @@ N_tfarg :
         <check name="CHKapArgCount" />
       </checks>
     </node>
-    <!--
+<!--
 
   N_mop :
 
@@ -7602,7 +7628,7 @@ N_tfarg :
         <flag name="IsFixed" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_exprs :
 
@@ -7636,7 +7662,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_funcond :
 
@@ -7682,7 +7708,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_array :
 
@@ -7706,6 +7732,20 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="TypePattern" default="NULL">
+          <description>
+            A type specification as found by the scanner/parser; it contains
+            type variables and has not yet been checked for consistency.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="TypePattern" />
+              <phases>
+                <range from="scp_prs" to="pre" />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="Elemtype" inconstructor="yes">
@@ -7713,7 +7753,7 @@ N_tfarg :
             to deduce the common shape of those elements.</description>
           <type name="NewType">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
                   <all />
@@ -7763,7 +7803,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_id :
 
@@ -7847,7 +7887,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_num :
 
@@ -7873,7 +7913,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_numbyte :
 
@@ -7899,7 +7939,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_numshort :
 
@@ -7925,7 +7965,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_numint :
 
@@ -7951,7 +7991,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_numlong :
 
@@ -7977,7 +8017,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_numlonglong :
 
@@ -8003,7 +8043,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_numubyte :
 
@@ -8029,7 +8069,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_numushort :
 
@@ -8055,7 +8095,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_numuint :
 
@@ -8081,7 +8121,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_numulong :
 
@@ -8107,7 +8147,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_numulonglong :
 
@@ -8133,7 +8173,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_char :
 
@@ -8159,7 +8199,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_float :
 
@@ -8185,7 +8225,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_float_vec :
 
@@ -8211,7 +8251,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_double :
 
@@ -8237,7 +8277,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_bool :
 
@@ -8263,7 +8303,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_nested_init :
 
@@ -8277,7 +8317,7 @@ N_tfarg :
       </flags>
     </node>
 
-    <!--
+<!--
 
   N_str :
 
@@ -8307,7 +8347,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_type :
 
@@ -8315,8 +8355,8 @@ N_tfarg :
     <node name="Type">
       <sons></sons>
       <attributes>
-        <attribute name="Type" inconstructor="yes">
-          <type name="NewType">
+        <attribute name="Type" inconstructor="yes" >
+	        <type name="NewType">
             <targets>
               <target mandatory="yes">
                 <any />
@@ -8326,13 +8366,17 @@ N_tfarg :
               </target>
             </targets>
           </type>
-        </attribute>
+	      </attribute>
       </attributes>
       <flags>
-        <flag name="DummyFlag" default="FALSE" />
+        <flag name="IsGuard" default="FALSE">
+          <description>
+            Whether this type is used in a guard by a type pattern constraint.
+	        </description>
+        </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_prf :
 
@@ -8441,7 +8485,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_dot :
 
@@ -8466,7 +8510,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_setwl :
 
@@ -8535,7 +8579,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_icm :
 
@@ -8597,7 +8641,7 @@ N_tfarg :
         <flag name="IsEndOfStatement" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_pragma :
 
@@ -8821,7 +8865,7 @@ N_tfarg :
         <flag name="NoCUDA" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_ssacnt :
 
@@ -8869,7 +8913,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_ssastack :
 
@@ -8917,7 +8961,7 @@ N_tfarg :
         <flag name="InUse" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_avis :
 
@@ -8925,6 +8969,20 @@ N_tfarg :
     <node name="Avis">
       <description>Arg and vardec information structure</description>
       <sons>
+        <son name="TypePattern" default="NULL">
+          <description>
+            A type specification as found by the scanner/parser; it contains
+            type variables and has not yet been checked for consistency.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="TypePattern" />
+              <phases>
+                <range from="scp_prs" to="pre" />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Dim" default="NULL">
           <description>
             An N_num or N_id specifying the array's rank
@@ -9052,11 +9110,11 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="Type" inconstructor="yes">
-          <description>the inferred type, which may be more precise than DeclType.</description>
+        <attribute name="Type" inconstructor="yes" default="NULL" >
+	  <description>the inferred type, which may be more precise than DeclType.</description>
           <type name="NewType">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
                   <range from="initial" to="final" />
@@ -9143,8 +9201,8 @@ N_tfarg :
                 <node name="Assign" />
                 <phases>
                   <!--
-                  <range from="ptc_ssa" to="wlt_ussa" /> 
-                  <range from="wlt_ssa" to="ussa_ussa" /> 
+                  <range from="ptc_ssa" to="wlt_ussa" />
+                  <range from="wlt_ssa" to="ussa_ussa" />
                   -->
                   <range from="ptc_ssa" to="ussa_ussa" />
                 </phases>
@@ -9811,7 +9869,7 @@ N_tfarg :
         <check name="CHKavisSsaassignNodeType" />
       </checks>
     </node>
-    <!--
+<!--
 
   N_mt :
 
@@ -9847,7 +9905,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_ex :
 
@@ -9871,7 +9929,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_st :
 
@@ -9896,7 +9954,7 @@ N_tfarg :
       </flags>
     </node>
 
-    <!--
+<!--
 
   N_cudast :
 
@@ -9921,7 +9979,7 @@ N_tfarg :
       </flags>
     </node>
 
-    <!--
+<!--
 
   N_with :
 
@@ -10181,7 +10239,7 @@ N_tfarg :
 
       </flags>
     </node>
-    <!--
+<!--
 
   N_part :
 
@@ -10295,7 +10353,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_withid :
 
@@ -10378,7 +10436,7 @@ N_tfarg :
         <flag name="VecNeeded" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_generator :
 
@@ -10499,7 +10557,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_default :
 
@@ -10511,7 +10569,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_code :
 
@@ -10634,7 +10692,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_with2 :
 
@@ -10844,7 +10902,7 @@ N_tfarg :
         <flag name="Cudarizable" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_genarray :
 
@@ -11006,7 +11064,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_modarray :
 
@@ -11117,7 +11175,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_spfold :
 
@@ -11214,7 +11272,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_fold :
 
@@ -11322,7 +11380,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_break :
 
@@ -11356,7 +11414,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_propagate:
 
@@ -11390,7 +11448,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_wlseg :
 
@@ -11572,7 +11630,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_wlblock :
 
@@ -11676,7 +11734,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_wlublock :
 
@@ -11774,7 +11832,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_wlstride :
 
@@ -11892,7 +11950,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_wlgrid:
 
@@ -12008,7 +12066,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_dataflownode :
 
@@ -12141,7 +12199,7 @@ N_tfarg :
         <flag name="IsUsed" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_dataflowgraph :
 
@@ -12202,7 +12260,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_import :
 
@@ -12248,7 +12306,7 @@ N_tfarg :
         <flag name="All" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_export :
 
@@ -12282,7 +12340,7 @@ N_tfarg :
         <flag name="All" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_use :
 
@@ -12328,7 +12386,7 @@ N_tfarg :
         <flag name="All" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_provide :
 
@@ -12362,7 +12420,7 @@ N_tfarg :
         <flag name="All" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_symbol :
 
@@ -12401,7 +12459,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_set :
 
@@ -12437,7 +12495,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_constraint :
 
@@ -12484,7 +12542,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_ret :
 
@@ -12500,13 +12558,27 @@ N_tfarg :
               </phases>
             </target>
           </targets>
+	</son>
+        <son name="TypePattern" default="NULL">
+          <description>
+            A type specification as found by the scanner/parser; it contains
+            type variables and has not yet been checked for consistency.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="TypePattern" />
+              <phases>
+                <range from="scp_prs" to="pre" />
+              </phases>
+            </target>
+          </targets>
         </son>
       </sons>
       <attributes>
         <attribute name="Type" inconstructor="yes">
           <type name="NewType">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
                   <all />
@@ -12548,7 +12620,7 @@ N_tfarg :
         <flag name="IsUnique" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_ids :
 
@@ -12587,7 +12659,7 @@ N_tfarg :
         <check name="CHKattribsIds" />
       </checks>
     </node>
-    <!--
+<!--
 
   N_nums :
 
@@ -12624,7 +12696,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_globobj :
 
@@ -12650,16 +12722,37 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_spid :
 
 -->
     <node name="SPId">
-      <sons></sons>
+      <sons>
+        <son name="TDim" default="NULL">
+          <description>
+            holds dimension specifier for named type-shapes "d_num:v_id" and
+            "d_id:v_id"; the actual "v_id" is stored in the attribute Name
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Num" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+            <target mandatory="no">
+              <node name="SPId" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
       <attributes>
         <attribute name="Ns" inconstructor="yes">
-          <type name="Namespace">
+	        <type name="Namespace">
             <targets>
               <target mandatory="no">
                 <any />
@@ -12667,15 +12760,9 @@ N_tfarg :
                   <range from="initial" to="ptc_goi" />
                 </phases>
               </target>
-              <!--  <target mandatory="yes">
-                      <any />
-                      <phases>
-                        <phase name="ptc_gon"/>
-                      </phases>
-                    </target> -->
             </targets>
           </type>
-        </attribute>
+	      </attribute>
         <attribute name="Name" inconstructor="yes">
           <type name="String">
             <targets>
@@ -12690,10 +12777,10 @@ N_tfarg :
         </attribute>
       </attributes>
       <flags>
-        <flag name="DummyFlag" default="FALSE" />
+        <flag name="DummyFlag" default="FALSE"/>
       </flags>
     </node>
-    <!--
+<!--
 
   N_spids :
 
@@ -12729,7 +12816,113 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
+
+  N_typepattern :
+
+-->
+    <node name="TypePattern">
+      <sons>
+        <son name="Shape">
+          <description>
+            An N_exprs chain containing the features of this type pattern.
+            These features can be: N_dot (e.g. '.'), N_num (e.g. '3') or
+            N_spid (e.g. 'd', '3:shp', 'd:shp').
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Vdim" default="NULL">
+          <description>
+            An N_spids chain containing the names of all variables in this type
+            pattern that have a polymorphic dimension. Namely, these are the
+            identifiers 'd' in 'd:shp' features. Note that '+' and '*' features
+            are not included in this set.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="SPIds" />
+              <phases>
+                <range from="pre" to="pre" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+        <attribute name="ElementType" inconstructor="yes">
+          <type name="NewType">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Fshp" inconstructor="no">
+          <description>
+            The number of features in this type pattern that have a fixed shape.
+            These are only numbers (e.g. '3') which define a single dimension
+            of that length.
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="pre" to="pre" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Fdim" inconstructor="no">
+          <description>
+            The number of fixed dimensions in this type pattern. Dots (e.g. '.')
+            and numbers (e.g. '3') increase the fixed dimensionality by one, as
+            they both describe a single dimension. Shape-components of static
+            size (e.g. '3:shp') increase the fixed dimensionality by the given
+            number.
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="pre" to="pre" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags>
+        <flag name="IsTypePattern" default="FALSE">
+          <description>
+            Whether this pattern is actually a type pattern, or jsut describes
+            a pre-existing type. For example, we do not want to consider
+            int[5,3,7] as a type pattern, as this is a pre-existing type and
+            thus there is no need for us to generate checks for this constraint.
+          </description>
+        </flag>
+        <flag name="HasVdim" default="FALSE">
+          <description>
+            Whether this type pattern has any features of unknown
+            dimensionality. Namely, these are '+', '*', and 'd:shp'.
+          </description>
+        </flag>
+      </flags>
+    </node>
+<!--
 
   N_spap :
 
@@ -12782,7 +12975,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_error :
 
@@ -12830,8 +13023,8 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
-  
+<!--
+
   N_funbundle :
 
 -->
@@ -12920,7 +13113,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_with3 :
 
@@ -13023,7 +13216,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_range :
 
@@ -13199,7 +13392,7 @@ N_tfarg :
         </flag>
       </flags>
     </node>
-    <!--
+<!--
 
   N_idag :
 
@@ -13248,7 +13441,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_idagvfam :
 
@@ -13316,7 +13509,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_idagefam :
 
@@ -13374,7 +13567,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_idagvertices :
 
@@ -13413,7 +13606,7 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
+<!--
 
   N_idagefams :
 
@@ -13452,11 +13645,11 @@ N_tfarg :
         <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
-    <!--
-         
-         N_withs :
-         
-         -->
+<!--
+
+  N_withs :
+
+-->
     <node name="Withs">
       <description>
         a simple chain of with-loops, used by distributed backend to support

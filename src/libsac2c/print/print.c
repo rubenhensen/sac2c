@@ -1208,6 +1208,27 @@ PRTspids (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
+ * @fn node *PRTtypepattern (node *arg_node, info *arg_info)
+ *
+ * @brief prints an N_typepattern node.
+ *
+ ******************************************************************************/
+node *
+PRTtypepattern (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    NODE_ERROR (arg_node) = TRAVopt (NODE_ERROR (arg_node), arg_info);
+
+    fprintf (global.outfile, "%s[", TYScalarType2String (TYPEPATTERN_ELEMENTTYPE (arg_node)));
+    TYPEPATTERN_SHAPE (arg_node) = TRAVopt (TYPEPATTERN_SHAPE (arg_node), arg_info);
+    fprintf (global.outfile, "]");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * Function:
  *   node *PRTmodule( node *arg_node, info *arg_info)
  *
@@ -1637,11 +1658,19 @@ PRTstructelem (node *arg_node, info *arg_info)
 
     INDENT;
 
-    fprintf (global.outfile, "%s %s;\n",
-             TYtype2String (STRUCTELEM_TYPE (arg_node), FALSE, 0),
-             STRUCTELEM_NAME (arg_node));
+    if (STRUCTELEM_TYPE (arg_node) != NULL) {
+        fprintf (global.outfile, "%s",
+                 TYtype2String (STRUCTELEM_TYPE (arg_node), FALSE, 0));
+    } else {
+        DBUG_ASSERT (STRUCTELEM_TYPEPATTERN (arg_node) != NULL,
+                     "structelem without type (pattern) found!");
+        STRUCTELEM_TYPEPATTERN (arg_node) =
+            TRAVdo (STRUCTELEM_TYPEPATTERN (arg_node), arg_info);
+    }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    fprintf (global.outfile, " %s;\n", STRUCTELEM_NAME (arg_node));
+
+    STRUCTELEM_NEXT (arg_node) = TRAVopt (STRUCTELEM_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1660,7 +1689,7 @@ node *
 PRTtypedef (node *arg_node, info *arg_info)
 {
     char *type_str;
-    bool ishidden;
+    bool ishidden = FALSE;
 
     DBUG_ENTER ();
 
@@ -1671,10 +1700,11 @@ PRTtypedef (node *arg_node, info *arg_info)
     }
 
     if (TYPEDEF_ICM (arg_node) == NULL) {
-        ishidden = TUisHidden (TYPEDEF_NTYPE (arg_node));
-
-        if (ishidden) {
-            fprintf (global.outfile, "external ");
+        if (TYPEDEF_NTYPE (arg_node) != NULL) {
+            ishidden = TUisHidden (TYPEDEF_NTYPE (arg_node));
+            if (ishidden) {
+                fprintf (global.outfile, "external ");
+            }
         }
 
         if (TYPEDEF_ISALIAS (arg_node)) {
@@ -1687,10 +1717,18 @@ PRTtypedef (node *arg_node, info *arg_info)
             fprintf (global.outfile, "typedef ");
         }
 
-        if (!ishidden) {
-            type_str = TYtype2String (TYPEDEF_NTYPE (arg_node), 0, TRUE);
-            fprintf (global.outfile, "%s ", type_str);
-            type_str = MEMfree (type_str);
+        if (TYPEDEF_NTYPE (arg_node) != NULL) {
+            if (!ishidden) {
+                type_str = TYtype2String (TYPEDEF_NTYPE (arg_node), 0, TRUE);
+                fprintf (global.outfile, "%s ", type_str);
+                type_str = MEMfree (type_str);
+            }
+        } else {
+            DBUG_ASSERT (TYPEDEF_TYPEPATTERN (arg_node) != NULL,
+                         "typedef without type (pattern) found");
+            TYPEDEF_TYPEPATTERN (arg_node) =
+                TRAVdo (TYPEDEF_TYPEPATTERN (arg_node), arg_info);
+            fprintf (global.outfile, " ");
         }
 
         if (TYPEDEF_NS (arg_node) != NULL) {
@@ -1765,9 +1803,17 @@ PRTobjdef (node *arg_node, info *arg_info)
             fprintf (global.outfile, "alias ");
         }
 
-        type_str = TYtype2String (OBJDEF_TYPE (arg_node), FALSE, 0);
-        fprintf (global.outfile, "%s ", type_str);
-        type_str = MEMfree (type_str);
+        if (OBJDEF_TYPE (arg_node) != NULL) {
+            type_str = TYtype2String (OBJDEF_TYPE (arg_node), FALSE, 0);
+            fprintf (global.outfile, "%s ", type_str);
+            type_str = MEMfree (type_str);
+        } else {
+            DBUG_ASSERT (OBJDEF_TYPEPATTERN (arg_node) != NULL,
+                         "objdef without type (pattern) found");
+            OBJDEF_TYPEPATTERN (arg_node) =
+                TRAVdo (OBJDEF_TYPEPATTERN (arg_node), arg_info);
+            fprintf (global.outfile, " ");
+        }
 
         if (OBJDEF_NS (arg_node) != NULL) {
             fprintf (global.outfile, "%s::", NSgetName (OBJDEF_NS (arg_node)));
@@ -1826,21 +1872,27 @@ PRTret (node *arg_node, info *arg_info)
         type_str = TYtype2String (RET_TYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s", type_str);
         type_str = MEMfree (type_str);
+    } else {
+        DBUG_ASSERT (RET_TYPEPATTERN (arg_node) != NULL,
+                     "N_ret without type (pattern) found");
+        RET_TYPEPATTERN (arg_node) =
+            TRAVdo (RET_TYPEPATTERN (arg_node), arg_info);
 
-        if (RET_ISUNIQUE (arg_node)) {
-            fprintf (global.outfile, " *");
-        }
+    }
 
-        DBUG_EXECUTE_TAG ("PRINT_LINKSIGN",
-            if (RET_HASLINKSIGNINFO (arg_node)) {
-                fprintf (global.outfile, "/* linksign %d */",
-                                         RET_LINKSIGN (arg_node));
-            });
+    if (RET_ISUNIQUE (arg_node)) {
+        fprintf (global.outfile, " *");
+    }
 
-        if (RET_NEXT (arg_node) != NULL) {
-            fprintf (global.outfile, ", ");
-            RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
-        }
+    DBUG_EXECUTE_TAG ("PRINT_LINKSIGN",
+        if (RET_HASLINKSIGNINFO (arg_node)) {
+            fprintf (global.outfile, "/* linksign %d */",
+                                     RET_LINKSIGN (arg_node));
+        });
+
+    if (RET_NEXT (arg_node) != NULL) {
+        fprintf (global.outfile, ", ");
+        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1973,11 +2025,6 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
         fprintf (global.outfile, ")");
 
-        if (FUNDEF_ASSERTS (arg_node) != NULL) {
-            fprintf (global.outfile, "\nAssert");
-            TRAVdo (FUNDEF_ASSERTS (arg_node), arg_info); /* print args of function */
-        }
-
         if (print_c) {
             fprintf (global.outfile, "\n");
             INDENT;
@@ -2006,7 +2053,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
                 fprintf (global.outfile, "%s\n",
                          t2s_fun (FUNDEF_WRAPPERTYPE (arg_node), TRUE,
-                                  global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8)); 
+                                  global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8));
                 fprintf (global.outfile, " *  dispatching to: ");
                 if (TYisProd (FUNDEF_WRAPPERTYPE (arg_node))) {
                     PrintFunName (FUNDEF_IMPL (arg_node), arg_info);
@@ -2467,12 +2514,16 @@ PRTarg (node *arg_node, info *arg_info)
 
     if (ARG_NTYPE (arg_node) != NULL) {
         type_str = TYtype2String (ARG_NTYPE (arg_node), FALSE, 0);
+        fprintf (global.outfile, " %s ", type_str);
+        type_str = MEMfree (type_str);
     } else {
-        DBUG_ASSERT (FALSE, "encountered old types on args");
-        type_str = NULL;
+        DBUG_ASSERT (AVIS_TYPEPATTERN (ARG_AVIS (arg_node)) != NULL,
+                     "arg without type (pattern) found!");
+        fprintf (global.outfile, " ");
+        AVIS_TYPEPATTERN (ARG_AVIS (arg_node)) =
+            TRAVdo (AVIS_TYPEPATTERN (ARG_AVIS (arg_node)), arg_info);
+        fprintf (global.outfile, " ");
     }
-    fprintf (global.outfile, " %s ", type_str);
-    type_str = MEMfree (type_str);
 
     if (ARG_ISREFERENCE (arg_node)) {
         if (ARG_ISREADONLY (arg_node)) {
@@ -2557,28 +2608,6 @@ PRTarg (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PRTudcs( node *arg_node, info *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-PRTudcs (node *arg_node, info *arg_info)
-{
-    TRAVdo (UDCS_UDC (arg_node), arg_info);
-
-    if (NULL != UDCS_NEXT (arg_node)) {
-        fprintf (global.outfile, ", ");
-        TRAVdo (UDCS_NEXT (arg_node), arg_info);
-    }
-    return (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *PRTvardec( node *arg_node, info *arg_info)
  *
  * Description:
@@ -2610,9 +2639,17 @@ PRTvardec (node *arg_node, info *arg_info)
             fprintf (global.outfile, "index ");
         }
 
-        type_str = TYtype2String (VARDEC_NTYPE (arg_node), FALSE, 0);
-        fprintf (global.outfile, "%s ", type_str);
-        type_str = MEMfree (type_str);
+        if (VARDEC_NTYPE (arg_node) != NULL) {
+            type_str = TYtype2String (VARDEC_NTYPE (arg_node), FALSE, 0);
+            fprintf (global.outfile, "%s ", type_str);
+            type_str = MEMfree (type_str);
+        } else {
+            DBUG_ASSERT (AVIS_TYPEPATTERN (VARDEC_AVIS (arg_node)) != NULL,
+                         "vardec without type (pattern) found");
+            AVIS_TYPEPATTERN (VARDEC_AVIS (arg_node)) =
+                TRAVdo (AVIS_TYPEPATTERN (VARDEC_AVIS (arg_node)), arg_info);
+            fprintf (global.outfile, " ");
+        }
 
         /* Print SAA information */
         fprintf (global.outfile, "%s", VARDEC_NAME (arg_node));
@@ -3088,9 +3125,18 @@ PRTcast (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    type_str = TYtype2String (CAST_NTYPE (arg_node), FALSE, 0);
-    fprintf (global.outfile, "(%s) ", type_str);
-    type_str = MEMfree (type_str);
+    if (CAST_NTYPE (arg_node) != NULL) {
+        type_str = TYtype2String (CAST_NTYPE (arg_node), FALSE, 0);
+        fprintf (global.outfile, "(%s) ", type_str);
+        type_str = MEMfree (type_str);
+    } else {
+        DBUG_ASSERT (CAST_TYPEPATTERN (arg_node) != NULL,
+                     "cast without type (pattern) found");
+        fprintf (global.outfile, "(");
+        CAST_TYPEPATTERN (arg_node) =
+            TRAVdo (CAST_TYPEPATTERN (arg_node), arg_info);
+        fprintf (global.outfile, ") ");
+    }
 
     TRAVdo (CAST_EXPR (arg_node), arg_info);
 
@@ -3411,9 +3457,18 @@ PRTarray (node *arg_node, info *arg_info)
         SHfreeShape (INFO_SHAPE_COUNTER (arg_info));
         INFO_ISARRAY (arg_info) = FALSE;
     } else {
-        type_str = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0);
-        fprintf (global.outfile, "[:%s]", type_str);
-        type_str = MEMfree (type_str);
+        if (ARRAY_ELEMTYPE (arg_node) != NULL) {
+            type_str = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0);
+            fprintf (global.outfile, "[:%s]", type_str);
+            type_str = MEMfree (type_str);
+        } else {
+            DBUG_ASSERT (ARRAY_TYPEPATTERN (arg_node) != NULL,
+                         "array without type (pattern) found!");
+            fprintf (global.outfile, "[:");
+            ARRAY_TYPEPATTERN (arg_node) =
+                TRAVdo (ARRAY_TYPEPATTERN (arg_node), arg_info);
+            fprintf (global.outfile, "]");
+        }
     }
 
     INFO_DIM (arg_info) = old_print_dim;
@@ -3565,13 +3620,17 @@ PRTspid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    NODE_ERROR (arg_node) = TRAVopt (NODE_ERROR (arg_node), arg_info);
+
+    if (SPID_TDIM (arg_node) != NULL) {
+        SPID_TDIM (arg_node) = TRAVdo (SPID_TDIM (arg_node), arg_info);
+        fprintf (global.outfile, ":");
     }
 
     if (SPID_NS (arg_node) != NULL) {
         fprintf (global.outfile, "%s::", NSgetName (SPID_NS (arg_node)));
     }
+
     fprintf (global.outfile, "%s", SPID_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -6664,9 +6723,22 @@ PRTset (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%s\n", CTIitemName (SET_MEMBER (arg_node)));
+    if (SET_MEMBER (arg_node) == NULL) {
+        fprintf (global.outfile, "---\n");
+    } else if (NODE_TYPE (SET_MEMBER (arg_node)) == N_set) {
+        fprintf (global.outfile, "(");
+        SET_MEMBER (arg_node) = TRAVdo (SET_MEMBER (arg_node), arg_info);
+        fprintf (global.outfile, ")\n");
+    } else if (NODE_TYPE (SET_MEMBER (arg_node)) == N_fundef
+            || NODE_TYPE (SET_MEMBER (arg_node)) == N_typedef
+            || NODE_TYPE (SET_MEMBER (arg_node)) == N_objdef) {
+        fprintf (global.outfile, "%s\n", CTIitemName (SET_MEMBER (arg_node)));
+    } else {
+        SET_MEMBER (arg_node) = TRAVdo (SET_MEMBER (arg_node), arg_info);
+    }
 
     if (SET_NEXT (arg_node) != NULL) {
+        fprintf (global.outfile, " ");
         SET_NEXT (arg_node) = TRAVdo (SET_NEXT (arg_node), arg_info);
     }
 

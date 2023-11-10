@@ -423,6 +423,34 @@ COsel (constant *idx, constant *a, constant *tmp1)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * @fn constant *COall( constant *a)
+ *
+ * @brief all_V returns true if all elements in the given array are true, and
+ * returns false if any one of the elements in the given array are false. We
+ * consider any non-zero argument to be truthy.
+ *
+ ******************************************************************************/
+constant *
+COall (constant *a, constant *tmp1, constant *tmp2)
+{
+    constant *res;
+    bool all = TRUE;
+    int i, *elems;
+
+    DBUG_ENTER ();
+
+    elems = (int *)CONSTANT_ELEMS (a);
+    for (i = 0; all && i < CONSTANT_VLEN (a); i++) {
+        all = elems[i] != 0;
+    }
+
+    res = COmakeConstantFromInt (all ? 1 : 0);
+
+    DBUG_RETURN (res);
+}
+
 constant *
 COsimd_sel (constant *simd_length, constant *idx, constant *a)
 {

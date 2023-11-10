@@ -633,6 +633,7 @@ extern node *TCgetNthExprs (size_t n, node *exprs);
 extern node *TCgetNthExprsOrNull (size_t, node *exprs);
 extern node *TCputNthExprs (size_t n, node *exprs, node *val);
 extern node *TCgetNthExprsExpr (size_t n, node *exprs);
+extern node *TCgetLastExprsExpr (node *exprs);
 extern node *TCgetNthExprsExprOrNull (size_t n, node *exprs);
 extern node *TCtakeDropExprs (int takecount, size_t dropcount, node *exprs);
 
@@ -1640,6 +1641,8 @@ extern node *TCappendError (node *chain, node *item);
  ***/
 
 extern int TCcountSpids (node *spids);
+extern bool TCspidsContains (node *spids, char *name);
+extern node *TCappendSpids (node *spids1, node *spids2);
 
 /*--------------------------------------------------------------------------*/
 

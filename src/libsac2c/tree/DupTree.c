@@ -946,9 +946,30 @@ DUPspid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    new_node
-      = TBmakeSpid (NSdupNamespace (SPID_NS (arg_node)), STRcpy (SPID_NAME (arg_node)));
+    new_node = TBmakeSpid (NSdupNamespace (SPID_NS (arg_node)),
+                           STRcpy (SPID_NAME (arg_node)));
 
+    SPID_TDIM (new_node) = DUPTRAV (SPID_TDIM (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    SPID_FLAGSTRUCTURE (new_node) = SPID_FLAGSTRUCTURE (arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPtypepattern (node *arg_node, info *arg_info)
+{
+    ntype *type;
+    node *new_node;
+
+    DBUG_ENTER ();
+
+    type = TYcopyType (TYPEPATTERN_ELEMENTTYPE (arg_node));
+    new_node = TBmakeTypepattern (type, DUPTRAV (TYPEPATTERN_SHAPE (arg_node)));
     CopyCommonNodeData (new_node, arg_node);
 
     SPID_FLAGSTRUCTURE (new_node) = SPID_FLAGSTRUCTURE (arg_node);
@@ -1128,6 +1149,7 @@ DUPfundef (node *arg_node, info *arg_info)
     FUNDEF_FLAGSTRUCTURE (new_node) = FUNDEF_FLAGSTRUCTURE (arg_node);
     FUNDEF_LIVEVARS (new_node) = DUPTRAV (FUNDEF_LIVEVARS (arg_node));
     FUNDEF_FPFRAMENAME (new_node) = STRcpy (FUNDEF_FPFRAMENAME (arg_node));
+    FUNDEF_ISGUARDFUN (new_node) = FUNDEF_ISGUARDFUN (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1211,20 +1233,6 @@ DUPfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = old_fundef;
 
     DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-// Fangyong add: user-defined constraints, not finish yet.
-node *
-DUPudcs (node *arg_node, info *arg_info)
-{
-    // node *new_node;
-
-    DBUG_ENTER ();
-
-    //  new_node = TBmakeUdcs(DUPTRAV(UDCS_UDC( arg_node)),NULL);
-
-    DBUG_RETURN (arg_node);
 }
 
 node *

@@ -1,0 +1,52 @@
+// Test whether we can implement matrix multiplication using type patterns.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check tc
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 224
+
+inline int + (int a, int b) { return _add_SxS_ (a, b); }
+inline int * (int a, int b) { return _mul_SxS_ (a, b); }
+inline int[n] * (int a, int[n] b) { return _mul_SxV_ (a, b); }
+inline int[n] * (int[n] a, int[n] b) { return _mul_VxV_ (a, b); }
+inline int[.] ++ (int[.] a, int[.] b) { return _cat_VxV_ (a, b); }
+
+inline
+int[d:shp] sel (int[vlen] idx, int[vlen:_,d:shp] array)
+{
+    return with {
+        (0*shp <= iv < shp) : _sel_VxA_ (idx ++ iv, array);
+    } : genarray (shp, 0);
+}
+
+int sum (int[n] a)
+{
+    return with {
+        ([0] <= iv < [n]) : a[iv];
+    } : fold (+, 0);
+}
+
+int[u,w] matmul (int[u,v] a, int[v,w] b)
+{
+    bT = { [i,j] -> b[j,i]
+         | [i,j] < [w,v] };
+    return { [i,j] -> sum (a[[i]] * bT[[j]])
+           | [i,j] < [u,w] };
+}
+
+int[u,v] createMatrix (int u, int v)
+{
+    return with {
+        ([0,0] <= [i,j] < [u,v]) : i + (j * u);
+    } : genarray ([u,v], 0);
+}
+
+int main()
+{
+    a = createMatrix (3, 4);
+    b = createMatrix (4, 5);
+    c = matmul (a, b);
+    return c[[1,2]];
+}

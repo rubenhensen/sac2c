@@ -58,9 +58,6 @@ extern node *DUPgetCopiedSpecialFundefsHook (void);
  * Functions for internal use during AST traversal only!
  */
 
-extern node *DUPudcs (node *arg_node,
-                      info *arg_info); // Fangyong add: user-defined constraints
-
 extern node *DUPnum (node *arg_node, info *arg_info);
 extern node *DUPnumbyte (node *arg_node, info *arg_info);
 extern node *DUPnumshort (node *arg_node, info *arg_info);
@@ -84,6 +81,7 @@ extern node *DUPdot (node *arg_node, info *arg_info);
 extern node *DUPsetwl (node *arg_node, info *arg_info);
 extern node *DUPid (node *arg_node, info *arg_info);
 extern node *DUPspid (node *arg_node, info *arg_info);
+extern node *DUPtypepattern (node *arg_node, info *arg_info);
 extern node *DUPcast (node *arg_node, info *arg_info);
 extern node *DUPreturn (node *arg_node, info *arg_info);
 extern node *DUPblock (node *arg_node, info *arg_info);

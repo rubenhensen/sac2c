@@ -1,15 +1,15 @@
-// test fold/multi-fold accumulator is correct defined by EA
-// *and* correctly propograted by MMV.
-
+// Test fold/multi-fold accumulator is correct defined by EA *and* correctly
+// propograted by MMV.
+//
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -v0 -noprelude
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
-
+//
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>$(CALL_SAC2C) -bewl:accu $< 2>&1 | $(GREP_COMMAND_OUTPUT) "_accu_( iv, _flat_97, _flat_98)" 1
-// SAC_TEST|<tab>$(CALL_SAC2C) -bpc:mmv $< 2>&1 | $(GREP_COMMAND_OUTPUT) "_accu_( iv, _emal_272__flat_97, _emal_273__flat_98)" 1
+// SAC_TEST|<tab>$(CALL_SAC2C) -bewl:accu $< 2>&1 | $(GREP_COMMAND_OUTPUT) "_accu_( iv, _flat_[0-9]*, _flat_[0-9]*)" 1
+// SAC_TEST|<tab>$(CALL_SAC2C) -bpc:mmv $< 2>&1   | $(GREP_COMMAND_OUTPUT) "_accu_( iv, _emal_[0-9]*__flat_[0-9]*, _emal_[0-9]*__flat_[0-9]*)" 1
 
-#include "mini-stdlib.sac"
+#include "../mini-stdlib.sac"
 
 int main ()
 {

@@ -79,6 +79,20 @@ ReintroduceReferenceArgs (node *args)
     DBUG_RETURN (args);
 }
 
+static void
+SubstituteReferenceArg (node *lhs, node *arg)
+{
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (arg) == N_arg) {
+        if (ARG_ISREFERENCE (arg) || ARG_WASREFERENCE (arg)) {
+            AVIS_SUBST (IDS_AVIS (lhs)) = ARG_AVIS (arg);
+        }
+    }
+
+    DBUG_RETURN ();
+}
+
 static node *
 RemoveArtificialRets (node *rets)
 {
@@ -265,13 +279,9 @@ RERAlet (node *arg_node, info *arg_info)
      * check whether rhs is a reference arg and in that case substitute
      * the lhs by the rhs.
      */
-    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_id)
-        && (NODE_TYPE (AVIS_DECL (ID_AVIS (LET_EXPR (arg_node)))) == N_arg)) {
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_id) {
         arg = AVIS_DECL (ID_AVIS (LET_EXPR (arg_node)));
-
-        if (ARG_WASREFERENCE (arg) || ARG_ISREFERENCE (arg)) {
-            AVIS_SUBST (IDS_AVIS (LET_IDS (arg_node))) = ARG_AVIS (arg);
-        }
+        SubstituteReferenceArg (LET_IDS (arg_node), arg);
     }
 
     /*
@@ -399,8 +409,7 @@ RERAfundef (node *arg_node, info *arg_info)
 node *
 RERAprf (node *arg_node, info *arg_info)
 {
-    node *args;
-    node *lhs;
+    node *lhs, *args, *arg;
 
     DBUG_ENTER ();
 
@@ -430,21 +439,16 @@ RERAprf (node *arg_node, info *arg_info)
          * check whether rhs is a prop_obj() and in that case substitute
          * lhs of any reference args by rhs.
          */
-        args = PRF_ARGS (arg_node);
         lhs = INFO_LHS (arg_info);
+        args = PRF_ARGS (arg_node);
 
         if (PRF_PRF (arg_node) == F_prop_obj_in) {
             args = EXPRS_NEXT (args); /* skip iv arg */
         }
 
         while (args != NULL) {
-            if (NODE_TYPE (AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)))) == N_arg) {
-                node *arg = AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)));
-
-                if (ARG_WASREFERENCE (arg) || ARG_ISREFERENCE (arg)) {
-                    AVIS_SUBST (IDS_AVIS (lhs)) = ARG_AVIS (arg);
-                }
-            }
+            arg = AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)));
+            SubstituteReferenceArg (lhs, arg);
 
             /* iterate */
             args = EXPRS_NEXT (args);
@@ -452,20 +456,40 @@ RERAprf (node *arg_node, info *arg_info)
         }
         break;
 
+    case F_guard:
+        /*
+         * x1', ..., xn' = guard (x1, ..., xn, p)
+         * - guard is the identity on the first n arguments
+         */
+        lhs = INFO_LHS (arg_info);
+        args = PRF_ARGS (arg_node);
+
+        DBUG_ASSERT (TCcountIds (lhs) == TCcountExprs (args) - 1,
+                     "guard function should return n-1 values");
+
+        while (lhs != NULL) {
+            if (NODE_TYPE (EXPRS_EXPR (args)) == N_id) {
+                arg = AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)));
+                SubstituteReferenceArg (lhs, arg);
+            }
+
+            lhs = IDS_NEXT (lhs);
+            args = EXPRS_NEXT (args);
+        }
+        break;
+
     case F_afterguard:
         /*
-         * after guard is the identity on the first argument
+         * x' = afterguard (x, p1, ..., pn)
+         * - after guard is the identity on the first argument
          */
-        if (NODE_TYPE (AVIS_DECL (ID_AVIS (PRF_ARG1 (arg_node)))) == N_arg) {
-            node *arg = AVIS_DECL (ID_AVIS (PRF_ARG1 (arg_node)));
+        lhs = INFO_LHS (arg_info);
+        arg = AVIS_DECL (ID_AVIS (PRF_ARG1 (arg_node)));
 
-            if (ARG_WASREFERENCE (arg) || ARG_ISREFERENCE (arg)) {
-                DBUG_ASSERT (IDS_NEXT (INFO_LHS (arg_info)) == NULL,
-                             "afterguard with multiple LHS found");
+        DBUG_ASSERT (IDS_NEXT (lhs) == NULL,
+                     "afterguard should return only 1 value");
 
-                AVIS_SUBST (IDS_AVIS (INFO_LHS (arg_info))) = ARG_AVIS (arg);
-            }
-        }
+        SubstituteReferenceArg (lhs, arg);
         break;
 
     default:

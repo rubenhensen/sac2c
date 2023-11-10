@@ -1,0 +1,26 @@
+// Test whether the compiler is able to parse type patterns with conditions.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noprelude
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 0
+
+inline bool > (int a, int b) { return _gt_SxS_ (a, b); }
+
+bool bar (int[m,n] a, int x)
+{
+    return _add_SxS_ (m, n) > x;
+}
+
+int[m,q,q] foo (int[m,n,3] a, int b)
+    | m > n, bar(a, m), m > q, b > 0, n > 0, _eq_SxS_ (m, q), bar(q, m)
+{
+    return a;
+}
+
+int main ()
+{
+    return 0;
+}

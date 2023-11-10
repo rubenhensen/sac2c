@@ -1,66 +1,41 @@
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @defgroup csgd Check and Simplify Generic Definitions
+ * This module checks that the variable bindings in polymorphic types within a
+ * function do comply to the following restrictions:
  *
- * This module checks that the variable bindings in polymorphic types
- * within a function do comply to the following restrictions:
+ * - Only argument positions bind new identifiers. Both, the return types and
+ *   the function body may only contain previously bound identifiers.
  *
- * - Only argument positions bind new identifiers. Both, the return
- *   types and the function body may only contain previously bound
- *   identifiers.
+ * - Identifiers used for referencing the shape of a polymorphic user type may
+ *   not be used in polymorphic types
  *
- * - Identifiers used for referencing the shape of a polymorphic user
- *   type may not be used in polymorphic types
- *
- * - Identifiers used for referencing the shape of a polymorphic user
- *   type may not be shared between different types
+ * - Identifiers used for referencing the shape of a polymorphic user type may
+ *   not be shared between different types
  *
  * - Implicit denesting is allowed only in argument position
  *
  * - Implicit renesting is allowed only in return position
  *
  * Furthermore, the de- and renesting operations are made explicit by
- * introducing appropriate casts and the shape variabled are bound
- * to a call of F_nested_shape.
+ * introducing appropriate casts and the shape variabled are bound to a call of
+ * F_nested_shape.
  *
- * @ingroup csgd
- *
- * @{
- *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @file check_and_simplify_generic_definitions.c
- *
- * Prefix: CSGD
- *
- *****************************************************************************/
-#include "check_and_simplify_generic_definitions.h"
-
-/*
- * Other includes go here
- */
+ ******************************************************************************/
+#include "ctinfo.h"
+#include "memory.h"
+#include "new_types.h"
+#include "shape.h"
+#include "str.h"
+#include "traverse.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "type_utils.h"
 
 #define DBUG_PREFIX "CSGD"
 #include "debug.h"
 
-#include "traverse.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "new_types.h"
-#include "type_utils.h"
-#include "shape.h"
-#include "str.h"
-#include "ctinfo.h"
-#include "memory.h"
+#include "check_and_simplify_generic_definitions.h"
 
-/** <!--********************************************************************-->
- *
- * @name INFO structure
- * @{
- *
- *****************************************************************************/
 enum csgd_mode_t {
     CSGD_normal,
     CSGD_checkarg,
@@ -88,9 +63,6 @@ struct INFO {
     bool shapedefined;
 };
 
-/**
- * A template entry in the template info structure
- */
 #define INFO_ARGS(n) ((n)->args)
 #define INFO_RETS(n) ((n)->rets)
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -138,47 +110,10 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
-/** <!--********************************************************************-->
- * @}  <!-- INFO structure -->
- *****************************************************************************/
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @name Entry functions
- * @{
- *
- *****************************************************************************/
-/** <!--********************************************************************-->
- *
- * @fn node *CSGDdoCheckAndSimplifyGenericDefinitions( node *syntax_tree)
- *
- *****************************************************************************/
-node *
-CSGDdoCheckAndSimplifyGenericDefinitions (node *syntax_tree)
-{
-    DBUG_ENTER ();
-
-    TRAVpush (TR_csgd);
-    syntax_tree = TRAVdo (syntax_tree, NULL);
-    TRAVpop ();
-
-    DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- * @}  <!-- Entry functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @name Static helper funcions
- * @{
- *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @fn bool PolymorphicTypeComplies(ntype *a, ntype *b)
+ * @fn bool PolymorphicTypeComplies (ntype *a, ntype *b)
  *
  * @brief Checks whether the type a complies with type b.
  *
@@ -186,6 +121,7 @@ CSGDdoCheckAndSimplifyGenericDefinitions (node *syntax_tree)
  * @param b a second type
  *
  * @return true if both types comply
+ *
  ******************************************************************************/
 static bool
 PolymorphicTypeComplies (ntype *a, ntype *b)
@@ -226,36 +162,38 @@ PolymorphicTypeComplies (ntype *a, ntype *b)
              * and b_outer and b_inner is not allowed to occur in a_shape
              */
             result = !STReq (TYgetPolyUserOuter (a), TYgetPolyUserShape (b))
-                     && !STReq (TYgetPolyUserInner (a), TYgetPolyUserShape (b))
-                     && !STReq (TYgetPolyUserShape (a), TYgetPolyUserOuter (b))
-                     && !STReq (TYgetPolyUserShape (a), TYgetPolyUserInner (b));
+                  && !STReq (TYgetPolyUserInner (a), TYgetPolyUserShape (b))
+                  && !STReq (TYgetPolyUserShape (a), TYgetPolyUserOuter (b))
+                  && !STReq (TYgetPolyUserShape (a), TYgetPolyUserInner (b));
 
             /*
              * if they both use the same shape variable, then the outer and
              * inner types need to be the same
              */
             result = result
-                     && (!STReq (TYgetPolyUserShape (a), TYgetPolyUserShape (b))
-                         || (STReq (TYgetPolyUserOuter (a), TYgetPolyUserOuter (b))
-                             && STReq (TYgetPolyUserInner (a), TYgetPolyUserInner (b))));
+                  && (!STReq (TYgetPolyUserShape (a), TYgetPolyUserShape (b))
+                      || (STReq (TYgetPolyUserOuter (a), TYgetPolyUserOuter (b))
+                          && STReq (TYgetPolyUserInner (a), TYgetPolyUserInner (b))));
         }
     }
 
     DBUG_RETURN (result);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn info *AnnotateDefinedVars( ntype *type, ntype *def, info *arg_info)
+/******************************************************************************
  *
- * @brief Checks whether the type variables in the polymorphic type type
- *        are bound in the type def. If so, the corresponding flags in
- *        the info structure are set to TRUE.
+ * @fn info *AnnotateDefinedVars (ntype *type, ntype *def, info *arg_info)
  *
- * @param type     type to check
- * @param def      binding type
+ * @brief Checks whether the type variables in the polymorphic type type are
+ *        bound in the type def. If so, the corresponding flags in the info
+ *        structure are set to TRUE.
+ *
+ * @param type type to check
+ * @param def binding type
  * @param arg_info info structure
  *
- * @return
+ * @return info structure
+ *
  ******************************************************************************/
 static info *
 AnnotateDefinedVars (ntype *type, ntype *def, info *arg_info)
@@ -273,34 +211,34 @@ AnnotateDefinedVars (ntype *type, ntype *def, info *arg_info)
 
         if (TYisPoly (type)) {
             if (TYisPoly (def)) {
-                INFO_OUTERDEFINED (arg_info)
-                  = INFO_OUTERDEFINED (arg_info)
+                INFO_OUTERDEFINED (arg_info) =
+                    INFO_OUTERDEFINED (arg_info)
                     || STReq (TYgetPolyName (type), TYgetPolyName (def));
             } else if (TYisPolyUser (def)) {
-                INFO_OUTERDEFINED (arg_info)
-                  = INFO_OUTERDEFINED (arg_info)
+                INFO_OUTERDEFINED (arg_info) =
+                    INFO_OUTERDEFINED (arg_info)
                     || STReq (TYgetPolyName (type), TYgetPolyUserOuter (def))
                     || STReq (TYgetPolyName (type), TYgetPolyUserInner (def));
             }
         } else if (TYisPolyUser (type)) {
             if (TYisPoly (def)) {
-                INFO_OUTERDEFINED (arg_info)
-                  = INFO_OUTERDEFINED (arg_info)
+                INFO_OUTERDEFINED (arg_info) =
+                    INFO_OUTERDEFINED (arg_info)
                     || STReq (TYgetPolyUserOuter (type), TYgetPolyName (def));
-                INFO_INNERDEFINED (arg_info)
-                  = INFO_INNERDEFINED (arg_info)
+                INFO_INNERDEFINED (arg_info) =
+                    INFO_INNERDEFINED (arg_info)
                     || STReq (TYgetPolyUserInner (type), TYgetPolyName (def));
             } else if (TYisPolyUser (def)) {
-                INFO_OUTERDEFINED (arg_info)
-                  = INFO_OUTERDEFINED (arg_info)
+                INFO_OUTERDEFINED (arg_info) =
+                    INFO_OUTERDEFINED (arg_info)
                     || STReq (TYgetPolyUserOuter (type), TYgetPolyUserOuter (def))
                     || STReq (TYgetPolyUserOuter (type), TYgetPolyUserInner (def));
-                INFO_INNERDEFINED (arg_info)
-                  = INFO_INNERDEFINED (arg_info)
+                INFO_INNERDEFINED (arg_info) =
+                    INFO_INNERDEFINED (arg_info)
                     || STReq (TYgetPolyUserInner (type), TYgetPolyUserOuter (def))
                     || STReq (TYgetPolyUserInner (type), TYgetPolyUserInner (def));
-                INFO_SHAPEDEFINED (arg_info)
-                  = INFO_SHAPEDEFINED (arg_info)
+                INFO_SHAPEDEFINED (arg_info) =
+                    INFO_SHAPEDEFINED (arg_info)
                     || STReq (TYgetPolyUserShape (type), TYgetPolyUserShape (def));
             }
         }
@@ -309,52 +247,36 @@ AnnotateDefinedVars (ntype *type, ntype *def, info *arg_info)
     DBUG_RETURN (arg_info);
 }
 
-/** <!--********************************************************************-->
- * @}  <!-- Static helper functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @name Traversal functions
- * @{
- *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @fn node *CSGDmodule(node *arg_node, info *arg_info)
- *
- * @brief traverses only the fundef chain
- *
- *****************************************************************************/
 node *
-CSGDmodule (node *arg_node, info *arg_info)
+CSGDdoCheckAndSimplifyGenericDefinitions (node *arg_node)
 {
+    info *arg_info;
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
+                 "called with non-module node");
+
     arg_info = MakeInfo ();
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    TRAVpush (TR_csgd);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
+
+    CTIabortOnError ();
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *CSGDfundef(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
 node *
 CSGDfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+
+    DBUG_PRINT ("----- check and simplify generic definitions of %s -----",
+                FUNDEF_NAME (arg_node));
 
     /*
      * 0) store context in info node
@@ -365,79 +287,61 @@ CSGDfundef (node *arg_node, info *arg_info)
     INFO_ISGENERIC (arg_info) = FALSE;
 
     /*
-     * 1) check compliance of args and figure out whether this is a
-     *    generic function after all.
+     * 1) check compliance of args and figure out whether this is a generic
+     *    function after all.
      */
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    DBUG_PRINT ("checking compliance of args");
+    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
     FUNDEF_ISGENERIC (arg_node) = INFO_ISGENERIC (arg_info);
 
     /*
      * 2) check compliance of rets
      */
-    if (FUNDEF_RETS (arg_node) != NULL) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
+    DBUG_PRINT ("checking compliance of rets");
+    FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
 
     /*
      * 3) bind shape vars
-     *    !!  this needs to be done before we denest the type in   !!
-     *    !!  the body, as otherwise the call to nested_shape      !!
-     *    !!  will return the wrong result.                        !!
+     *    this needs to be done before we denest the type in the body, as
+     *    otherwise the call to nested_shape will return the wrong result!
      */
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        INFO_MODE (arg_info) = CSGD_bindshape;
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        INFO_MODE (arg_info) = CSGD_normal;
-    }
+    DBUG_PRINT ("binding shape vars");
+    INFO_MODE (arg_info) = CSGD_bindshape;
+    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+    INFO_MODE (arg_info) = CSGD_normal;
 
     /*
      * 4) process denesting
      */
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        INFO_MODE (arg_info) = CSGD_denest;
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        INFO_MODE (arg_info) = CSGD_normal;
-    }
+    DBUG_PRINT ("process denesting");
+    INFO_MODE (arg_info) = CSGD_denest;
+    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+    INFO_MODE (arg_info) = CSGD_normal;
 
     /*
      * 5) process renesting and check compliance of body
      */
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    DBUG_PRINT ("process renesting");
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     /*
      * 6) strip nesting information from types
      */
+    DBUG_PRINT ("stripping nesting information");
     INFO_MODE (arg_info) = CSGD_strip;
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
-    if (FUNDEF_RETS (arg_node) != NULL) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
+    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+    FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
     INFO_MODE (arg_info) = CSGD_normal;
 
     /*
      * 7) next funef
      */
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *CSGDarg(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
 node *
 CSGDarg (node *arg_node, info *arg_info)
 {
@@ -448,11 +352,11 @@ CSGDarg (node *arg_node, info *arg_info)
         if (TUisPolymorphic (ARG_NTYPE (arg_node))) {
             INFO_ISGENERIC (arg_info) = TRUE;
             INFO_CURRENT (arg_info) = arg_node;
+
             INFO_MODE (arg_info) = CSGD_checkarg;
-
             INFO_ARGS (arg_info) = TRAVdo (INFO_ARGS (arg_info), arg_info);
-
             INFO_MODE (arg_info) = CSGD_normal;
+
             INFO_CURRENT (arg_info) = NULL;
         }
         break;
@@ -514,16 +418,13 @@ CSGDarg (node *arg_node, info *arg_info)
             ntype *poly = TYgetScalar (ARG_NTYPE (arg_node));
 
             INFO_PREASSIGNS (arg_info) = TCappendAssign (
-              INFO_PREASSIGNS (arg_info),
-              TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy (TYgetPolyUserShape (poly)),
-                                                    NULL),
-                                       TCmakePrf1 (F_nested_shape,
-                                                   TBmakeType (
-                                                     TYmakeAKS (TYmakePolyType (STRcpy (
-                                                                  TYgetPolyUserOuter (
-                                                                    poly))),
-                                                                SHmakeShape (0))))),
-                            NULL));
+                INFO_PREASSIGNS (arg_info),
+                TBmakeAssign (
+                    TBmakeLet (TBmakeSpids (STRcpy (TYgetPolyUserShape (poly)), NULL),
+                               TCmakePrf1 (F_nested_shape, TBmakeType (
+                                   TYmakeAKS (TYmakePolyType (STRcpy (TYgetPolyUserOuter (poly))),
+                                              SHmakeShape (0))))),
+                    NULL));
         }
         break;
     case CSGD_denest:
@@ -532,13 +433,12 @@ CSGDarg (node *arg_node, info *arg_info)
             ntype *poly = TYgetScalar (ARG_NTYPE (arg_node));
 
             INFO_PREASSIGNS (arg_info) = TCappendAssign (
-              INFO_PREASSIGNS (arg_info),
-              TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy (ARG_NAME (arg_node)), NULL),
-                                       TBmakeCast (TYmakeAUD (TYmakePolyType (
-                                                     STRcpy (TYgetPolyUserInner (poly)))),
-                                                   TBmakeSpid (NULL, STRcpy (ARG_NAME (
-                                                                       arg_node))))),
-                            NULL));
+                INFO_PREASSIGNS (arg_info),
+                TBmakeAssign (
+                    TBmakeLet (TBmakeSpids (STRcpy (ARG_NAME (arg_node)), NULL),
+                               TBmakeCast (TYmakeAUD (TYmakePolyType (STRcpy (TYgetPolyUserInner (poly)))),
+                                           TBmakeSpid (NULL, STRcpy (ARG_NAME (arg_node))))),
+                    NULL));
         }
         break;
     case CSGD_strip:
@@ -552,20 +452,11 @@ CSGDarg (node *arg_node, info *arg_info)
         DBUG_UNREACHABLE ("unknown traversal mode!");
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *CSGDret(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
 node *
 CSGDret (node *arg_node, info *arg_info)
 {
@@ -582,9 +473,7 @@ CSGDret (node *arg_node, info *arg_info)
             INFO_INNERDEFINED (arg_info) = FALSE;
             INFO_SHAPEDEFINED (arg_info) = FALSE;
 
-            if (INFO_ARGS (arg_info) != NULL) {
-                INFO_ARGS (arg_info) = TRAVdo (INFO_ARGS (arg_info), arg_info);
-            }
+            INFO_ARGS (arg_info) = TRAVopt (INFO_ARGS (arg_info), arg_info);
 
             if (!INFO_OUTERDEFINED (arg_info)) {
                 CTIerror (NODE_LOCATION (arg_node),
@@ -621,13 +510,12 @@ CSGDret (node *arg_node, info *arg_info)
             ntype *poly = TYgetScalar (RET_TYPE (arg_node));
 
             INFO_PREASSIGNS (arg_info) = TCappendAssign (
-              INFO_PREASSIGNS (arg_info),
-              TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy (newvar), NULL),
-                                       TBmakeCast (TYmakeAUD (TYmakePolyType (
-                                                     STRcpy (TYgetPolyUserOuter (poly)))),
-                                                   EXPRS_EXPR (
-                                                     INFO_RETEXPRS (arg_info)))),
-                            NULL));
+                INFO_PREASSIGNS (arg_info),
+                TBmakeAssign (
+                    TBmakeLet (TBmakeSpids (STRcpy (newvar), NULL),
+                               TBmakeCast (TYmakeAUD (TYmakePolyType (STRcpy (TYgetPolyUserOuter (poly)))),
+                                           EXPRS_EXPR (INFO_RETEXPRS (arg_info)))),
+                    NULL));
 
             EXPRS_EXPR (INFO_RETEXPRS (arg_info)) = TBmakeSpid (NULL, newvar);
         }
@@ -647,26 +535,42 @@ CSGDret (node *arg_node, info *arg_info)
         INFO_RETEXPRS (arg_info) = EXPRS_NEXT (INFO_RETEXPRS (arg_info));
     }
 
-    if (RET_NEXT (arg_node) != NULL) {
-        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
-    }
+    RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
 
     INFO_RETNO (arg_info)--;
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *CSGDcast(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+node *
+CSGDassign (node *arg_node, info *arg_info)
+{
+    node *preassigns = NULL;
+
+    DBUG_ENTER ();
+
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        preassigns = INFO_PREASSIGNS (arg_info);
+        INFO_PREASSIGNS (arg_info) = NULL;
+    }
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    if (preassigns != NULL) {
+        arg_node = TCappendAssign (preassigns, arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 node *
 CSGDcast (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+
+    DBUG_ASSERT (CAST_NTYPE (arg_node) != NULL, "ntype is null");
 
     if (TUisPolymorphic (CAST_NTYPE (arg_node))) {
         INFO_CURRENT (arg_info) = arg_node;
@@ -675,9 +579,7 @@ CSGDcast (node *arg_node, info *arg_info)
         INFO_INNERDEFINED (arg_info) = FALSE;
         INFO_SHAPEDEFINED (arg_info) = FALSE;
 
-        if (INFO_ARGS (arg_info) != NULL) {
-            INFO_ARGS (arg_info) = TRAVdo (INFO_ARGS (arg_info), arg_info);
-        }
+        INFO_ARGS (arg_info) = TRAVopt (INFO_ARGS (arg_info), arg_info);
 
         if (!INFO_OUTERDEFINED (arg_info)) {
             CTIerror (NODE_LOCATION (arg_node),
@@ -689,15 +591,15 @@ CSGDcast (node *arg_node, info *arg_info)
         if (TYisPolyUser (TYgetScalar (CAST_NTYPE (arg_node)))) {
             if (!INFO_INNERDEFINED (arg_info)) {
                 CTIerror (NODE_LOCATION (arg_node),
-                          "In definition of %s: Inner type variable in polymorphic "
-                          "cast type not bound by any argument.",
+                          "In definition of %s: Inner type variable in "
+                          "polymorphic cast type not bound by any argument.",
                           CTIitemName (INFO_FUNDEF (arg_info)));
             }
 
             if (!INFO_SHAPEDEFINED (arg_info)) {
                 CTIerror (NODE_LOCATION (arg_node),
-                          "In definition of %s: Shape variable in polymorphic cast "
-                          "type not bound by any argument.",
+                          "In definition of %s: Shape variable in "
+                          "polymorphic cast type not bound by any argument.",
                           CTIitemName (INFO_FUNDEF (arg_info)));
             }
 
@@ -724,13 +626,24 @@ CSGDcast (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *CSGDavis(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+node *
+CSGDreturn (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    RETURN_EXPRS (arg_node) = TRAVopt (RETURN_EXPRS (arg_node), arg_info);
+
+    if (INFO_RETS (arg_info) != NULL) {
+        INFO_RETEXPRS (arg_info) = RETURN_EXPRS (arg_node);
+
+        INFO_MODE (arg_info) = CSGD_renest;
+        INFO_RETS (arg_info) = TRAVdo (INFO_RETS (arg_info), arg_info);
+        INFO_MODE (arg_info) = CSGD_normal;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 node *
 CSGDavis (node *arg_node, info *arg_info)
 {
@@ -743,9 +656,7 @@ CSGDavis (node *arg_node, info *arg_info)
         INFO_INNERDEFINED (arg_info) = FALSE;
         INFO_SHAPEDEFINED (arg_info) = FALSE;
 
-        if (INFO_ARGS (arg_info) != NULL) {
-            INFO_ARGS (arg_info) = TRAVdo (INFO_ARGS (arg_info), arg_info);
-        }
+        INFO_ARGS (arg_info) = TRAVopt (INFO_ARGS (arg_info), arg_info);
 
         if (!INFO_OUTERDEFINED (arg_info)) {
             CTIerror (NODE_LOCATION (arg_node),
@@ -787,73 +698,3 @@ CSGDavis (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
-/** <!--********************************************************************-->
- *
- * @fn node *CSGDreturn(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-CSGDreturn (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-    }
-
-    if (INFO_RETS (arg_info) != NULL) {
-        INFO_RETEXPRS (arg_info) = RETURN_EXPRS (arg_node);
-        INFO_MODE (arg_info) = CSGD_renest;
-
-        INFO_RETS (arg_info) = TRAVdo (INFO_RETS (arg_info), arg_info);
-
-        INFO_MODE (arg_info) = CSGD_normal;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CSGDassign(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-CSGDassign (node *arg_node, info *arg_info)
-{
-    node *preassigns = NULL;
-
-    DBUG_ENTER ();
-
-    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-
-    if (INFO_PREASSIGNS (arg_info) != NULL) {
-        preassigns = INFO_PREASSIGNS (arg_info);
-        INFO_PREASSIGNS (arg_info) = NULL;
-    }
-
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    if (preassigns != NULL) {
-        arg_node = TCappendAssign (preassigns, arg_node);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- * @}  <!-- Traversal functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- * @}  <!-- Traversal template -->
- *****************************************************************************/
-
-#undef DBUG_PREFIX

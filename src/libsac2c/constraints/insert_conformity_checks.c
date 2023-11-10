@@ -383,8 +383,10 @@ static iccfun_p iccfuns[] = {
  *
  * @fn node *ICCfundef(node *arg_node, info *arg_info)
  *
- * @brief Performs a traversal of the fundef chain and inserts INFO_VARDECS
- *        into the fundefs vardec chain.
+ * @brief Performs a traversal of the fundef chain and inserts INFO_VARDECS into
+ * the fundefs vardec chain. We do not need to traverse fundefs that are marked
+ * as guard functions, since conformity checks have already been inserted into
+ * these functions by type pattern analysis and resolution.
  *
  *****************************************************************************/
 node *
@@ -392,28 +394,25 @@ ICCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("traversing %s:", CTIitemName (arg_node));
+    if (!FUNDEF_ISGUARDFUN (arg_node) && FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("traversing %s", FUNDEF_NAME (arg_node));
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
         arg_node = IDCinitialize (arg_node, FALSE);
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         if (INFO_VARDECS (arg_info) != NULL) {
-            FUNDEF_VARDECS (arg_node)
-              = TCappendVardec (FUNDEF_VARDECS (arg_node), INFO_VARDECS (arg_info));
-
+            FUNDEF_VARDECS (arg_node) =
+                TCappendVardec (FUNDEF_VARDECS (arg_node),
+                                INFO_VARDECS (arg_info));
             INFO_VARDECS (arg_info) = NULL;
         }
 
         arg_node = IDCinsertConstraints (arg_node, FALSE);
-
         arg_node = IDCfinalize (arg_node, FALSE);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

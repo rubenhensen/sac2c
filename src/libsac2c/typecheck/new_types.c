@@ -4764,8 +4764,8 @@ TYDeriveSubtype (ntype *type)
  *
  ******************************************************************************/
 
-static char *
-ScalarType2String (ntype *type)
+char *
+TYScalarType2String (ntype *type)
 {
     static str_buf *buf = NULL;
     char *res;
@@ -4847,7 +4847,7 @@ ArrayType2String (ntype *type)
     DBUG_ASSERT (type, "ArrayType2String called with NULL!");
     DBUG_ASSERT (TYisArray (type), "ArrayType2String called with non-array type!");
 
-    tmp_str = ScalarType2String (AKS_BASE (type));
+    tmp_str = TYScalarType2String (AKS_BASE (type));
     buf = SBUFprint (buf, tmp_str);
     tmp_str = MEMfree (tmp_str);
 
@@ -4943,7 +4943,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, size_t offset)
         DBUG_ASSERT (scal_str == NULL,
                      "FunType2String called on ibase with non NULL scal_str!");
 
-        scal_str = ScalarType2String (IBASE_BASE (type));
+        scal_str = TYScalarType2String (IBASE_BASE (type));
         scal_len = STRlen (scal_str);
 
         /*
@@ -5119,7 +5119,7 @@ TYtype2String (ntype *type, bool multiline, size_t offset)
             res = SSIvariable2DebugString (ALPHA_SSI (type));
             break;
         case TC_user:
-            res = ScalarType2String (type);
+            res = TYScalarType2String (type);
             break;
         default:
             DBUG_UNREACHABLE ("TYtype2String applied to non-SAC type!");

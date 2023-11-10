@@ -120,6 +120,7 @@ extern node *SCSprf_val_le_val_SxS (node *arg_node, info *arg_info);
 extern node *SCSprf_val_le_val_VxV (node *arg_node, info *arg_info);
 extern node *SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info);
 extern node *SCSprf_sel_VxA (node *arg_node, info *arg_info);
+extern node *SCSprf_all_V (node *arg_node, info *arg_info);
 extern node *SCSprf_sel_VxIA (node *arg_node, info *arg_info);
 extern node *SCSprf_idx_shape_sel (node *arg_node, info *arg_info);
 extern node *SCSprf_reshape (node *arg_node, info *arg_info);

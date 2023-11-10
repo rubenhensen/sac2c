@@ -117,6 +117,7 @@ extern bool COisEmptyVect (constant *a);
 
 extern constant *COreshape (constant *idx, constant *a, constant *);
 extern constant *COsel (constant *idx, constant *a, constant *);
+extern constant *COall (constant *a, constant *, constant *);
 extern constant *COidxSel (constant *idx, constant *a, constant *);
 extern constant *COoverSel (constant *idx, constant *a, constant *);
 extern constant *COtake (constant *idx, constant *a, constant *);

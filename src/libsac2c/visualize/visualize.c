@@ -262,6 +262,21 @@ VISUALspids (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * @fn node *VISUALtypepattern (node *arg_node, info *arg_info)
+ *
+ * @brief print N_typepattern node
+ *
+ ******************************************************************************/
+node *
+VISUALtypepattern (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--*********************************************************************-->
  *
  * @fn node *VISUALmodule( node *arg_node, info *arg_info)
@@ -780,23 +795,6 @@ VISUALannotate (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
- *
- * Function:
- *   node *VISUALarg( node *arg_node, info *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-VISUALudcs (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    DBUG_RETURN (arg_node);
-}
 /******************************************************************************
  *
  * Function:

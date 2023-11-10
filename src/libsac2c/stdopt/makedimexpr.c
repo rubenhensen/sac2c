@@ -202,23 +202,23 @@ SAAdim_is_arg1 (node *arg_node, info *arg_info)
 static node *
 SAAdim_guard (node *arg_node, info *arg_info)
 {
-    node *dim_expr;
-    node *lhsavis;
-    node *ids;
-    node *exprs;
+    node *dim_expr, *lhsavis, *ids, *exprs;
 
     DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
-
     ids = INFO_ALLIDS (arg_info);
-    exprs = EXPRS_EXPRS2 (PRF_ARGS (arg_node));
+    exprs = PRF_ARGS (arg_node);
 
     while (IDS_AVIS (ids) != lhsavis) {
         ids = IDS_NEXT (ids);
         exprs = EXPRS_NEXT (exprs);
     }
 
+    DBUG_ASSERT (EXPRS_NEXT (exprs) != NULL,
+                 "guard predicate does not have a corresponding return value");
+
+    // We are dealing with one of the guarded arguments
     dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (EXPRS_EXPR (exprs))));
 
     DBUG_RETURN (dim_expr);

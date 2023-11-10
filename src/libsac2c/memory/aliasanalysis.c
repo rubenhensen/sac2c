@@ -696,7 +696,11 @@ EMAAlet (node *arg_node, info *arg_info)
 node *
 EMAAprf (node *arg_node, info *arg_info)
 {
+    node *lhs, *args;
+
     DBUG_ENTER ();
+
+    lhs = INFO_LHS (arg_info);
 
     /*
      * Primitive functions in general yield a fresh result.
@@ -709,7 +713,7 @@ EMAAprf (node *arg_node, info *arg_info)
     case F_prop_obj_out:
     case F_prop_obj_in:
     case F_accu:
-        MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
+        MarkAllIdsAliasing (lhs, INFO_MASK (arg_info));
         break;
 
     case F_unshare:
@@ -720,7 +724,7 @@ EMAAprf (node *arg_node, info *arg_info)
         break;
 
     case F_type_conv:
-        MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
+        MarkAllIdsAliasing (lhs, INFO_MASK (arg_info));
         MarkIdAliasing (PRF_ARG2 (arg_node), INFO_MASK (arg_info));
         break;
 
@@ -733,24 +737,33 @@ EMAAprf (node *arg_node, info *arg_info)
         break;
 
     case F_afterguard:
-        MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
+        /*
+         * x' = afterguard (x, p1, ..., pn)
+         */
+        MarkAllIdsAliasing (lhs, INFO_MASK (arg_info));
         MarkIdAliasing (PRF_ARG1 (arg_node), INFO_MASK (arg_info));
         break;
 
     case F_guard:
-        MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
-        {
-            node *exprs = EXPRS_EXPRS2 (PRF_ARGS (arg_node));
-            while (exprs != NULL) {
-                MarkIdAliasing (EXPRS_EXPR (exprs), INFO_MASK (arg_info));
-                exprs = EXPRS_NEXT (exprs);
-            }
+        /*
+         * x1', ..., xn' = guard (x1, ..., xn, p)
+         */
+        args = PRF_ARGS (arg_node);
+
+        DBUG_ASSERT (TCcountIds (lhs) == TCcountExprs (args) - 1,
+                     "guard function should return n-1 values");
+
+        MarkAllIdsAliasing (lhs, INFO_MASK (arg_info));
+        while (lhs != NULL) {
+            MarkIdAliasing (EXPRS_EXPR (args), INFO_MASK (arg_info));
+            lhs = IDS_NEXT (lhs);
+            args = EXPRS_NEXT (args);
         }
         break;
 
     case F_prefetch2device:
     case F_prefetch2host:
-        MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
+        MarkAllIdsAliasing (lhs, INFO_MASK (arg_info));
         MarkIdAliasing (PRF_ARG1 (arg_node), INFO_MASK (arg_info));
         break;
 

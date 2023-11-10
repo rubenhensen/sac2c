@@ -315,6 +315,7 @@ extern ntype *TYcopyType (ntype *type);
 extern ntype *TYcopyTypeConstructor (ntype *type);
 extern ntype *TYcopyFixedType (ntype *type);
 extern ntype *TYderiveSubtype (ntype *type);
+extern char *TYScalarType2String (ntype *mnew);
 extern char *TYtype2String (ntype *mnew, bool multiline, size_t offset);
 extern char *TYtype2DebugString (ntype *mnew, bool multiline, size_t offset);
 extern char *TYargs2FunTypeString (node *args, ntype *rettype);

@@ -17,8 +17,6 @@ extern node *VISUALfundef (node *arg_node, info *arg_info);
 extern node *VISUALannotate (node *arg_node, info *arg_info);
 extern node *VISUALret (node *arg_node, info *arg_info);
 extern node *VISUALarg (node *arg_node, info *arg_info);
-extern node *VISUALudcs (node *arg_node,
-                         info *arg_info); // Fangyong add: user-defined constraints
 extern node *VISUALstructelem (node *arg_node, info *arg_info);
 extern node *VISUALvardec (node *arg_node, info *arg_info);
 extern node *VISUALblock (node *arg_node, info *arg_info);
@@ -40,6 +38,7 @@ extern node *VISUALid (node *arg_node, info *arg_info);
 extern node *VISUALids (node *arg_node, info *arg_info);
 extern node *VISUALspid (node *arg_node, info *arg_info);
 extern node *VISUALspids (node *arg_node, info *arg_info);
+extern node *VISUALtypepattern (node *arg_node, info *arg_info);
 extern node *VISUALnum (node *arg_node, info *arg_info);
 extern node *VISUALnumbyte (node *arg_node, info *arg_info);
 extern node *VISUALnumshort (node *arg_node, info *arg_info);

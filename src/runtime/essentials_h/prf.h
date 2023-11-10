@@ -438,16 +438,27 @@
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_MT_NOT_LOCALLY_PARALLEL ())
 #endif
 
-#define SAC_ND_PRF_GUARD(to_NT, from_NT)                                                 \
+#define SAC_ND_PRF_ALL(to_NT, from_NT)                                                   \
+    {                                                                                    \
+        int SAC_i, SAC_all = 1;                                                          \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from_NT); SAC_i++) {                      \
+            if (SAC_ND_READ (from_NT, SAC_i) == 0) {                                     \
+                SAC_all = 0;                                                             \
+                break;                                                                   \
+            }                                                                            \
+        }                                                                                \
+        SAC_ND_A_FIELD (to_NT) = SAC_all;                                                \
+    }
+
+#define SAC_ND_PRF_GUARD(to_NT, from_NT, pred_NT)                                        \
     {                                                                                    \
         int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < (SAC_ND_A_SIZE (from_NT) - 1); SAC_i++) {                \
-            SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from_NT, SAC_i), );            \
-        }                                                                                \
-        if (!SAC_ND_READ (from_NT, SAC_i)) {                                             \
+        if (!SAC_ND_READ (pred_NT, 0)) {                                                 \
             SAC_RuntimeError ("Guard failed in " __FILE__ ":" TO_STR (__LINE__) ".");    \
         }                                                                                \
-        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from_NT); SAC_i++) {                      \
+            SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from_NT, SAC_i), );            \
+        }                                                                                \
     }
 
 #define SAC_ND_PRF_TYPE_CONSTRAINT_AKD(to_NT, from_NT, scl)                              \

@@ -1,12 +1,12 @@
+// This program used to segfault at parsing, because the number of arguments to
+// ++ are zero.  So in this test we just test that compilation terminates at
+// phase 42, and not return code 134 (abort that comes after handling
+// segmentation fault).
+//
 // SAC_TEST|include common.mk
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>$(SAC2C) $< && (echo "error code expected"; exit 1) || (test $$? -eq 37)
+// SAC_TEST|<tab>$(SAC2C) $< && (echo "error code expected"; exit 1) || (test $$? -eq 40)
 
-// This program used to segfault at parsing, because the
-// number of arguments to ++ are zero.  So in this test
-// we just test that compilation terminates at phase 33,
-// and not return code 134 (abort that comes after handling
-// segmentation fault).
 int main ()
 {
     ++();

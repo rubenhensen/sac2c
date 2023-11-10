@@ -256,6 +256,18 @@ FREEdoFreeNode (node *free_node)
     DBUG_RETURN (free_node);
 }
 
+node *
+FREEoptFreeNode (node *free_node)
+{
+    DBUG_ENTER ();
+
+    if (free_node != NULL) {
+        free_node = FREEdoFreeNode (free_node);
+    }
+
+    DBUG_RETURN (free_node);
+}
+
 /******************************************************************************
  *
  * Function:
@@ -295,6 +307,18 @@ FREEdoFreeTree (node *free_node)
     global.valid_ssaform = store_valid_ssaform;
 
     arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (free_node);
+}
+
+node *
+FREEoptFreeTree (node *free_node)
+{
+    DBUG_ENTER ();
+
+    if (free_node != NULL) {
+        free_node = FREEdoFreeTree (free_node);
+    }
 
     DBUG_RETURN (free_node);
 }

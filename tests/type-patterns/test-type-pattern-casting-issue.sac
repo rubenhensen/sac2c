@@ -1,0 +1,42 @@
+// Arrays and casts can, themselves, contain other elements with a type pattern,
+// we should ensure that the elements of arrays and casts are traversed so that
+// their type patterns are analyses and their types are set.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 2
+
+typedef int[1] myInt;
+
+// Simple definition of sel to make our code a bit more readable
+inline int sel (int idx, int[*] a) { return _sel_VxA_ ([idx], a); }
+
+// If we cast to int[1] in a separate line, we are fine.
+inline
+myInt + (myInt x, myInt y)
+{
+    xi = (int[1])x;
+    yi = (int[1])y;
+    res = (myInt)[_add_SxS_ (xi[0], yi[0])];
+    return res;
+}
+
+// But if we try to combine it all in a single line, CSGD fails.
+// We should ensure that ATP analyses all inner type patterns as well.
+inline
+myInt - (myInt x, myInt y)
+{
+    res = (myInt)[_sub_SxS_ (((int[1])x)[0], ((int[1])y)[0])];
+    return res;
+}
+
+int main()
+{
+    x = (myInt)[2];
+    y = (myInt)[1];
+    res = x + y - y;
+    res = (int[1])res;
+    return res[0];
+}
