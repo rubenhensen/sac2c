@@ -321,6 +321,23 @@ NTCCTprf_cast (te_info *info, ntype *elems)
 
 /******************************************************************************
  *
+ * @fn ntype *NTCCTprf_dummy_type (te_info *info, ntype *elems)
+ *
+ ******************************************************************************/
+ntype *
+NTCCTprf_dummy_type (te_info *info, ntype *args)
+{
+    ntype *res;
+
+    DBUG_ENTER ();
+
+    res = TYcopyType (TYgetProductMember (args, 0));
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
  * function:
  *    ntype *NTCCTprf_type_conv( te_info *info, ntype *elems)
  *

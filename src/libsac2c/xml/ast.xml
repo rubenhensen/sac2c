@@ -2169,6 +2169,35 @@
         <node name="Prf" />
       </travuser>
     </traversal>
+    <traversal id="UAA" name="Unused Argument Annotation" default="sons" include="unused_argument_annotate.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Id" />
+      </travuser>
+    </traversal>
+    <traversal id="UAAR" name="Unused Application Argument Removal" default="sons" include="unused_application_argument_removal.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+      </travuser>
+    </traversal>
+    <traversal id="UFAR" name="Unused Function Argument Removal" default="sons" include="unused_function_argument_removal.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Arg" />
+      </travuser>
+    </traversal>
+    <traversal id="DDR" name="Dummy Definition Removal" default="sons" include="dummy_definition_removal.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Vardec" />
+        <node name="Assign" />
+        <node name="Ap" />
+        <node name="Exprs" />
+        <node name="Ids" />
+      </travuser>
+    </traversal>
     <traversal id="DCR" name="Dead Code Removal" default="sons" include="deadcoderemoval.h">
       <travuser>
         <node name="Fundef" />
@@ -6457,20 +6486,21 @@
             <range from="dm_dmisef" to="dm_dmisef" />
           </phases>
         </flag>
-        <flag name="IsInUse" default="FALSE">
-          <description> Used to mark unused function arguments in DeadCodeRemoval. Marked arguments
-            are removed in signature simplification.
-          </description>
-          <phases>
-            <range from="" to="final" />
-          </phases>
-        </flag>
-        <flag name="IsDuplicate" default="FALSE">
-          <description> Used to mark duplicated function arguments in
-            EDFA. Marked arguments are removed by EDFA, but this
-            flag allows us to simplify outer-level calls in a cleaner
-            fashion.
-          </description>
+	<flag name="IsUsedInBody" default="TRUE">
+	  <description>
+      Used by unused argument removal (UAR) to denote that this argument in not
+      used in the body of this function.
+	  </description>
+    <phases>
+      <range from="opt_cyc_uaa" to="pc_ufar" />
+    </phases>
+  </flag>
+	<flag name="IsDuplicate" default="FALSE" >
+	  <description>
+      Used to mark duplicated function arguments in EDFA. Marked arguments are
+      removed by EDFA, but this flag allows us to simplify outer-level calls in
+      a cleaner fashion.
+	  </description>
           <phases>
             <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
           </phases>
@@ -9641,6 +9671,18 @@
           <description>Used to indicate
             which VARDECS are no longer needed and can thus be eliminated.
           </description>
+        </flag>
+        <flag name="IsDummy" default="FALSE" >
+          <description>
+            Indicates a temporary dummy value; used by unused argument removal
+            (UAR) to replace unused values in applications so that the original
+            value can potentially be removed by dead code removal. This value is
+            set in stdopt/unused_application_argument_removal, and is required
+            in precompile/dummy_definition_removal.
+          </description>
+          <phases>
+            <range from="opt_cyc_uaar" to="pc_ddr" />
+          </phases>
         </flag>
         <flag name="IsDeadReturn">
           <description>Used to indicate a dead N_return value.

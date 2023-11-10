@@ -2512,6 +2512,10 @@ PRTarg (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
+    if (!ARG_ISUSEDINBODY (arg_node)) {
+        fprintf (global.outfile, " /* unused */");
+    }
+
     if (ARG_NTYPE (arg_node) != NULL) {
         type_str = TYtype2String (ARG_NTYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, " %s ", type_str);

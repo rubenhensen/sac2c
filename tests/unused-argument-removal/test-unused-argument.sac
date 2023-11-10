@@ -1,0 +1,21 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -douar -noprelude
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bopt
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) $<`; <nlslash>
+// Argument y is marked as unused
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "\/* unused *\/ int y" 1; <nlslash>
+// The value in the application of fst is replaced by a dummy
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "_dummy_type_" 1; <nlslash>
+
+noinline
+int fst(int x, int y)
+{
+    return x;
+}
+
+int main()
+{
+    return fst(1, 2);
+}

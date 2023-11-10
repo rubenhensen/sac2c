@@ -48,6 +48,7 @@
 OPTIMIZE ("ls", ls, TRUE, TRUE, "loop scalarization")
 OPTIMIZE ("lacsi", lacsi, FALSE, FALSE, "loop & conditional arg scalarization")
 OPTIMIZE ("lacso", lacso, FALSE, FALSE, "loop & conditional result scalarization")
+OPTIMIZE ("uar", uar, FALSE, FALSE, "unused argument removal")
 OPTIMIZE ("dcr", dcr, TRUE, TRUE, "dead code removal")
 OPTIMIZE ("cf", cf, TRUE, TRUE, "constant folding")
 OPTIMIZE ("dlir", dlir, TRUE, TRUE, "do-loop invariant removal")
