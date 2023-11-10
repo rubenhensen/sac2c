@@ -1,51 +1,55 @@
 #define TYPE_LENGTH 256      /* dimension of array of char */
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
 
-/* strings for primitve types */
-
-#define TYP_IFpr_str(str) str
+/******************************************************************************
+ *
+ * @brief strings for primitive types.
+ *
+ ******************************************************************************/
 static char *type_string[] = {
+#define TYP_IFpr_str(str) str
 #include "type_info.mac"
 };
 
-/* strings for primitve types used for renaming of functions*/
-
-#define TYP_IFfunr_str(str) str
+/******************************************************************************
+ *
+ * @brief strings for primitive types, used for renaming of functions.
+ *
+ ******************************************************************************/
 static char *rename_type[] = {
+#define TYP_IFfunr_str(str) str
 #include "type_info.mac"
 };
 
-#include <stdlib.h>
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "convert.h"
+#include "constants_internal.h"
+#include "free.h"
+#include "globals.h"
+#include "memory.h"
+#include "namespaces.h"
+#include "new_types.h"
+#include "str.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "type_utils.h"
+#include "user_types.h"
 
 #define DBUG_PREFIX "UNDEFINED"
 #include "debug.h"
 
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "free.h"
-#include "constants_internal.h"
-#include "globals.h"
-#include "new_types.h"
-#include "user_types.h"
-#include "type_utils.h"
-#include "namespaces.h"
-#include "str.h"
-#include "memory.h"
+#include "convert.h"
 
-/*
+/******************************************************************************
  *
- *  functionname  : CVfloat2String
- *  arguments     :  1) float-val
- *  description   : prints a float into a string so that the string
- *                  1) does not loose any digits
- *                  2) will be recognized as float from any C-Compiler!
+ * @fn char *CVfloat2String (float val)
  *
- */
-
+ * @brief converts a float to a string so that the string: does not loose any
+ * digits, and will be recognized as float from any C-Compiler!
+ *
+ ******************************************************************************/
 char *
 CVfloat2String (float val)
 {
@@ -69,6 +73,13 @@ CVfloat2String (float val)
     DBUG_RETURN (tmp_string);
 }
 
+/******************************************************************************
+ *
+ * @fn char *CVfloatvec2String (floatvec val)
+ *
+ * @brief converts a floatvec to a string.
+ *
+ ******************************************************************************/
 char *
 CVfloatvec2String (floatvec val)
 {
@@ -92,16 +103,14 @@ CVfloatvec2String (floatvec val)
     return s;
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : CVdouble2String
- *  arguments     :  1) double-val
- *  description   : prints a double into a string so that the string
- *                  1) does not loose any digits
- *                  2) will be recognized as double from any C-Compiler!
+ * @fn char *CVdouble2String (double val)
  *
- */
-
+ * @brief converts a double to a string so that the string: does not loose any
+ * digits, and will be recognized as double from any C-Compiler!
+ *
+ ******************************************************************************/
 char *
 CVdouble2String (double val)
 {
@@ -123,21 +132,17 @@ CVdouble2String (double val)
     DBUG_RETURN (tmp_string);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : CVtype2String
- *  arguments     :  1) pointer to type-structure
- *                   2) flag
- *  description   : convertes the infomation in type into a string
+ * @fn char *CVtype2String (ntype *type, int flag, bool all)
  *
- *                  flag == 2: used for renaming of functions( lookup type-name
- *                             in rename_type[] instead of type_string[])
- *                  flag == 3: the module name is not included into string
+ * @brief convertes the infomation in a type into a string.
+ *   flag == 2: used for renaming of functions (lookup type-name
+ *              in rename_type[] instead of type_string[])
+ *   flag == 3: the module name is not included into string
+ *   !all:      force Type2String only print 1st type in list
  *
- *                  ! all: force Type2String only print 1st type in list
- *
- */
-
+ ******************************************************************************/
 char *
 CVtype2String (ntype *type, int flag, bool all)
 {
@@ -241,22 +246,19 @@ CVtype2String (ntype *type, int flag, bool all)
 
 /******************************************************************************
  *
- * function:
- *   char *CVbasetype2String(simpletype type)
+ * @fn char *CVbasetype2String (simpletype type)
  *
- * description:
- *   This function yields a pointer to a static memory area that contains
- *   the name of basic data type as a string.
+ * @brief yields a pointer to a static memory area that contains the name of
+ * basic data type as a string.
  *
  ******************************************************************************/
-
 char *
 CVbasetype2String (simpletype type)
 {
     char *res;
 
-#define TYP_IFpr_str(str) str
     static char *ctype_string[] = {
+#define TYP_IFpr_str(str) str
 #include "type_info.mac"
     };
 
@@ -269,22 +271,19 @@ CVbasetype2String (simpletype type)
 
 /******************************************************************************
  *
- * function:
- *   char *CVbasetype2ShortString(simpletype type)
+ * @fn char *CVbasetype2ShortString (simpletype type)
  *
- * description:
- *   This function yields a pointer to a static memory area that contains
- *   the short name of basic data type as a string.
+ * @brief yields a pointer to a static memory area that contains the short name
+ * of basic data type as a string.
  *
  ******************************************************************************/
-
 char *
 CVbasetype2ShortString (simpletype type)
 {
     char *res;
 
-#define TYP_IFfunr_str(str) str
     static char *ctype_string[] = {
+#define TYP_IFfunr_str(str) str
 #include "type_info.mac"
     };
 
@@ -297,16 +296,145 @@ CVbasetype2ShortString (simpletype type)
 
 /******************************************************************************
  *
- * function:
- *   char *CVintBytes2String( unsigned int bytes)
+ * @fn char *CVspids2String (node *spids)
  *
- * description:
- *   This function yields a pointer to a static memory area that contains
- *   a "dotted" version of the integer number given. It is primarily used
- *   for printing memory usages.
+ * @brief converts an N_spids chain to a comma-separated string.
  *
  ******************************************************************************/
+char *
+CVspids2String (node *spids)
+{
+    char *res;
 
+    DBUG_ENTER ();
+
+    res = "[";
+
+    if (spids != NULL) {
+        res = STRcat (res, SPIDS_NAME (spids));
+        spids = SPIDS_NEXT (spids);
+
+        while (spids != NULL) {
+            res = STRcatn (3, res, ", ", SPIDS_NAME (spids));
+            spids = SPIDS_NEXT (spids);
+        }
+    }
+
+    res = STRcat (res, "]");
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @fn char *CVspid2String (node *spid)
+ *
+ * @brief converts an N_spid, which can be a type pattern feature, to a string.
+ *
+ ******************************************************************************/
+char *
+CVspid2String (node *spid)
+{
+    node *tdim;
+    char *res;
+
+    DBUG_ENTER ();
+
+    tdim = SPID_TDIM (spid);
+
+    if (tdim != NULL) {
+        if (NODE_TYPE (tdim) == N_num) {
+            static char num[6];
+            sprintf (num, "%d", NUM_VAL (tdim));
+            res = num;
+        } else {
+            DBUG_ASSERT (NODE_TYPE (tdim) == N_spid,
+                         "expected an N_num or N_spid node");
+            res = CVspid2String (tdim);
+        }
+
+        res = STRcatn (3, res, ":", SPID_NAME (spid));
+    } else {
+        res = STRcpy (SPID_NAME (spid));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @fn char *CVtypePatternShape2String (node *shape)
+ *
+ * @brief converts a single type pattern feature to a string.
+ *
+ ******************************************************************************/
+char *
+CVtypePatternShape2String (node *shape)
+{
+    char *res;
+
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (shape) == N_num) {
+        static char num[6];
+        sprintf (num, "%d", NUM_VAL (shape));
+        res = STRcpy (num);
+    } else if (NODE_TYPE (shape) == N_dot) {
+        res = STRcpy (".");
+    } else {
+        DBUG_ASSERT (NODE_TYPE (shape) == N_spid,
+                     "expected an N_num, N_dot, or N_spid node");
+        res = CVspid2String (shape);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @fn char *CVtypePattern2String (node *pattern)
+ *
+ * @brief converts a type pattern to a string.
+ *
+ ******************************************************************************/
+char *
+CVtypePattern2String (node *pattern)
+{
+    node *shp;
+    char *shp_str, *res;
+
+    DBUG_ENTER ();
+
+    res = STRcat (TYScalarType2String (TYPEPATTERN_ELEMENTTYPE (pattern)), "[");
+
+    shp = TYPEPATTERN_SHAPE (pattern);
+
+    if (shp != NULL) {
+        shp_str = CVtypePatternShape2String (EXPRS_EXPR (shp));
+        res = STRcat (res, shp_str);
+        shp = EXPRS_NEXT (shp);
+
+        while (shp != NULL) {
+            shp_str = CVtypePatternShape2String (EXPRS_EXPR (shp));
+            res = STRcatn (3, res, ",", shp_str);
+            shp = EXPRS_NEXT (shp);
+        }
+    }
+
+    res = STRcat (res, "]");
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @fn char *CVintBytes2String ( unsigned int bytes)
+ *
+ * @brief yields a pointer to a static memory area that contains a "dotted"
+ * version of the integer number given. It is primarily used for printing memory
+ * usages.
+ *
+ ******************************************************************************/
 char *
 CVintBytes2String (size_t bytes)
 {
@@ -337,5 +465,3 @@ CVintBytes2String (size_t bytes)
 
     DBUG_RETURN (res);
 }
-
-#undef DBUG_PREFIX

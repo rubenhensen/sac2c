@@ -202,6 +202,8 @@ ${CMAKE_CURRENT_SOURCE_DIR}/constraints/insert_conformity_checks.c
 ${CMAKE_CURRENT_SOURCE_DIR}/constraints/insert_domain_constraints.c
 ${CMAKE_CURRENT_SOURCE_DIR}/constraints/polyhedral_guard_optimization.c
 ${CMAKE_CURRENT_SOURCE_DIR}/constraints/strip_conformity_checks.c
+${CMAKE_CURRENT_SOURCE_DIR}/constraints/strip_type_pattern_checks.c
+${CMAKE_CURRENT_SOURCE_DIR}/constraints/type_pattern_statistics.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/adjust_shmem_access.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/adjust_stknl_rets.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/async_delay.c
@@ -265,7 +267,6 @@ ${CMAKE_CURRENT_SOURCE_DIR}/flatten/flattengenerators.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/fun2lac.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/handle_condexpr.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/handle_mops.c
-${CMAKE_CURRENT_SOURCE_DIR}/flatten/insert_udc_funbody.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/insert_vardec.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/lac2fun.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/lacinlining.c
@@ -422,6 +423,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/rtspec/runtime_compiler.c
 ${CMAKE_CURRENT_SOURCE_DIR}/rtspec/runtime_filtering.c
 ${CMAKE_CURRENT_SOURCE_DIR}/rtspec/runtime_function_id.c
 ${CMAKE_CURRENT_SOURCE_DIR}/rtspec/runtime_specialization.c
+${CMAKE_CURRENT_SOURCE_DIR}/scanparse/filter_fundef_conditions.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_with_loop_dots.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_selection_dots.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_set_expression_dots.c
@@ -438,6 +440,10 @@ ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/parser.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/resolvepragma.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/scnprs.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/trie.c
+${CMAKE_CURRENT_SOURCE_DIR}/scanparse/type_pattern_analyse.c
+${CMAKE_CURRENT_SOURCE_DIR}/scanparse/type_pattern_constraints.c
+${CMAKE_CURRENT_SOURCE_DIR}/scanparse/type_pattern_resolve.c
+${CMAKE_CURRENT_SOURCE_DIR}/scanparse/type_pattern_guard.c
 ${CMAKE_CURRENT_SOURCE_DIR}/serialize/add_function_body.c
 ${CMAKE_CURRENT_SOURCE_DIR}/serialize/deserialize.c
 ${CMAKE_CURRENT_SOURCE_DIR}/serialize/serialize.c

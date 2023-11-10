@@ -891,31 +891,32 @@ MMVprfPropObjOut (node *arg_node, info *arg_info)
  *
  * @fn node *MMVprfGuard( node *arg_node, info *arg_info)
  *
+ * @brief x1', ..., xn' = guard (x1, ..., xn, p)
+ * - rename x1, ..., xn, p
+ * - insert (xi', xi) into LUT
+ *
  *****************************************************************************/
 static node *
 MMVprfGuard (node *arg_node, info *arg_info)
 {
-    node *v;
-    node *as;
+    node *lhs, *args, *e;
 
     DBUG_ENTER ();
 
-    /*
-     * v1,...,vn = guard(p,a1,..an);
-     *
-     * 1. rename p,a1,..,an
-     * 2. Insert (vi,ai) into LUT
-     */
     PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
-    v = INFO_LHS (arg_info);
-    as = EXPRS_EXPRS2 (PRF_ARGS (arg_node));
-    while (as != NULL) {
-        node *a = EXPRS_EXPR (as);
-        LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (v), ID_NAME (a));
-        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (v), ID_AVIS (a));
-        v = IDS_NEXT (v);
-        as = EXPRS_NEXT (as);
+    lhs = INFO_LHS (arg_info);
+    args = PRF_ARGS (arg_node);
+
+    DBUG_ASSERT (TCcountIds (lhs) == TCcountExprs (args) - 1,
+                 "guard function should return n-1 values");
+
+    while (lhs != NULL) {
+        e = EXPRS_EXPR (args);
+        LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (lhs), ID_NAME (e));
+        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (lhs), ID_AVIS (e));
+        lhs = IDS_NEXT (lhs);
+        args = EXPRS_NEXT (args);
     }
 
     DBUG_RETURN (arg_node);

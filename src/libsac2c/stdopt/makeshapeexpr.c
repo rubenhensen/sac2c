@@ -403,23 +403,23 @@ SAAshp_for_drop (node *arg_node, info *arg_info)
 static node *
 SAAshp_guard (node *arg_node, info *arg_info)
 {
-    node *shp_expr;
-    node *lhsavis;
-    node *ids;
-    node *exprs;
+    node *shp_expr, *lhsavis, *ids, *exprs;
 
     DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
-
     ids = INFO_ALLIDS (arg_info);
-    exprs = EXPRS_EXPRS2 (PRF_ARGS (arg_node));
+    exprs = PRF_ARGS (arg_node);
 
     while (IDS_AVIS (ids) != lhsavis) {
         ids = IDS_NEXT (ids);
         exprs = EXPRS_NEXT (exprs);
     }
 
+    DBUG_ASSERT (EXPRS_NEXT (exprs) != NULL,
+                 "guard predicate does not have a corresponding return value");
+
+    // We are dealing with one of the guarded arguments
     shp_expr = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (EXPRS_EXPR (exprs))));
 
     DBUG_RETURN (shp_expr);

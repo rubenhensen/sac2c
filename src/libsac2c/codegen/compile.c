@@ -220,9 +220,9 @@ FreeInfo (info *info)
 
 #define RC_IS_VITAL(rc) ((rc) > 0)
 
-#if 0 
+#if 0
 /* These macros seem not to be used.
- * The only reason I keep them here is that they might shed a light on how RC 
+ * The only reason I keep them here is that they might shed a light on how RC
  * is meant to be used.... (Bodo 2016)
  */
 #define RC_INIT(rc) (RC_IS_ACTIVE (rc) ? 1 : (rc))
@@ -2856,7 +2856,7 @@ CheckAUDOperators (node *withop, node **break_id)
                  || (!hasgen && !hasmod), "illegal mix of operators in AUD WL");
     DBUG_ASSERT (isfull || !hasbreak || (numfold == 1), "illegal AUD WL operators: "
                                           "more than one fold and a single break!");
-    
+
     DBUG_RETURN (isfull);
 }
 
@@ -4113,9 +4113,9 @@ COMPApIds (node *ap, info *arg_info)
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
-    /* 
+    /*
      * decrement after check for > 0, safe method for reverse loop ending on 0
-     * i : (size - 1) to 0 
+     * i : (size - 1) to 0
      */
     for (i = argtab->size; i-- > 0;) {
         if (argtab->ptr_out[i] != NULL) {
@@ -4187,9 +4187,9 @@ COMPApArgs (node *ap, info *arg_info)
 
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT (argtab != NULL, "no argtab found!");
-    /* 
+    /*
      * decrement after check for > 0, safe method for reverse loop ending on 0
-     * i : (size - 1) to 0 
+     * i : (size - 1) to 0
      */
     for (i = argtab->size; i-- > 0;) {
         if (argtab->ptr_in[i] != NULL) {
@@ -4721,7 +4721,7 @@ COMPap (node *arg_node, info *arg_info)
                 recommendations = COMPdoDecideSmart (arg_info, spmdfun_count);
                 // create set of ICM's to compile the recommendation tabel in the SAC
                 // code.
-                data_size = (size_t) recommendations[0]; //used in malloc therefore can't be negative 
+                data_size = (size_t) recommendations[0]; //used in malloc therefore can't be negative
                 icm_data = MEMmalloc ((data_size + 2) * sizeof (node *));
                 icm_data[0] = TCmakeIcm1 ("MT_SMART_DATA_BEGIN", TBmakeNum (data_size));
                 for (size_t i = 0; i < data_size; i++) {
@@ -4840,9 +4840,9 @@ COMPap (node *arg_node, info *arg_info)
                                                                  TBmakeAssign (icm_post,
                                                                                NULL))));
             if (global.mt_smart_mode == 2) {
-                /* 
+                /*
                  * decrement after check for > 0, safe method for reverse loop ending on 0
-                 * i : (data_size + 1) to 0 
+                 * i : (data_size + 1) to 0
                  */
                 for (size_t i = data_size + 2; i-- > 0;) {
                     arg_node = TBmakeAssign (icm_data[i], arg_node);
@@ -7301,6 +7301,26 @@ COMPprfSel (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/******************************************************************************
+ *
+ * @fn node *COMPprfAll (node *arg_node, info *arg_info)
+ *
+ ******************************************************************************/
+static node *
+COMPprfAll (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    ret_node = TCmakeAssignIcm2 ("ND_PRF_ALL",
+                                 DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
 /* This is as SIMD version of the selection.  It selects a SIMD verctor,
  * rathter than a scalar.
  */
@@ -7973,13 +7993,13 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
      * of information: the basic type the operation is working on and
      * the operation itself.
      * The operation itself is encoded in TCmakeIdCopyString (prf_name)
-     * already, which is used to evetually expand a macro of that name 
+     * already, which is used to evetually expand a macro of that name
      * for the actual code generation.
      * Here, we extract the type from the first argument.
      * NB: bear in mind, we are on the old type representation here :-(
      * The encoding of the type here is similar BUT NOT IDENTICAL
      * to simpletype. simpletype does not exist in the runtime system.
-     * Instead, we have a custom enum type that lives in 
+     * Instead, we have a custom enum type that lives in
      * libsac/profile/profile_ops.h !
      */
     if (NODE_TYPE (arg1) == N_num) {
@@ -8858,20 +8878,42 @@ COMPprfMask_VxVxV (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn node *COMPprfGuard( node *arg_node, info *arg_info)
+ * @fn node *COMPprfGuard (node *arg_node, info *arg_info)
  *
- *****************************************************************************/
+ * @brief Creates a single guard for every guarded value.
+ *
+ * @example Given a statement: y1, .., yn = guard (x1, .., xn, pred),
+ * we generate: y1 = guard (x1, pred); .. yn = guard (xn, pred).
+ *
+ ******************************************************************************/
 static node *
 COMPprfGuard (node *arg_node, info *arg_info)
 {
-    node *ret_node;
+    node *ids, *exprs, *pred, *guard;
+    node *ret_node = NULL;
 
     DBUG_ENTER ();
 
-    ret_node = TCmakeAssignIcm1 ("ND_PRF_GUARD",
-                                 DupExpr_NT_AddReadIcms (PRF_ARG1 (arg_node)), NULL);
+    ids = INFO_LASTIDS (arg_info);
+    exprs = PRF_ARGS (arg_node);
+    pred = TCgetLastExprsExpr (exprs);
+
+    DBUG_ASSERT (TCcountIds (ids) == TCcountExprs (exprs) - 1,
+                 "guard function should return n-1 values");
+
+    while (ids != NULL) {
+        guard = TCmakeAssignIcm3 ("ND_PRF_GUARD",
+                                  DUPdupIdsIdNt (ids),
+                                  DUPdupNodeNt (EXPRS_EXPR (exprs)),
+                                  DUPdupNodeNt (pred),
+                                  NULL);
+        ret_node = TCappendAssign (ret_node, guard);
+
+        ids = IDS_NEXT (ids);
+        exprs = EXPRS_NEXT (exprs);
+    }
 
     DBUG_RETURN (ret_node);
 }
@@ -10431,7 +10473,7 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
                 shp = TYgetShape (IDS_NTYPE (tmp_ids));
             } else {
                 shp = NULL;
-            } 
+            }
             d = dims - 1;
             d_u = d;
             while (d >= 0) {
@@ -10524,17 +10566,17 @@ COMPwith (node *arg_node, info *arg_info)
      * This is an aud WL! We assume the following here:
      * 1) There is exactly 1 partition (fold/propagate)
      *                  or 2 partitions (genarray/modarray)
-     * 2) We can have multiple operators. If we do, the following 
+     * 2) We can have multiple operators. If we do, the following
      *    restrictions apply:
      *    a) we do NOT have a mix between fold, genarray, or modarray
      *    b) if we have multiple genarrays, they all have the same shape
      *    c) if we have multiple modarrays, they all modify the same array
-     *       NB: identical shapes might suffice, but currently (2022) 
+     *       NB: identical shapes might suffice, but currently (2022)
      *       these cannot arrive here...
      *    d) propagate operators are allowed both, as a stand-alone WL
      *       or in accompanyment of genarray, modarray, or fold WLs.
      *    e) not sure, we can deal with break- operators????
-     * 
+     *
      * For the code generation, we have to distinguish two cases:
      * 1) isfull: we are dealing with modarray or genarray
      *            and need to iterate over the entire shape
@@ -10578,7 +10620,7 @@ COMPwith (node *arg_node, info *arg_info)
      * Furthermore, note that the index vector comes as N_id as we are
      * after EMM!!
      * Another aspect to be noticed here is that COMPpart relies on
-     * INFO_ISFULL_AUDWL to be set properly since for genarray and modarray 
+     * INFO_ISFULL_AUDWL to be set properly since for genarray and modarray
      * With-Loops require checks against the lower and upper bounds whereas
      * fold-WLs do not!
      * For single propagates, i.e., withloops that have only a propagate
@@ -10685,7 +10727,7 @@ COMPwith (node *arg_node, info *arg_info)
                     icm_chain);
     icm_chain = TCappendAssign (generator_icms, icm_chain);
     icm_chain = TCmakeAssignIcm0 ("AUD_WL_START_ITERATE", icm_chain);
-    
+
     if (isfull) {
         i = 0;
         exprs = offs_exprs;

@@ -105,7 +105,7 @@ TClookupIds (const char *name, node *ids_chain)
     DBUG_RETURN (ids_chain);
 }
 
-/* isIdsMember - pointer passing back result of search for 
+/* isIdsMember - pointer passing back result of search for
 *                whether arg_node is a member of the ids chain */
 size_t
 TClookupIdsNode (node *ids_chain, node *idsavis, bool *isIdsMember)
@@ -1620,6 +1620,52 @@ TCcountSpids (node *spids)
     DBUG_RETURN (count);
 }
 
+/******************************************************************************
+ *
+ * @fn bool TCspidsContains (node *spids, char *name)
+ *
+ * @brief Checks whether the given N_spids chain contains a spid with the given
+ * name.
+ *
+ ******************************************************************************/
+bool
+TCspidsContains (node *spids, char *name)
+{
+    bool found = FALSE;
+
+    DBUG_ENTER ();
+
+    while (!found && spids != NULL) {
+        found = STReq (SPIDS_NAME (spids), name);
+        spids = SPIDS_NEXT (spids);
+    }
+
+    DBUG_RETURN (found);
+}
+
+/******************************************************************************
+ *
+ * @fn node *TCappendSpids (node *spids1, node *spids2)
+ *
+ * @brief appends the two given N_spids chains.
+ *
+ ******************************************************************************/
+extern node *
+TCappendSpids (node *spids1, node *spids2)
+{
+    node *ret;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (spids1 == NULL || NODE_TYPE (spids1) == N_spids,
+                 "First argument of TCappendSpids() has wrong node type.");
+    DBUG_ASSERT (spids2 == NULL || NODE_TYPE (spids2) == N_spids,
+                 "Second argument of TCappendSpids() has wrong node type.");
+
+    APPEND (ret, node *, SPIDS, spids1, spids2);
+
+    DBUG_RETURN (ret);
+}
 
 /** <!-- ****************************************************************** -->
  * @fn node *TCcreateExprsFromArgs( node *args)
@@ -1788,6 +1834,28 @@ TCgetNthExprsExpr (size_t n, node *exprs)
     result = EXPRS_EXPR (TCgetNthExprs (n, exprs));
     
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * @fn node *TCgetLastExprsExpr(node *exprs)
+ *
+ * @brief given an N_exprs chain, return the last EXPRS_EXPR in the chain.
+ * If n > chain length, return NULL.
+ *
+ ******************************************************************************/
+node *
+TCgetLastExprsExpr (node *exprs)
+{
+    size_t last_index;
+    node *expr;
+
+    DBUG_ENTER ();
+
+    last_index = TCcountExprs (exprs) - 1;
+    expr = TCgetNthExprsExpr (last_index, exprs);
+
+    DBUG_RETURN (expr);
 }
 
 /** <!-- ****************************************************************** -->

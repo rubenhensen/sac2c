@@ -19,6 +19,22 @@ ENDPHASE (scp)
 
 PHASE (pre, "Preprocessing SAC program", !global.runtime)
 
+SUBPHASE (ffc, "Assigning type pattern constraints to pre- and post-conditions",
+          FFCdoFilterFundefConditions,
+          ALWAYS, pre)
+
+SUBPHASE (atp, "Analysing type patterns and converting to built-in types",
+          ATPdoAnalyseTypePattern,
+          ALWAYS, pre)
+
+SUBPHASE (rtpf, "Turning type pattern functions into code",
+          RTPFdoResolveTypePatternFundefs,
+          ALWAYS, pre)
+
+SUBPHASE (rtpe, "Turning external type patterns into code",
+          RTPEdoResolveTypePatternExternals,
+          global.insertconformitychecks, pre)
+
 SUBPHASE (hs, "Hiding struct definitions behind typedefs and accessors", HSdoHideStructs,
           ALWAYS, pre)
 
@@ -86,9 +102,6 @@ PHASE (sim, "Simplifying source code", ALWAYS)
 
 SUBPHASE (w2d, "Transforming while-loops into do-loops", W2DdoTransformWhile2Do, ALWAYS,
           sim)
-
-SUBPHASE (iucfb, "Insert user-defined constraint to function body",
-          IUCFBdoInsertUdc2Funbody, ALWAYS, sim)
 
 SUBPHASE (ece, "Eliminating conditional expressions", HCEdoHandleConditionalExpressions,
           ALWAYS, sim)
@@ -890,6 +903,10 @@ SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
           SCCdoStripConformityChecks,
           global.doivext || global.optimize.doawlf || global.insertconformitychecks, opt)
 
+SUBPHASE (stpc, "Stripping type pattern guards",
+          STPCdoStripTypePatternChecks,
+          global.insertconformitychecks, opt)
+
 /*
  *   TC must run after IVE and before LS/LIR,
  *    in order to establish AKVness of some index variables
@@ -1021,6 +1038,10 @@ SUBPHASE (ts, "Displaying type specialisation statistics", TSdoPrintTypeStatisti
 SUBPHASE (cs, "Displaying constraint resolution statistics", CSdoPrintConstraintStatistics,
           global.feedback.constraint, opt)
 
+SUBPHASE (tps, "Displaying type pattern resolution statistics",
+          TPSdoPrintTypePatternStatistics,
+          global.insertconformitychecks && global.feedback.constraint, opt)
+
 SUBPHASE (stat, "Displaying optimisation statistics", STATdoPrintStatistics,
           global.feedback.optimisation, opt)
 
@@ -1121,7 +1142,7 @@ CYCLEPHASE (dcr, "Dead Code Removal", DCRdoDeadCodeRemoval, ALWAYS, cuda, mtrane
 ENDCYCLE (mtranexp)
 
 CYCLE (mtran, "Optimise memory transfers cycle (non-hybrid only)",
-       global.optimize.domemopt && (global.backend == BE_cuda), cuda, RESET) 
+       global.optimize.domemopt && (global.backend == BE_cuda), cuda, RESET)
 
 CYCLEPHASE (mcstran, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
             ALWAYS, cuda, mtran)
@@ -1335,16 +1356,16 @@ SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.
 SUBPHASE (cnstass, "CUDA Flatten generators", CNSTASSdoCUDAconstantAssignment,
           (global.backend == BE_cuda), mem)
 For now (2021) I (sbs) leave this in uncommented form here. This phase does
-two things: (1) It makes sure that all gen-vars are structural constants 
+two things: (1) It makes sure that all gen-vars are structural constants
         and (2) It lifts all N_num into N_id nodes.
 It seems that (1) is redundant and even broken(!).
-(2) inhibits known constants to make their way to pc:cuknl! The problem is 
+(2) inhibits known constants to make their way to pc:cuknl! The problem is
     that SSAASSIGN is gone after ussa and AKV types disappear until pc:cuknl :
     mem:alloc introduces explicit memory, and, in doing so elides all AKV types.
     This makes conceptual sense as we switch to a stateful representation here.
     pc:mmv later replaces the value variables by their (AKV-less) memory.
-    Consequently, the AKV info is gone in pc:cuknl. Even if we were to make 
-    the AKVs survive mem, theuy surely must not survive ussa, since we can 
+    Consequently, the AKV info is gone in pc:cuknl. Even if we were to make
+    the AKVs survive mem, theuy surely must not survive ussa, since we can
     not guarantee that there is not more than one assignment per variable.
 
 For now, we try whether we can safely leave out this phase....
@@ -1576,7 +1597,7 @@ SUBPHASE (cfp, "MUTC create function pairs", CFPdoCreateFunctionPairs,
 
 /* TVD: Runtime Specialization */
 SUBPHASE (rtspec, "Runtime Specialization create wrapper entry functions",
-          RTSPECdoCreateWrapperEntries, 
+          RTSPECdoCreateWrapperEntries,
           (global.config.rtspec == TRUE) && (global.rtspec_mode == RTSPEC_MODE_SIMPLE),
           pc)
 

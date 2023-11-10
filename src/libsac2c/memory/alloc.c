@@ -1775,6 +1775,17 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCmakePrf1 (F_shape_A, DUPdoDupNode (arg_node));
         break;
 
+    case F_all_V:
+        /*
+         * _all_V_ always yields a scalar
+         *
+         * _all_V_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_bool);
+        break;
+
     case F_sel_VxIA:
         // DBUG_UNREACHABLE ("IMPLEMENT THIS");
         als->dim = TCmakePrf2 (F_sub_SxS,
@@ -2055,17 +2066,19 @@ EMALprf (node *arg_node, info *arg_info)
 
     case F_guard:
         /*
-         * X' = guard( X, p);
+         * x1', ..., xn' = guard (x1, ..., xn, p)
+         * - xi' are an alias of xi
+         * - consumes p
          */
-        als->dim = MakeDimArg (PRF_ARG1 (arg_node));
-        als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
     case F_afterguard:
         /*
-         * v = afterguard(a,p1,...,pn)
-         * - consumes p1...pn
-         * - v is an alias of a_i
+         * x' = afterguard (x, p1, ..., pn)
+         * - x' is an alias of x
+         * - consumes all pi
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
         INFO_MUSTFILL (arg_info) = EA_nofill;

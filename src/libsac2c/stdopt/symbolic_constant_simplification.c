@@ -78,6 +78,7 @@
 #define DBUG_PREFIX "SCS"
 #include "debug.h"
 
+#include "ctinfo.h"
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
@@ -935,7 +936,7 @@ isMatchPrfShapes (node *arg_node)
 
     type1 = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
     type2 = AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)));
-    res = TUshapeKnown (type1) && TUshapeKnown (type2) 
+    res = TUshapeKnown (type1) && TUshapeKnown (type2)
           && TUeqShapes (type1, type2);
 
     DBUG_RETURN (res);
@@ -1247,11 +1248,11 @@ bool matchesDyadicWithRightArg (node *expr, node *arg2, prf *fun, node **arg1)
  * @fn bool matchesDyadicWithGivenArg (node *expr, node *arg,
  *                                     prf *fun, node **other_arg, bool *arg_is_left)
  *
- * @brief: checks whether <expr> matches 
+ * @brief: checks whether <expr> matches
  *         (<arg> fun other_arg) or (other_arg fun <arg>) where
  *         <expr> and <arg> are given through the parameters,
  *         fun and other_arg are being matched here and returned through the
- *         parameters. The final return value arg_is_left indicates which 
+ *         parameters. The final return value arg_is_left indicates which
  *         variant matched; if true, it is the former.
  *         NOTE here, that not necessarily fun itself is returned
  *         but the _SxS_ version of it!
@@ -2860,7 +2861,7 @@ SCSprf_lege (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
     if (SCSisMatchPrfargs (arg_node, arg_info)) {
-        // (x <prf> x)  
+        // (x <prf> x)
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
     } else if ( ((TULSgetPrfFamilyName (PRF_PRF (arg_node)) == F_ge_SxS)
              && SCScanOptGEOnDyadicFn (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), &z))
@@ -3163,6 +3164,21 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * @fn node *SCSprf_all_V (node *arg_node, info *arg_info)
+ *
+ ******************************************************************************/
+node *
+SCSprf_all_V (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_sel_VxIA( node *arg_node, info *arg_info)
@@ -3216,32 +3232,44 @@ SCSprf_reshape (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
  *  Functions for removing array operation conformability checks
  *
- *****************************************************************************/
+ ******************************************************************************/
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
  * @fn node *SCSprf_guard( node *arg_node, info *arg_info)
  *
- * TC can't handle this unless BOTH arguments are AKV.
+ * @brief x1', ..., xn' = guard (x1, ..., xn, p)
+ * If p is true, then result is x1, ... xn.
  *
- *   X' = guard( X, pred);
- *
- *   If pred is TRUE, then result is X.
- *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCSprf_guard (node *arg_node, info *arg_info)
 {
+    node *exprs, *pred_expr;
+    ntype *pred_type;
     node *res = NULL;
 
     DBUG_ENTER ();
 
-    if (SCSisConstantOne (PRF_ARG2 (arg_node))) {
-        res = DUPdoDupNode (PRF_ARG1 (arg_node));
+    // The last argument is the predicate
+    pred_expr = TCgetLastExprsExpr (PRF_ARGS (arg_node));
+    pred_type = ID_NTYPE (pred_expr);
+
+    if (TYisAKV (pred_type)) {
+        if (COisTrue (TYgetValue (pred_type), TRUE)) {
+            // Copy all but the last argument
+            exprs = PRF_ARGS (arg_node);
+            while (EXPRS_NEXT (exprs) != NULL) {
+                res = TCappendExprs (res, DUPdoDupNode (exprs));
+                exprs = EXPRS_NEXT (exprs);
+            }
+        } else {
+            CTIabort (NODE_LOCATION (arg_node), "guard failed");
+        }
     }
 
     DBUG_RETURN (res);

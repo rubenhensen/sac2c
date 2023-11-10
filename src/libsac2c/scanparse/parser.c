@@ -4,6 +4,7 @@
 #include <errno.h>
 
 #include "config.h"
+#include "convert.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -40,10 +41,6 @@
 static node *handle_generator_body (struct parser *parser, bool array_comprehension_p,
                                     struct array_comp_ctxt *ctxt);
 
-static ntype *Exprs2NType (ntype *, node *);
-static size_t CountDotsInExprs (node *);
-static shape *Exprs2Shape (node *);
-
 /* Helper function to annotate a node with location and return it.  */
 static inline node *
 loc_annotated (struct location loc, node *n)
@@ -52,108 +49,8 @@ loc_annotated (struct location loc, node *n)
     return n;
 }
 
-static ntype *
-Exprs2NType (ntype *basetype, node *exprs)
-{
-    size_t n;
-    size_t dots = 0;
-    shape *shp;
-    ntype *result = NULL;
-    struct location loc;
-
-    DBUG_ENTER ();
-
-    n = TCcountExprs (exprs);
-    loc = NODE_LOCATION (EXPRS_EXPR1 (exprs));
-
-    switch (NODE_TYPE (EXPRS_EXPR1 (exprs))) {
-    case N_spid:
-        if (SPID_NS (EXPRS_EXPR1 (exprs)) != NULL)
-            error_loc (loc, "illegal shape specification");
-        else if (SPID_NAME (EXPRS_EXPR1 (exprs))[1] != '\0')
-            error_loc (loc, "illegal shape specification");
-        else {
-            switch (SPID_NAME (EXPRS_EXPR1 (exprs))[0]) {
-            case '*':
-                result = TYmakeAUD (basetype);
-                break;
-            case '+':
-                result = TYmakeAUDGZ (basetype);
-                break;
-            default:
-                error_loc (loc, "illegal shape specification");
-                break;
-            }
-        }
-        break;
-    case N_dot:
-        dots = CountDotsInExprs (exprs);
-        if (dots != n)
-            error_loc (loc, "illegal shape specification");
-        else
-            result = TYmakeAKD (basetype, dots, SHmakeShape (0));
-        break;
-    case N_num:
-        shp = Exprs2Shape (exprs);
-        if (shp != NULL)
-            result = TYmakeAKS (basetype, shp);
-        else
-            error_loc (loc, "illegal shape specification");
-        break;
-    default:
-        error_loc (loc, "illegal shape specification");
-        break;
-    }
-
-    exprs = FREEdoFreeTree (exprs);
-
-    DBUG_RETURN (result);
-}
-
-static size_t
-CountDotsInExprs (node *exprs)
-{
-    size_t result = 0;
-
-    DBUG_ENTER ();
-
-    while (exprs != NULL) {
-        if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_dot)
-            result++;
-
-        exprs = EXPRS_NEXT (exprs);
-    }
-
-    DBUG_RETURN (result);
-}
-
-static shape *
-Exprs2Shape (node *exprs)
-{
-    shape *result;
-    size_t n;
-    int cnt = 0;
-
-    DBUG_ENTER ();
-
-    n = TCcountExprs (exprs);
-
-    result = SHmakeShape (n);
-
-    while (exprs != NULL && result != NULL) {
-        if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_num)
-            result = SHsetExtent (result, cnt, NUM_VAL (EXPRS_EXPR (exprs)));
-        else
-            result = SHfreeShape (result);
-        exprs = EXPRS_NEXT (exprs);
-        cnt++;
-    }
-
-    DBUG_RETURN (result);
-}
-
 static node *
-SetClassType (node *module, ntype *type, node *pragmas)
+SetClassType (node *module, node *type, node *pragmas)
 {
     node *tdef;
 
@@ -161,8 +58,9 @@ SetClassType (node *module, ntype *type, node *pragmas)
 
     tdef = TBmakeTypedef (strdup (NSgetModule (MODULE_NAMESPACE (module))),
                           NSdupNamespace (MODULE_NAMESPACE (module)),
-                          strdup (global.default_component_name), type, NULL,
+                          strdup (global.default_component_name), NULL, NULL,
                           MODULE_TYPES (module));
+    TYPEDEF_TYPEPATTERN (tdef) = type;
 
     NODE_LOCATION (tdef) = NODE_LOCATION (module);
     TYPEDEF_ISUNIQUE (tdef) = TRUE;
@@ -400,16 +298,23 @@ cleanup:
     return ret;
 }
 
-/* Handle list of type subexpressions.
-   It could be a standard expression and { '.', '+', '*' }.  */
+/* Handle list of type subexpressions. these can be
+   - '.'    => N_dot(1)
+   - num    => N_num
+   - id     => N_sptid{id}
+   - num:id => N_sptid{id} - num  -isVect
+   - idd:id => N_sptid{id} - id   -isVect
+   */
 static node *
 handle_type_subscript_expr (struct parser *parser)
 {
     struct token *tok;
+    enum token_class tclass;
     struct location loc;
-    node *t;
+    node *t, *t2;
 
     tok = parser_get_token (parser);
+    tclass = token_class (tok);
     loc = token_location (tok);
 
     if (token_is_operator (tok, tv_dot))
@@ -419,10 +324,20 @@ handle_type_subscript_expr (struct parser *parser)
     else if (token_is_operator (tok, tv_mult))
         t = TBmakeSpid (NULL, strdup ("*"));
     else {
-        parser_unget (parser);
-        /* FIXME handle_expr might be an overkill here: as expr has
-           conditionals, binary operations, etc.  */
-        t = handle_expr (parser);
+        if (tclass == tok_number || tclass == tok_number_int)
+            t = TBmakeNum ((int)strtoll (token_as_string (tok), (char **)NULL, 0));
+        else {
+            parser_unget (parser);
+            t = handle_id (parser);
+        }
+        tok = parser_get_token (parser);
+        if (token_is_operator (tok, tv_colon)) {
+            t2 = handle_id (parser);
+            SPID_TDIM (t2) = t;
+            t = t2;
+        } else {
+            parser_unget (parser);
+        }
     }
 
     if (t == NULL || t == error_mark_node) {
@@ -434,6 +349,30 @@ handle_type_subscript_expr (struct parser *parser)
 }
 #define handle_type_subscript_list(parser)                                               \
     handle_generic_list (parser, handle_type_subscript_expr, expr_constructor)
+
+/**
+ * Count the number of `+' and `*' in the type pattern N_exprs chain.
+ */
+static int
+type_subscript_aud_count (node *exprs)
+{
+    int count = 0;
+
+    while (exprs != NULL) {
+        node *expr = EXPRS_EXPR (exprs);
+
+        if (NODE_TYPE (expr) == N_spid) {
+            char *name = SPID_NAME (expr);
+            if (STReq (name, "+") || STReq (name, "*")) {
+                count += 1;
+            }
+        }
+
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    return count;
+}
 
 /* Handle list of numbers.  */
 /* XXX Please NOTE that stupid SaC backend would not print
@@ -1130,12 +1069,14 @@ make_simple_type (enum token_kind tkind)
 }
 
 /* Type definition.  */
-ntype *
+node *
 handle_type (struct parser *parser)
 {
     struct token *tok;
     ntype *type = NULL;
     node *sub_type_exprs = NULL;
+    node *res = NULL;
+    int aud_count;
 
     if (!is_type (parser)) {
         tok = parser_get_token (parser);
@@ -1190,17 +1131,26 @@ handle_type (struct parser *parser)
     } else
         parser_unget (parser);
 
-    if (sub_type_exprs == NULL)
-        return TYmakeAKS (type, SHmakeShape (0));
-    else {
-        type = Exprs2NType (type, sub_type_exprs);
-        return type == NULL ? error_type_node : type;
+    res = TBmakeTypepattern (type, sub_type_exprs);
+
+    aud_count = type_subscript_aud_count (sub_type_exprs);
+    if (aud_count > 1) {
+        char *tmp = CVtypePattern2String (res);
+        error_loc (token_location (tok),
+                   "at most one `+' or `*' is allowed in a type pattern, "
+                   "but found %d in %s",
+                   aud_count, tmp);
+        tmp = MEMfree (tmp);
+        goto out;
     }
+
+    return res;
 
 out:
     free_type (type);
     free_node (sub_type_exprs);
-    return error_type_node;
+    free_node (res);
+    return error_mark_node;
 }
 
 static int
@@ -2011,7 +1961,7 @@ handle_primary_expr (struct parser *parser)
 
             /* ::= '[' ':'? type ']'  */
             if (is_type (parser)) {
-                ntype *type;
+                node *type;
 
                 /* FIXME We haven't decieded if we want to support [:type]
                    or [type] syntax, so we do not produce the warning for
@@ -2020,15 +1970,11 @@ handle_primary_expr (struct parser *parser)
                   warning_loc (token_location (tok), "using deprecated type-cast "
                                "syntax, please remove the `:' character");  */
 
-                if (error_type_node == (type = handle_type (parser)))
+                if (error_mark_node == (type = handle_type (parser)))
                     return error_mark_node;
 
-                if (!TYisAKS (type)) {
-                    error_loc (loc, "Empty array with non-constant "
-                                    "shape found.");
-                    res = error_mark_node;
-                } else
-                    res = TCmakeVector (type, NULL);
+                res = TCmakeVector (NULL, NULL);
+                ARRAY_TYPEPATTERN (res) = type;
             }
             /* ::= '[' expr-list ']'
                    | '[' ']'
@@ -2345,7 +2291,8 @@ handle_cast_expr (struct parser *parser)
 
         if (is_type (parser)) {
             struct pre_post_expr ret;
-            ntype *type = NULL;
+            node *type = NULL;
+            node *t;
 
             if (saw_colon)
                 warning_loc (token_location (tok),
@@ -2371,12 +2318,12 @@ handle_cast_expr (struct parser *parser)
             */
             ret = handle_cast_expr (parser);
 
-            if (ret.expr == error_mark_node || type == error_type_node)
+            if (ret.expr == error_mark_node || type == error_mark_node)
                 return (struct pre_post_expr){error_mark_node, NULL};
 
-            return (
-              struct pre_post_expr){loc_annotated (loc, TBmakeCast (type, ret.expr)),
-                                    ret.parent_exprs};
+            t = TBmakeCast (NULL, ret.expr);
+            CAST_TYPEPATTERN (t) = type;
+            return (struct pre_post_expr){loc_annotated (loc, t), ret.parent_exprs};
         } else {
             if (saw_colon)
                 parser_unget (parser);
@@ -4229,7 +4176,7 @@ handle_vardecl_list (struct parser *parser)
 
     while (true) {
         if (is_type (parser)) {
-            ntype *type;
+            node *type;
             node *ids = error_mark_node;
 
             type = handle_type (parser);
@@ -4238,7 +4185,7 @@ handle_vardecl_list (struct parser *parser)
                exists after the type.  If not, check if the symbol is
                `=' which can be an assignment where the variable is named
                the same way as a type.  */
-            if (type != NULL && type != error_type_node
+            if (type != NULL && type != error_mark_node
                 && (error_mark_node != (ids = handle_var_id_list (parser))
                     && NULL != ids)) {
                 if (parser_expect_tval (parser, tv_semicolon))
@@ -4253,10 +4200,10 @@ handle_vardecl_list (struct parser *parser)
                     node *avis;
                     node *ids_tmp;
 
-                    avis = TBmakeAvis (strdup (SPIDS_NAME (ids)), TYcopyType (type));
+                    avis = TBmakeAvis (strdup (SPIDS_NAME (ids)), NULL);
+                    AVIS_TYPEPATTERN (avis) = DUPdoDupTree (type);
                     ret = TBmakeVardec (avis, ret);
                     NODE_LOCATION (avis) = NODE_LOCATION (ret) = NODE_LOCATION (ids);
-                    AVIS_DECLTYPE (VARDEC_AVIS (ret)) = TYcopyType (type);
                     ids_tmp = SPIDS_NEXT (ids);
                     free_node (ids);
                     ids = ids_tmp;
@@ -4264,10 +4211,10 @@ handle_vardecl_list (struct parser *parser)
 
                 ret = TBmakeVardec (loc_annotated (NODE_LOCATION (ids),
                                                    TBmakeAvis (strdup (SPIDS_NAME (ids)),
-                                                               type)),
+                                                               NULL)),
                                     ret);
+                AVIS_TYPEPATTERN (VARDEC_AVIS (ret)) = type;
                 NODE_LOCATION (ret) = NODE_LOCATION (ids);
-                AVIS_DECLTYPE (VARDEC_AVIS (ret)) = TYcopyType (type);
                 free_node (ids);
                 continue;
             } else
@@ -4275,7 +4222,7 @@ handle_vardecl_list (struct parser *parser)
 
             /* In case there was an error in type or identifiers.  */
             parser_get_until_tval (parser, tv_semicolon);
-            free_type (type);
+            free_tree (type);
             free_node (ids);
             continue;
         } else
@@ -4489,28 +4436,32 @@ static node *
 handle_rettype_list (struct parser *parser)
 {
     struct token *tok;
-    ntype *res = handle_type (parser);
+    node *res = handle_type (parser);
     node *t;
 
     if (res == NULL)
         return NULL;
-    if (res == error_type_node)
+    if (res == error_mark_node)
         return error_mark_node;
 
     tok = parser_get_token (parser);
     if (!token_is_operator (tok, tv_comma)) {
         parser_unget (parser);
-        return TBmakeRet (res, NULL);
+        t = TBmakeRet (NULL, NULL);
+        RET_TYPEPATTERN (t) = res;
+        return t;
     }
 
-    /* Check if the next token is '...', in whcih case
+    /* Check if the next token is '...', in which case
        we have reached the end of the list.  If we don't have
        this code, then the next recursive invocation will emit
        an error.  */
     tok = parser_get_token (parser);
     if (token_is_operator (tok, tv_threedots)) {
         parser_unget2 (parser);
-        return TBmakeRet (res, NULL);
+        t = TBmakeRet (NULL, NULL);
+        RET_TYPEPATTERN (t) = res;
+        return t;
     } else
         parser_unget (parser);
 
@@ -4519,8 +4470,10 @@ handle_rettype_list (struct parser *parser)
         error_loc (token_location (tok), "valid type expected after comma");
         return error_mark_node;
     }
+    t = TBmakeRet (NULL, t);
+    RET_TYPEPATTERN (t) = res;
 
-    return TBmakeRet (res, t);
+    return t;
 }
 
 /* rettypes ::= type-list | type-list ',' '...' | '...'  */
@@ -4579,7 +4532,7 @@ handle_rettypes (struct parser *parser, bool vaargs, bool *three_dots_p)
 node *
 handle_argument (struct parser *parser)
 {
-    ntype *type = error_type_node;
+    node *type = error_mark_node;
     node *ret = error_mark_node;
     struct identifier *id = NULL;
     struct token *tok;
@@ -4594,7 +4547,7 @@ handle_argument (struct parser *parser)
 
     type = handle_type (parser);
 
-    if (type == NULL || type == error_type_node)
+    if (type == NULL || type == error_mark_node)
         goto error;
 
     tok = parser_get_token (parser);
@@ -4636,18 +4589,18 @@ handle_argument (struct parser *parser)
 
     DBUG_ASSERT (id, "id cannot be NULL here");
 
-    var = loc_annotated (type_loc, TBmakeAvis (strdup (id->id), type));
+    var = loc_annotated (type_loc, TBmakeAvis (strdup (id->id), NULL));
+    AVIS_TYPEPATTERN (var) = type;
     /* consume the identifier  */
     parser_get_token (parser);
     free (id);
     ret = loc_annotated (var_loc, TBmakeArg (var, NULL));
-    AVIS_DECLTYPE (ARG_AVIS (ret)) = TYcopyType (type);
     ARG_ISREFERENCE (ret) = ref;
 
     return ret;
 
 error:
-    free_type (type);
+    free_tree (type);
     free_node (ret);
     parser_get_until_oneof_tvals (parser, 2, tv_comma, tv_rparen);
     parser_unget (parser);
@@ -5035,6 +4988,7 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
     node *ret_types = error_mark_node;
     node *fname = error_mark_node;
     node *args = error_mark_node;
+    node *constraints = NULL;
     node *body = NULL;
     node *ret = error_mark_node;
     node *pragmas = NULL;
@@ -5237,6 +5191,18 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
     } else
         parser_get_token (parser);
 
+    /**
+     * Handle type pattern constraints:
+     * foo (...) | expr_1, ..., expr_n { ... }
+     */
+    tok = parser_get_token (parser);
+    if (token_is_operator (tok, tv_or)) {
+        constraints = handle_expr_list (parser);
+    } else {
+        // The token was not a `|', there are no type pattern constraints.
+        parser_unget (parser);
+    }
+
 semi_or_exprs:
     tok = parser_get_token (parser);
     if (token_is_operator (tok, tv_semicolon)) {
@@ -5272,6 +5238,7 @@ pragmas:
         free_node (fname);
         free_node (args);
         free_node (body);
+        free_node (constraints);
         free_node (ret);
         free_node (pragmas);
         *ftype = fun_error;
@@ -5313,9 +5280,14 @@ pragmas:
     FUNDEF_NAME (ret) = SPID_NAME (fname);
     MEMfree (fname);
     FUNDEF_PRAGMA (ret) = pragmas;
+    FUNDEF_ISMAIN (ret) = is_main;
 
-    if (is_main)
-        FUNDEF_ISMAIN (ret) = true;
+    /**
+     * Initially assign all constraints to ArgConstraints, the phase
+     * filter_fundef_conditions is responsible for deciding whether a
+     * constraint operates on arguments or return values.
+     */
+    FUNDEF_PRECONDS (ret) = constraints;
 
     if (fundef_p) {
         /* FIXME ALLOWSINFIX is deprecated and is not used anywhere elese.  */
@@ -5327,10 +5299,12 @@ pragmas:
         FUNDEF_ISEXTERN (ret) = true;
         FUNDEF_HASDOTRETS (ret) = ret_three_dots;
         FUNDEF_HASDOTARGS (ret) = arg_three_dots;
-        if (specialize_p)
+        if (specialize_p) {
+            FUNDEF_ISSPECIALISATION (ret) = TRUE;
             *ftype = fun_specialize_fundec;
-        else if (extern_p)
+        } else if (extern_p) {
             *ftype = fun_extern_fundec;
+        }
     }
 
     return ret;
@@ -5605,7 +5579,7 @@ handle_typedef (struct parser *parser)
     bool nested = false;
     bool builtin_p = false;
     node *ret = error_mark_node;
-    ntype *type = error_type_node;
+    node *type = error_mark_node;
     node *pragmas = NULL;
     node *args = NULL;
     char *name = NULL;
@@ -5667,10 +5641,7 @@ handle_typedef (struct parser *parser)
 
     if (!extern_p && !builtin_p && is_type (parser)) {
         type = handle_type (parser);
-        if (!TUshapeKnown (type)) {
-            nested = true;
-        }
-        if (type == error_type_node)
+        if (type == error_mark_node)
             goto skip_error;
     }
 
@@ -5733,7 +5704,8 @@ handle_typedef (struct parser *parser)
         TYPEDEF_ISEXTERNAL (ret) = true;
         TYPEDEF_PRAGMA (ret) = pragmas;
     } else {
-        ret = TBmakeTypedef (name, NULL, component_name, type, NULL, NULL);
+        ret = TBmakeTypedef (name, NULL, component_name, NULL, NULL, NULL);
+        TYPEDEF_TYPEPATTERN (ret) = type;
         if (nested == true) {
             TYPEDEF_ISNESTED (ret) = true;
         }
@@ -5757,7 +5729,7 @@ error:
     if (component_name)
         free (component_name);
 
-    free_type (type);
+    free_tree (type);
     free_tree (args);
     free_tree (pragmas);
     return error_mark_node;
@@ -5796,7 +5768,7 @@ handle_struct_def (struct parser *parser)
 
     while (true) {
         if (is_type (parser)) {
-            ntype *type;
+            node *type;
             node *ids = error_mark_node;
             struct location loc;
 
@@ -5805,7 +5777,7 @@ handle_struct_def (struct parser *parser)
             loc = token_location (parser_get_token (parser));
             parser_unget (parser);
 
-            if (type != NULL && type != error_type_node
+            if (type != NULL && type != error_mark_node
                 && (error_mark_node != (ids = handle_var_id_list (parser)))) {
                 if (parser_expect_tval (parser, tv_semicolon))
                     parser_get_token (parser);
@@ -5826,8 +5798,8 @@ handle_struct_def (struct parser *parser)
                     node *se;
                     node *ids_tmp;
 
-                    se = TBmakeStructelem (strdup (SPIDS_NAME (ids)), TYcopyType (type),
-                                           NULL);
+                    se = TBmakeStructelem (strdup (SPIDS_NAME (ids)), NULL, NULL);
+                    STRUCTELEM_TYPEPATTERN (se) = DUPdoDupTree (type);
                     NODE_LOCATION (se) = NODE_LOCATION (ids);
                     if (ret == NULL) {
                         ret = se;
@@ -5847,7 +5819,7 @@ handle_struct_def (struct parser *parser)
 
             /* In case there was an error in type or identifiers.  */
             parser_get_until_tval (parser, tv_semicolon);
-            free_type (type);
+            free_tree (type);
             free_node (ids);
             continue;
         } else
@@ -5885,7 +5857,7 @@ node *
 handle_objdef (struct parser *parser)
 {
     struct token *tok;
-    ntype *type = error_type_node;
+    node *type = error_mark_node;
     node *expr = error_mark_node;
     char *name = NULL;
     bool extern_p = false;
@@ -5914,7 +5886,7 @@ handle_objdef (struct parser *parser)
 
     type = handle_type (parser);
 
-    if (type == NULL || type == error_type_node)
+    if (type == NULL || type == error_mark_node)
         goto skip_error;
 
     if (parser_expect_tclass (parser, tok_id))
@@ -5965,12 +5937,15 @@ handle_objdef (struct parser *parser)
         }
 
         if (extern_p) {
-            node *ret = TBmakeObjdef (type, NULL, name, NULL, NULL);
+            node *ret = TBmakeObjdef (NULL, NULL, name, NULL, NULL);
+            OBJDEF_TYPEPATTERN (ret) = type;
             OBJDEF_ISEXTERN (ret) = true;
             return loc_annotated (objdef_loc, ret);
-        } else
-            return loc_annotated (objdef_loc,
-                                  TBmakeObjdef (type, NULL, name, expr, NULL));
+        } else {
+            node *ret = TBmakeObjdef (NULL, NULL, name, expr, NULL);
+            OBJDEF_TYPEPATTERN (ret) = type;
+            return loc_annotated (objdef_loc, ret);
+        }
     }
 
 skip_error:
@@ -6380,7 +6355,7 @@ parse (struct parser *parser)
             free (name);
     } else if (token_is_keyword (tok, CLASS)) {
         node *defs = error_mark_node;
-        ntype *classtype = error_type_node;
+        node *classtype = error_mark_node;
         node *pragmas = NULL;
         char *name = NULL;
         char *deprecated = NULL;
@@ -6437,8 +6412,7 @@ parse (struct parser *parser)
         else if (token_is_keyword (tok, EXTERN)) {
             tok = parser_get_token (parser);
             if (token_is_keyword (tok, CLASSTYPE))
-                classtype
-                  = TYmakeAKS (TYmakeHiddenSimpleType (UT_NOT_DEFINED), SHmakeShape (0));
+                classtype = TBmakeTypepattern (TYmakeHiddenSimpleType (UT_NOT_DEFINED), NULL);
             else {
                 parser_unget (parser);
                 classtype_parse_error = true;

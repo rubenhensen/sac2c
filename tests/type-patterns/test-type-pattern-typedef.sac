@@ -1,0 +1,50 @@
+// Test whether the compiler is able to parse type patterns for typedefs.
+// Applying type patterns to typedefs requires that dim, and shape are defined
+// for these typedefs.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 4
+
+typedef double[2] complex;
+
+inline
+complex toc (double real)
+{
+    res = (complex)[real, 0d];
+    return res;
+}
+
+inline
+int dim (complex[*] array)
+{
+    d = _dim_A_ ((double[*])array);
+    res = _sub_SxS_ (d, 1);
+    return res;
+}
+
+inline
+int[.] shape (complex[*] array)
+{
+    shp = _shape_A_ ((double[*])array);
+    res = _drop_SxV_ (_sub_SxS_ (0, 1), shp);
+    return res;
+}
+
+int foo (complex[n,d:shp] a)
+{
+    res = _add_SxS_ (n, d);
+    return res;
+}
+
+int main()
+{
+    // shape(array) = [2,3,1]
+    array = [ [ [toc(1d)], [toc(2d)], [toc(3d)] ],
+              [ [toc(4d)], [toc(5d)], [toc(6d)] ] ];
+    // n + d = 2 + dim([3,1]) = 2 + 2 = 4
+    res = foo (array);
+    return res;
+}

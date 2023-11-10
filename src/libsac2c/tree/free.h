@@ -11,7 +11,9 @@
  */
 
 extern node *FREEdoFreeNode (node *arg_node);
+extern node *FREEoptFreeNode (node *arg_node);
 extern node *FREEdoFreeTree (node *arg_node);
+extern node *FREEoptFreeTree (node *arg_node);
 
 extern node *FREEfreeZombie (node *fundef);
 extern node *FREEremoveAllZombies (node *arg_node);

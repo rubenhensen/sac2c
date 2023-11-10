@@ -445,74 +445,43 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
 
 /******************************************************************************
  *
- * function:
- *    ntype *NTCCTprf_guard( te_info *info, ntype *elems)
+ * @fn ntype *NTCCTprf_guard (te_info *info, ntype *args)
  *
- * description: X', Y', Z'... = guard( X, Y, Z, ..., pred);
- *             pred is Boolean scalar
- *             X, Y, Z... are anything.
- *             If( pred), X' = X; Y' = Y; Z' = Z; ...
- *             else error.
+ * @brief x1', ..., xn' = guard (x1, ..., xn, p)
+ * xi are anything and p is a boolean scalar.
+ * If p then xi' = xi, else error.
  *
  ******************************************************************************/
-
 ntype *
 NTCCTprf_guard (te_info *info, ntype *args)
 {
-    ntype *res;
+    ntype *pred, *member, *res;
+    size_t num_rets, i;
     char *err_msg;
-    ntype *pred;
-    size_t num_rets;
-    size_t i;
 
     DBUG_ENTER ();
 
     num_rets = TYgetProductSize (args) - 1;
 
     pred = TYgetProductMember (args, num_rets);
-    TEassureBoolS ("predicate (last argument of guard())", pred);
+    TEassureBoolS ("guard predicate", pred);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         CTIabort (EMPTY_LOC, "%s", err_msg);
+    }
+
+    if (TYisAKV (pred) && COisFalse (TYgetValue (pred), FALSE)) {
+        CTIabort (EMPTY_LOC, "guard failed");
     }
 
     res = TYmakeEmptyProductType (num_rets);
+
     for (i = 0; i < num_rets; i++) {
-        TYsetProductMember (res, i, TYcopyType (TYgetProductMember (args, i)));
+        member = TYcopyType (TYgetProductMember (args, i));
+        TYsetProductMember (res, i, member);
     }
 
     DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *    ntype *NTCCTprf_guardhold( te_info *info, ntype *elems)
- *
- * description: pred' = guardhold( pred);  pred is Boolean scalar
- *              guardhold means the pred is always evaluated to true;
- *
- ******************************************************************************/
-
-ntype *
-NTCCTprf_guardhold (te_info *info, ntype *args)
-{
-    ntype *res = NULL;
-    char *err_msg;
-    ntype *pred;
-
-    DBUG_ENTER ();
-
-    pred = TYgetProductMember (args, 0);
-    TEassureBoolS ("requires predicate", pred);
-    err_msg = TEfetchErrors ();
-    if (err_msg != NULL) {
-        CTIabort (EMPTY_LOC, "%s", err_msg);
-    }
-
-    res = TYcopyType (pred);
-
-    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1661,6 +1630,43 @@ NTCCTprf_sel_VxA (te_info *info, ntype *args)
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * @fn ntype *NTCCTprf_all_V (te_info *info, ntype *args)
+ *
+ ******************************************************************************/
+ntype *
+NTCCTprf_all_V (te_info *info, ntype *args)
+{
+    ntype *array, *res = NULL;
+    char *err_msg;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "all_V called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    TEassureBoolV (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        CTIabort (EMPTY_LOC, "%s", err_msg);
+    }
+
+    if (TYisAKV (array)) {
+        res = TYmakeAKV (TYcopyType (TYgetScalar (array)),
+                         ApplyCF (info, args));
+    } else {
+        res = TYmakeAKS (TYcopyType (TYgetScalar (array)),
+                         SHmakeShape (0));
+    }
+
+    res = TYmakeProductType (1, res);
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************

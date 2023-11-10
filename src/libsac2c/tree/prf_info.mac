@@ -621,6 +621,16 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
        PPIgetPVSel, ICCsel, TEone, NULL, NULL),
 
   /*
+   * Checks whether all elements in the given vector are truthy. This function
+   * may be used by users of SaC, but is only intended to be used on small
+   * vectors, such as shapes. Internally, this function is used to compare two
+   * shape-components of type patterns.
+   */
+  PRF (all_V, (PA_V, PA_x, PA_x), 1, XXX, NTCCTprf_all_V, COall, COMPprfAll,
+       SCSprf_all_V, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL,
+       0, NULL, NULL, TEone, NULL, NULL),
+
+  /*
    * Special version of sel_VxA to mark local reads for the
    * distributed memory backend.
    * Exists only until the parser, then it is converted to
@@ -881,20 +891,30 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
        NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEval, NULL, NULL),
 
   /*******************************************************************************
-   * Functions for implementing conformability constraints:
+   * Functions for implementing conformability constraints.
+   * These functions are only intended to be used internally.
    *
    * NB. Be aware that constraint_statistics.c assumes that all
    *     constraints are contiguous in this table!
-   *
    */
 
+  /*
+   * Expects n values, and a boolean predicate. If the predicate is true, these
+   * n values are returned. Otherwise an error will be raised. These guard are
+   * inserted by type patterns, and serve as a barrier to optimisation for the
+   * provided arguments, ensuring that the predicate must hold before optimising
+   * further.
+   */
   PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_guard, NULL, COMPprfGuard,
-       SCSprf_guard, NULL, NULL, SAAdim_guard, SAAshp_guard, NULL, 0, NULL, NULL,
-       TEnMinusOne, NULL, NULL),
+       SCSprf_guard, NULL, NULL, SAAdim_guard, SAAshp_guard, NULL, 0, NULL,
+       NULL, TEnMinusOne, NULL, NULL),
 
-  PRF (guardhold, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_guardhold, NULL, COMPprfGuard,
-       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
-
+  /*
+   * Expects one value, and any number of boolean predicates. If all predicate
+   * are true, the value is returned. Otherwise an error will be raised. This
+   * guard serves as a barrier to optimisation for the provided arguments,
+   * ensuring that the predicate must hold before optimising further.
+   */
   PRF (afterguard, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_afterguard, NULL, COMPprfNoop,
        SCSprf_afterguard, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL,
        TEone, NULL, NULL),

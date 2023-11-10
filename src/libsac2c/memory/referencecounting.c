@@ -650,30 +650,36 @@ RCIprf (node *arg_node, info *arg_info)
 
     case F_guard:
         /*
-         * v1,..,vn = guard(p,a1,..an)
-         *
-         *  - Traverse p like a prf
-         * - Traverse a_i as app since they are aliased into v_i
+         * x1', ..., xn' = guard (x1, ..., xn, p)
+         * - traverse xi as app since they are aliased into xi'
+         * - traverse p like a prf
          */
-        INFO_MODE (arg_info) = rc_prfuse;
-        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-        INFO_MODE (arg_info) = rc_apuse;
-        EXPRS_EXPRS2 (PRF_ARGS (arg_node))
-          = TRAVopt (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
+        {
+            node *args = PRF_ARGS (arg_node);
+
+            // traverse all but the last expression as an app
+            INFO_MODE (arg_info) = rc_apuse;
+            while (EXPRS_NEXT (args) != NULL) {
+                EXPRS_EXPR (args) = TRAVdo (EXPRS_EXPR (args), arg_info);
+                args = EXPRS_NEXT (args);
+            }
+
+            // traverse the last expression (the predicate) as a prf
+            INFO_MODE (arg_info) = rc_prfuse;
+            EXPRS_EXPR (args) = TRAVdo (EXPRS_EXPR (args), arg_info);
+        }
         break;
 
     case F_afterguard:
         /*
-         * v = afterguard( a,p1,...,pn)
-         *
-         * - Traverse a like app since a is aliased into v
-         * - Traverse p1..pn like prfs
+         * x' = afterguard (x, p1, ..., pn)
+         * - traverse x like app since x is aliased into x'
+         * - traverse pi like prfs
          */
         INFO_MODE (arg_info) = rc_apuse;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         INFO_MODE (arg_info) = rc_prfuse;
-        EXPRS_EXPRS2 (PRF_ARGS (arg_node))
-          = TRAVopt (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
+        PRF_EXPRS2 (arg_node) = TRAVopt (PRF_EXPRS2 (arg_node), arg_info);
         break;
 
     case F_accu:

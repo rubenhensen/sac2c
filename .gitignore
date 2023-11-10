@@ -8,10 +8,12 @@ src/bin/*
 .make_track
 a.out
 a.out.c
+a.out.i
 Session.vim
 
-# Clion IDE
+# IDE generated files
 /.idea
+/.vscode
 
 # ide/clangd
 /.project

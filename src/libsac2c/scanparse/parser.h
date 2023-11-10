@@ -255,7 +255,7 @@ bool is_allowed_operation (struct token *);
 bool token_is_reserved (struct token *tok);
 
 ntype *make_simple_type (enum token_kind);
-ntype *handle_type (struct parser *);
+node *handle_type (struct parser *);
 node *handle_id (struct parser *);
 node *handle_id_or_funcall (struct parser *);
 node *handle_primary_expr (struct parser *);

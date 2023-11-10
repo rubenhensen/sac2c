@@ -47,8 +47,6 @@ extern node *PRTfundef (node *arg_node, info *arg_info);
 extern node *PRTannotate (node *arg_node, info *arg_info);
 extern node *PRTret (node *arg_node, info *arg_info);
 extern node *PRTarg (node *arg_node, info *arg_info);
-extern node *PRTudcs (node *arg_node,
-                      info *arg_info); // Fangyong add: user-defined constraints
 extern node *PRTstructelem (node *arg_node, info *arg_info);
 extern node *PRTvardec (node *arg_node, info *arg_info);
 extern node *PRTblock (node *arg_node, info *arg_info);
@@ -69,6 +67,7 @@ extern node *PRTid (node *arg_node, info *arg_info);
 extern node *PRTids (node *arg_node, info *arg_info);
 extern node *PRTspid (node *arg_node, info *arg_info);
 extern node *PRTspids (node *arg_node, info *arg_info);
+extern node *PRTtypepattern (node *arg_node, info *arg_info);
 extern node *PRTnum (node *arg_node, info *arg_info);
 extern node *PRTnumbyte (node *arg_node, info *arg_info);
 extern node *PRTnumshort (node *arg_node, info *arg_info);
