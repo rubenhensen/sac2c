@@ -45,10 +45,10 @@ HandleSpecialOptions (void)
         printLibsac2cInfo ();
         CTIexit (EXIT_SUCCESS);
     } else if (global.do_clink != DO_C_none) {
-        CCTperformTask (CCT_clinkonly);
+        CCTlinkOnly ();
         CTIexit (EXIT_SUCCESS);
     } else if (global.do_ccompile != DO_C_none) {
-        CCTperformTask (CCT_ccompileonly);
+        CCTcompileOnly ();
         CTIexit (EXIT_SUCCESS);
     }
 

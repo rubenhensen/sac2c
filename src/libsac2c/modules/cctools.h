@@ -11,8 +11,11 @@
  *
  *****************************************************************************/
 
-extern char *CCTperformTask (ccm_task_t task);
-extern node *CCTrunTools (node *syntax_tree);
-extern char *CCTperformTaskCwrapper (ccm_task_t task);
+extern node *CCTpreprocessCompileAndLink (node *syntax_tree);
+
+extern void CCTcompileOnly (void);
+extern void CCTlinkOnly (void);
+extern char *CCTreturnCompileFlags (void);
+extern char *CCTreturnLinkFlags (void);
 
 #endif /* _SAC_CCTOOLS_H_ */

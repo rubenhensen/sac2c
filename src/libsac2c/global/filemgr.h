@@ -42,6 +42,7 @@ extern void FMGRforEach (const char *path, const char *fileexpr, void *funargs,
                          void(const char *path, const char *file, void *params));
 extern char *FMGRdirname (const char *path);
 extern char *FMGRbasename (const char *path);
+extern char *FMGRstripExt (const char *path);
 extern char *FMGRfile2id (const char *path);
 
 #endif /* _SAC_FILEMGR_H_ */

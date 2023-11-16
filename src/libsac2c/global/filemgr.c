@@ -414,6 +414,26 @@ FMGRbasename (const char *path)
 }
 
 /*
+ * cuts off everything after the last dot-symbol found
+ */
+char *
+FMGRstripExt (const char *path)
+{
+    char *res;
+
+    DBUG_ENTER ();
+
+    const char *last = strrchr (path, '.');
+    if (last == NULL) {
+        res = STRcpy (path);
+    } else {
+        res = STRncpy (path, (size_t)(last-path));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/*
  * Convert file name to identifier
  * Make non alpha numeric '_'
  */
