@@ -131,7 +131,7 @@ ENDPHASE (ccg)
 
 PHASE (cicc, "Creating binary code", ALWAYS)
 
-SUBPHASE (ivcc, "Invoking C compiler", CCTrunTools, ALWAYS, cicc)
+SUBPHASE (ivcc, "Invoking C compiler", CCTpreprocessCompileAndLink, ALWAYS, cicc)
 
 ENDPHASE (cicc)
 

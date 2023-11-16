@@ -19,7 +19,7 @@ PLDFdoPrintLDFlags (node *syntax_tree)
 
     DBUG_ENTER ();
 
-    flags = CCTperformTaskCwrapper (CCT_linkflags);
+    flags = CCTreturnLinkFlags ();
     printf ("%s -l%s", flags, global.outfilename);
     flags = MEMfree (flags);
 

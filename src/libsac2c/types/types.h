@@ -944,14 +944,6 @@ typedef struct ST_SYMBOL_T stsymbol_t;
 
 typedef enum { DO_C_none = 0, DO_C_prog, DO_C_mod, DO_C_rmod } do_c_type_t;
 
-typedef enum {
-    CCT_doall,        // regular compile/link for SAC programs/modules
-    CCT_linkflags,    // just return %linkflags%
-    CCT_compileflags, // just return %compileflags%
-    CCT_clinkonly,    // just link C objects
-    CCT_ccompileonly  // just compile one C source
-} ccm_task_t;
-
 /*
  * moved from modulemanager.h
  */

@@ -1678,7 +1678,7 @@ SUBPHASE (frtr, "De-allocating syntax tree representation", FREEdoFreeTree, ALWA
 
 SUBPHASE (hdep, "Handling dependencies", DEPdoHandleDependencies, ALWAYS, icc)
 
-SUBPHASE (ivcc, "Invoking C compiler", CCTrunTools, ALWAYS, icc)
+SUBPHASE (ivcc, "Invoking C compiler", CCTpreprocessCompileAndLink, ALWAYS, icc)
 
 ENDPHASE (icc)
 
