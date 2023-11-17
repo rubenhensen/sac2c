@@ -26,7 +26,7 @@ extern char *GTPmakeValidFundefName (char *guard_str, char *name);
 // Methods for generating type pattern functions
 extern node *GTPmakePreCheck (node *fundef, char *pred, node *assigns, node *checks);
 extern node *GTPmakePostCheck (node *fundef, char *pred, node *assigns, node *checks, node *return_ids);
-extern node *GTPmodifyFundef (node *fundef, char *pred, node *impl, node *pre, node *post);
+extern node *GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post);
 extern node *GTPmakeImpl (node *fundef);
 
 #endif /* _SAC_TYPE_PATTERN_GUARD_H_ */

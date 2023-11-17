@@ -354,8 +354,7 @@ MakeGuardLet (node *ids, node *exprs, char *pred)
 
 /******************************************************************************
  *
- * @fn node *GTPmodifyFundef (node *fundef, char *pred, node *impl,
- *                            node *pre, node *post)
+ * @fn node *GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
  *
  * @brief Surrounds a function with type patterns with the newly generated pre-
  * and post-condition functions. We make this function inline as the call-site
@@ -364,13 +363,16 @@ MakeGuardLet (node *ids, node *exprs, char *pred)
  *
  ******************************************************************************/
 node *
-GTPmodifyFundef (node *fundef, char *pred, node *impl, node *pre, node *post)
+GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
 {
     node *pre_lhs = NULL, *pre_args = NULL;
     node *post_lhs = NULL, *post_args = NULL;
     node *ap, *let, *body;
+    char *pred;
 
     DBUG_ENTER ();
+
+    pred = TRAVtmpVarName ("pred");
 
     ConvertArgs (FUNDEF_ARGS (fundef), &pre_lhs, &pre_args);
     ConvertRets (FUNDEF_RETS (fundef), &post_lhs, &post_args);
@@ -385,9 +387,17 @@ GTPmodifyFundef (node *fundef, char *pred, node *impl, node *pre, node *post)
                             pred);
         body = TBmakeAssign (let, body);
 
-        // pred = foo_post (a, b, x, y, z);
+        // pred = foo_post (a, b, x, y, z)
         ap = TBmakeAp (post, TCappendExprs (DUPdoDupTree (pre_args), post_args));
         let = TBmakeLet (TBmakeSpids (STRcpy (pred), NULL), ap);
+        body = TBmakeAssign (let, body);
+    }
+
+    if (pre != NULL) {
+        // x, y, z = guard (x, y, z, pred)
+        let = MakeGuardLet (DUPdoDupTree (post_lhs),
+                            DUPdoDupTree (post_args),
+                            pred);
         body = TBmakeAssign (let, body);
     }
 
@@ -401,7 +411,7 @@ GTPmodifyFundef (node *fundef, char *pred, node *impl, node *pre, node *post)
         let = MakeGuardLet (pre_lhs, DUPdoDupTree (pre_args), pred);
         body = TBmakeAssign (let, body);
 
-        // pred = foo_pre (a, b)
+        // pre_pred = foo_pre (a, b)
         ap = TBmakeAp (pre, pre_args);
         let = TBmakeLet (TBmakeSpids (STRcpy (pred), NULL), ap);
         body = TBmakeAssign (let, body);

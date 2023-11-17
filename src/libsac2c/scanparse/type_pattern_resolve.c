@@ -91,10 +91,15 @@
  *     pred = foo_pre (a, b);
  *     a, b = guard (a, b, pred);
  *     res = foo_impl (a, b);
- *     pred = foo_post (a, b, res);
  *     res = guard (res, pred);
+ *     pred' = foo_post (a, b, res);
+ *     res = guard (res, pred');
  *     return res;
  * }
+ *
+ * Note here that we added an additional guard using the pre-condition result,
+ * after applying the implementation foo_impl. This ensures that the post-check
+ * does not accidentally consume and hide an erroneous result.
  *
  * We do this by first traversing the type patterns of arguments and return
  * types, and generating the corresponding assignments and checks.
@@ -1001,8 +1006,7 @@ RTPFfundef (node *arg_node, info *arg_info)
 
         if (pre != NULL || post != NULL) {
             impl = GTPmakeImpl (arg_node);
-            arg_node = GTPmodifyFundef (arg_node, RI_PRED (ri),
-                                        impl, pre, post);
+            arg_node = GTPmodifyFundef (arg_node, impl, pre, post);
         }
     }
 
@@ -1243,8 +1247,7 @@ RTPEfundef (node *arg_node, info *arg_info)
                                     DUPdoDupTree (FUNDEF_ARGS (arg_node)),
                                     TBmakeBlock (NULL, NULL),
                                     NULL);
-            wrapper = GTPmodifyFundef (wrapper, RI_PRED (ri),
-                                       arg_node, pre, post);
+            wrapper = GTPmodifyFundef (wrapper, arg_node, pre, post);
             INFO_NEWFUNDEFS (arg_info) =
                 TCappendFundef (INFO_NEWFUNDEFS (arg_info), wrapper);
         }
