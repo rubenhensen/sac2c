@@ -592,9 +592,11 @@ TCappendVardec (node *vardec_chain, node *vardec)
     DBUG_ENTER ();
 
     DBUG_ASSERT (((vardec_chain == NULL) || (NODE_TYPE (vardec_chain) == N_vardec)),
-                 "First argument of AppendVardec() has wrong node type.");
+                 "First argument of AppendVardec() has wrong node type \"%s\".",
+                 vardec_chain == NULL ? "NULL" : NODE_TEXT (vardec_chain));
     DBUG_ASSERT (((vardec == NULL) || (NODE_TYPE (vardec) == N_vardec)),
-                 "Second argument of AppendVardec() has wrong node type.");
+                 "Second argument of AppendVardec() has wrong node type \"%s\".",
+                 vardec == NULL ? "NULL" : NODE_TEXT (vardec));
 
     APPEND (ret, node *, VARDEC, vardec_chain, vardec);
 
@@ -1780,7 +1782,7 @@ TCputNthExprs (size_t n, node *old_exprs, node *val)
         exprs = EXPRS_NEXT (exprs);
     }
 
-    EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
+    EXPRS_EXPR (exprs) = FREEdoFreeTree (EXPRS_EXPR (exprs));
     EXPRS_EXPR (exprs) = val;
     DBUG_RETURN (old_exprs);
 }

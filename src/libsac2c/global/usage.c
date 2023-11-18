@@ -531,12 +531,39 @@ PrintOptimisationOptions (void)
             "                    effect as with-loop invariant removal and cause "
             "duplication\n"
             "                    of code execution.\n\n"
-            "    -maxwls         Set the maximum number of inner with-loop elements for "
+            "    -maxwls <n>     Set the maximum number of inner with-loop elements for "
             "which\n"
             "                    aggressive behaviour will be used even if "
             "-dowls_aggressive is\n"
-            "                    not given. (default: %d)\n\n",
+            "                    not given.\n"
+            "                      (default: %d)\n\n",
             global.maxwls);
+
+    printf(
+      "    -maxwlmp <n>    Set the maximum number of partitions that a partition can be\n"
+      "                    split into by the with-loop modulo partitioning optimization.\n"
+      "                    Setting -maxwlmp 1 can greatly increase compilation speed at\n"
+      "                    the cost of slower runtime performance for code that uses\n"
+      "                    rotate or modulo operations.\n"
+      "                    Setting n > 2 has no effect unless the compiled code uses\n"
+      "                    modulo operations in a context other than rotate, in which\n"
+      "                    case it may exponentially increases compilation times.\n"
+      "                      (default: %zu)\n\n",
+      global.maxwlmp);
+    
+    printf(
+      "    -dowlmp_aggressive Set the WLMP optimization level to aggressive.\n"
+      "                    WARNING:\n"
+      "                    There are no known cases implemented yet where this\n"
+      "                    setting improves runtime performance.\n"
+      "                    In its current form, it deteriorates both runtime\n"
+      "                    and compile-time performance.\n\n"
+    );
+
+    printf(
+      "    -suppress_wlmp_code_size Suppresses the warning from WLMP about excessive\n"
+      "                    code size increases.\n\n"   
+    );
 
     printf (
       "    -dofoldfusion   Enable fusion of with-loops with fold operator (default).\n"

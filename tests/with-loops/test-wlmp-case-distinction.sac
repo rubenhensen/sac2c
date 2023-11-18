@@ -1,0 +1,28 @@
+// Check whether WLMP transforms aplmod using case distinction into a num for sufficiently low divisors in aplmod.
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -maxwlur 1 -dowlmp
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+
+//// We test whether the result is 0.
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 0 && <nlslash>
+
+
+//// If all goes well, we apply the optimization at opt:cyc:wlmp:2, which applies a case
+//// distinction on the result of the _aplmod_SxS_ computation, creating partitions that
+//// share the then with-loop invariant computation.
+//// Once it is a with-loop invariant computation, constant folding can solve the modulo
+//// computations, so we test for the absence of _aplmod_SxS_ after opt:cyc:cf:3
+// SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) -bopt:cyc:cf:3 -printfun main <file-name> 2>&1`&& <nlslash>
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "_aplmod_SxS_" 0; <nlslash>
+
+#include "mini-stdlib.sac"
+
+int main()
+{
+    return with {
+        ([0, 0] <= iv < [8, 8] step [1, 1]):  _aplmod_SxS_ (iv[0] + 1, -2) + _aplmod_SxS_ (iv[1], 2);
+    } : fold (+, 0);
+}

@@ -2760,6 +2760,15 @@
         <node name="Modarray" />
       </travuser>
     </traversal>
+    <traversal id="WLMP" name="With-Loop Modulo Partitioning" default="sons" include="wl_modulo_partitioning.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="With" />
+        <node name="Part" />
+        <node name="Prf" />
+      </travuser>
+    </traversal>
     <traversal id="IVESPLIT" name="Index Vector Elimination (Split Selections)" default="sons"
       include="ive_split_selections.h">
       <travuser>
@@ -8511,6 +8520,15 @@
           </description>
           <phases>
             <range from="ptc_dmmls" to="final" />
+          </phases>
+        </flag>
+        <flag name="WLMP_SplitCause" default="FALSE">
+          <description>
+            Used by With-Loop Modulo Partitioning to indicate that this prf node
+            caused this partition to be split up into multiple partitions.
+          </description>
+          <phases>
+            <phase name="wlmp"/>
           </phases>
         </flag>
       </flags>

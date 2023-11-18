@@ -667,6 +667,28 @@ GLOBAL (int, maxwls, 1, xfree_dummy, )
  * as long as the size of the inner withloop does not exceed maxwls.
  */
 
+GLOBAL (size_t, maxwlmp, 2, xfree_dummy, )
+/*
+ * Maximum number of partitions that the wlmp optimization is allowed to
+ * split an existing partition into.
+ * The default, 2, is always enough to transform a definition of rotate
+ * based on aplmod to runtime-efficient code.
+ */
+
+GLOBAL (bool, dowlmp_aggressive, FALSE, xfree_dummy, )
+/*
+ * Whether SRP should apply despite the upper bound of the partition being of an
+ * unknown shape.
+ * Until wl_transform.c is improved to deal with AKS partition sizes, enabling
+ * this setting should always lower both compile-time and run-time performance.
+ */
+
+ GLOBAL (bool, suppress_wlmp_code_size, FALSE, xfree_dummy, )
+ /*
+  * Whether warnings about bloated code size in the WLMP optimization should
+  * be suppressed.
+  */
+
 GLOBAL (bool, enforce_ieee, FALSE, xfree_dummy, )
 /*
  * Restrict symbolic optimizations on floating point numbers according to

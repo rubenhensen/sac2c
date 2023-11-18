@@ -1,0 +1,40 @@
+// Check whether WLMP range partitioning can deal with a negative divisor
+// There are a bunch of cases where enough information is known at compile-time for WLMP to apply
+// while allowing for a zero divisor:
+// u = -x:
+// u = -x, c = 1
+// u, x
+// u, c, x
+// Remember that u is the upper bound, x is the divisor, and c is the offset.
+
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -maxoptcyc 3 -maxwlur 1 -dowlmp
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 1; <nlslash>
+#include "mini-stdlib.sac"
+
+inline
+int[.] aplmodwithloop (int offset, int divisor, int bound)
+{
+    return with {
+        ([0] <= iv < [bound]): _aplmod_SxS_ (iv[0] + offset, divisor);
+    }: genarray([bound], 0);
+}
+
+noinline int[.] divisor_is_negative_upper_bound (int offset, int bound) { return aplmodwithloop (0, -bound, bound); }
+noinline int[.] divisor_is_negative_upper_bound_offset_1 (int bound) { return aplmodwithloop (1, -bound, bound); }
+noinline int[.] known_u_and_x (int offset) { return aplmodwithloop (offset, -3, 4); }
+noinline int[.] known_u_and_x_and_c () { return aplmodwithloop (-3, -4, 6); }
+
+int main()
+{
+    return _toi_S_ (
+        _eq_SxS_ (sum (divisor_is_negative_upper_bound_offset_1 (4)), -6)   // We get sum([-3, -2, -1, 0]) = -6
+        && _eq_SxS_ (sum (divisor_is_negative_upper_bound (0, 4)), -6)      // We get sum(0, -3, -2, -1) = -6
+        && _eq_SxS_ (sum (known_u_and_x (2)), -4)                           // We get sum([-1, 0, -2, -1]) == -4
+        && _eq_SxS_ (sum (known_u_and_x_and_c ()), -11)                     // We get sum([-3, -2, -1, 0, -3, -2]) = -11
+    ); 
+}

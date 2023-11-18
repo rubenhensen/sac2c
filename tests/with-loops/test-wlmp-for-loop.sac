@@ -1,0 +1,31 @@
+// Check whether this program compiles since this originally wouldn't compile.
+// There was a bug where the for loop caused vardecs for the MG function to be stored in the MG loop function.
+// That in turn caused the type checking step to error out.
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -maxwlur 3 -maxlur 2 -dowlmp
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 0; <nlslash>
+
+#include "mini-stdlib.sac"
+
+noinline
+int[., .] MG(int[vdim1_len, vdim2_len] v)
+{
+  for (i = 0; i < 3; i++) {
+    v = v;
+  }
+
+  return {iv -> v[_aplmod_SxS_(1 + iv[0], vdim1_len),
+                  _aplmod_SxS_(1 + iv[1], vdim2_len)] | iv < shape(v)};
+}
+
+int main()
+{
+  v = {iv -> 0 | iv < [2, 2]};
+
+  r = MG(v);
+  return r[0, 0];
+}

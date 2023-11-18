@@ -207,7 +207,7 @@ MAP_NUM (BINARY, MAX, Max, ID)
 
 #define MOD(a,b) (a)%(b)
 #define SIGNUM(x) ((0 == (x)) ? 0 : (0 < (x)) ? 1 : -1)
-#define APLREM(a,b) ((b)==0 ? (a) : (a)-((b)*((a)/(b))))
+#define APLREM(a,b) ((b) == 0 ? (a) : ((a) % (b)))
 #define APLMOD(a,b) ((APLREM(a,b) != 0) && (SIGNUM(a) != SIGNUM(b)) ? \
                      APLREM(a,b) + (b) : APLREM(a,b))
 

@@ -1,0 +1,37 @@
+// Check whether WLMP range partitioning can deal with a zero divisor
+// There are three cases where enough information is known at compile-time for WLMP to apply
+// while allowing for a zero divisor:
+// u = x, c = 0
+// u = x
+// x = 0
+// Remember that u is the upper bound, x is the divisor, and c is the offset.
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -maxoptcyc 3 -noscs -dowlmp
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 1; <nlslash>
+
+#include "mini-stdlib.sac"
+
+inline
+int[.] aplmodwithloop (int offset, int divisor, int bound)
+{
+    return with {
+        ([0] <= iv < [bound]): _aplmod_SxS_ (iv[0] + offset, divisor);
+    }: genarray([bound], 0);
+}
+
+noinline int[.] u_equals_x_and_offset_is_0 (int divisor) { return aplmodwithloop (0, divisor, divisor); }
+noinline int[.] u_equals_x (int offset, int divisor) { return aplmodwithloop (offset, divisor, divisor); }
+noinline int[.] x_is_0 (int offset, int bound) { return aplmodwithloop (offset, 0, bound); }
+
+int main()
+{
+    return _toi_S_ (
+        _eq_SxS_ (sum (u_equals_x_and_offset_is_0 (0)), 0)
+        && _eq_SxS_ (sum (u_equals_x (3, 0)), 0)
+        && _eq_SxS_ (sum (x_is_0 (2, 4)), 14) // We should get sum([2, 3, 4, 5]) == 14
+    ); 
+}
