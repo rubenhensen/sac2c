@@ -143,6 +143,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/withloop_flattening.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wl_access_analyze.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wl_cost_check.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wl_needcount.c
+${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wl_modulo_partitioning.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlpropagation.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wls.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlsbuild.c

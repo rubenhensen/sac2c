@@ -144,7 +144,7 @@ all: <example-file-name.sac>
 ```  
 
 The `<nlslash>` meta tag gets transformed into a backslash. The backslash, in combination with either `;` or `&&` allows for the subsequent commands to happen in the same shell session. If the commands were executed in different shell sessions, the variable `OUTPUT` would be lost.  
-While debugging or creating the tests, your first instinct should be to look for a missing `; <nlslash>`.
+While debugging or creating the tests, your first instinct should be to look for a missing `&& <nlslash>`.
 
 ## Description of common.mk and scripts
 

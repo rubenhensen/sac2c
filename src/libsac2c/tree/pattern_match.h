@@ -16,9 +16,11 @@
  * Design of the shiny new pattern matcher:
  */
 extern bool PMmatch (pattern *pat, pm_mode_t *pm_mode, node *expr);
+extern bool PMmatchF (pm_mode_t *pm_mode, pattern *pat, node *expr);
 
 extern bool PMmatchExact (pattern *pat, node *expr);
 extern bool PMmatchFlat (pattern *pat, node *expr);
+extern bool PMmatchFlatF (pattern *pat, node *expr);
 extern bool PMmatchFlatSkipExtrema (pattern *pat, node *expr);
 extern bool PMmatchFlatSkipGuards (pattern *pat, node *expr);
 extern bool PMmatchFlatSkipExtremaAndGuards (pattern *pat, node *expr);

@@ -139,4 +139,49 @@ MATHmax (int x, int y)
     DBUG_RETURN (max);
 }
 
+/******************************************************************************
+ * @fn int MATHfloorDivide( int dividend, int divisor)
+ *
+ * Returns integer division rounded towards negative infinity.
+ *
+ ******************************************************************************/
+int
+MATHfloorDivide(int dividend, int divisor)
+{
+    int quotient;
+    int remainder;
+
+    DBUG_ENTER ();
+
+    // Reuse C's default toward-zero division and subtract one if the result is
+    // negative and the division has a remainder.
+    quotient = dividend / divisor;
+    remainder = dividend % divisor;
+
+
+    DBUG_RETURN (quotient - (((dividend ^ divisor) < 0) && remainder != 0));
+}
+
+/******************************************************************************
+ * @fn int MATHceilDivide( int dividend, int divisor)
+ *
+ * Returns integer division rounded towards positive infinity.
+ *
+ ******************************************************************************/
+int
+MATHceilDivide(int dividend, int divisor)
+{
+    int quotient;
+    int remainder;
+
+    DBUG_ENTER ();
+
+    // Reuse C's default toward-zero division and add one if the result is
+    // positive and the division has a remainder.
+    quotient = dividend / divisor;
+    remainder = dividend % divisor;
+
+    DBUG_RETURN (quotient + (((dividend ^ divisor) > 0) && remainder != 0));
+}
+
 #undef DBUG_PREFIX

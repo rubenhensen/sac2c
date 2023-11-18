@@ -1525,13 +1525,20 @@ PMmultiExprs (int num_nodes, ...)
  *
  * @fn bool PMmatch( pattern *pat, pm_nmode_t *pm_mode, node *expr)
  *
- * @brief matches pat against expr in the specified mode
- * @return success
+ * @brief Matches pat against expr in the specified mode.
+ *
+ * @param pm_mode - The mode in which the pattern matcher should run. 
+ * @param pat     - The pattern used to match expr.
+ * @param expr    - The expression the pattern is matched against.
+ * 
+ * @return Whether the pattern is successfully matched.
  *
  *****************************************************************************/
 bool
 PMmatch (pattern *pat, pm_mode_t *pm_mode, node *expr)
 {
+    // TODO: @Bodo swap the pattern *pat and pm_mode_t argument to be consistent
+    //       with PMmatchF
     mmode = pm_mode;
     matching_level = 0;
     bool res;
@@ -1540,6 +1547,39 @@ PMmatch (pattern *pat, pm_mode_t *pm_mode, node *expr)
     DBUG_PRINT ("starting match in mode NEW");
     res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
     DBUG_PRINT ("match %s!", (res ? "succeeded" : "failed"));
+
+    DBUG_RETURN (res);
+}
+
+/** <!--*********************************************************************-->
+ *
+ * @fn bool PMmatchF( pm_mode_t *pm_mode, pattern *pat, node *expr)
+ *
+ * @brief Matches pat against expr in the specified mode, then frees pat.
+ *
+ * @param pm_mode - The mode in which the pattern matcher should run. 
+ * @param pat     - The pattern used to match expr. Always gets freed.
+ * @param expr    - The expression the pattern is matched against.
+ * 
+ * @return Whether the pattern is successfully matched.
+ *
+ * Note on the function's design:
+ *   Having pat as a pointer instead of a pointer pointer is a deliberate
+ *   choice. While this prevents setting the reference on the caller side
+ *   to NULL for added safety, it allows for patterns to be inlined within
+ *   this function call, and it keeps the expected types between PMmatch and
+ *   PMmatchF consistent.
+ *
+ *****************************************************************************/
+bool
+PMmatchF (pm_mode_t *pm_mode, pattern *pat, node *expr)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    res = PMmatch (pat, pm_mode, expr);
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -1560,6 +1600,12 @@ bool
 PMmatchFlat (pattern *pat, node *expr)
 {
     return (PMmatch (pat, PMMflat (), expr));
+}
+
+bool
+PMmatchFlatF (pattern *pat, node *expr)
+{
+    return PMmatchF (PMMflat (), pat, expr);
 }
 
 bool

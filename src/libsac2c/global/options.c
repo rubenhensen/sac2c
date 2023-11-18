@@ -466,6 +466,21 @@ OPTcheckOptionConsistency (void)
         global.optimize.dowlur = TRUE;
     }
 
+    if (!global.optimize.dowlir && global.optimize.dowlmp) {
+        global.optimize.dowlmp = FALSE;
+        CTIwarn (EMPTY_LOC,
+                 "Disabling with-loop invariant removal also disables"
+                 " with-loop modulo partitioning.\n"
+                 "Use -nowlmp in addition to -nowlir to disable this warning.");
+    }
+
+    if (global.maxwlmp == 0 && global.optimize.dowlmp) {
+        global.optimize.dowlmp = FALSE;
+        CTIwarn (EMPTY_LOC,
+                 "Setting maxwlmp to 0 disables with-loop modulo partitioning.\n"
+                 "Use -nowlmp to disable it without causing this warning.");
+    }
+
     // Any polyhedral optimizations enabled
     if ((global.optimize.dopwlf || global.optimize.dopogo || global.optimize.doplur)) {
         if (!global.optimize.dossawl) {
@@ -1060,6 +1075,10 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION ("maxrepsize", ARG_NUM (global.max_replication_size));
 
     ARGS_OPTION ("maxwls", ARG_NUM (global.maxwls));
+
+    ARGS_OPTION ("maxwlmp", ARG_NUM (global.maxwlmp));
+
+    ARGS_FLAG ("suppress_wlmp_code_size", global.suppress_wlmp_code_size = TRUE);
 
     ARGS_OPTION_BEGIN ("minarrayrep")
     {

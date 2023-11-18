@@ -47,10 +47,11 @@
 
 /* Modulus definition (integer only) taken from ISO APL Standard N8485 */
 /* Make sure that the code below matches that in constants/zipcv.c */
+/* APLREM is altered to use % since it is equivalent, more readable, and 
+   perhaps faster if the C compiler can't figure out that we mean remainder. */
 
 #define SIGNUM(x) ((0 == (x)) ? 0 : (0 < (x)) ? 1 : -1)
-#define FLRDIV(arg1, arg2)                                                               \
-    ((0 == (arg2)) ? (arg1) : (arg1) - ((arg2) * ((arg1) / (arg2))))
+#define APLREM(arg1, arg2) ((arg2) == 0 ? (arg1) : ((arg1) % (arg2)))
 
 #define SAC_ND_PRF_NEG(arg) -(arg)
 #define SAC_ND_PRF_ID(arg) (arg + 0)
@@ -60,9 +61,9 @@
 #define SAC_ND_PRF_MOD(arg1, arg2) (arg1) % (arg2)
 
 #define SAC_ND_PRF_APLMOD(arg1, arg2)                                                    \
-    (((0 != FLRDIV (arg1, arg2)) && ((SIGNUM (arg1) != SIGNUM (arg2))))                  \
-       ? FLRDIV (arg1, arg2) + (arg2)                                                    \
-       : FLRDIV (arg1, arg2))
+    (((APLREM (arg1, arg2) != 0) && ((SIGNUM (arg1) != SIGNUM (arg2))))                  \
+       ? APLREM (arg1, arg2) + (arg2)                                                    \
+       : APLREM (arg1, arg2))
 
 #define SAC_ND_PRF_EQ(arg1, arg2) (arg1) == (arg2)
 #define SAC_ND_PRF_NE(arg1, arg2) (arg1) != (arg2)

@@ -1,0 +1,27 @@
+// Ensure the upper bound is never exceeded by the partition split.
+// Specifically, we test the C(u, x) case with:
+// C(u = 8, x = 9), l = 7, o = 0
+// This leads to an upper bound of 9 despite the original upper bound being 8.
+// If this is properly caught, we get a single occurence of the number 7, so that
+// is what we test for.
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -maxoptcyc 3 -maxwlur 1 -dowlmp
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 7; <nlslash>
+#include "mini-stdlib.sac"
+
+noinline
+int[.] upper_bound_does_not_exceed_original_bound(int lower, int offset)
+{
+    return with {
+        ([lower] <= iv < [8]): _aplmod_SxS_ (iv[0] + offset, 9); 
+    }: genarray([10], 0);
+}
+
+int main ()
+{
+    return sum (upper_bound_does_not_exceed_original_bound (7, 0));
+}

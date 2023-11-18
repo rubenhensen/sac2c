@@ -1,0 +1,50 @@
+// Check whether WLMP transforms aplmod using the range partitioning method when it has all information at compile-time
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -maxoptcyc 3 -dowlmp -DINLINE_MACRO=noinline
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+
+//// We test whether the result is 16 (We get that result with -nowlmp).
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 16 && <nlslash>
+
+//// If all goes well, we apply the optimization at opt:cyc:wlmp:2, which applies the range
+//// partitioning on all 4 _aplmod_SxS_ computation, 2^4 = 16 partitions.
+//// We test whether we get the expected 16 partitions.
+// SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) -bopt:cyc:wlmp:2 -printfun mod_rotate <file-name> 2>&1`&& <nlslash>
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "* Partn *" 16 && <nlslash>
+
+//// When we inline, we expect less partitions since the rotates for the first two dimensions can be
+//// eliminated. Hence, we expect to get 2^2 = 4 partitions. We already had 1 partition from
+//// the iota, so we look for a total of 5 partitions
+//// Additionally, we expect the `_aplmod_SxS_` calls to become with-loop-invariant and later eliminated by
+//// constant folding, so we ensure there are 0 occurrences of those
+// SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) -bopt:cyc:cf:3 -printfun main -DINLINE_MACRO=inline <file-name> 2>&1`&& <nlslash>
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "* Partn *" 5 && <nlslash>
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "_aplmod_SxS_" 0; <nlslash>
+
+#include "mini-stdlib.sac"
+
+INLINE_MACRO
+int[dim:shp] mod_rotate (int[dim] offset, int[dim:shp] grid)
+{
+    // We essentially create this oneliner except we need to create an inner with-loop
+    // to replace mod() because we have no access to the stdlib:
+    //return {iv -> grid[mod (iv + offset, shp)] | iv < shp};
+
+    return with {
+        (. <= iv < shp) { 
+            mod_ = with {
+                (. <= ov < [dim]): _aplmod_SxS_ (iv[ov] + offset[ov], shp[ov]);
+            }: genarray ([dim], 0);
+            a = grid[mod_];
+        }: a;
+    }: genarray (shp, 0);
+}
+
+int main()
+{
+    grid = reshape([1, 2, 3, 3], iota(1 * 2 * 3 * 3));
+    return mod_rotate([1, 0, -7, 2], grid)[0, 1, 0, 2];
+}

@@ -8,6 +8,9 @@ extern unsigned int MATHnumDigits (int number);
 extern int MATHmin (int x, int y);
 extern int MATHmax (int x, int y);
 
+extern int MATHfloorDivide(int dividend, int divisor);
+extern int MATHceilDivide(int dividend, int divisor);
+
 #define MATH_MAX(x, y) ((x) > (y) ? (x) : (y))
 
 #endif /*_MATH_UTILS_H_ */

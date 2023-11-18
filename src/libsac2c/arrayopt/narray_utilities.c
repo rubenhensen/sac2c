@@ -99,7 +99,6 @@ NAUTisAllElemsSame (node *arg_node)
 
     DBUG_RETURN (z);
 }
-#undef DBUG_PREFIX
 
 /** <!--********************************************************************-->
  *
@@ -154,3 +153,5 @@ NAUTisMemberArray (bool tf, node *arg_node)
 
     DBUG_RETURN (z);
 }
+
+#undef DBUG_PREFIX

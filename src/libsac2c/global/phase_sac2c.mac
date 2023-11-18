@@ -469,6 +469,18 @@ CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
 CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistributiveLawOptimization,
                global.optimize.dodl, opt, cyc)
 
+CYCLEPHASEFUN (wlirimp, "Applying with-loop invariant removal inference for WLMP",
+               WLIRIdoLoopInvariantRemovalInference,
+               global.optimize.dowlir && global.optimize.dowlmp, opt, cyc)
+
+CYCLEPHASEFUN (wlirmp, "Applying with-loop invariant removal for WLMP",
+               WLIRdoLoopInvariantRemoval, global.optimize.dowlir && global.optimize.dowlmp,
+               opt, cyc)
+
+CYCLEPHASEFUN (wlmp, "Partitioning modulo computations in with-loops", 
+               WLMPdoWithLoopModuloPartitioning,
+               global.optimize.dowlmp, opt, cyc)
+
 CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                UESDdoUndoElimSubDiv,
                global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),

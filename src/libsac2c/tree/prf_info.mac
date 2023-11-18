@@ -14,8 +14,13 @@
  *    adjust scanparse/parser.c handle_function_call and friends.
  *
  * 6. Add a function COxxx to constants/constants.h and write
- *    appropriate to handle evaluation of xxx when all its
+ *    appropriate evaluation of xxx when all its
  *    arguments are constant.
+ *    When doing so, you likely have to add entries to the following:
+ *     - zipcv.c
+ *     - zipcv.h
+ *     - globals.mac
+ *     - globals.c
  *
  * 7. Run-time: add code to src/runtime/essentials_h/prf.h for
  *    the run-time execution code.

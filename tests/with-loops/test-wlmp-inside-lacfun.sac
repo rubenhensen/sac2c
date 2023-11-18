@@ -1,0 +1,45 @@
+// Check whether aplmod is extracted from the loop and condition functions.
+// Without explicitly traversing into the loop and condition function calls, this extraction wouldn't happen.
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -maxwlur 9 -maxlur 2 -dowlmp
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 0; <nlslash>
+
+
+// We expect wlmp to apply to all aplmod computations in the file during the second cycle.
+// They'll be constant folded away by cf in the third cycle, so we check for the absence
+// of aplmod in the AST after that point.
+// SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) <file-name> -bopt:cyc:cf:3 -noprelude 2>&1`&& <nlslash>
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "_aplmod_SxS_" 0; <nlslash>
+
+
+#include "mini-stdlib.sac"
+
+noinline
+int[.] loopTest (int[.] grid)
+{
+  for (i = 0; i < 3; i++) {
+    grid = {iv -> grid[_aplmod_SxS_ (iv[0], shape(grid)[0])] | iv < shape(grid)};
+  }
+
+  return grid;
+}
+
+noinline
+int[.] condTest (int[.] grid)
+{
+  return grid[0] > 0 ? {iv -> grid[_aplmod_SxS_ (iv[0]    , shape(grid)[0])] | iv < shape(grid)}
+                            : {iv -> grid[_aplmod_SxS_ (iv[0] + 5, shape(grid)[0])] | iv < shape(grid)};
+}
+
+int main()
+{
+  grid = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]; // grid must be larger than -maxwlur
+
+  res1 = loopTest(grid)[0]; // Should be 0
+  res2 = condTest(grid)[0]; // Should be 0
+  return res1 + res2; // Should also be 0
+}

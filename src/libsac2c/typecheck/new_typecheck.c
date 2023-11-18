@@ -1082,9 +1082,12 @@ NTClet (node *arg_node, info *arg_info)
                 } else {
                     /* A likely cause of failure in next line is multiple
                      * assigns of LHS (This is SSA, remember.)
+                     * Another possible cause is that the avis for the variable
+                     * didn't get (properly) saved to the vardecs.
                      */
                     DBUG_ASSERT (TYisAlpha (existing_type),
-                                 "non-alpha type for LHS found!");
+                                 "non-alpha type \"%s\" for LHS found!",
+                                 TYtype2String (existing_type, FALSE, 0));
                     ok = SSInewTypeRel (inferred_type, existing_type);
                     if (!ok) {
                         CTIabort (NODE_LOCATION (arg_node),
@@ -1169,7 +1172,9 @@ NTClet (node *arg_node, info *arg_info)
             /* A likely cause of failure in next line is multiple
              * assigns of LHS (This is SSA, remember.)
              */
-            DBUG_ASSERT (TYisAlpha (existing_type), "non-alpha type for LHS found!");
+            DBUG_ASSERT (TYisAlpha (existing_type), 
+                         "non-alpha type \"%s\" for LHS found!", 
+                         TYtype2String (existing_type, FALSE, 0));
             ok = SSInewTypeRel (inferred_type, existing_type);
             if (!ok) {
                 CTIabort (NODE_LOCATION (arg_node),

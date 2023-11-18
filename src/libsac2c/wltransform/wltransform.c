@@ -114,6 +114,18 @@
  * Step 2.2 ComputeCubes
  * ---------------------
  * 
+ *
+ *
+ *
+ *
+ * Limitations/Potential improvements:
+ *   - It may be possible to adjust wl_transform to fuse loops even when the
+ *     lower and upper bounds are unknown.
+ *     This could make the resulting program multiple times faster at the cost
+ *     of doubling the file size.
+ *     For more information and an example, look for -dowlmp_aggressive in the
+ *     wl_modulo_partitioning.c file.
+ * 
  ******************************************************************************/
 
 #include "tree_basic.h"
