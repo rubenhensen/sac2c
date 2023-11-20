@@ -2191,6 +2191,7 @@
     <traversal id="DDR" name="Dummy Definition Removal" default="sons" include="dummy_definition_removal.h">
       <travuser>
         <node name="Fundef" />
+        <node name="Block" />
         <node name="Vardec" />
         <node name="Assign" />
         <node name="Ap" />
