@@ -20,6 +20,7 @@
 extern node *DDRdoDummyDefinitionRemoval (node *arg_node);
 
 extern node *DDRfundef (node *arg_node, info *arg_info);
+extern node *DDRblock (node *arg_node, info *arg_info);
 extern node *DDRvardec (node *arg_node, info *arg_info);
 extern node *DDRassign (node *arg_node, info *arg_info);
 extern node *DDRap (node *arg_node, info *arg_info);

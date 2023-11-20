@@ -117,8 +117,7 @@ DDRdoDummyDefinitionRemoval (node *arg_node)
  *
  * @fn node *DDRfundef (node *arg_node, info *arg_info)
  *
- * @brief First remove dummies from applications, then remove dummy assignments
- * and dummy declarations.
+ * @brief Remove dummies from all function bodies.
  *
  ******************************************************************************/
 node *
@@ -126,13 +125,32 @@ DDRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("----- dummy definition removal of %s -----",
-                FUNDEF_NAME (arg_node));
-
-    FUNDEF_ASSIGNS (arg_node) = TRAVopt (FUNDEF_ASSIGNS (arg_node), arg_info);
-    FUNDEF_VARDECS (arg_node) = TRAVopt (FUNDEF_VARDECS (arg_node), arg_info);
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("----- dummy definition removal in %s -----",
+                    FUNDEF_NAME (arg_node));
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * @fn node *DDRblock (node *arg_node, info *arg_info)
+ *
+ * @brief First remove dummies from applications, then remove dummy assignments
+ * and dummy declarations.
+ *
+ ******************************************************************************/
+node *
+DDRblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
