@@ -466,19 +466,22 @@ OPTcheckOptionConsistency (void)
         global.optimize.dowlur = TRUE;
     }
 
-    if (!global.optimize.dowlir && global.optimize.dowlmp) {
-        global.optimize.dowlmp = FALSE;
+    if (!global.optimize.dowlir && (global.optimize.dosop || global.optimize.dosrp)) {
+        global.optimize.dosop = FALSE;
+        global.optimize.dosrp = FALSE;
         CTIwarn (EMPTY_LOC,
                  "Disabling with-loop invariant removal also disables"
                  " with-loop modulo partitioning.\n"
-                 "Use -nowlmp in addition to -nowlir to disable this warning.");
+                 "Use -nosop and -nosrp in addition to -nowlir to disable this warning.");
     }
 
-    if (global.maxwlmp == 0 && global.optimize.dowlmp) {
-        global.optimize.dowlmp = FALSE;
+    if (global.maxwlmp == 0 && (global.optimize.dosop || global.optimize.dosrp)) {
+        global.optimize.dosop = FALSE;
+        global.optimize.dosrp = FALSE;
         CTIwarn (EMPTY_LOC,
-                 "Setting maxwlmp to 0 disables with-loop modulo partitioning.\n"
-                 "Use -nowlmp to disable it without causing this warning.");
+                 "Setting maxwlmp to 0 disables the with-loop modulo partitioning\n"
+                 "optimizations SOP and SRP.\n"
+                 "Use -nosop and -nosrp to disable it without causing this warning.");
     }
 
     // Any polyhedral optimizations enabled
