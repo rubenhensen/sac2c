@@ -297,6 +297,9 @@ EBTfundef (node *arg_node, info *arg_info)
         if (bottom != NULL) {
             DBUG_PRINT ("bottom component found in function %s", CTIitemName (arg_node));
             if (FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
+                CTIerror (LINE_TO_LOC (global.linenum),
+                          "All instances of \"%s\" contain type errors",
+                          FUNDEF_NAME (arg_node));
                 CTIabortOnBottom (TYgetBottomError (bottom));
             } else {
                 /**
