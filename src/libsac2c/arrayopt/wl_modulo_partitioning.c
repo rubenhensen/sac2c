@@ -663,7 +663,7 @@ struct INFO {
     /* These are also used to cache, but don't use the caching struct */
     node *sop_lower_bound_base;
     node *sop_new_offset_base;
-    node *srp_new_step;
+    node *srp_new_step_avis;
 
     /* These integers are used to signal the required actions */
     size_t partition_method;
@@ -692,7 +692,7 @@ struct INFO {
 
 #define INFO_SOP_LOWER_BOUND_BASE(n) ((n)->sop_lower_bound_base)
 #define INFO_SOP_NEW_OFFSET_BASE(n) ((n)->sop_new_offset_base)
-#define INFO_SRP_NEW_STEP(n) ((n)->srp_new_step)
+#define INFO_SRP_NEW_STEP_AVIS(n) ((n)->srp_new_step_avis)
 
 #define INFO_PARTITION_METHOD(n) ((n)->partition_method)
 #define INFO_NR_REQUIRED_PARTITIONS(n) ((n)->nr_required_partitions)
@@ -742,7 +742,7 @@ MakeInfo (void)
 
     INFO_SOP_LOWER_BOUND_BASE (result) = NULL;
     INFO_SOP_NEW_OFFSET_BASE (result) = NULL;
-    INFO_SRP_NEW_STEP (result) = NULL;
+    INFO_SRP_NEW_STEP_AVIS (result) = NULL;
 
     INFO_PARTITION_METHOD (result) = WLMP_noop;
     INFO_NR_REQUIRED_PARTITIONS (result) = 0;
@@ -787,7 +787,7 @@ ResetNodeCaches (info *arg_info)
     // Reset partition-independent caches
     INFO_SOP_LOWER_BOUND_BASE (arg_info) = NULL;
     INFO_SOP_NEW_OFFSET_BASE (arg_info) = NULL;
-    INFO_SRP_NEW_STEP (arg_info) = NULL;
+    INFO_SRP_NEW_STEP_AVIS (arg_info) = NULL;
     
     DBUG_RETURN ();
 }
@@ -1253,35 +1253,48 @@ SetSRPstep (node *partition, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_SRP_NEW_STEP (arg_info) == NULL) {
-        // If we haven't generated a new step yet, we generate one that we
-        // directly adjust and insert into PART_STEP(partition)
-
-        // If there is no partition yet, we initialize one with an array of 1s.
-        if (PART_STEP (partition) == NULL) {
-            PART_STEP (partition) = TCcreateIntVector (
-                (int)(TCcountIds (INFO_WITH_IDS (arg_info))), 1, 0);
-        }
-
-        // Replace the step entry for the dimension that we operate on with
-        // abs(divisor).
-        WLUTupdateBoundNthDim (&PART_STEP (partition), 
-                               INFO_PARTITION_DIMENSION (arg_info),
-                               INFO_ABS_DIVISOR_AVIS (arg_info),
-                               &INFO_VARDECS (arg_info),
-                               &INFO_PREASSIGNS (arg_info));
-        // We store the associated avis for the other partitions
-        INFO_SRP_NEW_STEP (arg_info) = 
-            ID_AVIS (PART_STEP (partition));
-    } else {
-        // Override the step size
-        if (PART_STEP (partition) != NULL) {
-            FREEdoFreeTree (PART_STEP (partition));
-        }
-        PART_STEP (partition) = 
-            TBmakeId (INFO_SRP_NEW_STEP (arg_info));
+    // If we've already generated a new step for the partitions, reuse it
+    // after potentially freeing the old step.
+    if (INFO_SRP_NEW_STEP_AVIS (arg_info) != NULL) {
+        PART_STEP (partition) = FREEoptFreeTree (PART_STEP (partition));
+        PART_STEP (partition) = TBmakeId (INFO_SRP_NEW_STEP_AVIS (arg_info));
+        DBUG_RETURN ();
     }
 
+    // If we haven't generated a new step yet, we generate one that we
+    // directly adjust and insert into PART_STEP(partition)
+
+    // If the partition has no step size yet, create one with an array of 1s.
+    if (PART_STEP (partition) == NULL) {
+        PART_STEP (partition) = TCcreateIntVector (
+            (int)(TCcountIds (INFO_WITH_IDS (arg_info))), 1, 0);
+    }
+
+    // Replace the step entry for the dimension that we operate on with
+    // abs(divisor).
+    WLUTupdateBoundNthDim (&PART_STEP (partition), 
+                            INFO_PARTITION_DIMENSION (arg_info),
+                            INFO_ABS_DIVISOR_AVIS (arg_info),
+                            &INFO_VARDECS (arg_info),
+                            &INFO_PREASSIGNS (arg_info));
+
+    // We force the bound to become an id and store the avis for reuse in
+    // other partitions.
+    switch (NODE_TYPE (PART_STEP (partition))) {
+    case N_id:
+        INFO_SRP_NEW_STEP_AVIS (arg_info) = ID_AVIS (PART_STEP (partition));
+        break;
+    case N_array:
+        INFO_SRP_NEW_STEP_AVIS (arg_info) = 
+            FLATGexpression2Avis (PART_STEP (partition), 
+                                  &INFO_VARDECS (arg_info), 
+                                  &INFO_PREASSIGNS (arg_info), NULL);
+        PART_STEP (partition) = TBmakeId (INFO_SRP_NEW_STEP_AVIS (arg_info));
+        break;
+    default:
+        DBUG_UNREACHABLE ("Illegal node type %s for step!",
+                          NODE_TEXT (PART_STEP (partition)));
+    }
     DBUG_RETURN ();
 }
 

@@ -1,0 +1,17 @@
+// This used to cause a seg fault during compilation in the first opt cycle
+// during wlmp due to the absence of "step [1, 1]" in the partition.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -check t -noprelude -v0 -bopt:cyc
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) 
+//
+// SAC_TEST|all: <file-name-we>
+
+#include "mini-stdlib.sac"
+
+int main()
+{
+    return with {
+        ([0, 0] <= [i, j] < [4, 4]):  _aplmod_SxS_ (i + 1, 2);
+    } : fold (+, 0);
+}
