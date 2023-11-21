@@ -117,7 +117,7 @@ TPCmakeFeatureError (node *pattern, char *v, char *fundef, bool is_argument)
     DBUG_ENTER ();
 
     v = is_argument ? v : "return value";
-    error = STRcatn (6, "Type pattern error in definition of ", fundef,
+    error = STRcatn (6, "Type pattern error in application of ", fundef,
                         ": feature `", CVtypePatternShape2String (pattern),
                         "' in ", v);
 
@@ -143,7 +143,7 @@ TPCmakeDimError (node *pattern, char *v, char *fundef, int fdim,
 
     sprintf (num_str, "%d", fdim);
     v = is_argument ? v : "return value";
-    error = STRcatn (7, "Type pattern error in definition of ", fundef,
+    error = STRcatn (7, "Type pattern error in application of ", fundef,
                         ": dimensionality of ", v, " expected to be ",
                         (TYPEPATTERN_HASVDIM (pattern) ? ">= " : ""),
                         num_str);

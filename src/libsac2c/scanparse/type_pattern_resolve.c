@@ -151,6 +151,7 @@
 #include "new_types.h"
 #include "print.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -177,6 +178,9 @@
  * @param CI_DEPENDENCIES The dependencies (variables) that need to be known
  *        before this constraint can be checked.
  * @param CI_ISARGUMENT Whether this feature is part of an argument.
+ * @param CI_ISDEFINED Whether the function has an argument with the same name
+ *        as this feature, meaning that this feature is always determined by
+ *        the value of that argument.
  * @param CI_ISCONSTANT Usually the constraint returns a value, that we compare
  *        to the feature 'id'. But sometimes the result is a boolean, such as
  *        5 == dim(id). In this case we dont want to generate id == 5 == dim(id)
@@ -193,10 +197,11 @@
  ******************************************************************************/
 typedef struct CONSTRAINT_INFO {
     char *id;
-    char *error;
+    str_buf *error;
     node *constraint;
     node *dependencies;
     bool is_argument;
+    bool is_defined;
     bool is_constant;
     bool is_scalar;
     bool is_dim_check;
@@ -208,6 +213,7 @@ typedef struct CONSTRAINT_INFO {
 #define CI_CONSTRAINT(n) ((n)->constraint)
 #define CI_DEPENDENCIES(n) ((n)->dependencies)
 #define CI_ISARGUMENT(n) ((n)->is_argument)
+#define CI_ISDEFINED(n) ((n)->is_defined)
 #define CI_ISCONSTANT(n) ((n)->is_constant)
 #define CI_ISSCALAR(n) ((n)->is_scalar)
 #define CI_ISDIMCHECK(n) ((n)->is_dim_check)
@@ -409,10 +415,12 @@ AddSpidToEnv (char *v, char *id, char *error, node *constraint,
     // Create a new constraint info, to insert into the env
     ci = (constraint_info *)MEMmalloc (sizeof (constraint_info));
     CI_ID (ci) = STRcpy (v);
-    CI_ERROR (ci) = error;
+    CI_ERROR (ci) = SBUFcreate (strlen (error) + 1);
+    CI_ERROR (ci) = SBUFprint (CI_ERROR (ci), error);
     CI_CONSTRAINT (ci) = constraint;
     CI_DEPENDENCIES (ci) = dependencies;
     CI_ISARGUMENT (ci) = RI_ISARGUMENT (ri);
+    CI_ISDEFINED (ci) = TCspidsContains (RI_DEFINED (ri), id);
     CI_ISCONSTANT (ci) = STReq (v, id);
     CI_ISSCALAR (ci) = is_scalar;
     CI_ISDIMCHECK (ci) = FALSE;
@@ -422,8 +430,9 @@ AddSpidToEnv (char *v, char *id, char *error, node *constraint,
     RI_ENV (ri) = LUTinsertIntoLutS (RI_ENV (ri), id, ci);
 
     DBUG_EXECUTE ({ char *tmp = CVspids2String (dependencies);
-                    DBUG_PRINT ("constraint for `%s' with dependencies: %s",
-                                id, tmp);
+                    DBUG_PRINT ("constraint for feature `%s' of %s "
+                                "with dependencies: %s",
+                                id, v, tmp);
                     tmp = MEMfree (tmp); });
 
     DBUG_RETURN ();
@@ -591,7 +600,8 @@ ResolveDim (char *v, node *pattern, int fdim, resolution_info *ri)
     // Create a new constraint info, to insert into the env
     ci = (constraint_info *)MEMmalloc (sizeof (constraint_info));
     CI_ID (ci) = STRcpy (v);
-    CI_ERROR (ci) = error;
+    CI_ERROR (ci) = SBUFcreate (strlen (error) + 1);
+    CI_ERROR (ci) = SBUFprint (CI_ERROR (ci), error);
     CI_CONSTRAINT (ci) = constraint;
     CI_DEPENDENCIES (ci) = NULL;
     CI_ISARGUMENT (ci) = RI_ISARGUMENT (ri);
@@ -682,9 +692,20 @@ MakeFeatureGuard (char *id, char *pred, constraint_info *ci)
     }
 
     // Generate a bottom type with a descriptive error message
-    error = STRcatn (6, CI_ERROR (ci), " does not match `", id,
-                        "' in ", CI_ID (ci), ".\n");
-    type = TBmakeType (TYmakeBottomType (error));
+    if (CI_ISDIMCHECK (ci)) {
+        CI_ERROR (ci) = SBUFprint (CI_ERROR (ci), ".\n");
+    } else if (CI_ISDEFINED (ci)) {
+        CI_ERROR (ci) = SBUFprintf (CI_ERROR (ci),
+                                    " does not match argument %s.\n",
+                                    id);
+    } else {
+        CI_ERROR (ci) = SBUFprintf (CI_ERROR (ci),
+                                    " does not match feature `%s' in %s.\n",
+                                    id, CI_ID (ci));
+    }
+
+    error = SBUF2strAndFree (&CI_ERROR (ci));
+    type = TBmakeType (TYmakeBottomType (STRcpy (error)));
     TYPE_ISGUARD (type) = TRUE;
 
     // Generate an expression: pred = constraint() ? pred : _|_
@@ -949,6 +970,27 @@ RTPFmodule (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
+ * @fn void AddArgsToDefined (node *args, resolution_info *ri)
+ *
+ * @brief Add all given argument names to the defined set.
+ *
+ ******************************************************************************/
+static void
+AddArgsToDefined (node *args, resolution_info *ri)
+{
+    DBUG_ENTER ();
+
+    while (args != NULL) {
+        TPCtryAddSpid (&RI_DEFINED (ri), ARG_NAME (args));
+        DBUG_PRINT ("added `%s' to defined", ARG_NAME (args));
+        args = ARG_NEXT (args);
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
  * @fn node *RTPFfundef (node *arg_node, info *arg_info)
  *
  * @brief Generate the pre- and post-check functions and modify this function.
@@ -972,6 +1014,8 @@ RTPFfundef (node *arg_node, info *arg_info)
     RI_PRED (ri) = STRcpy (TRAVtmpVarName ("pred"));
 
     RI_ISARGUMENT (ri) = TRUE;
+    // First add all arguments to defined before traversing their type patterns
+    AddArgsToDefined (FUNDEF_ARGS (arg_node), ri);
     FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
     RI_ISARGUMENT (ri) = FALSE;
     FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
@@ -1063,8 +1107,6 @@ RTPFarg (node *arg_node, info *arg_info)
     if (pattern != NULL && TYPEPATTERN_ISTYPEPATTERN (pattern)) {
         GenerateConstraints (ARG_NAME (arg_node), pattern, ri);
     }
-
-    TPCtryAddSpid (&RI_DEFINED (ri), ARG_NAME (arg_node));
 
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
@@ -1201,6 +1243,8 @@ RTPEfundef (node *arg_node, info *arg_info)
     RI_PRED (ri) = STRcpy (TRAVtmpVarName ("pred"));
 
     RI_ISARGUMENT (ri) = TRUE;
+    // First add all arguments to defined before traversing their type patterns
+    AddArgsToDefined (FUNDEF_ARGS (arg_node), ri);
     FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
     RI_ISARGUMENT (ri) = FALSE;
     FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
@@ -1283,8 +1327,6 @@ RTPEarg (node *arg_node, info *arg_info)
     if (pattern != NULL && TYPEPATTERN_ISTYPEPATTERN (pattern)) {
         GenerateConstraints (ARG_NAME (arg_node), pattern, ri);
     }
-
-    TPCtryAddSpid (&RI_DEFINED (ri), ARG_NAME (arg_node));
 
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
