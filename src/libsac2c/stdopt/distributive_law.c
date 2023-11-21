@@ -727,7 +727,7 @@ CollectExprs (prf target_prf, node *arg_node, bool is_scalar_arg, info *arg_info
                        PMvar (1, PMAgetNode (&arg2), 0));
     patmonadic = PMprf (1, PMAgetPrf (&found_prf), 1, PMvar (1, PMAgetNode (&arg1), 0));
 
-    if ((PMmatch (patdyadic, dl_pm_mode, arg_node))
+    if ((PMmatch (dl_pm_mode, patdyadic, arg_node))
         && compatiblePrf (target_prf, found_prf)) {
         /* Dyadic case */
         /**
@@ -739,7 +739,7 @@ CollectExprs (prf target_prf, node *arg_node, bool is_scalar_arg, info *arg_info
         left = CollectExprs (target_prf, arg1, isArg1Scl (found_prf), arg_info);
         right = CollectExprs (target_prf, arg2, isArg2Scl (found_prf), arg_info);
         res = TCappendExprs (left, right);
-    } else if ((PMmatch (patmonadic, dl_pm_mode, arg_node))
+    } else if ((PMmatch (dl_pm_mode, patmonadic, arg_node))
                && (TCisSignedType (AVIS_TYPE (ID_AVIS (arg1))))
                && (compatiblePrf (target_prf, found_prf))) {
         /**

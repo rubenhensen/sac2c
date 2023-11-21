@@ -1523,7 +1523,7 @@ PMmultiExprs (int num_nodes, ...)
 
 /** <!--*********************************************************************-->
  *
- * @fn bool PMmatch( pattern *pat, pm_nmode_t *pm_mode, node *expr)
+ * @fn bool PMmatch( pm_mode_t *pm_mode, pattern *pat, node *expr)
  *
  * @brief Matches pat against expr in the specified mode.
  *
@@ -1535,10 +1535,8 @@ PMmultiExprs (int num_nodes, ...)
  *
  *****************************************************************************/
 bool
-PMmatch (pattern *pat, pm_mode_t *pm_mode, node *expr)
+PMmatch (pm_mode_t *pm_mode, pattern *pat, node *expr)
 {
-    // TODO: @Bodo swap the pattern *pat and pm_mode_t argument to be consistent
-    //       with PMmatchF
     mmode = pm_mode;
     matching_level = 0;
     bool res;
@@ -1578,7 +1576,7 @@ PMmatchF (pm_mode_t *pm_mode, pattern *pat, node *expr)
 
     DBUG_ENTER ();
 
-    res = PMmatch (pat, pm_mode, expr);
+    res = PMmatch (pm_mode, pat, expr);
     pat = PMfree (pat);
 
     DBUG_RETURN (res);
@@ -1593,13 +1591,13 @@ PMmatchF (pm_mode_t *pm_mode, pattern *pat, node *expr)
 bool
 PMmatchExact (pattern *pat, node *expr)
 {
-    return (PMmatch (pat, PMMexact (), expr));
+    return (PMmatch (PMMexact (), pat, expr));
 }
 
 bool
 PMmatchFlat (pattern *pat, node *expr)
 {
-    return (PMmatch (pat, PMMflat (), expr));
+    return (PMmatch (PMMflat (), pat, expr));
 }
 
 bool
@@ -1611,25 +1609,25 @@ PMmatchFlatF (pattern *pat, node *expr)
 bool
 PMmatchFlatSkipExtrema (pattern *pat, node *expr)
 {
-    return (PMmatch (pat, PMMflatPrf (PMMisInExtrema), expr));
+    return (PMmatch (PMMflatPrf (PMMisInExtrema), pat, expr));
 }
 
 bool
 PMmatchFlatSkipGuards (pattern *pat, node *expr)
 {
-    return (PMmatch (pat, PMMflatPrf (PMMisInGuards), expr));
+    return (PMmatch (PMMflatPrf (PMMisInGuards), pat, expr));
 }
 
 bool
 PMmatchFlatSkipExtremaAndGuards (pattern *pat, node *expr)
 {
-    return (PMmatch (pat, PMMflatPrf (PMMisInExtremaOrGuards), expr));
+    return (PMmatch (PMMflatPrf (PMMisInExtremaOrGuards), pat, expr));
 }
 
 bool
 PMmatchFlatWith (pattern *pat, node *expr)
 {
-    return (PMmatch (pat, PMMflatPrf (PMMisAfterguard), expr));
+    return (PMmatch (PMMflatPrf (PMMisAfterguard), pat, expr));
 }
 
 #undef DBUG_PREFIX

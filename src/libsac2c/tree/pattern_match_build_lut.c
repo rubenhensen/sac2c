@@ -196,7 +196,7 @@ TagIdentities (node *args, node *params, lut_t *lut, pm_mode_t *pmmode)
     while (args != NULL) {
         DBUG_ASSERT (params != NULL, "no of args does not match no of params");
 
-        if ((PMmatch (pat, pmmode, EXPRS_EXPR (args))) && (avis == ARG_AVIS (params))) {
+        if ((PMmatch (pmmode, pat, EXPRS_EXPR (args))) && (avis == ARG_AVIS (params))) {
             /* insert this mapping into lut to remember that it is a pass through */
             lut = LUTinsertIntoLutP (lut, avis, EXPRS_EXPR (args));
         }
