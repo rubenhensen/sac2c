@@ -648,9 +648,7 @@ SIfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FOLD_INITIAL (arg_node) != NULL) {
-        FOLD_INITIAL (arg_node) = FREEdoFreeTree (FOLD_INITIAL (arg_node));
-    }
+    FOLD_INITIAL (arg_node) = FREEoptFreeTree(FOLD_INITIAL (arg_node));
 
     FOLD_INITIAL (arg_node) = DUPdoDupTree (EXPRS_EXPR (INFO_SI_OPS_INIT (arg_info)));
 

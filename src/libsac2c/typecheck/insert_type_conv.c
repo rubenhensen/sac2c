@@ -138,9 +138,7 @@ INSTCfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -161,13 +159,9 @@ INSTCblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
-    }
+    BLOCK_ASSIGNS (arg_node) = TRAVopt(BLOCK_ASSIGNS (arg_node), arg_info);
 
-    if (BLOCK_VARDECS (arg_node) != NULL) {
-        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
-    }
+    BLOCK_VARDECS (arg_node) = TRAVopt(BLOCK_VARDECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -210,13 +204,9 @@ INSTCassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
-    if (ASSIGN_STMT (arg_node) != NULL) {
-        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-    }
+    ASSIGN_STMT (arg_node) = TRAVopt(ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_INSTC_RETURN (arg_info) != NULL) {
         /**
@@ -265,9 +255,7 @@ INSTCids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
 
     scalar_type = TYgetScalar (IDS_NTYPE (arg_node));
     if (!TYisAUD (IDS_NTYPE (arg_node))
@@ -365,9 +353,7 @@ INSTCreturn (node *arg_node, info *arg_info)
 
     INFO_INSTC_RETURN (arg_info) = arg_node;
 
-    if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-    }
+    RETURN_EXPRS (arg_node) = TRAVopt(RETURN_EXPRS (arg_node), arg_info);
 
     if (INFO_INSTC_RETS (arg_info) != NULL) {
         CTIerror (NODE_LOCATION (arg_node),

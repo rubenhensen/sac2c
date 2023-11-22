@@ -92,9 +92,7 @@ CUDids (node *arg_node, info *arg_info)
                      "CleanupDecls() can be used after type checking only!");
         DFMsetMaskEntryClear (INFO_CUD_REF (arg_info), IDS_AVIS (arg_node));
 
-        if (IDS_NEXT (arg_node) != NULL) {
-            IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-        }
+        IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -141,9 +139,7 @@ CUDfundef (node *arg_node, info *arg_info)
                                FUNDEF_VARDECS (arg_node));
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -179,9 +175,7 @@ CUDblock (node *arg_node, info *arg_info)
         BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
     }
 
-    if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
-    }
+    BLOCK_ASSIGNS (arg_node) = TRAVopt(BLOCK_ASSIGNS (arg_node), arg_info);
 
     if (BLOCK_VARDECS (arg_node) != NULL) {
         mask = INFO_CUD_REF (arg_info);
@@ -231,9 +225,7 @@ CUDvardec (node *arg_node, info *arg_info)
 
     DFMsetMaskEntrySet (INFO_CUD_REF (arg_info), VARDEC_AVIS (arg_node));
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

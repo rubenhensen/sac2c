@@ -525,9 +525,7 @@ WLCOMP_All (node *segs, node *parms, node *cubes, int dims, size_t line)
                                       " All(): Too many parameters found");
     }
 
-    if (segs != NULL) {
-        segs = FREEdoFreeTree (segs);
-    }
+    segs = FREEoptFreeTree(segs);
 
     segs = TBmakeWlseg (dims, DUPdoDupTree (cubes), NULL);
     WLSEG_ISDYNAMIC (segs)
@@ -562,9 +560,7 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, size_t line)
                                       " Cubes(): Too many parameters found");
     }
 
-    if (segs != NULL) {
-        segs = FREEdoFreeTree (segs);
-    }
+    segs = FREEoptFreeTree(segs);
 
     DBUG_ASSERT (cubes != NULL, "no cubes found!");
 
@@ -619,9 +615,7 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, size_t line)
         CTIwarn (LINE_TO_LOC (line), "wlcomp-pragma function ConstSeg() ignored"
                                      " because generator is not constant");
     } else {
-        if (segs != NULL) {
-            segs = FREEdoFreeTree (segs);
-        }
+        segs = FREEoptFreeTree(segs);
 
         if (parms == NULL) {
             CTIabort (LINE_TO_LOC (line), "Illegal argument in wlcomp-pragma found;"

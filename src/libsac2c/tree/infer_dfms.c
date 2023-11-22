@@ -1006,9 +1006,7 @@ InferMasksWith2 (node *arg_node, info *arg_info)
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
     WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
 
-    if (WITH2_CODE (arg_node) != NULL) {
-        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-    }
+    WITH2_CODE (arg_node) = TRAVopt(WITH2_CODE (arg_node), arg_info);
 
     WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
 
@@ -1523,9 +1521,7 @@ INFDFMSlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -1625,9 +1621,7 @@ INFDFMSap (node *arg_node, info *arg_info)
     /*
      * traverse the arguments -> mark them as 'used vars'
      */
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1672,9 +1666,7 @@ INFDFMSids (node *arg_node, info *arg_info)
 
     arg_info = DefinedIds (arg_info, arg_node);
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

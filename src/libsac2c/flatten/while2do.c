@@ -50,13 +50,9 @@ W2Dwhile (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* first traverse condition and body */
-    if (WHILE_COND (arg_node) != NULL) {
-        WHILE_COND (arg_node) = TRAVdo (WHILE_COND (arg_node), arg_info);
-    }
+    WHILE_COND (arg_node) = TRAVopt(WHILE_COND (arg_node), arg_info);
 
-    if (WHILE_BODY (arg_node) != NULL) {
-        WHILE_BODY (arg_node) = TRAVdo (WHILE_BODY (arg_node), arg_info);
-    }
+    WHILE_BODY (arg_node) = TRAVopt(WHILE_BODY (arg_node), arg_info);
 
     /* create new do-node */
     new_do = TBmakeDo (WHILE_COND (arg_node), WHILE_BODY (arg_node));

@@ -94,9 +94,7 @@ MNGwlblock (node *arg_node, info *arg_info)
     /*
      * traverse next dim first
      */
-    if (WLBLOCK_NEXTDIM (arg_node) != NULL) {
-        WLBLOCK_NEXTDIM (arg_node) = TRAVdo (WLBLOCK_NEXTDIM (arg_node), arg_info);
-    }
+    WLBLOCK_NEXTDIM (arg_node) = TRAVopt(WLBLOCK_NEXTDIM (arg_node), arg_info);
 
     /*
      * check whether this dim is a noop
@@ -104,17 +102,13 @@ MNGwlblock (node *arg_node, info *arg_info)
     oldinfo = INFO_ISNOOP (arg_info);
     INFO_ISNOOP (arg_info) = TRUE;
 
-    if (WLBLOCK_CONTENTS (arg_node) != NULL) {
-        WLBLOCK_CONTENTS (arg_node) = TRAVdo (WLBLOCK_CONTENTS (arg_node), arg_info);
-    }
+    WLBLOCK_CONTENTS (arg_node) = TRAVopt(WLBLOCK_CONTENTS (arg_node), arg_info);
 
     /*
      * transform this node in a NOOP if possible
      */
     if (INFO_ISNOOP (arg_info) && (WLBLOCK_NEXTDIM (arg_node) == NULL)) {
-        if (WLBLOCK_CONTENTS (arg_node) != NULL) {
-            WLBLOCK_CONTENTS (arg_node) = FREEdoFreeTree (WLBLOCK_CONTENTS (arg_node));
-        }
+        WLBLOCK_CONTENTS (arg_node) = FREEoptFreeTree(WLBLOCK_CONTENTS (arg_node));
     }
 
     /*
@@ -125,9 +119,7 @@ MNGwlblock (node *arg_node, info *arg_info)
     /*
      * continue with next block in this dim
      */
-    if (WLBLOCK_NEXT (arg_node) != NULL) {
-        WLBLOCK_NEXT (arg_node) = TRAVdo (WLBLOCK_NEXT (arg_node), arg_info);
-    }
+    WLBLOCK_NEXT (arg_node) = TRAVopt(WLBLOCK_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -142,9 +134,7 @@ MNGwlublock (node *arg_node, info *arg_info)
     /*
      * traverse next dim first
      */
-    if (WLUBLOCK_NEXTDIM (arg_node) != NULL) {
-        WLUBLOCK_NEXTDIM (arg_node) = TRAVdo (WLUBLOCK_NEXTDIM (arg_node), arg_info);
-    }
+    WLUBLOCK_NEXTDIM (arg_node) = TRAVopt(WLUBLOCK_NEXTDIM (arg_node), arg_info);
 
     /*
      * check whether this dim is a noop
@@ -152,17 +142,13 @@ MNGwlublock (node *arg_node, info *arg_info)
     oldinfo = INFO_ISNOOP (arg_info);
     INFO_ISNOOP (arg_info) = TRUE;
 
-    if (WLUBLOCK_CONTENTS (arg_node) != NULL) {
-        WLUBLOCK_CONTENTS (arg_node) = TRAVdo (WLUBLOCK_CONTENTS (arg_node), arg_info);
-    }
+    WLUBLOCK_CONTENTS (arg_node) = TRAVopt(WLUBLOCK_CONTENTS (arg_node), arg_info);
 
     /*
      * transform this node in a NOOP if possible
      */
     if (INFO_ISNOOP (arg_info) && (WLUBLOCK_NEXTDIM (arg_node) == NULL)) {
-        if (WLUBLOCK_CONTENTS (arg_node) != NULL) {
-            WLUBLOCK_CONTENTS (arg_node) = FREEdoFreeTree (WLUBLOCK_CONTENTS (arg_node));
-        }
+        WLUBLOCK_CONTENTS (arg_node) = FREEoptFreeTree(WLUBLOCK_CONTENTS (arg_node));
     }
 
     /*
@@ -173,9 +159,7 @@ MNGwlublock (node *arg_node, info *arg_info)
     /*
      * continue with next block in this dim
      */
-    if (WLUBLOCK_NEXT (arg_node) != NULL) {
-        WLUBLOCK_NEXT (arg_node) = TRAVdo (WLUBLOCK_NEXT (arg_node), arg_info);
-    }
+    WLUBLOCK_NEXT (arg_node) = TRAVopt(WLUBLOCK_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -193,9 +177,7 @@ MNGwlstride (node *arg_node, info *arg_info)
     oldinfo = INFO_ISNOOP (arg_info);
     INFO_ISNOOP (arg_info) = TRUE;
 
-    if (WLSTRIDE_CONTENTS (arg_node) != NULL) {
-        WLSTRIDE_CONTENTS (arg_node) = TRAVdo (WLSTRIDE_CONTENTS (arg_node), arg_info);
-    }
+    WLSTRIDE_CONTENTS (arg_node) = TRAVopt(WLSTRIDE_CONTENTS (arg_node), arg_info);
 
     /*
      * transform this stride into a NOOP if it is one
@@ -203,9 +185,7 @@ MNGwlstride (node *arg_node, info *arg_info)
     if (INFO_ISNOOP (arg_info)) {
         DBUG_PRINT ("tagging wlstride as noop");
 
-        if (WLSTRIDE_CONTENTS (arg_node) != NULL) {
-            WLSTRIDE_CONTENTS (arg_node) = FREEdoFreeTree (WLSTRIDE_CONTENTS (arg_node));
-        }
+        WLSTRIDE_CONTENTS (arg_node) = FREEoptFreeTree(WLSTRIDE_CONTENTS (arg_node));
     }
 
     /*
@@ -217,9 +197,7 @@ MNGwlstride (node *arg_node, info *arg_info)
     /*
      * continue with next stride
      */
-    if (WLSTRIDE_NEXT (arg_node) != NULL) {
-        WLSTRIDE_NEXT (arg_node) = TRAVdo (WLSTRIDE_NEXT (arg_node), arg_info);
-    }
+    WLSTRIDE_NEXT (arg_node) = TRAVopt(WLSTRIDE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -245,8 +223,8 @@ MNGwlgrid (node *arg_node, info *arg_info)
      */
     if (WLGRID_CODE (arg_node) != NULL) {
         WLGRID_CODE (arg_node) = TRAVdo (WLGRID_CODE (arg_node), arg_info);
-    } else if (WLGRID_NEXTDIM (arg_node) != NULL) {
-        WLGRID_NEXTDIM (arg_node) = TRAVdo (WLGRID_NEXTDIM (arg_node), arg_info);
+    } else {
+        WLGRID_NEXTDIM (arg_node) = TRAVopt(WLGRID_NEXTDIM (arg_node), arg_info);
     }
 
     /*
@@ -261,9 +239,7 @@ MNGwlgrid (node *arg_node, info *arg_info)
     WLGRID_ISNOOP (arg_node) = WLGRID_ISNOOP (arg_node) || INFO_ISNOOP (arg_info);
 
     if (WLGRID_ISNOOP (arg_node)) {
-        if (WLGRID_NEXTDIM (arg_node) != NULL) {
-            WLGRID_NEXTDIM (arg_node) = FREEdoFreeTree (WLGRID_NEXTDIM (arg_node));
-        }
+        WLGRID_NEXTDIM (arg_node) = FREEoptFreeTree(WLGRID_NEXTDIM (arg_node));
 
         if (WLGRID_CODE (arg_node) != NULL) {
             CODE_USED (WLGRID_CODE (arg_node))--;
@@ -280,9 +256,7 @@ MNGwlgrid (node *arg_node, info *arg_info)
     /*
      * continue with next
      */
-    if (WLGRID_NEXT (arg_node) != NULL) {
-        WLGRID_NEXT (arg_node) = TRAVdo (WLGRID_NEXT (arg_node), arg_info);
-    }
+    WLGRID_NEXT (arg_node) = TRAVopt(WLGRID_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

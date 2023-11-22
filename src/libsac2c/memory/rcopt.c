@@ -163,9 +163,7 @@ EMRCOassign (node *arg_node, info *arg_info)
     remassign = INFO_REMASSIGN (arg_info);
     INFO_REMASSIGN (arg_info) = FALSE;
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     /*
      * Traverse RHS again if required
@@ -219,9 +217,7 @@ EMRCOblock (node *arg_node, info *arg_info)
     INFO_FILLLUT (arg_info) = LUTgenerateLut ();
     INFO_NEXTEXPR (arg_info) = NULL;
 
-    if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
-    }
+    BLOCK_ASSIGNS (arg_node) = TRAVopt(BLOCK_ASSIGNS (arg_node), arg_info);
 
     INFO_FILLLUT (arg_info) = LUTremoveLut (INFO_FILLLUT (arg_info));
     INFO_FILLLUT (arg_info) = old_lut;
@@ -260,9 +256,7 @@ EMRCOfundef (node *arg_node, info *arg_info)
         maskbase = DFMremoveMaskBase (maskbase);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

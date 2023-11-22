@@ -219,9 +219,7 @@ RDEPENDassign (node *arg_node, info *arg_info)
         INFO_RDEPEND_RESOLVED (arg_info) = FALSE;
     }
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -248,9 +246,7 @@ RDEPENDprf (node *arg_node, info *arg_info)
         break;
 
     default:
-        if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        }
+        PRF_ARGS (arg_node) = TRAVopt(PRF_ARGS (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }

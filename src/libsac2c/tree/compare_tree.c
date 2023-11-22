@@ -905,9 +905,7 @@ CMPTdoCompareTree (node *tree1, node *tree2)
         AVIS_ALT (IDS_AVIS (ids)) = NULL;
         ids = IDS_NEXT (ids);
     }
-    if (INFO_IDS (arg_info) != NULL) {
-        INFO_IDS (arg_info) = FREEdoFreeTree (INFO_IDS (arg_info));
-    }
+    INFO_IDS (arg_info) = FREEoptFreeTree(INFO_IDS (arg_info));
 
     arg_info = FreeInfo (arg_info);
 

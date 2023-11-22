@@ -586,9 +586,7 @@ MEMRTap (node *arg_node, info *arg_info)
             /* reset all the info fields */
             INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
             INFO_LUT (arg_info) = old_lut;
-            if (INFO_DEVS (arg_info) != NULL) {
-                INFO_DEVS (arg_info) = FREEdoFreeTree (INFO_DEVS (arg_info));
-            }
+            INFO_DEVS (arg_info) = FREEoptFreeTree(INFO_DEVS (arg_info));
             INFO_DEVS (arg_info) = old_devs;
             INFO_FUNDEF (arg_info) = old_fundef;
             INFO_APARGS (arg_info) = old_ap_args;

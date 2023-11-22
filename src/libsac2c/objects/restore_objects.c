@@ -549,9 +549,7 @@ RESOassign (node *arg_node, info *arg_info)
     xdelete = INFO_DELETE (arg_info);
     INFO_DELETE (arg_info) = FALSE;
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     if (xdelete) {
         arg_node = FREEdoFreeNode (arg_node);
@@ -580,18 +578,14 @@ RESOfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_ISSPMDFUN (arg_node) && !INFO_DOSPMD (arg_info)) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
         DBUG_RETURN (arg_node);
     }
 
     /*
      * process all bodies first
      */
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
 
     if (FUNDEF_NEXT (arg_node) != NULL && !FUNDEF_ISSPMDFUN (arg_node)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -624,17 +618,11 @@ RESOmodule (node *arg_node, info *arg_info)
      * we have to traverse the fundefs first, as the bodies have
      * to be transformed prior to transforming the signatures!
      */
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
-    if (MODULE_FUNSPECS (arg_node) != NULL) {
-        MODULE_FUNSPECS (arg_node) = TRAVdo (MODULE_FUNSPECS (arg_node), arg_info);
-    }
+    MODULE_FUNSPECS (arg_node) = TRAVopt(MODULE_FUNSPECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -646,9 +634,7 @@ RESOpropagate (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (PROPAGATE_NEXT (arg_node) != NULL) {
-        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
-    }
+    PROPAGATE_NEXT (arg_node) = TRAVopt(PROPAGATE_NEXT (arg_node), arg_info);
 
     arg = AVIS_DECL (ID_AVIS (PROPAGATE_DEFAULT (arg_node)));
 

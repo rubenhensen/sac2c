@@ -152,9 +152,7 @@ MTCMmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -206,9 +204,7 @@ MTCMfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -248,9 +244,7 @@ MTCMassign (node *arg_node, info *arg_info)
         INFO_SEQUENTIAL (arg_info) = NULL;
     }
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -398,9 +392,7 @@ MTCMfold (node *arg_node, info *arg_info)
          */
         INFO_MAYPAR (arg_info) = FALSE;
         INFO_ISWORTH (arg_info) = FALSE;
-        if (INFO_CONDITION (arg_info) != NULL) {
-            INFO_CONDITION (arg_info) = FREEdoFreeTree (INFO_CONDITION (arg_info));
-        }
+        INFO_CONDITION (arg_info) = FREEoptFreeTree(INFO_CONDITION (arg_info));
     } else {
         if (FOLD_NEXT (arg_node) != NULL) {
             INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
@@ -490,10 +482,7 @@ MTCMgenarray (node *arg_node, info *arg_info)
                  * created before.
                  */
                 INFO_ISWORTH (arg_info) = TRUE;
-                if (INFO_CONDITION (arg_info) != NULL) {
-                    INFO_CONDITION (arg_info)
-                      = FREEdoFreeTree (INFO_CONDITION (arg_info));
-                }
+                INFO_CONDITION (arg_info) = FREEoptFreeTree(INFO_CONDITION (arg_info));
             } else {
                 /*
                  * We statically know the size of the result array and its *not* beyond
@@ -509,10 +498,7 @@ MTCMgenarray (node *arg_node, info *arg_info)
                      * We now know that the with-loop is not worth parallelization.
                      * So, we eliminate a potential condition.
                      */
-                    if (INFO_CONDITION (arg_info) != NULL) {
-                        INFO_CONDITION (arg_info)
-                          = FREEdoFreeTree (INFO_CONDITION (arg_info));
-                    }
+                    INFO_CONDITION (arg_info) = FREEoptFreeTree(INFO_CONDITION (arg_info));
                 }
             }
         } else {
@@ -570,9 +556,7 @@ MTCMmodarray (node *arg_node, info *arg_info)
              * created before.
              */
             INFO_ISWORTH (arg_info) = TRUE;
-            if (INFO_CONDITION (arg_info) != NULL) {
-                INFO_CONDITION (arg_info) = FREEdoFreeTree (INFO_CONDITION (arg_info));
-            }
+            INFO_CONDITION (arg_info) = FREEoptFreeTree(INFO_CONDITION (arg_info));
         } else {
             /*
              * We statically know the size of the result array and it is *not* beyond
@@ -588,10 +572,7 @@ MTCMmodarray (node *arg_node, info *arg_info)
                  * We now know that the with-loop is not worth parallelization.
                  * So, we eliminate a potential condition.
                  */
-                if (INFO_CONDITION (arg_info) != NULL) {
-                    INFO_CONDITION (arg_info)
-                      = FREEdoFreeTree (INFO_CONDITION (arg_info));
-                }
+                INFO_CONDITION (arg_info) = FREEoptFreeTree(INFO_CONDITION (arg_info));
             }
         }
     } else {

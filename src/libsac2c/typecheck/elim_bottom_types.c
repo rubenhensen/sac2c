@@ -198,9 +198,7 @@ TransformIntoTypeError (node *fundef)
     DBUG_ASSERT (TUretsContainBottom (FUNDEF_RETS (fundef)),
                  "cannot transform a fundef without bottom return types!");
 
-    if (FUNDEF_BODY (fundef) != NULL) {
-        FUNDEF_BODY (fundef) = FREEdoFreeNode (FUNDEF_BODY (fundef));
-    }
+    FUNDEF_BODY (fundef) = FREEoptFreeNode(FUNDEF_BODY (fundef));
 
     /*
      * we mark the function as a special type error function. this
@@ -502,12 +500,8 @@ EBTids (node *arg_node, info *arg_info)
             /**
              * this seems to be saa-bind related stuff??!
              */
-            if (AVIS_DIM (avis) != NULL) {
-                AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
-            }
-            if (AVIS_SHAPE (avis) != NULL) {
-                AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
-            }
+            AVIS_DIM (avis) = FREEoptFreeNode(AVIS_DIM (avis));
+            AVIS_SHAPE (avis) = FREEoptFreeNode(AVIS_SHAPE (avis));
 
         } else {
             DBUG_PRINT ("eliminating bottom LHS %s", AVIS_NAME (avis));

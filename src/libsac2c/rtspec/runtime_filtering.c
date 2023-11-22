@@ -124,9 +124,7 @@ RTFILTERarg (node *arg_node, info *arg_info)
     } else if (cmp == TY_dis) {
         DBUG_PRINT ("Ignoring non-simple argument.");
 
-        if (ARG_NEXT (arg_node) != NULL) {
-            ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-        }
+        ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -176,9 +174,7 @@ RTFILTERret (node *arg_node, info *arg_info)
         }
     }
 
-    if (RET_NEXT (arg_node) != NULL) {
-        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
-    }
+    RET_NEXT (arg_node) = TRAVopt(RET_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

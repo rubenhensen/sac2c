@@ -113,31 +113,23 @@ SWRmodule (node *arg_node, info *arg_info)
      */
     INFO_TRAVNO (arg_info) = 1;
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     /*
      * adjust AP_FUNDEF pointers
      * As only FUNS may contain N_ap's we have to traverse these only!
      */
     INFO_TRAVNO (arg_info) = 2;
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     /*
      * remove non-used and zombie funs!
      */
     INFO_TRAVNO (arg_info) = 3;
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     MODULE_WRAPPERFUNS (arg_node) = LUTremoveLut (MODULE_WRAPPERFUNS (arg_node));
 
@@ -402,9 +394,7 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
          */
         new_fundefs = SplitWrapper (arg_node, arg_info);
 
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
         /*
          * insert new wrapper functions after the generic wrapper
@@ -426,16 +416,12 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
          */
         FUNDEF_ISNEEDED (arg_node) = TRUE;
 
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
     } else {
         /*
          * if this is no wrapper function, just skip to the next function
          */
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -445,9 +431,7 @@ FundefAdjustPointers (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -461,9 +445,7 @@ FundefRemoveGarbage (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (!FUNDEF_ISNEEDED (arg_node))) {
         /*
@@ -560,9 +542,7 @@ SWRap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
 
     DBUG_PRINT ("Ap of function %s::%s pointed to " F_PTR ".",
                 NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), (void *)AP_FUNDEF (arg_node));
@@ -616,9 +596,7 @@ SWRgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
+    GENARRAY_DEFAULT (arg_node) = TRAVopt(GENARRAY_DEFAULT (arg_node), arg_info);
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         DBUG_ASSERT (EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL,

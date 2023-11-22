@@ -976,9 +976,7 @@ MostCommonFactor (node *mop)
     if (mcf != NULL) {
         mcf = DUPdoDupNode (mcf);
     }
-    if (factors != NULL) {
-        factors = FREEdoFreeTree (factors);
-    }
+    factors = FREEoptFreeTree(factors);
 
     DBUG_RETURN (mcf);
 }

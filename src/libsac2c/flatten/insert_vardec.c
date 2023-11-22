@@ -7,7 +7,7 @@
  * description:
  *
  *   This compiler module inserts vardecs for all identifyers that do not have
- *   one yet and it replaces all N_spids by N_ids, and all N_spid by either 
+ *   one yet and it replaces all N_spids by N_ids, and all N_spid by either
  *   N_id or N_globobj.
  *
  *   All this is needed for running InferDFMS prior to type checking.
@@ -15,7 +15,7 @@
  *
  *   Implementation:
  *   While traversing top-down, it introduces new N_avis / N_vardec for every
- *   new name encountered in N_spids. 
+ *   new name encountered in N_spids.
  *   N_spid nodes are transformed into N_id or N_globobj nodes when being met.
  *
  *
@@ -176,9 +176,7 @@ INSVDmodule (node *arg_node, info *arg_info)
     INFO_MODULE (arg_info) = arg_node;
     INFO_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -205,9 +203,7 @@ INSVDfundef (node *arg_node, info *arg_info)
         FUNDEF_VARDECS (arg_node) = INFO_VARDECS (arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -231,9 +227,7 @@ INSVDspap (node *arg_node, info *arg_info)
      * as it does not reference a variable and thus has not to be processed
      */
 
-    if (SPAP_ARGS (arg_node) != NULL) {
-        SPAP_ARGS (arg_node) = TRAVdo (SPAP_ARGS (arg_node), arg_info);
-    }
+    SPAP_ARGS (arg_node) = TRAVopt(SPAP_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -254,9 +248,7 @@ INSVDlet (node *arg_node, info *arg_info)
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -445,17 +437,11 @@ INSVDwith (node *arg_node, info *arg_info)
 
     /* traverse all sons in following order:*/
 
-    if (WITH_PART (arg_node) != NULL) {
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
+    WITH_PART (arg_node) = TRAVopt(WITH_PART (arg_node), arg_info);
 
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
+    WITH_CODE (arg_node) = TRAVopt(WITH_CODE (arg_node), arg_info);
 
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVopt(WITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -476,17 +462,11 @@ INSVDdo (node *arg_node, info *arg_info)
 
     /* traverse all sons in following order:*/
 
-    if (DO_BODY (arg_node) != NULL) {
-        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
-    }
+    DO_BODY (arg_node) = TRAVopt(DO_BODY (arg_node), arg_info);
 
-    if (DO_SKIP (arg_node) != NULL) {
-        DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
-    }
+    DO_SKIP (arg_node) = TRAVopt(DO_SKIP (arg_node), arg_info);
 
-    if (DO_COND (arg_node) != NULL) {
-        DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
-    }
+    DO_COND (arg_node) = TRAVopt(DO_COND (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -507,17 +487,11 @@ INSVDpart (node *arg_node, info *arg_info)
 
     /* withid has to be traversed first */
 
-    if (PART_WITHID (arg_node) != NULL) {
-        PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
-    }
+    PART_WITHID (arg_node) = TRAVopt(PART_WITHID (arg_node), arg_info);
 
-    if (PART_GENERATOR (arg_node) != NULL) {
-        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
-    }
+    PART_GENERATOR (arg_node) = TRAVopt(PART_GENERATOR (arg_node), arg_info);
 
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt(PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -538,17 +512,11 @@ INSVDcode (node *arg_node, info *arg_info)
 
     /* cblock has to be traversed first */
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt(CODE_CBLOCK (arg_node), arg_info);
 
-    if (CODE_CEXPRS (arg_node) != NULL) {
-        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-    }
+    CODE_CEXPRS (arg_node) = TRAVopt(CODE_CEXPRS (arg_node), arg_info);
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

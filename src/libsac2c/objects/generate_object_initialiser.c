@@ -113,7 +113,7 @@ SortObjdefList (node *objlist)
             }
         }
         if (changes == 0) {
-            CTIabort (EMPTY_LOC, 
+            CTIabort (EMPTY_LOC,
                       "Cannot compute initialisation order for objdefs. This "
                       "may be due to circular dependencies!");
         }
@@ -296,9 +296,7 @@ GOIfundef (node *arg_node, info *arg_info)
         }
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -315,9 +313,7 @@ GOImodule (node *arg_node, info *arg_info)
     if ((MODULE_FILETYPE (arg_node) == FT_prog) && (MODULE_OBJS (arg_node) != NULL)) {
         INFO_NS (arg_info) = MODULE_NAMESPACE (arg_node);
 
-        if (MODULE_FUNS (arg_node) != NULL) {
-            MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-        }
+        MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
         INFO_NS (arg_info) = NULL;
     }

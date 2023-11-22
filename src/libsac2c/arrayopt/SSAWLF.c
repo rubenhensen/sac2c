@@ -219,7 +219,7 @@ static intern_gen *intersect_intern_gen; /* resulting igs of IntersectInternGen.
  *   node * FindCExpr (node *cexprs, node *avis, node *wlassign)
  *
  * description:
- *   expects avis to be defined on the LHS of wlassign and searches for the 
+ *   expects avis to be defined on the LHS of wlassign and searches for the
  *   corresponding position in the exprs-chain cexprs.
  *   This is crucial for folding MO-WLs (see issue 2271 for details)
  *
@@ -1601,18 +1601,14 @@ WLFassign (node *arg_node, info *arg_info)
             LET_EXPR (tmpn) = INFO_NEW_ID (arg_info);
             INFO_NEW_ID (arg_info) = NULL;
         } else {
-            if (ASSIGN_NEXT (arg_node)) {
-                ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-            }
+            ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
         }
         break;
 
     default:
         /* Do not assign ASSIGN_NEXT(arg_node) here!
            Why? See comment in wlfm_search_wl branch of this function. */
-        if (ASSIGN_NEXT (arg_node)) {
-            TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
+        ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

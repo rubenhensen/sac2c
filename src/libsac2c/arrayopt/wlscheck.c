@@ -654,9 +654,7 @@ WLSCpart (node *arg_node, info *arg_info)
          * Traverse next part
          */
         if (INFO_POSSIBLE (arg_info)) {
-            if (PART_NEXT (arg_node) != NULL) {
-                PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-            }
+            PART_NEXT (arg_node) = TRAVopt(PART_NEXT (arg_node), arg_info);
         }
     } else {
         /*
@@ -672,9 +670,7 @@ WLSCpart (node *arg_node, info *arg_info)
          * Traverse next part
          */
         if (INFO_POSSIBLE (arg_info)) {
-            if (PART_NEXT (arg_node) != NULL) {
-                PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-            }
+            PART_NEXT (arg_node) = TRAVopt(PART_NEXT (arg_node), arg_info);
         }
     }
 

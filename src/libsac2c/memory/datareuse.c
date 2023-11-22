@@ -127,9 +127,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ();
 
-    if (INFO_FREE_ME (info) != NULL) {
-        INFO_FREE_ME (info) = FREEdoFreeTree (INFO_FREE_ME (info));
-    }
+    INFO_FREE_ME (info) = FREEoptFreeTree(INFO_FREE_ME (info));
 
     info = MEMfree (info);
 
@@ -1043,12 +1041,8 @@ EMDRrange (node *arg_node, info *arg_info)
      * we can now free the IIRR and IDXS info, as it is no longer needed and
      * may otherwise keep offsets/indices alive that are not actually used
      */
-    if (RANGE_IIRR (arg_node) != NULL) {
-        RANGE_IIRR (arg_node) = FREEdoFreeTree (RANGE_IIRR (arg_node));
-    }
-    if (RANGE_IDXS (arg_node) != NULL) {
-        RANGE_IDXS (arg_node) = FREEdoFreeTree (RANGE_IDXS (arg_node));
-    }
+    RANGE_IIRR (arg_node) = FREEoptFreeTree(RANGE_IIRR (arg_node));
+    RANGE_IDXS (arg_node) = FREEoptFreeTree(RANGE_IDXS (arg_node));
 
     /*
      * Traverse next range

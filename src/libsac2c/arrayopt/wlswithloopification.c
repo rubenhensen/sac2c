@@ -425,13 +425,13 @@ CreateCopyWithloop (node *array, info *arg_info)
     node *withop;
     node *vec_ids;
     node *scl_ids = NULL;
-    /* FIXME grzegorz: i, unrdim, dim and arraydim will need to be size_t 
+    /* FIXME grzegorz: i, unrdim, dim and arraydim will need to be size_t
      * due to INFO_INNERDIMS as INFO_INNERDIMS takes input from TCcountIds.
      * Leaving for now as passed to shape funcs and would create too many warnings
      */
     int i;
     int unrdim = 0;
-    int dim; 
+    int dim;
     shape *maxshp;
 
     DBUG_ENTER ();
@@ -682,20 +682,14 @@ WLSWcode (node *arg_node, info *arg_info)
             last = FREEdoFreeTree (last);
         }
 
-        if (CODE_NEXT (arg_node) != NULL) {
-            CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-        }
+        CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
     } else {
         /*
          * Traversal of inner code: TravSons
          */
-        if (CODE_CBLOCK (arg_node) != NULL) {
-            CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-        }
+        CODE_CBLOCK (arg_node) = TRAVopt(CODE_CBLOCK (arg_node), arg_info);
 
-        if (CODE_NEXT (arg_node) != NULL) {
-            CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-        }
+        CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -810,9 +804,7 @@ WLSWpart (node *arg_node, info *arg_info)
          */
         PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
-        if (PART_NEXT (arg_node) != NULL) {
-            PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-        }
+        PART_NEXT (arg_node) = TRAVopt(PART_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

@@ -143,9 +143,7 @@ USSATfundef (node *arg_node, info *arg_info)
         }
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -164,13 +162,9 @@ USSATblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
-    }
+    BLOCK_ASSIGNS (arg_node) = TRAVopt(BLOCK_ASSIGNS (arg_node), arg_info);
 
-    if (BLOCK_VARDECS (arg_node) != NULL) {
-        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
-    }
+    BLOCK_VARDECS (arg_node) = TRAVopt(BLOCK_VARDECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -193,9 +187,7 @@ USSATvardec (node *arg_node, info *arg_info)
 
     VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
 
     if (AVIS_SUBST (VARDEC_AVIS (arg_node)) != NULL) {
         arg_node = FREEdoFreeNode (arg_node);
@@ -273,9 +265,7 @@ USSATids (node *arg_ids, info *arg_info)
         IDS_AVIS (arg_ids) = AVIS_SUBST (IDS_AVIS (arg_ids));
     }
 
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
-    }
+    IDS_NEXT (arg_ids) = TRAVopt(IDS_NEXT (arg_ids), arg_info);
 
     DBUG_RETURN (arg_ids);
 }
@@ -297,9 +287,7 @@ USSATassign (node *arg_node, info *arg_info)
     /*
      * Bottom-up traversal
      */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     INFO_REMASSIGN (arg_info) = FALSE;
 
@@ -333,9 +321,7 @@ USSATlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
@@ -361,13 +347,9 @@ USSATcond (node *arg_node, info *arg_info)
      * After all informations from the funconds have been annotated,
      * perform renaming in the THENASS, ELSEASS assigment chains
      */
-    if (INFO_THENASS (arg_info) != NULL) {
-        INFO_THENASS (arg_info) = TRAVdo (INFO_THENASS (arg_info), arg_info);
-    }
+    INFO_THENASS (arg_info) = TRAVopt(INFO_THENASS (arg_info), arg_info);
 
-    if (INFO_ELSEASS (arg_info) != NULL) {
-        INFO_ELSEASS (arg_info) = TRAVdo (INFO_ELSEASS (arg_info), arg_info);
-    }
+    INFO_ELSEASS (arg_info) = TRAVopt(INFO_ELSEASS (arg_info), arg_info);
 
     /*
      * perform renaming in the branches of the conditional

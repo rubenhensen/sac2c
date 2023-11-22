@@ -252,9 +252,7 @@ EMAAap (node *arg_node, info *arg_info)
      */
     INFO_CONTEXT (arg_info) = AA_ap;
     INFO_FUNARGS (arg_info) = FUNDEF_ARGS (AP_FUNDEF (arg_node));
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
 
     /*
      * Check whether return values are alias-free
@@ -312,9 +310,7 @@ EMAAarg (node *arg_node, info *arg_info)
         DBUG_UNREACHABLE ("Illegal context!");
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -334,9 +330,7 @@ EMAAassign (node *arg_node, info *arg_info)
     INFO_CONTEXT (arg_info) = AA_undef;
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -376,9 +370,7 @@ EMAAcode (node *arg_node, info *arg_info)
         INFO_MASK (arg_info) = oldmask;
     }
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -548,9 +540,7 @@ EMAAfundef (node *arg_node, info *arg_info)
              * Traverse function args to mark them as ALIAS in MASK
              */
             INFO_CONTEXT (info) = AA_begin;
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-            }
+            FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), info);
 
             /*
              * Aliased CONDFUN parameters must be marked as ALIAS
@@ -590,9 +580,7 @@ EMAAfundef (node *arg_node, info *arg_info)
              * Traverse args to annotate AVIS_ISALIAS
              */
             INFO_CONTEXT (info) = AA_end;
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-            }
+            FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), info);
 
             /*
              * Clean up
@@ -607,9 +595,7 @@ EMAAfundef (node *arg_node, info *arg_info)
     }
 
     if (arg_info == NULL) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -853,9 +839,7 @@ EMAAvardec (node *arg_node, info *arg_info)
                                            DFMtestMaskEntry (INFO_MASK (arg_info),
                                                              VARDEC_AVIS (arg_node)));
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

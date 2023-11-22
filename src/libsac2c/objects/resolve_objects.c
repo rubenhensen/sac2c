@@ -15,7 +15,7 @@
  */
 
 /*
- * 
+ *
  * The task of the withloop object analysis is to adjust with-loops
  * that reference objects in their body, and make sure the objects are
  * returned from the bodies to the surrounding code, as follows:
@@ -49,9 +49,9 @@
  * When traversing a function we first adjust the formal parameters:
  * objects from FUNDEF_OBJECTS are being added as reference parameters.
  * This happens in AppendObjdefsToArgs.
- * Here, we also create temporary links from the N_objdef to the 
+ * Here, we also create temporary links from the N_objdef to the
  * corresponding N_avis; it is stored in OBJDEF_ARGAVIS.
- * These are later being used when encountering function applications 
+ * These are later being used when encountering function applications
  * in RSOap. Here we call AppendObjdefsToArgExprs to inject
  * additional arguments as needed. Note here, that all this can be
  * done locally to individual functions, as the analyses that have been
@@ -164,7 +164,7 @@ FindPropagateGoalExpr (node *prop, info *arg_info)
         DBUG_ASSERT (wlop != NULL, "failed to find N_propagate that we started on");
         if (EXPRS_NEXT (wlexpr) == NULL) {
             CTIabort (NODE_LOCATION (wlexpr), "missing return value(s) in WL partition");
-        } 
+        }
         wlexpr = EXPRS_NEXT (wlexpr);
     }
 
@@ -636,17 +636,11 @@ RSOmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
-    if (MODULE_FUNSPECS (arg_node) != NULL) {
-        MODULE_FUNSPECS (arg_node) = TRAVdo (MODULE_FUNSPECS (arg_node), arg_info);
-    }
+    MODULE_FUNSPECS (arg_node) = TRAVopt(MODULE_FUNSPECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -667,22 +661,16 @@ RSOfundef (node *arg_node, info *arg_info)
           = AppendObjdefsToArgs (FUNDEF_ARGS (arg_node), FUNDEF_OBJECTS (arg_node));
 
         INFO_FUNDEF (arg_info) = arg_node;
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
+        FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
 
         FUNDEF_OBJECTS (arg_node) = CleanUpObjlist (FUNDEF_OBJECTS (arg_node));
-        if (INFO_OBJECTS (arg_info) != NULL) {
-            INFO_OBJECTS (arg_info) = FREEdoFreeTree (INFO_OBJECTS (arg_info));
-        }
+        INFO_OBJECTS (arg_info) = FREEoptFreeTree(INFO_OBJECTS (arg_info));
 
         DBUG_PRINT ("leaving fundef %s...", CTIitemName (arg_node));
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -754,9 +742,7 @@ RSOlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
 
     if (LET_EXPR (arg_node) != NULL) {
 
@@ -810,9 +796,7 @@ RSOpropagate (node *arg_node, info *arg_info)
         ModPropObj (arg_node, arg_info);
     }
 
-    if (PROPAGATE_NEXT (arg_node) != NULL) {
-        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
-    }
+    PROPAGATE_NEXT (arg_node) = TRAVopt(PROPAGATE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -823,9 +807,7 @@ RSOwith (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     bool is_nested_withloop = FALSE;
 
-    if (WITH_PART (arg_node) != NULL) {
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
+    WITH_PART (arg_node) = TRAVopt(WITH_PART (arg_node), arg_info);
 
     if (WITH_CODE (arg_node) != NULL) {
         /* Traverse the with-loop's code body to find object references. */
@@ -841,9 +823,7 @@ RSOwith (node *arg_node, info *arg_info)
 
     /* Traverse the withops, which will add F_prop_obj's for each propagate */
     INFO_WL (arg_info) = arg_node;
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVopt(WITH_WITHOP (arg_node), arg_info);
     INFO_WL (arg_info) = NULL;
     INFO_PROPOBJ_IN (arg_info) = NULL;
 

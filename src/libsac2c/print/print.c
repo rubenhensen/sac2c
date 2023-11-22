@@ -1151,9 +1151,7 @@ PRTids (node *arg_node, info *arg_info)
 
     if (arg_node != NULL) {
 
-        if (NODE_ERROR (arg_node) != NULL) {
-            NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-        }
+        NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
         fprintf (global.outfile, "%s", IDS_NAME (arg_node));
 
@@ -1191,9 +1189,7 @@ PRTspids (node *arg_node, info *arg_info)
 
     if (arg_node != NULL) {
 
-        if (NODE_ERROR (arg_node) != NULL) {
-            NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-        }
+        NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
         fprintf (global.outfile, "%s", SPIDS_NAME (arg_node));
 
@@ -1279,9 +1275,7 @@ PRTmodule (node *arg_node, info *arg_info)
 
     INFO_NAMESPACE (arg_info) = STRcpy (NSgetName (MODULE_NAMESPACE (arg_node)));
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (INFO_SEPARATE (arg_info)) {
         /*
@@ -1622,9 +1616,7 @@ PRTstructdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "struct %s {\n", STRUCTDEF_NAME (arg_node));
     global.indent++;
@@ -1652,9 +1644,7 @@ PRTstructelem (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
 
@@ -1695,9 +1685,7 @@ PRTtypedef (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (TYPEDEF_ICM (arg_node) == NULL) {
         if (TYPEDEF_NTYPE (arg_node) != NULL) {
@@ -1790,9 +1778,7 @@ PRTobjdef (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if ((OBJDEF_ICM (arg_node) == NULL) || (NODE_TYPE (OBJDEF_ICM (arg_node)) != N_icm)) {
         if (!OBJDEF_ISLOCAL (arg_node) || global.print_objdef_for_header_file) {
@@ -1828,9 +1814,7 @@ PRTobjdef (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, ";\n");
 
-        if (OBJDEF_PRAGMA (arg_node) != NULL) {
-            TRAVdo (OBJDEF_PRAGMA (arg_node), arg_info);
-        }
+        OBJDEF_PRAGMA (arg_node) = TRAVopt(OBJDEF_PRAGMA (arg_node), arg_info);
 
         fprintf (global.outfile, "\n");
     } else {
@@ -1864,9 +1848,7 @@ PRTret (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (RET_TYPE (arg_node) != NULL) {
         type_str = TYtype2String (RET_TYPE (arg_node), FALSE, 0);
@@ -1931,9 +1913,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
     DBUG_EXECUTE_TAG ("PRINT_PTR",
                       fprintf (global.outfile, "/* " F_PTR " */\n", (void *)arg_node));
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
     /*
      * Print SOSSK demand if wanted
      */
@@ -2125,9 +2105,7 @@ PRTfundef (node *arg_node, info *arg_info)
         //    if( INFO_NONLOCCALFUN( arg_info) != NULL) {
         //    }
 
-        if (NODE_ERROR (arg_node) != NULL) {
-            NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-        }
+        NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
         /*
          * needed for the introduction of PROFILE_... MACROS in the
@@ -2135,9 +2113,7 @@ PRTfundef (node *arg_node, info *arg_info)
          */
         INFO_FUNDEF (arg_info) = arg_node;
         /*
-          if (FUNDEF_OBJECTS( arg_node) != NULL) {
-            FUNDEF_OBJECTS( arg_node) = TRAVdo( FUNDEF_OBJECTS( arg_node), arg_info);
-          }
+          FUNDEF_OBJECTS( arg_node) = TRAVopt(FUNDEF_OBJECTS( arg_node), arg_info);
         */
         if (INFO_SPECIALIZATION (arg_info)) {
             fprintf (global.outfile, "specialize ");
@@ -2179,9 +2155,7 @@ PRTfundef (node *arg_node, info *arg_info)
 
                     if ((global.compiler_subphase != PH_cg_prt)
                         && (global.compiler_subphase != PH_ccg_prt)) {
-                        if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                            TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
-                        }
+                        FUNDEF_PRAGMA (arg_node) = TRAVopt(FUNDEF_PRAGMA (arg_node), arg_info);
                     }
 
                     fprintf (global.outfile, "\n");
@@ -2350,9 +2324,7 @@ PRTfundef (node *arg_node, info *arg_info)
 
                     if ((global.compiler_subphase != PH_cg_prt)
                         && (global.compiler_subphase != PH_ccg_prt)) {
-                        if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                            TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
-                        }
+                        FUNDEF_PRAGMA (arg_node) = TRAVopt(FUNDEF_PRAGMA (arg_node), arg_info);
                     }
 
                     fprintf (global.outfile, "\n");
@@ -2449,9 +2421,7 @@ PRTannotate (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (ANNOTATE_TAG (arg_node) & CALL_FUN) {
         SBUFprintf (buf1, "PROFILE_BEGIN_UDF( %d, %d)", ANNOTATE_FUNNUMBER (arg_node),
@@ -2508,9 +2478,7 @@ PRTarg (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (!ARG_ISUSEDINBODY (arg_node)) {
         fprintf (global.outfile, " /* unused */");
@@ -2628,9 +2596,7 @@ PRTvardec (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
 
@@ -2770,9 +2736,7 @@ PRTblock (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
     fprintf (global.outfile, "{ \n");
@@ -2839,9 +2803,7 @@ PRTreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "return");
     if (RETURN_EXPRS (arg_node) != NULL) {
@@ -2874,9 +2836,7 @@ PRTassign (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     DBUG_EXECUTE_TAG ("PRINT_LINENO", fprintf (global.outfile, "\n#line %zu \"%s\"\n",
                                                global.linenum, global.filename););
@@ -2978,9 +2938,7 @@ PRTdo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (DO_ISCUDARIZABLE (arg_node)) {
         fprintf (global.outfile, "/********** Cudarizable do loop **********/\n");
@@ -3044,17 +3002,13 @@ PRTwhile (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "while (");
     TRAVdo (WHILE_COND (arg_node), arg_info);
     fprintf (global.outfile, ") \n");
 
-    if (WHILE_BODY (arg_node) != NULL) {
-        TRAVdo (WHILE_BODY (arg_node), arg_info);
-    }
+    WHILE_BODY (arg_node) = TRAVopt(WHILE_BODY (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -3074,9 +3028,7 @@ PRTcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (global.optimize.dopra && COND_ISTHENNOOP (arg_node)) {
         fprintf (global.outfile, "/* Noop branch */\n");
@@ -3101,9 +3053,7 @@ PRTcond (node *arg_node, info *arg_info)
     INDENT;
     fprintf (global.outfile, "else\n");
 
-    if (COND_ELSE (arg_node) != NULL) {
-        TRAVdo (COND_ELSE (arg_node), arg_info);
-    }
+    COND_ELSE (arg_node) = TRAVopt(COND_ELSE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -3125,9 +3075,7 @@ PRTcast (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (CAST_NTYPE (arg_node) != NULL) {
         type_str = TYtype2String (CAST_NTYPE (arg_node), FALSE, 0);
@@ -3169,9 +3117,7 @@ PRTlet (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     expr = LET_EXPR (arg_node);
     if ((NODE_TYPE (expr) == N_ap) && (AP_ARGTAB (expr) != NULL)) {
@@ -3243,9 +3189,7 @@ PRTprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     DBUG_PRINT ("%s (%s)" F_PTR, NODE_TEXT (arg_node),
                 global.prf_name[PRF_PRF (arg_node)], (void *)arg_node);
@@ -3278,9 +3222,7 @@ PRTfuncond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "( ");
     TRAVdo (FUNCOND_IF (arg_node), arg_info);
@@ -3309,9 +3251,7 @@ PRTap (node *arg_node, info *arg_info)
     node *fundef;
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -3344,9 +3284,7 @@ PRTspap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (LEXERisOperator (SPAP_NAME (arg_node))) {
         PrintOperatorAp (NULL, arg_node, arg_info);
@@ -3375,9 +3313,7 @@ PRTspmop (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (SPMOP_ISFIXED (arg_node)) {
         fprintf (global.outfile, "(");
@@ -3435,9 +3371,7 @@ PRTarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
 
@@ -3511,9 +3445,7 @@ PRTexprs (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     /*
      * do not inherit whether we are inside an array
@@ -3563,9 +3495,7 @@ PRTid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
@@ -3655,9 +3585,7 @@ PRTglobobj (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
@@ -3692,9 +3620,7 @@ PRTnum (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "%d", NUM_VAL (arg_node));
 
@@ -3716,9 +3642,7 @@ PRTnumbyte (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
@@ -3745,9 +3669,7 @@ PRTnumshort (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
@@ -3774,9 +3696,7 @@ PRTnumint (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "%d", NUMINT_VAL (arg_node));
 
@@ -3798,9 +3718,7 @@ PRTnumlong (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "%ldl", NUMLONG_VAL (arg_node));
 
@@ -3822,9 +3740,7 @@ PRTnumlonglong (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "%lldLL", NUMLONGLONG_VAL (arg_node));
 
@@ -3846,9 +3762,7 @@ PRTnumubyte (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
@@ -3875,9 +3789,7 @@ PRTnumushort (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
@@ -3904,9 +3816,7 @@ PRTnumuint (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
@@ -3933,9 +3843,7 @@ PRTnumulong (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "%luul", NUMULONG_VAL (arg_node));
 
@@ -3957,9 +3865,7 @@ PRTnumulonglong (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "%lluULL", NUMULONGLONG_VAL (arg_node));
 
@@ -3983,9 +3889,7 @@ PRTfloat (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     tmp_string = CVfloat2String (FLOAT_VAL (arg_node));
     fprintf (global.outfile, "%s", tmp_string);
@@ -4002,9 +3906,7 @@ PRTfloatvec (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     val = FLOATVEC_VAL (arg_node);
     fprintf (global.outfile, "((floatvec){");
@@ -4036,9 +3938,7 @@ PRTdouble (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     tmp_string = CVdouble2String (DOUBLE_VAL (arg_node));
     fprintf (global.outfile, "%s", tmp_string);
@@ -4062,9 +3962,7 @@ PRTbool (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (0 == BOOL_VAL (arg_node)) {
         fprintf (global.outfile, "false");
@@ -4090,9 +3988,7 @@ PRTnested_init (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "nested_init");
 
@@ -4114,9 +4010,7 @@ PRTstr (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "\"%s\"", STR_STRING (arg_node));
 
@@ -4142,9 +4036,7 @@ PRTtype (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (TYPE_TYPE (arg_node) != NULL) {
         type_str = TYtype2String (TYPE_TYPE (arg_node), FALSE, 0);
@@ -4179,9 +4071,7 @@ PRTdot (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     for (i = 0; i < DOT_NUM (arg_node); i++) {
         fprintf (global.outfile, ".");
@@ -4206,9 +4096,7 @@ PRTsetwl (node *arg_node, info *arg_info)
     bool old_insetwl;
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     old_insetwl = INFO_INSETWL (arg_info);
     if (!INFO_INSETWL (arg_info)) {
@@ -4263,9 +4151,7 @@ PRTchar (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if ((CHAR_VAL (arg_node) >= ' ') && (CHAR_VAL (arg_node) <= '~')
         && (CHAR_VAL (arg_node) != '\'') && (CHAR_VAL (arg_node) != '\\')) {
@@ -4323,9 +4209,7 @@ PRTicm (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("icm-node %s\n", ICM_NAME (arg_node));
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
@@ -4393,9 +4277,7 @@ PRTicm (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, "(");
 
-        if (ICM_ARGS (arg_node) != NULL) {
-            TRAVdo (ICM_ARGS (arg_node), arg_info);
-        }
+        ICM_ARGS (arg_node) = TRAVopt(ICM_ARGS (arg_node), arg_info);
 
         fprintf (global.outfile, ")");
 
@@ -4432,9 +4314,7 @@ PRTpragma (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (PRAGMA_LINKNAME (arg_node) != NULL) {
         fprintf (global.outfile, "#pragma linkname \"%s\"\n", PRAGMA_LINKNAME (arg_node));
@@ -4547,9 +4427,7 @@ PRTmt (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 #if 0 /***** TODO   */
   /* PrintAssign already indents */
   fprintf (global.outfile, "MT {");
@@ -4607,9 +4485,7 @@ PRTex (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     /* PrintAssign already indents */
     fprintf (global.outfile, "EX {");
@@ -4646,9 +4522,7 @@ PRTst (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     /* PrintAssign already indents */
     fprintf (global.outfile, "ST {");
@@ -4685,9 +4559,7 @@ PRTcudast (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     /* PrintAssign already indents */
     fprintf (global.outfile, "CUDAST {");
@@ -4724,9 +4596,7 @@ PRTwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     global.indent++;
 
@@ -4840,9 +4710,7 @@ PRTwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (WITHID_VEC (arg_node) != NULL) {
         TRAVdo (WITHID_VEC (arg_node), arg_info);
@@ -4884,9 +4752,7 @@ PRTgenerator (node *arg_node, info *arg_info)
     bool insetwl;
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     insetwl = INFO_INSETWL (arg_info);
     INFO_INSETWL (arg_info) = FALSE;
@@ -4973,9 +4839,7 @@ PRTdefault (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "default partition( ");
 
@@ -5011,9 +4875,7 @@ PRTcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     DBUG_ASSERT (CODE_USED (arg_node) >= 0, "illegal CODE_USED value!");
 
@@ -5054,9 +4916,7 @@ PRTpart (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     tmp_npart = INFO_NPART (arg_info);
     INFO_NPART (arg_info) = arg_node;
@@ -5129,9 +4989,7 @@ PRTgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
 
@@ -5193,9 +5051,7 @@ PRTmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
 
@@ -5241,9 +5097,7 @@ PRTspfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
 
@@ -5303,9 +5157,7 @@ PRTfold (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
 
@@ -5376,9 +5228,7 @@ PRTbreak (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
 
@@ -5417,17 +5267,13 @@ PRTpropagate (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
 
     fprintf (global.outfile, "propagate( ");
 
-    if (PROPAGATE_DEFAULT (arg_node) != NULL) {
-        TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
-    }
+    PROPAGATE_DEFAULT (arg_node) = TRAVopt(PROPAGATE_DEFAULT (arg_node), arg_info);
 
     fprintf (global.outfile, ")");
 
@@ -5460,9 +5306,7 @@ PRTwith2 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     tmp_nwith2 = INFO_NWITH2 (arg_info);
     INFO_NWITH2 (arg_info) = arg_node;
@@ -5519,9 +5363,7 @@ PRTwith2 (node *arg_node, info *arg_info)
         code = CODE_NEXT (code);
     }
 
-    if (WITH2_SEGS (arg_node) != NULL) {
-        TRAVdo (WITH2_SEGS (arg_node), arg_info);
-    }
+    WITH2_SEGS (arg_node) = TRAVopt(WITH2_SEGS (arg_node), arg_info);
 
     INDENT;
     fprintf (global.outfile, "/********** conexpr: **********/\n");
@@ -5564,9 +5406,7 @@ PRTwlseg (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     seg = arg_node;
     id = 0;
@@ -5651,9 +5491,7 @@ PrintWLxblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
     fprintf (global.outfile, "(");
@@ -5723,9 +5561,7 @@ PRTwlstride (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
     fprintf (global.outfile, "(");
@@ -5770,9 +5606,7 @@ PRTwlcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, " ");
     if (arg_node != NULL) {
@@ -5835,9 +5669,7 @@ PRTwlgrid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVopt (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
     fprintf (global.outfile, "(");
@@ -5883,9 +5715,7 @@ PRTssacnt (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     INDENT;
     fprintf (global.outfile, " *  ");
@@ -5916,9 +5746,7 @@ PRTavis (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     char * type_str;
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     /* to be implemented */
 
@@ -5975,13 +5803,9 @@ PRTconstraint (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
-    if (CONSTRAINT_NEXT (arg_node) != NULL) {
-        CONSTRAINT_NEXT (arg_node) = TRAVdo (CONSTRAINT_NEXT (arg_node), arg_info);
-    }
+    CONSTRAINT_NEXT (arg_node) = TRAVopt(CONSTRAINT_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -6001,9 +5825,7 @@ PRTwiths (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, " /* Hybrid With-Loop */ {\n");
     global.indent++;
@@ -6136,9 +5958,7 @@ PRTrange (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, "/* (BS: %d) */ \n", RANGE_BLOCKSIZE (arg_node));
 
-    if (RANGE_BODY (arg_node) != NULL) {
-        RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
-    }
+    RANGE_BODY (arg_node) = TRAVopt(RANGE_BODY (arg_node), arg_info);
 
     fprintf (global.outfile, " : ");
     if (RANGE_RESULTS (arg_node) != NULL) {
@@ -6234,9 +6054,7 @@ PRTtravPre (node *arg_node, info *arg_info)
     DBUG_PRINT_TAG ("PRINT_LINE", "line (%s) %s:%zu\n", NODE_TEXT (arg_node),
                     NODE_FILE (arg_node), NODE_LINE (arg_node));
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -6256,9 +6074,7 @@ PRTtravPost (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -6396,9 +6212,7 @@ PRTdataflowgraph (node *arg_node, info *arg_info)
     nodelist *member_iterator;
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     global.outfile = stdout;
 
@@ -6437,9 +6251,7 @@ PRTdataflownode (node *arg_node, info *arg_info)
     nodelist *dependent_iterator;
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     global.outfile = stdout;
 
@@ -6492,9 +6304,7 @@ PRTerror (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     firstError = INFO_FIRSTERROR (arg_info);
 
@@ -6536,9 +6346,7 @@ PRTimport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "import %s : ", IMPORT_MOD (arg_node));
 
@@ -6552,9 +6360,7 @@ PRTimport (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, ";\n");
 
-    if (IMPORT_NEXT (arg_node) != NULL) {
-        IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
-    }
+    IMPORT_NEXT (arg_node) = TRAVopt(IMPORT_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -6574,9 +6380,7 @@ PRTexport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "export ");
 
@@ -6595,9 +6399,7 @@ PRTexport (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, ";\n");
 
-    if (EXPORT_NEXT (arg_node) != NULL) {
-        EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
-    }
+    EXPORT_NEXT (arg_node) = TRAVopt(EXPORT_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -6617,9 +6419,7 @@ PRTuse (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "use %s : ", USE_MOD (arg_node));
 
@@ -6638,9 +6438,7 @@ PRTuse (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, ";\n");
 
-    if (USE_NEXT (arg_node) != NULL) {
-        USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
-    }
+    USE_NEXT (arg_node) = TRAVopt(USE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -6660,9 +6458,7 @@ PRTprovide (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     fprintf (global.outfile, "provide ");
 
@@ -6682,9 +6478,7 @@ PRTprovide (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, ";\n");
 
-    if (PROVIDE_NEXT (arg_node) != NULL) {
-        PROVIDE_NEXT (arg_node) = TRAVdo (PROVIDE_NEXT (arg_node), arg_info);
-    }
+    PROVIDE_NEXT (arg_node) = TRAVopt(PROVIDE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -6704,9 +6498,7 @@ PRTsymbol (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (SYMBOL_NEXT (arg_node) != NULL) {
         SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);
@@ -6723,9 +6515,7 @@ PRTset (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
+    NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
     if (SET_MEMBER (arg_node) == NULL) {
         fprintf (global.outfile, "---\n");
@@ -6781,9 +6571,7 @@ PRTfunbundle (node *arg_node, info *arg_info)
                  FUNBUNDLE_ARITY (arg_node));
     }
 
-    if (FUNBUNDLE_FUNDEF (arg_node) != NULL) {
-        TRAVdo (FUNBUNDLE_FUNDEF (arg_node), arg_info);
-    }
+    FUNBUNDLE_FUNDEF (arg_node) = TRAVopt(FUNBUNDLE_FUNDEF (arg_node), arg_info);
 
     if (INFO_PROTOTYPE (arg_info)) {
         fprintf (global.outfile, "\n\n "
@@ -6925,9 +6713,7 @@ PRTtfvertex (node *arg_node, info *arg_info)
 
     INFO_TFSUPERNODE (arg_info) = arg_node;
 
-    if (TFVERTEX_CHILDREN (arg_node) != NULL) {
-        TRAVdo (TFVERTEX_CHILDREN (arg_node), arg_info);
-    }
+    TFVERTEX_CHILDREN (arg_node) = TRAVopt(TFVERTEX_CHILDREN (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -6941,9 +6727,7 @@ PRTtfrel (node *arg_node, info *arg_info)
     fprintf (global.outfile, "\"%s\"->\"%s\";\n", TFREL_SUPERTAG (arg_node),
              TFREL_SUBTAG (arg_node));
 
-    if (TFREL_NEXT (arg_node) != NULL) {
-        TRAVdo (TFREL_NEXT (arg_node), arg_info);
-    }
+    TFREL_NEXT (arg_node) = TRAVopt(TFREL_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -7005,9 +6789,7 @@ PRTtfedge (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, ";\n");
 
-    if (TFEDGE_NEXT (arg_node) != NULL) {
-        TRAVdo (TFEDGE_NEXT (arg_node), arg_info);
-    }
+    TFEDGE_NEXT (arg_node) = TRAVopt(TFEDGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

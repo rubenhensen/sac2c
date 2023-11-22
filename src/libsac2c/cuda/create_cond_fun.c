@@ -183,9 +183,7 @@ CCFdoCreateCondFun (node *fundef, node *then_assigns, node *else_assigns,
     INFO_DUPLUT (arg_info) = LUTremoveLut (INFO_DUPLUT (arg_info));
 
     then_assigns = FREEdoFreeTree (then_assigns);
-    if (else_assigns != NULL) {
-        else_assigns = FREEdoFreeTree (else_assigns);
-    }
+    else_assigns = FREEoptFreeTree(else_assigns);
 
     TRAVpop ();
     arg_info = FreeInfo (arg_info);

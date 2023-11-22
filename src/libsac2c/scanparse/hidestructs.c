@@ -205,9 +205,7 @@ HSstructdef (node *arg_node, info *arg_info)
     fundec = DUPdoDupNode (fundec);
     arg = TBmakeArg (TBmakeAvis (STRcpy ("s"), TYcopyType (structtype)), NULL);
     AVIS_DECLTYPE (ARG_AVIS (arg)) = TYcopyType (structtype);
-    if (FUNDEF_ARGS (fundec) != NULL) {
-        FREEdoFreeTree (FUNDEF_ARGS (fundec));
-    }
+    FUNDEF_ARGS (fundec) = FREEoptFreeTree(FUNDEF_ARGS (fundec));
     FUNDEF_ARGS (fundec) = arg;
     FUNDEF_NEXT (fundec) = MODULE_FUNDECS (module);
     /* TODO: Instead of sticky, recreate on-demand in 9:des. */

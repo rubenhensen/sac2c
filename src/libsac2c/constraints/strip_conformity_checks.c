@@ -424,9 +424,7 @@ SCCvardec (node *arg_node, info *arg_info)
         DBUG_PRINT ("Removing variable %s...", AVIS_NAME (VARDEC_AVIS (arg_node)));
 
         arg_node = FREEdoFreeNode (arg_node);
-        if (arg_node != NULL) {
-            arg_node = TRAVdo (arg_node, arg_info);
-        }
+        arg_node = TRAVopt(arg_node, arg_info);
     } else {
         VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
     }

@@ -413,16 +413,12 @@ CRTWRPmodule (node *arg_node, info *arg_info)
      * DO NOT have bodies, it does not matter that not all functions have
      * been seen prior to our way back up!
      */
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
     /**
      * Now, we traverse the local fundefs. Once we reach the last fundef,
      * we know for sure, that we have seen ALL functions (including the externals)!
      */
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     /**
      * Now, we set the FUNDEF_IMPL nodes for the forced specializations:
@@ -638,9 +634,7 @@ CRTWRPlet (node *arg_node, info *arg_info)
     old_exprets = INFO_EXPRETS (arg_info);
     INFO_EXPRETS (arg_info) = TCcountIds (LET_IDS (arg_node));
 
-    if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    }
+    LET_EXPR (arg_node) = TRAVopt(LET_EXPR (arg_node), arg_info);
     INFO_EXPRETS (arg_info) = old_exprets;
 
     DBUG_RETURN (arg_node);
@@ -713,9 +707,7 @@ CRTWRPgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
+    GENARRAY_DEFAULT (arg_node) = TRAVopt(GENARRAY_DEFAULT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

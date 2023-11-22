@@ -502,9 +502,7 @@ EMRBassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     /*
      * In case this assigment was holding some memory operations for a
@@ -597,9 +595,7 @@ EMRBfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("Traversing function %s", FUNDEF_NAME (arg_node));
@@ -642,9 +638,7 @@ EMRBids (node *arg_node, info *arg_info)
         DFMsetMaskEntrySet (INFO_LOCALVARS (arg_info), IDS_AVIS (arg_node));
     }
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -821,7 +815,7 @@ EMRBrange (node *arg_node, info *arg_info)
      * stack local indentifiers
      */
     oldlocals = INFO_LOCALVARS (arg_info);
-    INFO_LOCALVARS (arg_info) = 
+    INFO_LOCALVARS (arg_info) =
         DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
     RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
@@ -868,12 +862,10 @@ EMRBcode (node *arg_node, info *arg_info)
      * stack local indentifiers
      */
     oldlocals = INFO_LOCALVARS (arg_info);
-    INFO_LOCALVARS (arg_info) = 
+    INFO_LOCALVARS (arg_info) =
         DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt(CODE_CBLOCK (arg_node), arg_info);
 
     cexprs = CODE_CEXPRS (arg_node);
 
@@ -888,9 +880,7 @@ EMRBcode (node *arg_node, info *arg_info)
     /*
      * Traverse next code
      */
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -918,7 +908,7 @@ EMRBwith (node *arg_node, info *arg_info)
      * Stack outer data reuse candidates
      */
     olddrcs = INFO_DRCS (arg_info);
-    INFO_DRCS (arg_info) = 
+    INFO_DRCS (arg_info) =
         DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -960,7 +950,7 @@ EMRBwith2 (node *arg_node, info *arg_info)
      * Stack outer data reuse candidates
      */
     olddrcs = INFO_DRCS (arg_info);
-    INFO_DRCS (arg_info) = 
+    INFO_DRCS (arg_info) =
         DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
     WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
@@ -1001,7 +991,7 @@ EMRBwith3 (node *arg_node, info *arg_info)
      * Stack outer data reuse candidates
      */
     olddrcs = INFO_DRCS (arg_info);
-    INFO_DRCS (arg_info) = 
+    INFO_DRCS (arg_info) =
         DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
     WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
@@ -1137,9 +1127,7 @@ EMRBgenarray (node *arg_node, info *arg_info)
 
     MakeWithopReuseBranches (GENARRAY_MEM (arg_node), arg_info);
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1163,9 +1151,7 @@ EMRBmodarray (node *arg_node, info *arg_info)
 
     MakeWithopReuseBranches (MODARRAY_MEM (arg_node), arg_info);
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -130,7 +130,7 @@ GenerateSerFileHead (FILE *file, node *module)
                    "#endif\n\n");
 
     fprintf (file, "#define DROP( x, y) y\n");
-    
+
     /* This is an implementation of a static assert that checks the value of
        `e` at compile time and terminates compilation in case it is 0.
        If we ever switch to C11 or later such a funtionality is built-in.  */
@@ -775,9 +775,7 @@ SERfundef (node *arg_node, info *arg_info)
         }
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     INFO_SER_CURRENT (arg_info) = last;
 
@@ -804,9 +802,7 @@ SERtypedef (node *arg_node, info *arg_info)
         SerializeTypedef (arg_node, arg_info);
     }
 
-    if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
-    }
+    TYPEDEF_NEXT (arg_node) = TRAVopt(TYPEDEF_NEXT (arg_node), arg_info);
 
     INFO_SER_CURRENT (arg_info) = last;
 
@@ -833,9 +829,7 @@ SERobjdef (node *arg_node, info *arg_info)
         SerializeObjdef (arg_node, arg_info);
     }
 
-    if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
-    }
+    OBJDEF_NEXT (arg_node) = TRAVopt(OBJDEF_NEXT (arg_node), arg_info);
 
     INFO_SER_CURRENT (arg_info) = last;
 

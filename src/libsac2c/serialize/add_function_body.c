@@ -156,9 +156,7 @@ AFBfundef (node *arg_node, info *arg_info)
     /*
      * correct args ssa counters
      */
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
     /*
      * correct FUNDEF_RETURN

@@ -185,7 +185,7 @@ MergeNewExprs (node **preassigns, node **postassigns, node *with, node **exprs,
 
     if (*exprs != NULL) {
         if ((lhs == NULL) || (*lhs == NULL)) {
-            CTIerror (EMPTY_LOC, 
+            CTIerror (EMPTY_LOC,
                       "Number of left-hand-side expression does not match "
                       "number of With-Loop operators.");
         } else {
@@ -352,9 +352,7 @@ HZGWLgenarray (node *arg_node, info *arg_info)
     if (INFO_MODE (arg_info) == T_traverse) {
         arg_node = TRAVcont (arg_node, arg_info);
     } else {
-        if (GENARRAY_NEXT (arg_node) != NULL) {
-            GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-        }
+        GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
         if (GENARRAY_DEFAULT (arg_node) == NULL) {
             CTIerror (EMPTY_LOC, "Missing default value for zero-generator withloop.");
@@ -376,9 +374,7 @@ HZGWLmodarray (node *arg_node, info *arg_info)
     if (INFO_MODE (arg_info) == T_traverse) {
         arg_node = TRAVcont (arg_node, arg_info);
     } else {
-        if (MODARRAY_NEXT (arg_node) != NULL) {
-            MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-        }
+        MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
         INFO_NEWRES (arg_info) = TBmakeExprs (DUPdoDupTree (MODARRAY_ARRAY (arg_node)),
                                               INFO_NEWRES (arg_info));
@@ -395,9 +391,7 @@ HZGWLspfold (node *arg_node, info *arg_info)
     if (INFO_MODE (arg_info) == T_traverse) {
         arg_node = TRAVcont (arg_node, arg_info);
     } else {
-        if (SPFOLD_NEXT (arg_node) != NULL) {
-            SPFOLD_NEXT (arg_node) = TRAVdo (SPFOLD_NEXT (arg_node), arg_info);
-        }
+        SPFOLD_NEXT (arg_node) = TRAVopt(SPFOLD_NEXT (arg_node), arg_info);
 
         INFO_NEWRES (arg_info) = TBmakeExprs (DUPdoDupTree (SPFOLD_NEUTRAL (arg_node)),
                                               INFO_NEWRES (arg_info));
@@ -414,9 +408,7 @@ HZGWLpropagate (node *arg_node, info *arg_info)
     if (INFO_MODE (arg_info) == T_traverse) {
         arg_node = TRAVcont (arg_node, arg_info);
     } else {
-        if (PROPAGATE_NEXT (arg_node) != NULL) {
-            PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
-        }
+        PROPAGATE_NEXT (arg_node) = TRAVopt(PROPAGATE_NEXT (arg_node), arg_info);
 
         INFO_NEWRES (arg_info) = TBmakeExprs (DUPdoDupTree (PROPAGATE_DEFAULT (arg_node)),
                                               INFO_NEWRES (arg_info));
@@ -477,9 +469,7 @@ HZGWLassign (node *arg_node, info *arg_info)
 
         arg_node = TRAVcont (arg_node, arg_info);
     } else {
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
+        ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

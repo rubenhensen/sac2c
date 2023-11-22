@@ -776,9 +776,7 @@ IVERAScode (node *arg_node, info *arg_info)
      */
     INFO_IVINFO (arg_info) = PopLocalOffsets (INFO_IVINFO (arg_info));
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -537,9 +537,7 @@ WLFLTMwithid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (WITHID_IDS (arg_node) != NULL) {
-        WITHID_IDS (arg_node) = FREEdoFreeTree (WITHID_IDS (arg_node));
-    }
+    WITHID_IDS (arg_node) = FREEoptFreeTree(WITHID_IDS (arg_node));
 
     ids_avis = TBmakeAvis (TRAVtmpVar (),
                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -589,24 +587,16 @@ WLFLTfundef (node *arg_node, info *arg_info)
     /*
      * As we do not trust the previous state, we clear the AVIS_ISUSED.
      */
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
 
     /*
      * Remove the information we have stored in AVIS_ISUSED again.
      */
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -626,9 +616,7 @@ WLFLTblock (node *arg_node, info *arg_info)
     /*
      * Clear left-over information from the AVIS_ISUSED flag.
      */
-    if (BLOCK_VARDECS (arg_node) != NULL) {
-        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
-    }
+    BLOCK_VARDECS (arg_node) = TRAVopt(BLOCK_VARDECS (arg_node), arg_info);
 
     BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
@@ -812,13 +800,9 @@ WLFLTwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (WITHID_VEC (arg_node) != NULL) {
-        WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
-    }
+    WITHID_VEC (arg_node) = TRAVopt(WITHID_VEC (arg_node), arg_info);
 
-    if (WITHID_IDS (arg_node) != NULL) {
-        WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
-    }
+    WITHID_IDS (arg_node) = TRAVopt(WITHID_IDS (arg_node), arg_info);
 
     /*
      * We intentionally do not traverse into WITHID_IDXS.
@@ -882,9 +866,7 @@ WLFLTassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_POSTASSIGNS (arg_info) != NULL) {

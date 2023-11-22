@@ -295,9 +295,7 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
             p = LET_EXPR (ASSIGN_STMT (p));
             if (!GetLoopIdentifiers (ivtmp->loopvar, p, &stack, &ext_ivs)
                 || !GetModifier (ivtmp->loopvar, &stack, NULL, FALSE, &m)) {
-                if (NULL != m) {
-                    m = FREEdoFreeNode (m);
-                }
+                m = FREEoptFreeNode(m);
                 goto cleanup;
             }
         }

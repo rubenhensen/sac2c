@@ -157,9 +157,7 @@ CUMMlet (node *arg_node, info *arg_info)
                                               expr);
             PRF_ERC (LET_EXPR (arg_node)) = ercs;
         } else {
-            if (ercs) {
-                ercs = FREEdoFreeTree (ercs);
-            }
+            ercs = FREEoptFreeTree(ercs);
         }
     }
 

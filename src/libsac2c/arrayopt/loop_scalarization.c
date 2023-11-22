@@ -842,9 +842,7 @@ LSap (node *arg_node, info *arg_info)
         && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
         INFO_RECCALL (arg_info) = arg_node;
     } else {
-        if (AP_ARGS (arg_node) != NULL) {
-            AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-        }
+        AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
         if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))
             || FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
             INFO_LEVEL (arg_info)++;

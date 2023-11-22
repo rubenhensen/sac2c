@@ -8,7 +8,7 @@
  *
  *   We traverse each ST function body and look for with-loops to be
  *   parallelised. Each such with-loop is then lifted into a separate
- *   function definition and the with-loop itself is replaced by a 
+ *   function definition and the with-loop itself is replaced by a
  *   call of that function. The newly created fundefs are named and tagged
  *   SPMD functions. These functions will later implement switching from
  *   single-threaded execution to multithreaded execution and vice versa.
@@ -35,7 +35,7 @@
  *
  *   The RETURN VALUES and types of the spmd functions are taken from
  *   the left hand side of the with-loops.
- * 
+ *
  *   For all LOCAL VARIABLES needed in the new spmd functions we collect
  *   those variables that are being locally defined within the with loop
  *   body. We add to these the left hand side variables of the with-loop
@@ -47,14 +47,14 @@
  *   fundef chain.
  *
  *
- *   For example, we transform 
+ *   For example, we transform
  *
  *      a = with {
  *            ( lb <= iv < ub) {
  *               res = max( b[iv]);
  *            } : res;
  *          } : genarray( [100], 0);
- * 
+ *
  *   into
  *
  *      a = spmdfun( lb, ub, b);
@@ -66,7 +66,7 @@
  *         int[100] a;
  *         int res;
  *         int[1] iv;
- *    
+ *
  *         a = with {
  *               ( lb <= iv < ub) {
  *                  res = max( b[iv]);
@@ -116,7 +116,7 @@
  *   element, the non-mt aware mem phase assumes that the neutral element is
  *   always consumed *within* the WL, either by reuse or by discarding.
  *   Consequently, we cannot simply lift fold with-loops without adjusting
- *   the memory management of the neutral element. If we did, we would 
+ *   the memory management of the neutral element. If we did, we would
  *   generate a space leak on the neutral elements of parallel fold with
  *   loops. We resolve this problem by injecting a _dec_rc_(neutral, 1)
  *   directly after the call to the spmd function.
@@ -166,14 +166,14 @@
  * implementation:
  *   Most of the analysis is happening in MTSPMDFid and in MTSPMDFids. Here,
  *   the RFVs and local vars are being identified, and the corresponding parts
- *   of the new code are being created. 
+ *   of the new code are being created.
  *   RFVs are being transformed into parameters (collected in INFO_PARAMS) and
- *   argument expressions (collected in INFO_ARGS). Local variables are 
+ *   argument expressions (collected in INFO_ARGS). Local variables are
  *   transformed into variable declarations (collected in INFO_VARDECS).
- *   Key to this process is the use of a LUT. Here we keep pointers to 
+ *   Key to this process is the use of a LUT. Here we keep pointers to
  *   N_avis nodes that we have encountered already. For each such entry
  *   we create a duplicate of the N_avis and hold that in the LUT as well.
- *   Later, when doing the actual function creation, we exchange all 
+ *   Later, when doing the actual function creation, we exchange all
  *   old N_avis nodes by the new ones using that very LUT.
  *   This also allows us to avoid unnecessary duplicates when encountering
  *   the same variable more than once and it allows us to disambiguate
@@ -183,9 +183,9 @@
  *      void HandleLocal( node *avis, info *arg_info)     and
  *      void HandleUse( node *avis, info *arg_info)
  *
- *   We use a flag INFO_COLLECT to indicate when we are traversing a 
+ *   We use a flag INFO_COLLECT to indicate when we are traversing a
  *   with loop that we want to lift out. It is being set before traversing
- *   the body of a to be parallelised with-loops and is reset once the 
+ *   the body of a to be parallelised with-loops and is reset once the
  *   N_assign of that with-loop is being reached on the way back up.
  *   The actual function creation is done by a helper function
  *      node * CreateSpmdFundef (node *arg_node, info *arg_info)
@@ -195,7 +195,7 @@
  *   code when traversing N_fold and put it into INFO_NEUTRALS.
  *   As this only has to happen for top-level fold-WLs, we use INFO_TOPLEVEL
  *   as an indicator to decide whether to adjust or not.
- *   This code is eventually inserted after the spmd function call in 
+ *   This code is eventually inserted after the spmd function call in
  *   MTSPMDFassign.
  *
  *****************************************************************************/
@@ -495,9 +495,7 @@ MTSPMDFmodule (node *arg_node, info *arg_info)
 
     INFO_LUT (arg_info) = LUTgenerateLut ();
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
 
@@ -531,9 +529,7 @@ MTSPMDFfundef (node *arg_node, info *arg_info)
         INFO_SPMDFUNS (arg_info) = NULL;
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     spmdfuns = TCappendFundef (spmdfuns, FUNDEF_NEXT (arg_node));
     FUNDEF_NEXT (arg_node) = spmdfuns;
@@ -619,9 +615,7 @@ MTSPMDFlet (node *arg_node, info *arg_info)
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
 
     if (INFO_LIFT (arg_info)) {
         spmd_fundef = CreateSpmdFundef (arg_node, arg_info);
@@ -722,9 +716,7 @@ MTSPMDFids (node *arg_node, info *arg_info)
         }
     }
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -918,7 +910,7 @@ MTSPMDFfold (node *arg_node, info *arg_info)
     node * neutr;
     node * dec_rc;
     DBUG_ENTER ();
-    
+
     if (INFO_COLLECT (arg_info)) {
         if (INFO_TOPLEVEL (arg_info)) {
             neutr = FOLD_NEUTRAL (arg_node);
@@ -928,7 +920,7 @@ MTSPMDFfold (node *arg_node, info *arg_info)
             INFO_NEUTRALS (arg_info) = TBmakeAssign (TBmakeLet (NULL, dec_rc),
                                                      INFO_NEUTRALS (arg_info));
         }
-        
+
         // Finally we traverse all sons (including the neutral!)
         arg_node = TRAVcont (arg_node, arg_info);
     }

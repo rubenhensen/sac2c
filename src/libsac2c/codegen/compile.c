@@ -3057,23 +3057,15 @@ COMPmodule (node *arg_node, info *arg_info)
                                                     INFO_SPMDBARRIER (arg_info));
     }
 
-    if (MODULE_OBJS (arg_node) != NULL) {
-        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
-    }
+    MODULE_OBJS (arg_node) = TRAVopt(MODULE_OBJS (arg_node), arg_info);
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     MODULE_THREADFUNS (arg_node) = TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
 
-    if (MODULE_TYPES (arg_node) != NULL) {
-        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
-    }
+    MODULE_TYPES (arg_node) = TRAVopt(MODULE_TYPES (arg_node), arg_info);
 
     if (global.mtmode != MT_none) {
         INFO_SPMDFRAME (arg_info)
@@ -3170,9 +3162,7 @@ COMPobjdef (node *arg_node, info *arg_info)
     OBJDEF_NT_TAG (arg_node)
       = NTUcreateNtTagFromNType (OBJDEF_NAME (arg_node), OBJDEF_TYPE (arg_node));
 
-    if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
-    }
+    OBJDEF_NEXT (arg_node) = TRAVopt(OBJDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -3482,9 +3472,7 @@ COMPfundef (node *arg_node, info *arg_info)
         /*
          * traverse next fundef
          */
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
         /*
          * Create entries in SPMD frame and SPMD barrier
@@ -3533,9 +3521,7 @@ COMPfundef (node *arg_node, info *arg_info)
          */
         INFO_FUNDEF (arg_info) = old_fundef;
     } else {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -3638,9 +3624,7 @@ COMPvardec (node *arg_node, info *arg_info)
                               INFO_VARDEC_INIT (arg_info));
     }
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -3688,14 +3672,10 @@ COMPblock (node *arg_node, info *arg_info)
     }
 
     DBUG_PRINT ("   traversing assignments...");
-    if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
-    }
+    BLOCK_ASSIGNS (arg_node) = TRAVopt(BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_PRINT ("   traversing vardecs...");
-    if (BLOCK_VARDECS (arg_node) != NULL) {
-        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
-    }
+    BLOCK_VARDECS (arg_node) = TRAVopt(BLOCK_VARDECS (arg_node), arg_info);
 
     if (INFO_VARDEC_INIT (arg_info) != NULL) {
         BLOCK_ASSIGNS (arg_node)
@@ -3755,9 +3735,7 @@ COMPassign (node *arg_node, info *arg_info)
         ASSIGN_STMT (arg_node) = instr;
     }
 
-    if (next != NULL) {
-        next = TRAVdo (next, arg_info);
-    }
+    next = TRAVopt(next, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -9996,9 +9974,7 @@ COMPdo (node *arg_node, info *arg_info)
         INFO_COND (arg_info) = FALSE;
 
         DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
-        if (DO_SKIP (arg_node) != NULL) {
-            DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
-        }
+        DO_SKIP (arg_node) = TRAVopt(DO_SKIP (arg_node), arg_info);
 
         /*
          * We will return a N_assign chain!!
@@ -11131,9 +11107,7 @@ COMPwith2 (node *arg_node, info *arg_info)
      *     down below!                              *
      ************************************************/
 
-    if (WITH2_CODE (arg_node) != NULL) {
-        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-    }
+    WITH2_CODE (arg_node) = TRAVopt(WITH2_CODE (arg_node), arg_info);
 
     /*******************************************
      * put it all together                     *
@@ -11273,9 +11247,7 @@ COMPwith3 (node *arg_node, info *arg_info)
             arg_node = TCappendAssign (arg_node, post);
         }
 
-        if (INFO_WITH3_FOLDS (arg_info) != NULL) {
-            INFO_WITH3_FOLDS (arg_info) = FREEdoFreeTree (INFO_WITH3_FOLDS (arg_info));
-        }
+        INFO_WITH3_FOLDS (arg_info) = FREEoptFreeTree(INFO_WITH3_FOLDS (arg_info));
 
         INFO_CONCURRENTRANGES (arg_info) = old_concurrentranges;
     } else if (global.backend == BE_cuda || global.backend == BE_cudahybrid) {
@@ -12137,9 +12109,7 @@ COMPcode (node *arg_node, info *arg_info)
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

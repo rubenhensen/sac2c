@@ -155,12 +155,8 @@ CUblock (node *arg_node, info *arg_info)
      * uniqueness checking. Then traverse the VARDECs to
      * reset the flags.
      */
-    if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
-    }
-    if (BLOCK_VARDECS (arg_node) != NULL) {
-        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
-    }
+    BLOCK_ASSIGNS (arg_node) = TRAVopt(BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt(BLOCK_VARDECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -184,21 +180,15 @@ CUcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (COND_COND (arg_node) != NULL) {
-        COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    }
+    COND_COND (arg_node) = TRAVopt(COND_COND (arg_node), arg_info);
 
     /* Traverse down the THEN and ELSE parts in their respective modes. */
 
     INFO_MODE (arg_info) = CU_MODE_THEN;
-    if (COND_THEN (arg_node) != NULL) {
-        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    }
+    COND_THEN (arg_node) = TRAVopt(COND_THEN (arg_node), arg_info);
 
     INFO_MODE (arg_info) = CU_MODE_ELSE;
-    if (COND_ELSE (arg_node) != NULL) {
-        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-    }
+    COND_ELSE (arg_node) = TRAVopt(COND_ELSE (arg_node), arg_info);
 
     INFO_MODE (arg_info) = CU_MODE_NORMAL;
 
@@ -210,21 +200,15 @@ CUfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNCOND_IF (arg_node) != NULL) {
-        FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
-    }
+    FUNCOND_IF (arg_node) = TRAVopt(FUNCOND_IF (arg_node), arg_info);
 
     /* Traverse down the THEN and ELSE parts in their respective modes. */
 
     INFO_MODE (arg_info) = CU_MODE_THEN;
-    if (FUNCOND_THEN (arg_node) != NULL) {
-        FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
-    }
+    FUNCOND_THEN (arg_node) = TRAVopt(FUNCOND_THEN (arg_node), arg_info);
 
     INFO_MODE (arg_info) = CU_MODE_ELSE;
-    if (FUNCOND_ELSE (arg_node) != NULL) {
-        FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
-    }
+    FUNCOND_ELSE (arg_node) = TRAVopt(FUNCOND_ELSE (arg_node), arg_info);
 
     INFO_MODE (arg_info) = CU_MODE_NORMAL;
 
@@ -247,15 +231,11 @@ CUfundef (node *arg_node, info *arg_info)
 
         /* Only traverse the arguments if we have a body
          * (otherwise external functions break) */
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
     }
 
     /* Continue to the next function. */
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -370,9 +350,7 @@ node *CUpropagate( node *arg_node, info *arg_info)
   * Skip the 'default element' son, see PROBLEMS at the top of this
   * file.
 
-  if ( PROPAGATE_NEXT( arg_node) != NULL) {
-    PROPAGATE_NEXT( arg_node) = TRAVdo( PROPAGATE_NEXT( arg_node), arg_info);
-  }
+  PROPAGATE_NEXT( arg_node) = TRAVopt(PROPAGATE_NEXT( arg_node), arg_info);
 
   DBUG_RETURN( arg_node);
 }

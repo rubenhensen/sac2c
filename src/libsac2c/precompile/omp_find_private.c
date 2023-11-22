@@ -127,9 +127,7 @@ OFPlet (node *arg_node, info *arg_info)
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
-    if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    }
+    LET_EXPR (arg_node) = TRAVopt(LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -141,13 +139,9 @@ OFPwith2 (node *arg_node, info *arg_info)
 
     INFO_NUM_WITH_LOOP (arg_info)++;
 
-    if (WITH2_WITHID (arg_node) != NULL) {
-        WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
-    }
+    WITH2_WITHID (arg_node) = TRAVopt(WITH2_WITHID (arg_node), arg_info);
 
-    if (WITH2_CODE (arg_node) != NULL) {
-        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-    }
+    WITH2_CODE (arg_node) = TRAVopt(WITH2_CODE (arg_node), arg_info);
 
     INFO_NUM_WITH_LOOP (arg_info)--;
 
@@ -167,17 +161,11 @@ OFPwithid (node *arg_node, info *arg_info)
 
     INFO_IN_WITH_LOOP_ID (arg_info) = TRUE;
 
-    if (WITHID_VEC (arg_node) != NULL) {
-        WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
-    }
+    WITHID_VEC (arg_node) = TRAVopt(WITHID_VEC (arg_node), arg_info);
 
-    if (WITHID_IDS (arg_node) != NULL) {
-        WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
-    }
+    WITHID_IDS (arg_node) = TRAVopt(WITHID_IDS (arg_node), arg_info);
 
-    if (WITHID_IDXS (arg_node) != NULL) {
-        WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
-    }
+    WITHID_IDXS (arg_node) = TRAVopt(WITHID_IDXS (arg_node), arg_info);
 
     INFO_IN_WITH_LOOP_ID (arg_info) = FALSE;
 
@@ -197,13 +185,9 @@ OFPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

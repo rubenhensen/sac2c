@@ -47,30 +47,30 @@
  * using WLSTRIDE_NEXT.
  *
  * The translation of partitions works as follows:
- * For each dimension, we translate (lb, ub, step, width) into 
+ * For each dimension, we translate (lb, ub, step, width) into
  *
  * WLSTRIDE_BOUND1 := lb
  * WLSTRIDE_BOUND2 := ub
  * WLSTRIDE_STEP := step
- * 
+ *
  * WLSTRIDE_ISDYNAMIC is set if any of the 4 values is non constant
- * 
+ *
  * WLGRID_BOUND1 := 0
  * WLGRID_BOUND2 := width (default:1)
- * 
- * WLGRID_ISDYNAMIC is set if width is an N_id 
- * 
- * 
+ *
+ * WLGRID_ISDYNAMIC is set if width is an N_id
+ *
+ *
  * Step 1.2 CheckDisjointness
  * --------------------------
  *
  * Checks that a stride chain contains disjoint stride/grid chains.
- * 
+ *
  * Step 1.3 ConvertWith
  * ------------------------
  *
  * Converts N_with into N_with2 without the partition / stride info.
- * 
+ *
  * Step 2 BuildCubes
  * -----------------
  *
@@ -81,14 +81,14 @@
  * which is mapped onto all N_wlstride / N_wlgrid pairs.
  *
  * Given an N_wlstride/ Ngrid pair with
- * 
+ *
  * WLSTRIDE_BOUND1 := lb
  * WLSTRIDE_BOUND2 := ub
  * WLSTRIDE_STEP := step
- * 
+ *
  * WLGRID_BOUND1 := 0
  * WLGRID_BOUND2 := width (default:1)
- * 
+ *
  * we try to simplify width & step to 1 whenever possible.
  * 1) If the overall range is smaller than the step, we can
  *    get rid of the step/width entirely!
@@ -104,16 +104,16 @@
  *                              (0 ->> 1)
  *
  * We also try to maximise the outline:
- *          (3 -> 8) step 2 
+ *          (3 -> 8) step 2
  *             (0 ->> 1):
  *    can be transformed into:
  *          (2 -> 9) step 2     <- decreased lb && increased ub!
  *             (1 ->> 2):       <- shifted grid
- * 
- * 
+ *
+ *
  * Step 2.2 ComputeCubes
  * ---------------------
- * 
+ *
  *
  *
  *
@@ -125,7 +125,7 @@
  *     of doubling the file size.
  *     For more information and an example, look for -dowlmp_aggressive in the
  *     wl_modulo_partitioning.c file.
- * 
+ *
  ******************************************************************************/
 
 #include "tree_basic.h"
@@ -1866,7 +1866,7 @@ NormalizeStride1 (node *stride)
     /*
      * if (bound2 - bound1 - grid_b1 <= step), we can set (step = 1) and (width = 1 )
      * as well!
-     * Rationale: (bound2 - bound1 - grid_b1) is the total range when starting from 
+     * Rationale: (bound2 - bound1 - grid_b1) is the total range when starting from
      * the first element where we want to compute (bound1 + grid_b1). If that is less
      * than or equal to the step, we only have 1 step to look into.
      * => we can make it a dense grid from (bound1 + grid_b1)
@@ -3240,7 +3240,7 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
              * the outlines are disjoint
              *  -> free the useless data in 'divided_stride?'
              */
-            
+
             DBUG_PRINT_TAG ("WLTcubes", "    strides are disjoint; skipping inner dims!");
             divided_stride1a = FREEdoFreeTree (divided_stride1a);
             divided_stride1b = FREEdoFreeTree (divided_stride1b);
@@ -3447,14 +3447,10 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
              *  -> free the useless data in 'i_stride1', 'i_stride2'
              */
             if (i_stride1 != NULL) {
-                if (*i_stride1 != NULL) {
-                    *i_stride1 = FREEdoFreeTree (*i_stride1);
-                }
+                *i_stride1 = FREEoptFreeTree(*i_stride1);
             }
             if (i_stride2 != NULL) {
-                if (*i_stride2 != NULL) {
-                    *i_stride2 = FREEdoFreeTree (*i_stride2);
-                }
+                *i_stride2 = FREEoptFreeTree(*i_stride2);
             }
             result = FALSE;
 
@@ -3807,11 +3803,11 @@ ComputeCubes (node *strides)
      *         && stride(op1) ! intersect outline(op3)
      *   ---> in first round: split op2 because of op3 --->
      *
-     *     strides                indices 
+     *     strides                indices
      *
      *     0->4 step 2            0: ( op1  )
      *            0->1: op1       1: ( op2a )
-     *     1->2 step 1            2: ( op1  )       
+     *     1->2 step 1            2: ( op1  )
      *            0->1: op2a      3: ( op3  )
      *     3->4 step 1:           4: ( op2b )
      *            0->1: op3       5:
@@ -4208,14 +4204,14 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
         char *scheduler_name = SPID_NAME (SPAP_ID (schedul));
         if (STReq (scheduler_name, "Static") || STReq (scheduler_name, "Self")) {
             if (tasksel == NULL) {
-                CTIerror (LINE_TO_LOC (global.linenum), 
+                CTIerror (LINE_TO_LOC (global.linenum),
                           "The Scheduler %s requires a Task Selector",
                           scheduler_name);
             }
         } else if (STReq (scheduler_name, "Affinity")) {
             if (tasksel == NULL
                 || !STReq (SPID_NAME (SPAP_ID (SPAP_ARG1 (tasksel))), "Even")) {
-                CTIerror (LINE_TO_LOC (global.linenum), 
+                CTIerror (LINE_TO_LOC (global.linenum),
                           "Please use Affinity only with Taskselector Even");
             }
         }
@@ -5091,7 +5087,7 @@ IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid
     bound12 = NUM_VAL (WLGRID_BOUND1 (grid2));
     bound22 = NUM_VAL (WLGRID_BOUND2 (grid2));
 
-    DBUG_PRINT_TAG ("WLTmerge", "IntersectGrid ( %d -> %d,  %d -> %d, ...)", 
+    DBUG_PRINT_TAG ("WLTmerge", "IntersectGrid ( %d -> %d,  %d -> %d, ...)",
                     bound11, bound21, bound12, bound22);
 
     /* compute bounds of intersection */
@@ -7316,9 +7312,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 
             /* free temporary data */
-            if (cubes != NULL) {
-                cubes = FREEdoFreeTree (cubes);
-            }
+            cubes = FREEoptFreeTree(cubes);
 
             WITH2_SEGS (new_node) = segs;
             WITH2_HASNAIVEORDERING (new_node) = do_naive_comp;
@@ -7352,17 +7346,11 @@ WLTRAcode (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (CODE_USED (arg_node) >= 0, "illegal NCODE_USED value!");
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt(CODE_CBLOCK (arg_node), arg_info);
 
-    if (CODE_CEXPRS (arg_node) != NULL) {
-        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-    }
+    CODE_CEXPRS (arg_node) = TRAVopt(CODE_CEXPRS (arg_node), arg_info);
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

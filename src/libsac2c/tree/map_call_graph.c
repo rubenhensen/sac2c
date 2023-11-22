@@ -89,9 +89,7 @@ MCGfundef (node *arg_node, info *arg_info)
         arg_node = INFO_MAPFUNDOWN (arg_info) (arg_node, INFO_INFO (arg_info));
     }
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
 
     if (INFO_MAPFUNUP (arg_info) != NULL) {
         arg_node = INFO_MAPFUNUP (arg_info) (arg_node, INFO_INFO (arg_info));

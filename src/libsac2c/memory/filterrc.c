@@ -372,9 +372,7 @@ FRCap (node *arg_node, info *arg_info)
         }
     }
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -421,9 +419,7 @@ FRCassign (node *arg_node, info *arg_info)
     /*
      * Bottom-up traversal
      */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
@@ -533,9 +529,7 @@ FRCfundef (node *arg_node, info *arg_info)
 
             if (oldmask != NULL) {
                 INFO_OLDMASK (arg_info) = oldmask;
-                if (FUNDEF_ARGS (arg_node) != NULL) {
-                    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-                }
+                FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
                 INFO_OLDMASK (arg_info) = NULL;
             }
 
@@ -703,13 +697,9 @@ FRCbreak (node *arg_node, info *arg_info)
     /* NOTE: from phase mem-alloc this should not be NULL, but as we call
      * the filtering traversal in phase opt, this node will be NULL.
      */
-    if (BREAK_MEM (arg_node) != NULL) {
-        BREAK_MEM (arg_node) = TRAVdo (BREAK_MEM (arg_node), arg_info);
-    }
+    BREAK_MEM (arg_node) = TRAVopt(BREAK_MEM (arg_node), arg_info);
 
-    if (BREAK_NEXT (arg_node) != NULL) {
-        BREAK_NEXT (arg_node) = TRAVdo (BREAK_NEXT (arg_node), arg_info);
-    }
+    BREAK_NEXT (arg_node) = TRAVopt(BREAK_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -728,9 +718,7 @@ FRCfold (node *arg_node, info *arg_info)
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
-    if (FOLD_NEXT (arg_node) != NULL) {
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-    }
+    FOLD_NEXT (arg_node) = TRAVopt(FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -776,13 +764,9 @@ FRCgenarray (node *arg_node, info *arg_info)
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
 
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
+    GENARRAY_DEFAULT (arg_node) = TRAVopt(GENARRAY_DEFAULT (arg_node), arg_info);
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -824,9 +808,7 @@ FRCmodarray (node *arg_node, info *arg_info)
 
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -845,13 +827,9 @@ FRCcode (node *arg_node, info *arg_info)
 
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt(CODE_CBLOCK (arg_node), arg_info);
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -873,13 +851,9 @@ FRCrange (node *arg_node, info *arg_info)
     RANGE_LOWERBOUND (arg_node) = TRAVopt (RANGE_LOWERBOUND (arg_node), arg_info);
     RANGE_CHUNKSIZE (arg_node) = TRAVopt (RANGE_CHUNKSIZE (arg_node), arg_info);
 
-    if (RANGE_BODY (arg_node) != NULL) {
-        RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
-    }
+    RANGE_BODY (arg_node) = TRAVopt(RANGE_BODY (arg_node), arg_info);
 
-    if (RANGE_NEXT (arg_node) != NULL) {
-        RANGE_NEXT (arg_node) = TRAVdo (RANGE_NEXT (arg_node), arg_info);
-    }
+    RANGE_NEXT (arg_node) = TRAVopt(RANGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

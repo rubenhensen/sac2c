@@ -4,14 +4,14 @@
  *
  * global objects need to be initialised somewhere. To do so,
  * we need to have some code that knows about the global object
- * and that performs the necessary allocations, if needed. To 
+ * and that performs the necessary allocations, if needed. To
  * reuse existing code generation, in SaC, we generate a special
  * INIT function which expects the global object as a reference
- * parameter. Inside that function, we generate the actual 
+ * parameter. Inside that function, we generate the actual
  * object including potentially needed memory allocations and
- * we assign it to the global variable by "returning" it 
+ * we assign it to the global variable by "returning" it
  * through the reference parameter.
- * While this approach ensures that the usual reference-parameter 
+ * While this approach ensures that the usual reference-parameter
  * mechanism sorts almost everything, there is one little catch:
  * the "incoming" object, in contrast to the normal reference
  * parameter case, does not yet exist / is not yet allocated or
@@ -30,13 +30,13 @@
  *
  * Before this phase, we have a function:
  *
- * X:_INIT::init_myX (int[10] & _OI_object)   which has the code of 
+ * X:_INIT::init_myX (int[10] & _OI_object)   which has the code of
  *                                            createX() inlined
  *
  * Because the compiler "thinks" that this is a normal function,
  * it will try to "consume" its argument, either through DEC_RC
  * or through _alloc_or_reuse. Given that we plan to call this function
- * with an uninitialisd global variable, we have to elide the DEC_RC 
+ * with an uninitialisd global variable, we have to elide the DEC_RC
  * and we have to replace a potential alloc_or_reuse by an _alloc.
  *
  * Note that we also have a wrapper function for this thingy:
@@ -139,9 +139,7 @@ MOIassign (node *arg_node, info *arg_info)
     /*
      * we do it bottom up
      */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     /*
      * check whether rhs contains a reference to one of
@@ -215,9 +213,7 @@ MOIfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("<<< leaving fundef %s", CTIitemName (arg_node));
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -185,12 +185,8 @@ AnnotateRefcounting (node *arg_node, info *arg_info, node *nums)
     INFO_NUMS (arg_info) = nums;
     INFO_TRAVMODE (arg_info) = RSP_refcnt;
 
-    if (FUNDEF_RETS (arg_node) != NULL) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_RETS (arg_node) = TRAVopt(FUNDEF_RETS (arg_node), arg_info);
+    FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
     INFO_COUNTER (arg_info) = 0;
     INFO_NUMS (arg_info) = NULL;
@@ -209,12 +205,8 @@ AnnotateGpuMem (node *arg_node, info *arg_info, node *nums)
     INFO_NUMS (arg_info) = nums;
     INFO_TRAVMODE (arg_info) = RSP_gpumem;
 
-    if (FUNDEF_RETS (arg_node) != NULL) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_RETS (arg_node) = TRAVopt(FUNDEF_RETS (arg_node), arg_info);
+    FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
     FUNDEF_ISGPUFUNCTION (arg_node) = INFO_ANNOTATED (arg_info);
     DBUG_PRINT ("setting FUNDEF_ISGPUFUNCTION () to %s",
@@ -236,12 +228,8 @@ AnnotateLinksign (node *arg_node, info *arg_info, node *nums)
     INFO_NUMS (arg_info) = nums;
     INFO_TRAVMODE (arg_info) = RSP_linksign;
 
-    if (FUNDEF_RETS (arg_node) != NULL) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_RETS (arg_node) = TRAVopt(FUNDEF_RETS (arg_node), arg_info);
+    FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
     INFO_NUMS (arg_info) = NULL;
     INFO_TRAVMODE (arg_info) = RSP_default;
@@ -356,9 +344,7 @@ RSPtypedef (node *arg_node, info *arg_info)
         TYPEDEF_PRAGMA (arg_node) = FREEdoFreeNode (TYPEDEF_PRAGMA (arg_node));
     }
 
-    if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
-    }
+    TYPEDEF_NEXT (arg_node) = TRAVopt(TYPEDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -380,9 +366,7 @@ RSPobjdef (node *arg_node, info *arg_info)
         OBJDEF_PRAGMA (arg_node) = FREEdoFreeNode (OBJDEF_PRAGMA (arg_node));
     }
 
-    if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
-    }
+    OBJDEF_NEXT (arg_node) = TRAVopt(OBJDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -545,9 +529,7 @@ RSPfundef (node *arg_node, info *arg_info)
         }
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -561,17 +543,11 @@ RSPmodule (node *arg_node, info *arg_info)
 
     INFO_MODULE (arg_info) = arg_node;
 
-    if (MODULE_OBJS (arg_node) != NULL) {
-        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
-    }
+    MODULE_OBJS (arg_node) = TRAVopt(MODULE_OBJS (arg_node), arg_info);
 
-    if (MODULE_TYPES (arg_node) != NULL) {
-        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
-    }
+    MODULE_TYPES (arg_node) = TRAVopt(MODULE_TYPES (arg_node), arg_info);
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
     INFO_MODULE (arg_info) = NULL;
 

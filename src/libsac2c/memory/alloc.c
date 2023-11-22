@@ -376,13 +376,9 @@ FreeALS (alloclist_struct *als)
     DBUG_ENTER ();
 
     if (als != NULL) {
-        if (als->dim != NULL) {
-            als->dim = FREEdoFreeTree (als->dim);
-        }
+        als->dim = FREEoptFreeTree(als->dim);
 
-        if (als->shape != NULL) {
-            als->shape = FREEdoFreeTree (als->shape);
-        }
+        als->shape = FREEoptFreeTree(als->shape);
 
         if (als->next != NULL) {
             als->next = FreeALS (als->next);

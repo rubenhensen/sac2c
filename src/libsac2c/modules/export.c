@@ -90,9 +90,7 @@ CheckExport (bool all, node *symbol, info *arg_info)
 
     INFO_RESULT (arg_info) = FALSE;
 
-    if (symbol != NULL) {
-        symbol = TRAVdo (symbol, arg_info);
-    }
+    symbol = TRAVopt(symbol, arg_info);
 
     if (all) {
         /* in case of an all flag, the symbollist was
@@ -109,9 +107,7 @@ CheckSymbolsUsed (node *symbols, info *info)
 {
     DBUG_ENTER ();
 
-    if (symbols != NULL) {
-        symbols = TRAVdo (symbols, info);
-    }
+    symbols = TRAVopt(symbols, info);
 
     DBUG_RETURN (symbols);
 }
@@ -125,9 +121,7 @@ EXPuse (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (USE_NEXT (arg_node) != NULL) {
-        USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
-    }
+    USE_NEXT (arg_node) = TRAVopt(USE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -137,9 +131,7 @@ EXPimport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (IMPORT_NEXT (arg_node) != NULL) {
-        IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
-    }
+    IMPORT_NEXT (arg_node) = TRAVopt(IMPORT_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -149,9 +141,7 @@ EXPprovide (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (PROVIDE_NEXT (arg_node) != NULL) {
-        PROVIDE_NEXT (arg_node) = TRAVdo (PROVIDE_NEXT (arg_node), arg_info);
-    }
+    PROVIDE_NEXT (arg_node) = TRAVopt(PROVIDE_NEXT (arg_node), arg_info);
 
     if (INFO_SYMBMODE (arg_info) == SYM_filter) {
         if (INFO_FILETYPE (arg_info) != FT_prog) {
@@ -178,9 +168,7 @@ EXPexport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (EXPORT_NEXT (arg_node) != NULL) {
-        EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
-    }
+    EXPORT_NEXT (arg_node) = TRAVopt(EXPORT_NEXT (arg_node), arg_info);
 
     if (INFO_SYMBMODE (arg_info) == SYM_filter) {
         if (INFO_FILETYPE (arg_info) != FT_prog) {
@@ -223,9 +211,7 @@ EXPsymbol (node *arg_node, info *arg_info)
         }
     }
 
-    if (SYMBOL_NEXT (arg_node) != NULL) {
-        SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);
-    }
+    SYMBOL_NEXT (arg_node) = TRAVopt(SYMBOL_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -279,9 +265,7 @@ EXPfundef (node *arg_node, info *arg_info)
             INFO_EXPORTED (arg_info) = FALSE;
             INFO_PROVIDED (arg_info) = FALSE;
 
-            if (INFO_INTERFACE (arg_info) != NULL) {
-                INFO_INTERFACE (arg_info) = TRAVdo (INFO_INTERFACE (arg_info), arg_info);
-            }
+            INFO_INTERFACE (arg_info) = TRAVopt(INFO_INTERFACE (arg_info), arg_info);
 
             if (INFO_EXPORTED (arg_info)) {
                 DBUG_PRINT ("...is exported");
@@ -312,9 +296,7 @@ EXPfundef (node *arg_node, info *arg_info)
                 CTIitemName (arg_node), FUNDEF_ISPROVIDED (arg_node),
                 FUNDEF_ISEXPORTED (arg_node));
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -328,9 +310,7 @@ EXPtypedef (node *arg_node, info *arg_info)
     INFO_EXPORTED (arg_info) = FALSE;
     INFO_PROVIDED (arg_info) = FALSE;
 
-    if (INFO_INTERFACE (arg_info) != NULL) {
-        INFO_INTERFACE (arg_info) = TRAVdo (INFO_INTERFACE (arg_info), arg_info);
-    }
+    INFO_INTERFACE (arg_info) = TRAVopt(INFO_INTERFACE (arg_info), arg_info);
 
     if (INFO_EXPORTED (arg_info)) {
         TYPEDEF_ISEXPORTED (arg_node) = TRUE;
@@ -343,9 +323,7 @@ EXPtypedef (node *arg_node, info *arg_info)
         TYPEDEF_ISPROVIDED (arg_node) = FALSE;
     }
 
-    if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
-    }
+    TYPEDEF_NEXT (arg_node) = TRAVopt(TYPEDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -359,9 +337,7 @@ EXPobjdef (node *arg_node, info *arg_info)
     INFO_EXPORTED (arg_info) = FALSE;
     INFO_PROVIDED (arg_info) = FALSE;
 
-    if (INFO_INTERFACE (arg_info) != NULL) {
-        INFO_INTERFACE (arg_info) = TRAVdo (INFO_INTERFACE (arg_info), arg_info);
-    }
+    INFO_INTERFACE (arg_info) = TRAVopt(INFO_INTERFACE (arg_info), arg_info);
 
     if (INFO_EXPORTED (arg_info)) {
         OBJDEF_ISEXPORTED (arg_node) = TRUE;
@@ -374,9 +350,7 @@ EXPobjdef (node *arg_node, info *arg_info)
         OBJDEF_ISPROVIDED (arg_node) = FALSE;
     }
 
-    if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
-    }
+    OBJDEF_NEXT (arg_node) = TRAVopt(OBJDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -391,21 +365,13 @@ EXPmodule (node *arg_node, info *arg_info)
     INFO_NAMESPACE (arg_info) = MODULE_NAMESPACE (arg_node);
     INFO_SYMBMODE (arg_info) = SYM_filter;
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
-    if (MODULE_TYPES (arg_node) != NULL) {
-        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
-    }
+    MODULE_TYPES (arg_node) = TRAVopt(MODULE_TYPES (arg_node), arg_info);
 
-    if (MODULE_OBJS (arg_node) != NULL) {
-        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
-    }
+    MODULE_OBJS (arg_node) = TRAVopt(MODULE_OBJS (arg_node), arg_info);
 
     MODULE_INTERFACE (arg_node) = INFO_INTERFACE (arg_info);
     INFO_NAMESPACE (arg_info) = NULL;
@@ -416,9 +382,7 @@ EXPmodule (node *arg_node, info *arg_info)
      */
     INFO_SYMBMODE (arg_info) = SYM_check;
 
-    if (MODULE_INTERFACE (arg_node) != NULL) {
-        MODULE_INTERFACE (arg_node) = TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
-    }
+    MODULE_INTERFACE (arg_node) = TRAVopt(MODULE_INTERFACE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

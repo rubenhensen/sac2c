@@ -179,9 +179,7 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
 
     mod = MODMunLoadModule (mod);
 
-    if (symbols != NULL) {
-        symbols = FREEdoFreeTree (symbols);
-    }
+    symbols = FREEoptFreeTree(symbols);
 
     if (result == NULL) {
         CTIwarn (EMPTY_LOC, "All flag resolved to empty set of symbols.");
@@ -204,9 +202,7 @@ RSAuse (node *arg_node, info *arg_info)
                   "The namespace of the module being compiled cannot be "
                   "referenced in use statements.");
 
-        if (USE_NEXT (arg_node) != NULL) {
-            USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
-        }
+        USE_NEXT (arg_node) = TRAVopt(USE_NEXT (arg_node), arg_info);
     } else {
         USE_SYMBOL (arg_node)
           = CheckSymbolExists (USE_MOD (arg_node), USE_SYMBOL (arg_node), FALSE);
@@ -217,9 +213,7 @@ RSAuse (node *arg_node, info *arg_info)
             USE_ALL (arg_node) = FALSE;
         }
 
-        if (USE_NEXT (arg_node) != NULL) {
-            USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
-        }
+        USE_NEXT (arg_node) = TRAVopt(USE_NEXT (arg_node), arg_info);
 
         if (USE_SYMBOL (arg_node) == NULL) {
             node *tmp;
@@ -247,9 +241,7 @@ RSAimport (node *arg_node, info *arg_info)
                   "The namespace of the module being compiled cannot be "
                   "referenced in import statements.");
 
-        if (IMPORT_NEXT (arg_node) != NULL) {
-            IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
-        }
+        IMPORT_NEXT (arg_node) = TRAVopt(IMPORT_NEXT (arg_node), arg_info);
     } else {
         IMPORT_SYMBOL (arg_node)
           = CheckSymbolExists (IMPORT_MOD (arg_node), IMPORT_SYMBOL (arg_node), TRUE);
@@ -260,9 +252,7 @@ RSAimport (node *arg_node, info *arg_info)
             IMPORT_ALL (arg_node) = FALSE;
         }
 
-        if (IMPORT_NEXT (arg_node) != NULL) {
-            IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
-        }
+        IMPORT_NEXT (arg_node) = TRAVopt(IMPORT_NEXT (arg_node), arg_info);
 
         if (IMPORT_SYMBOL (arg_node) == NULL) {
             node *tmp;
@@ -285,9 +275,7 @@ RSAprovide (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (PROVIDE_NEXT (arg_node) != NULL) {
-        PROVIDE_NEXT (arg_node) = TRAVdo (PROVIDE_NEXT (arg_node), arg_info);
-    }
+    PROVIDE_NEXT (arg_node) = TRAVopt(PROVIDE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -297,9 +285,7 @@ RSAexport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (EXPORT_NEXT (arg_node) != NULL) {
-        EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
-    }
+    EXPORT_NEXT (arg_node) = TRAVopt(EXPORT_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -311,9 +297,7 @@ RSAmodule (node *arg_node, info *arg_info)
 
     INFO_CURRENTNS (arg_info) = MODULE_NAMESPACE (arg_node);
 
-    if (MODULE_INTERFACE (arg_node) != NULL) {
-        MODULE_INTERFACE (arg_node) = TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
-    }
+    MODULE_INTERFACE (arg_node) = TRAVopt(MODULE_INTERFACE (arg_node), arg_info);
 
     INFO_CURRENTNS (arg_info) = NULL;
 

@@ -154,9 +154,7 @@ EMREassign (node *arg_node, info *arg_info)
     postassign = INFO_POSTASS (arg_info);
     INFO_POSTASS (arg_info) = NULL;
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     if (postassign != NULL) {
         ASSIGN_NEXT (arg_node) = TCappendAssign (postassign, ASSIGN_NEXT (arg_node));
@@ -188,9 +186,7 @@ EMREblock (node *arg_node, info *arg_info)
 
     BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
-    if (BLOCK_VARDECS (arg_node) != NULL) {
-        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
-    }
+    BLOCK_VARDECS (arg_node) = TRAVopt(BLOCK_VARDECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -279,9 +275,7 @@ EMREfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("Reuse elimination in function %s complete.", FUNDEF_NAME (arg_node));
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -468,9 +462,7 @@ EMREvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
 
     if (LUTsearchInLutPp (INFO_LUT (arg_info), VARDEC_AVIS (arg_node))
         != VARDEC_AVIS (arg_node)) {
@@ -510,9 +502,7 @@ EMREgenarray (node *arg_node, info *arg_info)
         GENARRAY_MEM (arg_node) = TBmakeId (avis);
     }
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -546,9 +536,7 @@ EMREmodarray (node *arg_node, info *arg_info)
         MODARRAY_MEM (arg_node) = TBmakeId (avis);
     }
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

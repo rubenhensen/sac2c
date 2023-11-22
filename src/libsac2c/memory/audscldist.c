@@ -360,9 +360,7 @@ ASDmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -380,18 +378,14 @@ ASDfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     INFO_FUNDEF (arg_info) = arg_node;
 
     INFO_POSTASSIGNS (arg_info) = NULL;
     INFO_PREASSIGNS (arg_info) = NULL;
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -410,9 +404,7 @@ ASDassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     INFO_ASSIGN (arg_info) = arg_node;
 
@@ -548,13 +540,9 @@ ASDcond (node *arg_node, info *arg_info)
      * first traverse the two blocks
      * as we insert the assigns on our way up
      */
-    if (COND_THEN (arg_node) != NULL) {
-        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    }
+    COND_THEN (arg_node) = TRAVopt(COND_THEN (arg_node), arg_info);
 
-    if (COND_ELSE (arg_node) != NULL) {
-        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-    }
+    COND_ELSE (arg_node) = TRAVopt(COND_ELSE (arg_node), arg_info);
 
     if (NODE_TYPE (COND_COND (arg_node)) == N_id) {
         cond_type = AVIS_TYPE (ID_AVIS (COND_COND (arg_node)));
@@ -727,17 +715,13 @@ ASDcode (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt(CODE_CBLOCK (arg_node), arg_info);
 
     INFO_CEXTYPES (arg_info)
       = GetLeastTypes (INFO_CEXTYPES (arg_info),
                        NTCnewTypeCheck_Expr (CODE_CEXPRS (arg_node)));
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     i = 0;
     cexprs = CODE_CEXPRS (arg_node);

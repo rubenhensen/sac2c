@@ -407,9 +407,7 @@ DFRobjdef (node *arg_node, info *arg_info)
         arg_node = tagObjdefAsNeeded (arg_node, arg_info);
     }
 
-    if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
-    }
+    OBJDEF_NEXT (arg_node) = TRAVopt(OBJDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

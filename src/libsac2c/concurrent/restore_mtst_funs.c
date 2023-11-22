@@ -142,13 +142,9 @@ RMTSTFmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -247,9 +243,7 @@ RMTSTFfundef (node *arg_node, info *arg_info)
             FUNDEF_NEXT (arg_node) = INFO_XTCOMPANIONS (arg_info);
             INFO_XTCOMPANIONS (arg_info) = NULL;
 
-            if (FUNDEF_NEXT (arg_node) != NULL) {
-                FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-            }
+            FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
         }
     }
 

@@ -967,13 +967,9 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
              || (AVIS_HASDTELSEPROXY (avis) == TRUE))) {
 
             /* clean the avis, as we do not want shape/dim on our parameters */
-            if (NULL != AVIS_SHAPE (avis)) {
-                AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
-            }
+            AVIS_SHAPE (avis) = FREEoptFreeNode(AVIS_SHAPE (avis));
 
-            if (NULL != AVIS_DIM (avis)) {
-                AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
-            }
+            AVIS_DIM (avis) = FREEoptFreeNode(AVIS_DIM (avis));
         }
 #endif
     } /* if ( makeproxy ) */
@@ -1221,9 +1217,7 @@ ISAAap (node *arg_node, info *arg_info)
     }
 
     /* we may now traverse the arguments, in order to take care of AVIS_SUBST */
-    if (NULL != AP_ARGS (arg_node)) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
 
 #else
     TRAVcont (arg_node, arg_info);
