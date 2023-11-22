@@ -144,9 +144,7 @@ USStypedef (node *arg_node, info *arg_info)
         TYPEDEF_NTYPE (arg_node) = USSntype (TYPEDEF_NTYPE (arg_node), arg_info);
     }
 
-    if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
-    }
+    TYPEDEF_NEXT (arg_node) = TRAVopt(TYPEDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -160,13 +158,9 @@ USSobjdef (node *arg_node, info *arg_info)
         OBJDEF_TYPE (arg_node) = USSntype (OBJDEF_TYPE (arg_node), arg_info);
     }
 
-    if (OBJDEF_EXPR (arg_node) != NULL) {
-        OBJDEF_EXPR (arg_node) = TRAVdo (OBJDEF_EXPR (arg_node), arg_info);
-    }
+    OBJDEF_EXPR (arg_node) = TRAVopt(OBJDEF_EXPR (arg_node), arg_info);
 
-    if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
-    }
+    OBJDEF_NEXT (arg_node) = TRAVopt(OBJDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -267,9 +261,7 @@ USSspmop (node *arg_node, info *arg_info)
         INFO_USS_INSIDEMOP (arg_info) = FALSE;
     }
 
-    if (SPMOP_EXPRS (arg_node) != NULL) {
-        SPMOP_EXPRS (arg_node) = TRAVdo (SPMOP_EXPRS (arg_node), arg_info);
-    }
+    SPMOP_EXPRS (arg_node) = TRAVopt(SPMOP_EXPRS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -302,21 +294,13 @@ USSmodule (node *arg_node, info *arg_info)
 
     DSinitDeserialize (arg_node);
 
-    if (MODULE_TYPES (arg_node) != NULL) {
-        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
-    }
+    MODULE_TYPES (arg_node) = TRAVopt(MODULE_TYPES (arg_node), arg_info);
 
-    if (MODULE_OBJS (arg_node) != NULL) {
-        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
-    }
+    MODULE_OBJS (arg_node) = TRAVopt(MODULE_OBJS (arg_node), arg_info);
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     DSfinishDeserialize (arg_node);
 

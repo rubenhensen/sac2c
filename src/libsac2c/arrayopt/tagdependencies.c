@@ -114,9 +114,7 @@ TDEPENDassign (node *arg_node, info *arg_info)
 
         ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
+        ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
     } else if (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with) {
         /*
          * We are not inside a WL but we traverse in one, so we had to

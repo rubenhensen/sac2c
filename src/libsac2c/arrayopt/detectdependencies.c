@@ -191,9 +191,7 @@ CheckPrfSel (node *arg_node, info *arg_info)
             }
         } else {
             /* check for indirect dependencies */
-            if (PRF_ARGS (arg_node) != NULL) {
-                PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-            }
+            PRF_ARGS (arg_node) = TRAVopt(PRF_ARGS (arg_node), arg_info);
         }
     }
 
@@ -224,9 +222,7 @@ DDEPENDassign (node *arg_node, info *arg_info)
         DBUG_RETURN (arg_node);
     }
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -253,9 +249,7 @@ DDEPENDprf (node *arg_node, info *arg_info)
         break;
 
     default:
-        if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        }
+        PRF_ARGS (arg_node) = TRAVopt(PRF_ARGS (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -373,9 +367,7 @@ DDEPENDcode (node *arg_node, info *arg_info)
         CODE_HASRESOLVEABLEDEPENDENCIES (arg_node) = TRUE;
     }
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

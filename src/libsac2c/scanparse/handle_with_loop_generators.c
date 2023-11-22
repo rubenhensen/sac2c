@@ -260,9 +260,7 @@ HWLGassign (node *arg_node, info *arg_info)
     mem_postassign = INFO_POSTASSIGN (arg_info);
     INFO_POSTASSIGN (arg_info) = NULL;
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     ASSIGN_NEXT (arg_node) = TCappendAssign (mem_postassign, ASSIGN_NEXT (arg_node));
 
@@ -528,13 +526,9 @@ HWLGgenarray (node *arg_node, info *arg_info)
 
     if (INFO_HWLG_MODE (arg_info) == T_create) {
 
-        if (INFO_FOLD (arg_info) != NULL) {
-            INFO_FOLD (arg_info) = FREEdoFreeNode (INFO_FOLD (arg_info));
-        }
+        INFO_FOLD (arg_info) = FREEoptFreeNode(INFO_FOLD (arg_info));
 
-        if (GENARRAY_NEXT (arg_node) != NULL) {
-            GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-        }
+        GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
         INFO_FOLD (arg_info) = TBmakeExprs (NULL, INFO_FOLD (arg_info));
 
@@ -575,13 +569,9 @@ HWLGmodarray (node *arg_node, info *arg_info)
 
     if (INFO_HWLG_MODE (arg_info) == T_create) {
 
-        if (INFO_FOLD (arg_info) != NULL) {
-            INFO_FOLD (arg_info) = FREEdoFreeNode (INFO_FOLD (arg_info));
-        }
+        INFO_FOLD (arg_info) = FREEoptFreeNode(INFO_FOLD (arg_info));
 
-        if (MODARRAY_NEXT (arg_node) != NULL) {
-            MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-        }
+        MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
         INFO_FOLD (arg_info) = TBmakeExprs (NULL, INFO_FOLD (arg_info));
 
@@ -693,13 +683,9 @@ HWLGpropagate (node *arg_node, info *arg_info)
 
     if (INFO_HWLG_MODE (arg_info) == T_create) {
 
-        if (INFO_FOLD (arg_info) != NULL) {
-            INFO_FOLD (arg_info) = FREEdoFreeNode (INFO_FOLD (arg_info));
-        }
+        INFO_FOLD (arg_info) = FREEoptFreeNode(INFO_FOLD (arg_info));
 
-        if (PROPAGATE_NEXT (arg_node) != NULL) {
-            PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
-        }
+        PROPAGATE_NEXT (arg_node) = TRAVopt(PROPAGATE_NEXT (arg_node), arg_info);
 
         INFO_FOLD (arg_info) = TBmakeExprs (NULL, INFO_FOLD (arg_info));
 

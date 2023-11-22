@@ -198,13 +198,9 @@ FreeInfo (info *info)
 
     INFO_LUT (info) = LUTremoveLut (INFO_LUT (info));
 
-    if (INFO_FRAME_INDICES (info) != NULL) {
-        INFO_FRAME_INDICES (info) = FREEdoFreeTree (INFO_FRAME_INDICES (info));
-    }
+    INFO_FRAME_INDICES (info) = FREEoptFreeTree(INFO_FRAME_INDICES (info));
 
-    if (INFO_BLOCK_CHUNK (info) != NULL) {
-        INFO_BLOCK_CHUNK (info) = FREEdoFreeTree (INFO_BLOCK_CHUNK (info));
-    }
+    INFO_BLOCK_CHUNK (info) = FREEoptFreeTree(INFO_BLOCK_CHUNK (info));
 
     info = MEMfree (info);
 
@@ -2063,9 +2059,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, int newdim, node **
     IDS_AVIS (INFO_INDICES (arg_info)) = old_iv_avis;
     INFO_PREASSIGNS (arg_info) = old_preassigns;
     INFO_CURRENT_SIZE (arg_info) = old_size;
-    if (INFO_OFFSETS (arg_info) != NULL) {
-        INFO_OFFSETS (arg_info) = FREEdoFreeTree (INFO_OFFSETS (arg_info));
-    }
+    INFO_OFFSETS (arg_info) = FREEoptFreeTree(INFO_OFFSETS (arg_info));
     INFO_OFFSETS (arg_info) = old_offsets;
     INFO_WITH3_ASSIGN (arg_info) = old_with3_assign;
 
@@ -2401,9 +2395,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
         resultindices = TCids2Exprs (final_offsets);
 
         /* free final offsets */
-        if (final_offsets != NULL) {
-            final_offsets = FREEdoFreeTree (final_offsets);
-        }
+        final_offsets = FREEoptFreeTree(final_offsets);
 
         IDS_AVIS (INFO_INDICES (arg_info)) = old_iv_avis;
     } else if (nextdim != NULL) {
@@ -2778,10 +2770,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
          */
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
-        if (INFO_FRAME_INDICES (arg_info) != NULL) {
-            INFO_FRAME_INDICES (arg_info)
-              = FREEdoFreeTree (INFO_FRAME_INDICES (arg_info));
-        }
+        INFO_FRAME_INDICES (arg_info) = FREEoptFreeTree(INFO_FRAME_INDICES (arg_info));
         /*
          * we keep the withops as a template for later use in the new with3.
          */
@@ -2832,13 +2821,8 @@ WLSDwith2 (node *arg_node, info *arg_info)
          * memory leaks.
          */
         INFO_INDICES (arg_info) = FREEdoFreeTree (INFO_INDICES (arg_info));
-        if (INFO_OFFSETS (arg_info) != NULL) {
-            INFO_OFFSETS (arg_info) = FREEdoFreeTree (INFO_OFFSETS (arg_info));
-        }
-        if (INFO_WITH2_LENGTHS (arg_info) != NULL) {
-            INFO_WITH2_LENGTHS (arg_info)
-              = FREEdoFreeTree (INFO_WITH2_LENGTHS (arg_info));
-        }
+        INFO_OFFSETS (arg_info) = FREEoptFreeTree(INFO_OFFSETS (arg_info));
+        INFO_WITH2_LENGTHS (arg_info) = FREEoptFreeTree(INFO_WITH2_LENGTHS (arg_info));
         INFO_WITH2_WITHOPS (arg_info) = NULL;
         INFO_WITH2_IVECT (arg_info) = NULL;
         INFO_WITH2_ISCLS (arg_info) = NULL;

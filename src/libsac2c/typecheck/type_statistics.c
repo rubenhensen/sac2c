@@ -240,23 +240,17 @@ TSfundef (node *arg_node, info *arg_info)
         /**
          * count args:
          */
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
         /**
          * count vardecs:
          */
-        if (FUNDEF_VARDECS (arg_node) != NULL) {
-            FUNDEF_VARDECS (arg_node) = TRAVdo (FUNDEF_VARDECS (arg_node), arg_info);
-        }
+        FUNDEF_VARDECS (arg_node) = TRAVopt(FUNDEF_VARDECS (arg_node), arg_info);
 
         PrintStatistics (arg_node, arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 
@@ -279,9 +273,7 @@ TSarg (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     type = ARG_NTYPE (arg_node);
     arg_info = ExamineTypes (type, arg_info);
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 
@@ -304,9 +296,7 @@ TSvardec (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     type = VARDEC_NTYPE (arg_node);
     arg_info = ExamineTypes (type, arg_info);
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 

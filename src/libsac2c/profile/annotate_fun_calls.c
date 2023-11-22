@@ -2,7 +2,7 @@
  * @file
  * @defgroup pf Annotate functions for profiling
  * @ingroup iprof
- * 
+ *
  * @brief Add profling annotations to code
  *
  * This module implements the annotation of PROFILE_BEGIN and PROFILE_END
@@ -356,9 +356,7 @@ PFassign (node *arg_node, info *arg_info)
         res = arg_node;
     }
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (res);
 }
@@ -429,9 +427,9 @@ PFwith (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (!WITH_CUDARIZABLE (arg_node)) {
-        WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info); 
-        WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info); 
-        WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info); 
+        WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+        WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
     } else {
         DBUG_PRINT ("... skipping CUDA WL ...");
     }
@@ -483,9 +481,7 @@ PFdoProfileFunCalls (node *arg_node)
     DBUG_PRINT ("starting function annotation");
     if (MODULE_FUNS (arg_node) != NULL) {
         main_fun = SearchMain (MODULE_FUNS (arg_node));
-        if (main_fun != NULL) {
-            main_fun = TRAVdo (main_fun, info);
-        }
+        main_fun = TRAVopt(main_fun, info);
     }
     DBUG_PRINT ("function annotation done");
 

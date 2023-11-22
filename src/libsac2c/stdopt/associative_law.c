@@ -1392,18 +1392,10 @@ ALprf (node *arg_node, info *arg_info)
 
                     DBUG_PRINT ("No AL optimisation !!.");
 
-                    if (consts != NULL) {
-                        consts = FREEdoFreeTree (consts);
-                    }
-                    if (scalars != NULL) {
-                        scalars = FREEdoFreeTree (scalars);
-                    }
-                    if (vectors != NULL) {
-                        vectors = FREEdoFreeTree (vectors);
-                    }
-                    if (externals != NULL) {
-                        externals = FREEdoFreeTree (externals);
-                    }
+                    consts = FREEoptFreeTree(consts);
+                    scalars = FREEoptFreeTree(scalars);
+                    vectors = FREEoptFreeTree(vectors);
+                    externals = FREEoptFreeTree(externals);
                 }
             }
         }

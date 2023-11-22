@@ -1557,9 +1557,7 @@ WLFSfundef (node *arg_node, info *arg_info)
                     FUNDEF_NAME (arg_node));
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1586,9 +1584,7 @@ WLFSblock (node *arg_node, info *arg_info)
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = INFO_FUNDEF (info_tmp);
 
-    if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
-    }
+    BLOCK_ASSIGNS (arg_node) = TRAVopt(BLOCK_ASSIGNS (arg_node), arg_info);
 
     arg_info = FreeInfo (arg_info);
     arg_info = info_tmp;
@@ -1665,9 +1661,7 @@ WLFSassign (node *arg_node, info *arg_info)
         }
     }
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     do {
         if (INFO_WLACTION (arg_info) == WL_travback) {
@@ -1722,9 +1716,7 @@ WLFSassign (node *arg_node, info *arg_info)
 
                 DBUG_PRINT ("fusion is finished, starting search for new WL");
 
-                if (ASSIGN_NEXT (arg_node) != NULL) {
-                    ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-                }
+                ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
             } else {
                 ASSIGN_VISITED_WITH (arg_node) = INFO_FUSIONABLE_WL (arg_info);
@@ -1752,9 +1744,7 @@ WLFSassign (node *arg_node, info *arg_info)
                 assigns2shift = NULL;
             }
 
-            if (ASSIGN_NEXT (arg_node) != NULL) {
-                ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-            }
+            ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
         } else {
             /* cleaning up */
 
@@ -1845,9 +1835,7 @@ WLFSwith (node *arg_node, info *arg_info)
      * and I want to modify bottom up.
      */
     DBUG_PRINT ("trav NCODE of WL");
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
+    WITH_CODE (arg_node) = TRAVopt(WITH_CODE (arg_node), arg_info);
     DBUG_PRINT ("trav NCODE of WL finished");
 
     /* initialise some pointers */
@@ -2001,9 +1989,7 @@ WLFSgenarray (node *arg_node, info *arg_info)
 
     INFO_LHS_WL (arg_info) = IDS_NEXT (INFO_LHS_WL (arg_info));
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2079,9 +2065,7 @@ WLFSmodarray (node *arg_node, info *arg_info)
 
     INFO_LHS_WL (arg_info) = IDS_NEXT (INFO_LHS_WL (arg_info));
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2118,9 +2102,7 @@ WLFSfold (node *arg_node, info *arg_info)
 
     INFO_LHS_WL (arg_info) = IDS_NEXT (INFO_LHS_WL (arg_info));
 
-    if (FOLD_NEXT (arg_node) != NULL) {
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-    }
+    FOLD_NEXT (arg_node) = TRAVopt(FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2143,9 +2125,7 @@ WLFSpart (node *arg_node, info *arg_info)
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt(PART_NEXT (arg_node), arg_info);
 
     if ((INFO_WL_SHAPE (arg_info) != NULL)
         && (INFO_WL_ARRAY_TYPE (arg_info) == ARRAY_unknown)) {

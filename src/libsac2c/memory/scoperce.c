@@ -142,9 +142,7 @@ SRCEfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_ISLACFUN (arg_node) && (arg_info != NULL)) {
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
+        FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
     } else {
         if (!FUNDEF_ISLACFUN (arg_node)) {
             if (FUNDEF_BODY (arg_node) != NULL) {
@@ -156,9 +154,7 @@ SRCEfundef (node *arg_node, info *arg_info)
                   = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
                 INFO_RCMASK (info) = DFMgenMaskClear (INFO_MASKBASE (info));
 
-                if (FUNDEF_ARGS (arg_node) != NULL) {
-                    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-                }
+                FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), info);
 
                 FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
@@ -170,9 +166,7 @@ SRCEfundef (node *arg_node, info *arg_info)
     }
 
     if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_info == NULL)) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -190,9 +184,7 @@ SRCEarg (node *arg_node, info *arg_info)
 
     DFMsetMaskEntrySet (INFO_RCMASK (arg_info), ARG_AVIS (arg_node));
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -209,9 +201,7 @@ SRCEassign (node *arg_node, info *arg_info)
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -226,9 +216,7 @@ SRCElet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -247,9 +235,7 @@ SRCEids (node *arg_node, info *arg_info)
 
     DFMsetMaskEntrySet (INFO_RCMASK (arg_info), IDS_AVIS (arg_node));
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -313,16 +299,12 @@ SRCEcode (node *arg_node, info *arg_info)
     oldmask = INFO_RCMASK (arg_info);
     INFO_RCMASK (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt(CODE_CBLOCK (arg_node), arg_info);
 
     INFO_RCMASK (arg_info) = DFMremoveMask (INFO_RCMASK (arg_info));
     INFO_RCMASK (arg_info) = oldmask;
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -343,9 +325,7 @@ SRCEprf (node *arg_node, info *arg_info)
 
         INFO_RCELIM (arg_info) = TRUE;
 
-        if (PRF_EXPRS3 (arg_node) != NULL) {
-            PRF_EXPRS3 (arg_node) = TRAVdo (PRF_EXPRS3 (arg_node), arg_info);
-        }
+        PRF_EXPRS3 (arg_node) = TRAVopt(PRF_EXPRS3 (arg_node), arg_info);
 
         if (PRF_EXPRS3 (arg_node) == NULL) {
             PRF_PRF (arg_node) = F_alloc;
@@ -369,9 +349,7 @@ SRCEexprs (node *arg_node, info *arg_info)
 
     if (INFO_RCELIM (arg_info)) {
 
-        if (EXPRS_NEXT (arg_node) != NULL) {
-            EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
-        }
+        EXPRS_NEXT (arg_node) = TRAVopt(EXPRS_NEXT (arg_node), arg_info);
 
         if (!DFMtestMaskEntry (INFO_RCMASK (arg_info),
                                ID_AVIS (EXPRS_EXPR (arg_node)))) {

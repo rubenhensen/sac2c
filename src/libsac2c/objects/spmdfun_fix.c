@@ -488,9 +488,7 @@ FSFSfundef (node *arg_node, info *arg_info)
     if ((!FUNDEF_ISSPMDFUN (arg_node))
         || (FUNDEF_ISSPMDFUN (arg_node) && INFO_ENTER_SPMD (arg_info))) {
         DBUG_PRINT ("entered fundef %s!", FUNDEF_NAME (arg_node));
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
+        FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL && !FUNDEF_ISSPMDFUN (arg_node)) {

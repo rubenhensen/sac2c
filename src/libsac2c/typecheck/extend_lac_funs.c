@@ -389,9 +389,7 @@ ELFfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (!NSequals (FUNDEF_NS (arg_node), NSgetNamespace (global.preludename))) {
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
+        FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
 
         if (INFO_VARDECS (arg_info) != NULL) {
             BLOCK_VARDECS (FUNDEF_BODY (arg_node))
@@ -401,9 +399,7 @@ ELFfundef (node *arg_node, info *arg_info)
         }
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -422,9 +418,7 @@ ELFassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     if (INFO_ASSIGNS (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_ASSIGNS (arg_info), arg_node);

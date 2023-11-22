@@ -93,9 +93,9 @@ CheckUseUnique (sttable_t *table)
             stentry_t *entry = STentryIteratorNext (entries);
 
             if (STentryIteratorHasMore (entries)) {
-                CTIerrorBegin (EMPTY_LOC, 
+                CTIerrorBegin (EMPTY_LOC,
                                "Symbol `%s' used more than once\n"
-                               "... from module `%s'", 
+                               "... from module `%s'",
                                STsymbolName (symbol), STentryName (entry));
 
                 while (STentryIteratorHasMore (entries)) {
@@ -124,7 +124,7 @@ CheckImportNameClash (const char *symbol, const char *module, sttable_t *table)
     if (STcontains (symbol, table)) {
         iterator = STentryIteratorGet (symbol, table);
 
-        CTIerrorBegin (EMPTY_LOC, "Symbol `%s' imported from module '%s' and", 
+        CTIerrorBegin (EMPTY_LOC, "Symbol `%s' imported from module '%s' and",
                        symbol, module);
 
         while (STentryIteratorHasMore (iterator)) {
@@ -225,9 +225,7 @@ ANSsymbol (node *arg_node, info *arg_info)
                INFO_SYMBOLS (arg_info), 0); /* XXX may be this nees adjustment... */
     }
 
-    if (SYMBOL_NEXT (arg_node) != NULL) {
-        SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);
-    }
+    SYMBOL_NEXT (arg_node) = TRAVopt(SYMBOL_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -245,9 +243,7 @@ ANSuse (node *arg_node, info *arg_info)
 
     INFO_CURRENT (arg_info) = NULL;
 
-    if (USE_NEXT (arg_node) != NULL) {
-        USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
-    }
+    USE_NEXT (arg_node) = TRAVopt(USE_NEXT (arg_node), arg_info);
 
     /* the use information is no more needed from
      * this point on, so we can free this use
@@ -269,9 +265,7 @@ ANSimport (node *arg_node, info *arg_info)
      * they are not needed for namespace annotation.
      */
 
-    if (IMPORT_NEXT (arg_node) != NULL) {
-        IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
-    }
+    IMPORT_NEXT (arg_node) = TRAVopt(IMPORT_NEXT (arg_node), arg_info);
 
     /*
      * on the way up, we check whether we have common symbols in
@@ -280,9 +274,7 @@ ANSimport (node *arg_node, info *arg_info)
     INFO_CHECKIMPORT (arg_info) = TRUE;
     INFO_CURRENT (arg_info) = IMPORT_MOD (arg_node);
 
-    if (IMPORT_SYMBOL (arg_node) != NULL) {
-        IMPORT_SYMBOL (arg_node) = TRAVdo (IMPORT_SYMBOL (arg_node), arg_info);
-    }
+    IMPORT_SYMBOL (arg_node) = TRAVopt(IMPORT_SYMBOL (arg_node), arg_info);
 
     INFO_CHECKIMPORT (arg_info) = FALSE;
     INFO_CURRENT (arg_info) = NULL;
@@ -297,9 +289,7 @@ ANSexport (node *arg_node, info *arg_info)
 
     /* exports are ignored in this traversal */
 
-    if (EXPORT_NEXT (arg_node) != NULL) {
-        EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
-    }
+    EXPORT_NEXT (arg_node) = TRAVopt(EXPORT_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -311,9 +301,7 @@ ANSprovide (node *arg_node, info *arg_info)
 
     /* provides are ignored in this traversal */
 
-    if (PROVIDE_NEXT (arg_node) != NULL) {
-        PROVIDE_NEXT (arg_node) = TRAVdo (PROVIDE_NEXT (arg_node), arg_info);
-    }
+    PROVIDE_NEXT (arg_node) = TRAVopt(PROVIDE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -332,13 +320,9 @@ ANSfundef (node *arg_node, info *arg_info)
         FUNDEF_NS (arg_node) = NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (arg_info)));
     }
 
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
-    if (FUNDEF_RETS (arg_node) != NULL) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
+    FUNDEF_RETS (arg_node) = TRAVopt(FUNDEF_RETS (arg_node), arg_info);
 
     if (FUNDEF_AFFECTEDOBJECTS (arg_node) != NULL) {
         INFO_INSIDEOBJLIST (arg_info) = TRUE;
@@ -347,15 +331,11 @@ ANSfundef (node *arg_node, info *arg_info)
         INFO_INSIDEOBJLIST (arg_info) = FALSE;
     }
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
 
     INFO_IDS (arg_info) = STRSfree (INFO_IDS (arg_info));
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -380,9 +360,7 @@ ANStypedef (node *arg_node, info *arg_info)
         TYPEDEF_NTYPE (arg_node) = ANSntype (TYPEDEF_NTYPE (arg_node), arg_info);
     }
 
-    if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
-    }
+    TYPEDEF_NEXT (arg_node) = TRAVopt(TYPEDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -514,13 +492,9 @@ ANSarg (node *arg_node, info *arg_info)
     INFO_IDS (arg_info)
       = STRSadd (ARG_NAME (arg_node), STRS_unknown, INFO_IDS (arg_info));
 
-    if (ARG_AVIS (arg_node) != NULL) {
-        ARG_AVIS (arg_node) = TRAVdo (ARG_AVIS (arg_node), arg_info);
-    }
+    ARG_AVIS (arg_node) = TRAVopt(ARG_AVIS (arg_node), arg_info);
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -534,9 +508,7 @@ ANSret (node *arg_node, info *arg_info)
         RET_TYPE (arg_node) = ANSntype (RET_TYPE (arg_node), arg_info);
     }
 
-    if (RET_NEXT (arg_node) != NULL) {
-        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
-    }
+    RET_NEXT (arg_node) = TRAVopt(RET_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -548,9 +520,7 @@ ANSvardec (node *arg_node, info *arg_info)
 
     VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -590,9 +560,7 @@ ANSspmop (node *arg_node, info *arg_info)
         INFO_INSIDEMOP (arg_info) = FALSE;
     }
 
-    if (SPMOP_EXPRS (arg_node) != NULL) {
-        SPMOP_EXPRS (arg_node) = TRAVdo (SPMOP_EXPRS (arg_node), arg_info);
-    }
+    SPMOP_EXPRS (arg_node) = TRAVopt(SPMOP_EXPRS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -652,16 +620,12 @@ ANSlet (node *arg_node, info *arg_info)
      * objects on the RHS are being found even if the
      * LHS re-difines them!
      */
-    if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    }
+    LET_EXPR (arg_node) = TRAVopt(LET_EXPR (arg_node), arg_info);
 
     /*
      * then traverse all defining ids
      */
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -674,17 +638,11 @@ ANSwith (node *arg_node, info *arg_info)
     /*
      * make sure, the withid is traversed prior to the code!
      */
-    if (WITH_PART (arg_node) != NULL) {
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
+    WITH_PART (arg_node) = TRAVopt(WITH_PART (arg_node), arg_info);
 
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
+    WITH_CODE (arg_node) = TRAVopt(WITH_CODE (arg_node), arg_info);
 
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVopt(WITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -718,9 +676,7 @@ ANSmodule (node *arg_node, info *arg_info)
      * traverse use/import statements
      */
 
-    if (MODULE_INTERFACE (arg_node) != NULL) {
-        MODULE_INTERFACE (arg_node) = TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
-    }
+    MODULE_INTERFACE (arg_node) = TRAVopt(MODULE_INTERFACE (arg_node), arg_info);
 
     /*
      * check uniqueness property of symbols refernced by use statements
@@ -732,40 +688,30 @@ ANSmodule (node *arg_node, info *arg_info)
      * traverse fundecs
      */
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
     /*
      * traverse fundefs
      */
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     /*
      * traverse funspecs
      */
 
-    if (MODULE_FUNSPECS (arg_node) != NULL) {
-        MODULE_FUNSPECS (arg_node) = TRAVdo (MODULE_FUNSPECS (arg_node), arg_info);
-    }
+    MODULE_FUNSPECS (arg_node) = TRAVopt(MODULE_FUNSPECS (arg_node), arg_info);
     /*
      * traverse typedefs
      */
 
-    if (MODULE_TYPES (arg_node) != NULL) {
-        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
-    }
+    MODULE_TYPES (arg_node) = TRAVopt(MODULE_TYPES (arg_node), arg_info);
 
     /*
      * traverse objdefs
      */
 
-    if (MODULE_OBJS (arg_node) != NULL) {
-        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
-    }
+    MODULE_OBJS (arg_node) = TRAVopt(MODULE_OBJS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

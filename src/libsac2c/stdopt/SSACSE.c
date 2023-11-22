@@ -885,9 +885,7 @@ CSEblock (node *arg_node, info *arg_info)
          */
         if (oldwithid != NULL) {
             INFO_WITHID (arg_info) = oldwithid;
-            if (ivlet != NULL) {
-                ivlet = FREEdoFreeNode (ivlet);
-            }
+            ivlet = FREEoptFreeNode(ivlet);
         }
 
         /*

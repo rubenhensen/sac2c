@@ -292,9 +292,7 @@ WLDPmodule (node *arg_node, info *arg_info)
 
     INFO_MODULE (arg_info) = arg_node;
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     DSfinishDeserialize (arg_node);
 
@@ -325,9 +323,7 @@ WLDPfundef (node *arg_node, info *arg_info)
         FUNDEF_ASSIGNS (arg_node) = TRAVdo (FUNDEF_ASSIGNS (arg_node), arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -348,9 +344,7 @@ WLDPassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
@@ -446,9 +440,7 @@ WLDPgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
     if (GENARRAY_DEFAULT (arg_node) == NULL) {
         ntype *array_type;
@@ -508,9 +500,7 @@ WLDPmodarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
     sel_vec = WITHID_VEC (INFO_DEFAULTWITHID (arg_info));
     sel_array = MODARRAY_ARRAY (arg_node);
@@ -560,9 +550,7 @@ WLDPpropagate (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (PROPAGATE_NEXT (arg_node) != NULL) {
-        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
-    }
+    PROPAGATE_NEXT (arg_node) = TRAVopt(PROPAGATE_NEXT (arg_node), arg_info);
 
     DBUG_ASSERT (NODE_TYPE (PROPAGATE_DEFAULT (arg_node)) == N_id,
                  "N_id node expected as propagate default");

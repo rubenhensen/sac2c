@@ -195,9 +195,7 @@ GNTCmodule (node *arg_node, info *arg_info)
     INFO_FUNDEFS (arg_info) = MODULE_FUNS (arg_node);
     INFO_FUNDECS (arg_info) = MODULE_FUNDECS (arg_node);
 
-    if (MODULE_TYPES (arg_node) != NULL) {
-        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
-    }
+    MODULE_TYPES (arg_node) = TRAVopt(MODULE_TYPES (arg_node), arg_info);
 
     MODULE_FUNDECS (arg_node) = INFO_FUNDECS (arg_info);
     INFO_FUNDECS (arg_info) = NULL;
@@ -254,9 +252,7 @@ GNTCtypedef (node *arg_node, info *arg_info)
         }
     }
 
-    if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
-    }
+    TYPEDEF_NEXT (arg_node) = TRAVopt(TYPEDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

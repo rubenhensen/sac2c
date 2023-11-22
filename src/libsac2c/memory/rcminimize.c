@@ -225,9 +225,7 @@ RCMap (node *arg_node, info *arg_info)
     if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     } else {
-        if (AP_ARGS (arg_node) != NULL) {
-            AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-        }
+        AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -251,9 +249,7 @@ RCMarg (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (n == 0, "Enequal numbers of inc_rc / dec_rc removed!");
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -273,9 +269,7 @@ RCMassign (node *arg_node, info *arg_info)
     /*
      * bottom-up traversal
      */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     INFO_ASSIGN (arg_info) = arg_node;
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
@@ -318,9 +312,7 @@ RCMcode (node *arg_node, info *arg_info)
     INFO_ENV (arg_info) = oldenv;
     INFO_USEDMASK (arg_info) = oldusedmask;
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -383,9 +375,7 @@ RCMrange (node *arg_node, info *arg_info)
     INFO_ENV (arg_info) = oldenv;
     INFO_USEDMASK (arg_info) = oldusedmask;
 
-    if (RANGE_NEXT (arg_node) != NULL) {
-        RANGE_NEXT (arg_node) = TRAVdo (RANGE_NEXT (arg_node), arg_info);
-    }
+    RANGE_NEXT (arg_node) = TRAVopt(RANGE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -609,9 +599,7 @@ RCMfundef (node *arg_node, info *arg_info)
                 }
             }
 
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-            }
+            FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), info);
 
             INFO_ENV (info) = NLUTremoveNlut (INFO_ENV (info));
             INFO_USEDMASK (info) = DFMremoveMask (INFO_USEDMASK (info));
@@ -666,9 +654,7 @@ RCMids (node *arg_node, info *arg_info)
     DBUG_ASSERT (n == 0, "Unequal numbers of inc_rc / dec_rc removed for %s!",
                  AVIS_NAME (IDS_AVIS (arg_node)));
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -687,9 +673,7 @@ RCMlet (node *arg_node, info *arg_info)
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -777,9 +761,7 @@ RCMprf (node *arg_node, info *arg_info)
         break;
 
     default:
-        if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        }
+        PRF_ARGS (arg_node) = TRAVopt(PRF_ARGS (arg_node), arg_info);
         break;
     }
 
@@ -799,9 +781,7 @@ RCMreturn (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (!FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
-        if (RETURN_EXPRS (arg_node) != NULL) {
-            RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-        }
+        RETURN_EXPRS (arg_node) = TRAVopt(RETURN_EXPRS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

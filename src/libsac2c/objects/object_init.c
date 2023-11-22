@@ -126,9 +126,7 @@ OIobjdef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
-    }
+    OBJDEF_NEXT (arg_node) = TRAVopt(OBJDEF_NEXT (arg_node), arg_info);
 
     if (OBJDEF_ISLOCAL (arg_node) && !OBJDEF_ISEXTERN (arg_node)
         && !OBJDEF_ISALIAS (arg_node)) {
@@ -153,9 +151,7 @@ OImodule (node *arg_node, info *arg_info)
 
     INFO_FUNDEFS (arg_info) = MODULE_FUNS (arg_node);
 
-    if (MODULE_OBJS (arg_node) != NULL) {
-        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
-    }
+    MODULE_OBJS (arg_node) = TRAVopt(MODULE_OBJS (arg_node), arg_info);
 
     MODULE_FUNS (arg_node) = INFO_FUNDEFS (arg_info);
     INFO_FUNDEFS (arg_info) = NULL;

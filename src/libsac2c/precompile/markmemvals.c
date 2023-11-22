@@ -730,9 +730,7 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
          */
         if (global.backend == BE_c99 || global.backend == BE_cuda
             || global.backend == BE_cudahybrid) {
-            if (PRF_EXPRS4 (arg_node) != NULL) {
-                PRF_EXPRS4 (arg_node) = FREEdoFreeTree (PRF_EXPRS4 (arg_node));
-            }
+            PRF_EXPRS4 (arg_node) = FREEoptFreeTree(PRF_EXPRS4 (arg_node));
         }
     }
     DBUG_RETURN (arg_node);

@@ -18,7 +18,7 @@
  * This traversal sets the attributes ARG_ISALIASING and RET_ISALIASING.
  * They help to identify argument positions that are possibly returned in
  * *unmodified* form! NB: it is *not* about possible memory reuse here,
- * but it is about equality of MemVals! Consequently, 
+ * but it is about equality of MemVals! Consequently,
  *    a = b;            introduces aliasing, whereas
  *    a = _reuse_(b);   does NOT!
  *
@@ -29,8 +29,8 @@
  * Consequently, this phase tries to set as many of them as possible to FALSE!
  *
  * The basic idea is simple: Assuming the worst case, ie., all functions
- * alias all args to all rets, we try to find args or rets that are 
- * definitely NOT aliased. Once we find those, we can try again, taking 
+ * alias all args to all rets, we try to find args or rets that are
+ * definitely NOT aliased. Once we find those, we can try again, taking
  * the new "unaliased" args/rets into accound. We do this until a fixed
  * point is reached, ie., until no further unaliasing is possible.
  *
@@ -60,7 +60,7 @@
  *    }
  *
  * How do we find this out? While we traverse the body, we identify
- * potential aliasing sets for all args/local variables. Once we 
+ * potential aliasing sets for all args/local variables. Once we
  * reach the return statement, we check the sets of the return
  * variables. If these do not intersect with *any* arguments, we
  * mark them unaliasing. Any argument that does not appear in any
@@ -77,10 +77,10 @@
  *
  * Coming back to our example above, we see that the aliasing sets
  * after the traversal of the body are:
- * 
+ *
  * A[x] = {x}    and
  * A[res] = {res}
- * 
+ *
  * Consequently, we unalias the entire signature!
  * Now consider a second function
  *
@@ -90,7 +90,7 @@
  * (1)       cc = bb;
  *       else
  * (2)       cc = with {} :modarray(aa);
- *   
+ *
  *       if( p(1))
  * (3)       dd = rec (aa, cc);
  *       else
@@ -400,9 +400,7 @@ EMIAap (node *arg_node, info *arg_info)
     DBUG_PRINT ("   application of %s found",
                  FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -458,9 +456,7 @@ EMIAarg (node *arg_node, info *arg_info)
         break;
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -483,9 +479,7 @@ EMIAassign (node *arg_node, info *arg_info)
     INFO_CONTEXT (arg_info) = IA_undef;
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -573,12 +567,8 @@ EMIAfundef (node *arg_node, info *arg_info)
          * Traverse vardecs/args to initialize ALIASMASKS
          */
         INFO_CONTEXT (arg_info) = IA_begin;
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
-        if (FUNDEF_VARDECS (arg_node) != NULL) {
-            FUNDEF_VARDECS (arg_node) = TRAVdo (FUNDEF_VARDECS (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_VARDECS (arg_node) = TRAVopt(FUNDEF_VARDECS (arg_node), arg_info);
 
         DBUG_PRINT ("traversing function %s", FUNDEF_NAME (arg_node));
 
@@ -590,12 +580,8 @@ EMIAfundef (node *arg_node, info *arg_info)
          * Traverse vardecs/args to remove ALIASMASKS
          */
         INFO_CONTEXT (arg_info) = IA_end;
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
-        if (FUNDEF_VARDECS (arg_node) != NULL) {
-            FUNDEF_VARDECS (arg_node) = TRAVdo (FUNDEF_VARDECS (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_VARDECS (arg_node) = TRAVopt(FUNDEF_VARDECS (arg_node), arg_info);
 
         INFO_MASKBASE (arg_info) = DFMremoveMaskBase (INFO_MASKBASE (arg_info));
     }
@@ -604,30 +590,22 @@ EMIAfundef (node *arg_node, info *arg_info)
      * Mark unique parameters and return values not ALIAS
      */
     INFO_CONTEXT (arg_info) = IA_unqargs;
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
     INFO_RETALIAS (arg_info) = FUNDEF_HASDOTRETS (arg_node);
-    if (FUNDEF_RETS (arg_node) != NULL) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
+    FUNDEF_RETS (arg_node) = TRAVopt(FUNDEF_RETS (arg_node), arg_info);
 
     /*
      * If no return value is marked ALIASING, no argument can be ALIASED
      */
     if (!INFO_RETALIAS (arg_info)) {
         INFO_CONTEXT (arg_info) = IA_argnoalias;
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
     }
 
     arg_info = FreeInfo (arg_info);
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -751,9 +729,7 @@ EMIAret (node *arg_node, info *arg_info)
 
     INFO_RETALIAS (arg_info) = INFO_RETALIAS (arg_info) || RET_ISALIASING (arg_node);
 
-    if (RET_NEXT (arg_node) != NULL) {
-        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
-    }
+    RET_NEXT (arg_node) = TRAVopt(RET_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -787,7 +763,7 @@ EMIAreturn (node *arg_node, info *arg_info)
         DFMsetMaskOr (retmask, AVIS_ALIASMASK (ID_AVIS (EXPRS_EXPR (retexprs))));
         retexprs = EXPRS_NEXT (retexprs);
     }
-    
+
     DBUG_PRINT ("   The union of all alias-lists of all return values is:");
     DBUG_EXECUTE (fprintf (stderr, "                     => ");
                   DFMprintMask (stderr, "%s, ", retmask););
@@ -892,9 +868,7 @@ EMIAvardec (node *arg_node, info *arg_info)
         break;
     }
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -950,9 +924,7 @@ EMIAfold (node *arg_node, info *arg_info)
 
     INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
 
-    if (FOLD_NEXT (arg_node) != NULL) {
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-    }
+    FOLD_NEXT (arg_node) = TRAVopt(FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -971,9 +943,7 @@ EMIAgenarray (node *arg_node, info *arg_info)
 
     INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -992,9 +962,7 @@ EMIAmodarray (node *arg_node, info *arg_info)
 
     INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

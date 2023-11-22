@@ -532,9 +532,7 @@ APTarg (node *arg_node, info *arg_info)
         ARG_PADDED (arg_node) = FALSE;
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -576,18 +574,13 @@ APTvardec (node *arg_node, info *arg_info)
 
         VARDEC_PADDED (arg_node) = TRUE;
 
-        if (VARDEC_NEXT (original_vardec) != NULL) {
-            VARDEC_NEXT (original_vardec)
-              = TRAVdo (VARDEC_NEXT (original_vardec), arg_info);
-        }
+        VARDEC_NEXT (original_vardec) = TRAVopt(VARDEC_NEXT (original_vardec), arg_info);
 
     } else {
         FREEdoFreeNode (original_vardec);
         VARDEC_PADDED (arg_node) = FALSE;
 
-        if (VARDEC_NEXT (arg_node) != NULL) {
-            VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-        }
+        VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -625,9 +618,7 @@ APTassign (node *arg_node, info *arg_info)
     new_assigns = INFO_APT_ASSIGNMENTS (arg_info);
 
     /* traverse next assignment */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     /* APTassign will insert assignments stored in INFO_APT_ASSIGNMENTS
      * before the current assignment
@@ -764,9 +755,7 @@ APTcode (node *arg_node, info *arg_info)
     /* */
 
     /* traverse following code blocks (rvalue of assignment) */
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     INFO_APT_EXPRESSION_PADDED (arg_info) = save_padded_state;
 
@@ -833,9 +822,7 @@ APTgenarray (node *arg_node, info *arg_info)
     }
 
     /* check all sons for paddable code */
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
+    GENARRAY_DEFAULT (arg_node) = TRAVopt(GENARRAY_DEFAULT (arg_node), arg_info);
 
     /* apply WO_TYPE independend padding */
     if (INFO_APT_EXPRESSION_PADDED (arg_info)) {
@@ -979,9 +966,7 @@ APTap (node *arg_node, info *arg_info)
     } else { DBUG_PRINT ("APT", (" trav ap: (NULL)")); });
 
     /* first inspect arguments */
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
 
     /* look whether body exists or not
      * EXPRESSION_PADDED does not depend on arguments! */
@@ -1147,9 +1132,7 @@ APTfundef (node *arg_node, info *arg_info)
         DBUG_PRINT (" no body");
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

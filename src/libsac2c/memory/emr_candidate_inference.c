@@ -301,9 +301,7 @@ EMRCIfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        if (INFO_EMR_RC (arg_info) != NULL) {
-            INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
-        }
+        INFO_EMR_RC (arg_info) = FREEoptFreeTree(INFO_EMR_RC (arg_info));
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -367,17 +365,13 @@ EMRCIcond (node *arg_node, info *arg_info)
     if (COND_THEN (arg_node) != NULL) {
         INFO_EMR_RC (arg_info) = DUPdoDupTree (old_chain);
         COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
-        if (INFO_EMR_RC (arg_info) != NULL) {
-            INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
-        }
+        INFO_EMR_RC (arg_info) = FREEoptFreeTree(INFO_EMR_RC (arg_info));
     }
 
     if (COND_ELSE (arg_node) != NULL) {
         INFO_EMR_RC (arg_info) = DUPdoDupTree (old_chain);
         COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
-        if (INFO_EMR_RC (arg_info) != NULL) {
-            INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
-        }
+        INFO_EMR_RC (arg_info) = FREEoptFreeTree(INFO_EMR_RC (arg_info));
     }
 
     INFO_EMR_RC (arg_info) = old_chain;

@@ -83,9 +83,7 @@ RENarg (node *arg_node, info *arg_info)
     ARG_AVIS (arg_node)
       = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (arg_node));
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -98,9 +96,7 @@ RENvardec (node *arg_node, info *arg_info)
     VARDEC_AVIS (arg_node)
       = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), VARDEC_AVIS (arg_node));
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -124,9 +120,7 @@ RENids (node *arg_node, info *arg_info)
     IDS_AVIS (arg_node)
       = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

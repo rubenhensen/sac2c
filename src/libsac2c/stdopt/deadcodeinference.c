@@ -186,29 +186,17 @@ FreeAvisSons (node *arg_node)
     DBUG_PRINT ("Freeing avis sons for %s", AVIS_NAME (avis));
 
     // This is so ugly, I could spit...
-    if (AVIS_DIM (avis) != NULL) {
-        AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
-    }
+    AVIS_DIM (avis) = FREEoptFreeNode(AVIS_DIM (avis));
 
-    if (AVIS_SHAPE (avis) != NULL) {
-        AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
-    }
+    AVIS_SHAPE (avis) = FREEoptFreeNode(AVIS_SHAPE (avis));
 
-    if (AVIS_MIN (avis) != NULL) {
-        AVIS_MIN (avis) = FREEdoFreeNode (AVIS_MIN (avis));
-    }
+    AVIS_MIN (avis) = FREEoptFreeNode(AVIS_MIN (avis));
 
-    if (AVIS_MAX (avis) != NULL) {
-        AVIS_MAX (avis) = FREEdoFreeNode (AVIS_MAX (avis));
-    }
+    AVIS_MAX (avis) = FREEoptFreeNode(AVIS_MAX (avis));
 
-    if (AVIS_SCALARS (avis) != NULL) {
-        AVIS_SCALARS (avis) = FREEdoFreeNode (AVIS_SCALARS (avis));
-    }
+    AVIS_SCALARS (avis) = FREEoptFreeNode(AVIS_SCALARS (avis));
 
-    if (AVIS_LACSO (avis) != NULL) {
-        AVIS_LACSO (avis) = FREEdoFreeNode (AVIS_LACSO (avis));
-    }
+    AVIS_LACSO (avis) = FREEoptFreeNode(AVIS_LACSO (avis));
 
     DBUG_RETURN (arg_node);
 }
@@ -582,9 +570,7 @@ DCIap (node *arg_node, info *arg_info)
         }
     } else {
         /* mark all parameters of regular functions as needed */
-        if (AP_ARGS (arg_node) != NULL) {
-            AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-        }
+        AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

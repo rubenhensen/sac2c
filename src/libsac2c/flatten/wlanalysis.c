@@ -832,9 +832,7 @@ WLAgenarray (node *arg_node, info *arg_info)
 
     fundef = INFO_FUNDEF (arg_info);
 
-    if (GENARRAY_SHAPE (arg_node) != NULL) {
-        GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
-    }
+    GENARRAY_SHAPE (arg_node) = TRAVopt(GENARRAY_SHAPE (arg_node), arg_info);
 
     current_shape = PropagateVectorConstants (&(GENARRAY_SHAPE (arg_node)));
 

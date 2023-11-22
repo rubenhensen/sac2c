@@ -794,9 +794,7 @@ SOSSKarg (node *arg_node, info *arg_info)
 
         INFO_NUM_ARGS (arg_info) = INFO_NUM_ARGS (arg_info) + 1;
 
-        if (ARG_NEXT (arg_node) != NULL) {
-            ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-        }
+        ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKarg");
@@ -852,9 +850,7 @@ SOSSKassign (node *arg_node, info *arg_info)
     DBUG_EXECUTE (string = MEMfree (string));
 
     /* Go on to the next assignment first to compute the demands*/
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     if (INFO_DEMAND (arg_info) != NULL) {
         INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
@@ -1068,9 +1064,7 @@ SOSSKfold (node *arg_node, info *arg_info)
     INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
     INFO_DEMAND (arg_info) = old_demand;
 
-    if (FOLD_NEXT (arg_node) != NULL) {
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-    }
+    FOLD_NEXT (arg_node) = TRAVopt(FOLD_NEXT (arg_node), arg_info);
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKfold");
     MEMfree (elems);
@@ -1128,13 +1122,9 @@ SOSSKgenarray (node *arg_node, info *arg_info)
     INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
     INFO_DEMAND (arg_info) = old_demand;
 
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
+    GENARRAY_DEFAULT (arg_node) = TRAVopt(GENARRAY_DEFAULT (arg_node), arg_info);
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKgenarray");
     MEMfree (elems);
@@ -1191,9 +1181,7 @@ SOSSKmodarray (node *arg_node, info *arg_info)
     INFO_DEMAND (arg_info) = COfreeConstant (INFO_DEMAND (arg_info));
     INFO_DEMAND (arg_info) = old_demand;
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKmodarray");
     MEMfree (elems);
@@ -1392,9 +1380,7 @@ SOSSKret (node *arg_node, info *arg_info)
 
     INFO_NUM_RETS (arg_info) = INFO_NUM_RETS (arg_info) + 1;
 
-    if (RET_NEXT (arg_node) != NULL) {
-        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
-    }
+    RET_NEXT (arg_node) = TRAVopt(RET_NEXT (arg_node), arg_info);
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKret");
     DBUG_RETURN (arg_node);
@@ -1510,12 +1496,8 @@ SOSSKfundef (node *arg_node, info *arg_info)
     FUNDEF_LASTITERATIONROUND (arg_node) = INFO_ITERATION_ROUND (old_info);
 
     /* Count the number of return values and numbers of arguments*/
-    if (FUNDEF_RETS (arg_node) != NULL) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    FUNDEF_RETS (arg_node) = TRAVopt(FUNDEF_RETS (arg_node), arg_info);
+    FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
     /* If the function has no arguments, there is nothing to do*/
     if (INFO_NUM_ARGS (arg_info) != 0) {
@@ -1595,9 +1577,7 @@ SOSSKfundef (node *arg_node, info *arg_info)
                 INFO_ESTIMATION (arg_info) = TRUE;
             }
 
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-            }
+            FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
         }
     }
 

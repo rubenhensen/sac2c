@@ -132,9 +132,7 @@ filterDuplicateId (node *fexprs, node **exprs)
     filtered = TCfilterExprsArg (doAvisMatch, fexprs, exprs);
 
     /* we delete all duplicate N_id in exprs */
-    if (filtered != NULL) {
-        filtered = FREEdoFreeTree (filtered);
-    }
+    filtered = FREEoptFreeTree(filtered);
 
     DBUG_RETURN (*exprs);
 }

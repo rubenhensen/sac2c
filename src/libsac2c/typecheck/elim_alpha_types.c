@@ -224,9 +224,7 @@ EATfundef (node *arg_node, info *arg_info)
 
                 FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
-                if (FUNDEF_BODY (arg_node) != NULL) {
-                    FUNDEF_BODY (arg_node) = FREEdoFreeNode (FUNDEF_BODY (arg_node));
-                }
+                FUNDEF_BODY (arg_node) = FREEoptFreeNode(FUNDEF_BODY (arg_node));
 
                 msgbuf = SBUFcreate (255);
                 tmp = TYtype2String (ftype, FALSE, 0);

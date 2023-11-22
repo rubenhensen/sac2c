@@ -198,7 +198,7 @@ CCWBfunbundle (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     noargs = FUNBUNDLE_ARITY (arg_node);
-    norets = TCcountRets (FUNDEF_RETS (FUNBUNDLE_FUNDEF (arg_node))); 
+    norets = TCcountRets (FUNDEF_RETS (FUNBUNDLE_FUNDEF (arg_node)));
 
     /* we only use non-{x,s}t funbundle here and manually do a dispatch between
        the versions to call */
@@ -210,7 +210,7 @@ CCWBfunbundle (node *arg_node, info *arg_info)
         for (i=0; i<2; i++) {
             fprintf (INFO_FILE (arg_info), "void %s(", FUNBUNDLE_EXTNAME (arg_node));
 
-            //norets - pos + noargs > 1 ==> norets + noargs > pos + 1 
+            //norets - pos + noargs > 1 ==> norets + noargs > pos + 1
             for (pos = 0; pos < norets; pos++) {
                 fprintf (INFO_FILE (arg_info), "void **ret%zu%s", pos,
                          (norets + noargs > pos + 1) ? ", " : "");
@@ -303,9 +303,7 @@ CCWBfunbundle (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info), "}\n\n");
     }
 
-    if (FUNBUNDLE_NEXT (arg_node) != NULL) {
-        FUNBUNDLE_NEXT (arg_node) = TRAVdo (FUNBUNDLE_NEXT (arg_node), arg_info);
-    }
+    FUNBUNDLE_NEXT (arg_node) = TRAVopt(FUNBUNDLE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

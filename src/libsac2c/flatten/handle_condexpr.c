@@ -16,7 +16,7 @@
  * ----------------
  *
  * This traversal elides funcond expressions and produces proper cond-assignments
- * instead. The reason this is done is to standardise the way conditionals can 
+ * instead. The reason this is done is to standardise the way conditionals can
  * appear throughout.
  *
  * An example:
@@ -37,22 +37,22 @@
  * Implementation:
  * ---------------
  *
- * In principle, the implementation is straight forward. Most of the music happens in 
+ * In principle, the implementation is straight forward. Most of the music happens in
  * HCEfuncond, where a replacement variable is generated, the assignment chain is
  * constructed and put into the info-node (INFO_HCE_PREASSIGN) and the funcond is
- * replaced by the new variable. 
+ * replaced by the new variable.
  * The only tricky part then is to inject the assignemnt chain in the right place.
  * Non-surprisingly, HCEassign does so during a bottom up traversal.
- * However, we do have a few language constructs that may contain funcond 
+ * However, we do have a few language constructs that may contain funcond
  * expressions and assignment chaines by themselves such as loops, conditionals
- * and with-loops. In these cases we need to make sure that any INFO_HCE_PREASSIGN 
+ * and with-loops. In these cases we need to make sure that any INFO_HCE_PREASSIGN
  * expressions are inserted in the right places!
- * 
- * For conditionals (HCEcond), it suffices to make sure we traverse the branches 
+ *
+ * For conditionals (HCEcond), it suffices to make sure we traverse the branches
  * BEFORE we traverse the predicate. If it so happens that we lift a funcond from
  * the predicate expression, we are sure this is inserted in the immediately
  * surrounding assignment chain as the cond itself lives within an N_assign
- * 
+ *
  * The only loops left here are DO-loops. Here we first traverse the condition
  * expression. If (INFO_HCE_PREASSIGN) contains assignments, we append them to
  * the loop body BEFORE traversing the body itself thus making sure that the
@@ -69,7 +69,7 @@
  *    The idea is that we keep the assignment chain long enough so that it can
  *    be inserted when we reach the surrounding assignmemnt.
  *    Unfortunately, PART and WITHOP both have more than one subexpression
- *    all of which can (a) add further assignment chaines and (b) 
+ *    all of which can (a) add further assignment chaines and (b)
  *    can contain WLs themselves which contain assignment chains that can
  *    trigger un-intended offloading of chains lifted from unrelated expressions.
  *    issue 2274 is exactly an instance of such a situation:
@@ -185,9 +185,7 @@ HCEassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
@@ -221,13 +219,9 @@ HCEcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
-    if (CODE_CEXPRS (arg_node) != NULL) {
-        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-    }
+    CODE_CEXPRS (arg_node) = TRAVopt(CODE_CEXPRS (arg_node), arg_info);
 
     if (INFO_HCE_PREASSIGN (arg_info) != NULL) {
         CODE_CBLOCK_ASSIGNS (arg_node) = TCappendAssign (CODE_CBLOCK_ASSIGNS (arg_node),
@@ -359,16 +353,14 @@ HCEwith (node *arg_node, info *arg_info)
 {
     node *old_pre_assigns;
     DBUG_ENTER ();
-  
+
     /* hide any potential PREASSIGNS that need to get to the outer context! */
     old_pre_assigns = INFO_HCE_PREASSIGN (arg_info);
     INFO_HCE_PREASSIGN (arg_info) = NULL;
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVopt(WITH_WITHOP (arg_node), arg_info);
     /* Now we bring old preassigns back! */
     if (old_pre_assigns != NULL) {
         INFO_HCE_PREASSIGN (arg_info) = TCappendAssign (old_pre_assigns,

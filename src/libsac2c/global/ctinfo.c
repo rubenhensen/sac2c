@@ -994,9 +994,7 @@ CTIterminateCompilation (node *syntax_tree)
 
     CleanUp ();
 
-    if (syntax_tree != NULL) {
-        syntax_tree = FREEdoFreeTree (syntax_tree);
-    }
+    syntax_tree = FREEoptFreeTree(syntax_tree);
 
     /*
      *  At last, we display a success message.

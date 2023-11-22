@@ -51,7 +51,7 @@
  *   _emlr_3021_a = _fill_( _copy_( a), _emlr_3020_a);
  *   a__SSA0_1 = _MAIN::main__Loop_0( _emlr_3021_a, i) ;
  *
- * This, combined with an annotation of '_emlr_3021_a' being non-aliased, 
+ * This, combined with an annotation of '_emlr_3021_a' being non-aliased,
  * suffices for the remaining mem-phases to end up with a loop body like this:
  *
  *   _emal_2615__emec_2599_a = a;
@@ -83,23 +83,23 @@
  *       res = (p? rec: b);
  *       return res;
  *   }
- *      
- *   Notice here, that the argument 'a' which we want to make unique also 
+ *
+ *   Notice here, that the argument 'a' which we want to make unique also
  *   serves as first argument in the recursive call. This is essential as
  *   it guarantees that in the next iteration, it will be unique again!
  *
- *   In essence this means we are looking for parameters that are being 
+ *   In essence this means we are looking for parameters that are being
  *   used in _alloc_or_reuse_ *and* that are being fed a guaranteed unique
  *   argument in the recursive call.
- *   In order to decide whether 'b' is unique there, we need to have 
+ *   In order to decide whether 'b' is unique there, we need to have
  *   aliasing analysis. Unfortunately, AA has not yet been run and even
- *   if it was, that would not help, since standard AA always assumes that 
- *   all function parameters are aliases and, thus would infer 'b' to 
+ *   if it was, that would not help, since standard AA always assumes that
+ *   all function parameters are aliases and, thus would infer 'b' to
  *   be aliased.
- *   What needs to be done is to start out with an assumption that all 
- *   those parameters that we intend to make unique are marked as 
+ *   What needs to be done is to start out with an assumption that all
+ *   those parameters that we intend to make unique are marked as
  *   non-aliased, then run an AA and check whether the corresponding
- *   recursive call arguments are non-aliased. If any one of them turns 
+ *   recursive call arguments are non-aliased. If any one of them turns
  *   out to be aliased, we have to restart again, now marking the
  *   corresponding parameter as aliased. We repeat this exercise
  *   until a fixedpoint is reached.
@@ -121,21 +121,21 @@
  *       res = (p? rec: a);
  *       return res;
  *   }
- *      
+ *
  *   In the initial round, we assume {a,b,i} to be non-aliased. While
- *   traversing the body, we find that {b,i} are possible reuse-set 
+ *   traversing the body, we find that {b,i} are possible reuse-set
  *   candidates. When looking at the recursive call AA sees that {a,b,i}
  *   all are non-aliased so we conclude that {b,i} could be the the reuse-set
  *   since neither 'a' nor 'j' are aliased.
  *   Now, we update the alias anotation of the parameters [NB: this was missing
- *   prior to bug #2323 being fixed :-)]; assuming that only {b,i} are 
+ *   prior to bug #2323 being fixed :-)]; assuming that only {b,i} are
  *   non-aliased. Upon our second iteration, we now find out that 'a' in the
  *   recursive call is classifies as aliased which results in 'b' being taken
  *   out of the reuse-set, leaving us with 'i' only.
  *   Again, we change the alias annotation of 'b' to aliased and rerun our
  *   inference, just to find that the fixpoint has been reached.
  *
- *   Note here that it might be considered crazy that we actually lift 
+ *   Note here that it might be considered crazy that we actually lift
  *   scalar values such as 'i' here. However, that is ok as the entire
  *   mem phase treats all values equaly and eventualy strips out all
  *   potential overheads here!
@@ -471,9 +471,7 @@ EMLRassign (node *arg_node, info *arg_info)
     /*
      * Bottom-up traversal
      */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
@@ -513,9 +511,7 @@ EMLRfundef (node *arg_node, info *arg_info)
     }
 
     if (arg_info == NULL) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -630,9 +626,7 @@ EMLROarg (node *arg_node, info *arg_info)
         break;
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -224,9 +224,7 @@ ProjectObjects (node *fundef, info *info)
          * wrapper is not local and thus all its instances.
          * In both cases we can safely modify the instances.
          */
-        if (FUNDEF_OBJECTS (fundef) != NULL) {
-            FUNDEF_OBJECTS (fundef) = FREEdoFreeTree (FUNDEF_OBJECTS (fundef));
-        }
+        FUNDEF_OBJECTS (fundef) = FREEoptFreeTree(FUNDEF_OBJECTS (fundef));
         if (INFO_OBJECTS (info) != NULL) {
             FUNDEF_OBJECTS (fundef) = DUPdoDupTree (INFO_OBJECTS (info));
         }
@@ -235,9 +233,7 @@ ProjectObjects (node *fundef, info *info)
          * We're in runtime mode and want to pretend as though all instances
          * are local, so runtime loaded specializations work as expected.
          */
-        if (FUNDEF_OBJECTS (fundef) != NULL) {
-            FUNDEF_OBJECTS (fundef) = FREEdoFreeTree (FUNDEF_OBJECTS (fundef));
-        }
+        FUNDEF_OBJECTS (fundef) = FREEoptFreeTree(FUNDEF_OBJECTS (fundef));
         if (INFO_OBJECTS (info) != NULL) {
             FUNDEF_OBJECTS (fundef) = DUPdoDupTree (INFO_OBJECTS (info));
         }
@@ -252,9 +248,7 @@ ProjectObjects (node *fundef, info *info)
             fundef = CreateObjectWrapper (INFO_WRAPPER (info), fundef);
             INFO_FUNDEFS (info) = TCappendFundef (INFO_FUNDEFS (info), fundef);
 
-            if (FUNDEF_OBJECTS (fundef) != NULL) {
-                FUNDEF_OBJECTS (fundef) = FREEdoFreeTree (FUNDEF_OBJECTS (fundef));
-            }
+            FUNDEF_OBJECTS (fundef) = FREEoptFreeTree(FUNDEF_OBJECTS (fundef));
             if (INFO_OBJECTS (info) != NULL) {
                 FUNDEF_OBJECTS (fundef) = DUPdoDupTree (INFO_OBJECTS (info));
             }
@@ -290,9 +284,7 @@ UnifyOverloadedFunctions (node *funs, info *info)
                 FUNDEF_OBJECTS (funs) = INFO_OBJECTS (info);
                 INFO_OBJECTS (info) = NULL;
             } else {
-                if (FUNDEF_OBJECTS (funs) != NULL) {
-                    FUNDEF_OBJECTS (funs) = FREEdoFreeTree (FUNDEF_OBJECTS (funs));
-                }
+                FUNDEF_OBJECTS (funs) = FREEoptFreeTree(FUNDEF_OBJECTS (funs));
                 if (FUNDEF_OBJECTS (FUNDEF_IMPL (funs)) != NULL) {
                     FUNDEF_OBJECTS (funs)
                       = DUPdoDupTree (FUNDEF_OBJECTS (FUNDEF_IMPL (funs)));
@@ -413,9 +405,7 @@ OANmodule (node *arg_node, info *arg_info)
      */
     DBUG_PRINT ("!!! processing fundecs...");
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
     /*
      * iterate until the set of objects does not
@@ -433,9 +423,7 @@ OANmodule (node *arg_node, info *arg_info)
          * so we only traverse FUNS
          */
 
-        if (MODULE_FUNS (arg_node) != NULL) {
-            MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-        }
+        MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
         DBUG_PRINT ("!!! last iteration added %d objects.", INFO_CHANGES (arg_info));
 
@@ -539,9 +527,7 @@ OANfundef (node *arg_node, info *arg_info)
 
         INFO_OBJECTS (arg_info) = FUNDEF_OBJECTS (arg_node);
 
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
+        FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
 
         FUNDEF_OBJECTS (arg_node) = INFO_OBJECTS (arg_info);
         INFO_OBJECTS (arg_info) = NULL;
@@ -561,7 +547,7 @@ OANobjdef (node *arg_node, info *arg_info)
 
     if ((OBJDEF_INITFUN (arg_node) != NULL)
         && (TCsetContains (FUNDEF_OBJECTS (OBJDEF_INITFUN (arg_node)), arg_node))) {
-        CTIerror (EMPTY_LOC, 
+        CTIerror (EMPTY_LOC,
                   "The initialisation expression of global object `%s' depends on "
                   "its own result (the global object). Most likely it uses a "
                   "function that requires the object to already exist.",

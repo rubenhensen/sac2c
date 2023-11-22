@@ -852,9 +852,7 @@ ICCmodarray (node *arg_node, info *arg_info)
          */
     }
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -888,9 +886,7 @@ ICCfold (node *arg_node, info *arg_info)
          */
     }
 
-    if (FOLD_NEXT (arg_node) != NULL) {
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-    }
+    FOLD_NEXT (arg_node) = TRAVopt(FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -924,9 +920,7 @@ ICCpropagate (node *arg_node, info *arg_info)
          */
     }
 
-    if (PROPAGATE_NEXT (arg_node) != NULL) {
-        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
-    }
+    PROPAGATE_NEXT (arg_node) = TRAVopt(PROPAGATE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

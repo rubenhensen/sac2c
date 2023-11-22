@@ -364,9 +364,7 @@ WRCIwith (node *arg_node, info *arg_info)
     /*
      * Remove RC list
      */
-    if (INFO_RC (arg_info) != NULL) {
-        INFO_RC (arg_info) = FREEdoFreeTree (INFO_RC (arg_info));
-    }
+    INFO_RC (arg_info) = FREEoptFreeTree(INFO_RC (arg_info));
 
     /*
      * Be sure to remove all GENERATOR_GENWIDTH
@@ -393,9 +391,7 @@ WRCIgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (GENERATOR_GENWIDTH (arg_node) != NULL) {
-        GENERATOR_GENWIDTH (arg_node) = FREEdoFreeTree (GENERATOR_GENWIDTH (arg_node));
-    }
+    GENERATOR_GENWIDTH (arg_node) = FREEoptFreeTree(GENERATOR_GENWIDTH (arg_node));
 
     DBUG_RETURN (arg_node);
 }

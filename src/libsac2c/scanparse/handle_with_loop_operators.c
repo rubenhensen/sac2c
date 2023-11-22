@@ -34,7 +34,7 @@
  * As of 21.8.2021, we try to extend the capabilities for keeping Multi-Operator
  * With-Loops even further. This time, we want to support With-Loops that contain
  * several modarray operators provided they modify the same array and we want to
- * support multiple fold-operators. These should be straight forward as single generator 
+ * support multiple fold-operators. These should be straight forward as single generator
  * fold with-loops solely iterate over the generator guaranteeing identical ranges.
  * We extend IsLegitimateMoWl accordingly.
  *
@@ -212,11 +212,11 @@
  *
  * Renamings are performed when we split off and the corresponding renaming
  * assignments are being put into INFO_HWLO_RENASSIGNS for later insertion.
- * Both these renaming related operations happen in the function 
+ * Both these renaming related operations happen in the function
  * RenameLHSandCreateRanamingAssign.
- * 
+ *
  * Upon return to HWLOwith, the split-off WL is generated and put into
- * INFO_HWLO_NEWASSIGNS for later insertion. 
+ * INFO_HWLO_NEWASSIGNS for later insertion.
  *
  * HWLOwith subsequently is applied recursively to the remaining WL again
  * to make sure all split-offs that are needed are actually being performed.
@@ -320,7 +320,7 @@ static node *
 ATravILMOWLmodarray (node *modarray, info *arg_info)
 {
     DBUG_ENTER ();
-    
+
     // We know that (INFO_HWLO_LEGAL_MOWL (arg_info) == TRUE)!
     if (INFO_HWLO_OPKIND (arg_info) == N_with) { // first genarray/modarray/fold!
         INFO_HWLO_OPKIND (arg_info) = N_modarray;
@@ -391,7 +391,7 @@ IsLegitimateMoWl (node *withop, info *arg_info)
     TRAVpop ();
 
     DBUG_PRINT ("... splitting is %s required",
-                (INFO_HWLO_LEGAL_MOWL (arg_info) ?  "not" : "")); 
+                (INFO_HWLO_LEGAL_MOWL (arg_info) ?  "not" : ""));
     DBUG_RETURN (INFO_HWLO_LEGAL_MOWL (arg_info));
 }
 
@@ -480,7 +480,7 @@ HWLOassign (node *arg_node, info *arg_info)
         INFO_HWLO_RENASSIGNS(arg_info) = NULL;
     }
     /*
-     * newly generated assignments of split-off-WLs are collected in 
+     * newly generated assignments of split-off-WLs are collected in
      * INFO_HWLO_NEWASSIGNS(arg_info). To properly insert these nodes,
      * they have to be prepanded to arg_node.
      */
@@ -494,9 +494,7 @@ HWLOassign (node *arg_node, info *arg_info)
         return_node = arg_node;
     }
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (return_node);
 }
@@ -659,7 +657,7 @@ StdWithOp (node *arg_node, info *arg_info)
                       "more operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) == NULL) {
-            CTIerror (LINE_TO_LOC (global.linenum), 
+            CTIerror (LINE_TO_LOC (global.linenum),
                       "more operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
@@ -671,7 +669,7 @@ StdWithOp (node *arg_node, info *arg_info)
                       "less operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) != NULL) {
-            CTIerror (LINE_TO_LOC (global.linenum), 
+            CTIerror (LINE_TO_LOC (global.linenum),
                       "less operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
@@ -810,7 +808,7 @@ HWLOpropagate (node *arg_node, info *arg_info)
                       "less operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) != NULL) {
-            CTIerror (LINE_TO_LOC (global.linenum), 
+            CTIerror (LINE_TO_LOC (global.linenum),
                       "less operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
@@ -821,7 +819,7 @@ HWLOpropagate (node *arg_node, info *arg_info)
         DBUG_ASSERT (NODE_TYPE (PROPAGATE_DEFAULT (arg_node)) == N_spid,
                      "propgate defaults should be N_spid!");
         tmp = STRcpy (SPID_NAME (PROPAGATE_DEFAULT (arg_node)));
-        CTIwarn (NODE_LOCATION (arg_node), 
+        CTIwarn (NODE_LOCATION (arg_node),
                  "Effect on \"%s\" in multi-operator-with-loop will be repeated %d "
                  "times due to splitting of the with-loop.",
                  tmp, INFO_HWLO_NUM_STD_OPS (arg_info));

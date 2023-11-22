@@ -1762,7 +1762,7 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
     pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
                   PMvar (1, PMAgetNode (&iv), 0));
 
-    
+
     if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat3, offset))
         && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv)))) && (0 != ARRAY_AELEMS (aelems))
         && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
@@ -2026,9 +2026,7 @@ SelProxyArray (node *arg_node, info *arg_info)
                     res = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis),
                                       DUPdoDupNode (INFO_PROXYARR (arg_info)));
                 } else {
-                    if (xtemplate != NULL) {
-                        xtemplate = FREEdoFreeTree (xtemplate);
-                    }
+                    xtemplate = FREEoptFreeTree(xtemplate);
                     filter_iv = FREEdoFreeTree (filter_iv);
                 }
             } else {
@@ -2166,9 +2164,7 @@ IdxselProxyArray (node *arg_node, info *arg_info)
                     res = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis),
                                       DUPdoDupNode (INFO_PROXYARR (arg_info)));
                 } else {
-                    if (xtemplate != NULL) {
-                        xtemplate = FREEdoFreeTree (xtemplate);
-                    }
+                    xtemplate = FREEoptFreeTree(xtemplate);
                     filter_iv = FREEdoFreeTree (filter_iv);
                 }
             } else {

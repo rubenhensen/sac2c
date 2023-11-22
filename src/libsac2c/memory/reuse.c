@@ -463,10 +463,7 @@ EMRIprf (node *arg_node, info *arg_info)
             PRF_ERC (arg_node) = NULL;
             if (INFO_RHSCAND (arg_info) != NULL) {
                 // we only want to pick the first one, so we free all the rest
-                if (EXPRS_NEXT (INFO_RHSCAND (arg_info)) != NULL) {
-                    EXPRS_NEXT (INFO_RHSCAND (arg_info))
-                      = FREEdoFreeTree (EXPRS_NEXT (INFO_RHSCAND (arg_info)));
-                }
+                EXPRS_NEXT (INFO_RHSCAND (arg_info)) = FREEoptFreeTree(EXPRS_NEXT (INFO_RHSCAND (arg_info)));
                 DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
                 INFO_USED_RCS (arg_info)
                   = TCappendExprs (INFO_USED_RCS (arg_info),
@@ -496,9 +493,7 @@ EMRIgenarray (node *arg_node, info *arg_info)
     bool using_erc = FALSE;
     DBUG_ENTER ();
 
-    if (INFO_RHSCAND (arg_info) != NULL) {
-        INFO_RHSCAND (arg_info) = FREEdoFreeTree (INFO_RHSCAND (arg_info));
-    }
+    INFO_RHSCAND (arg_info) = FREEoptFreeTree(INFO_RHSCAND (arg_info));
     DBUG_PRINT ("handling WL-genarray; resetting RHSCAND");
 
     INFO_RHSCAND (arg_info) = GENARRAY_RC (arg_node);
@@ -527,10 +522,7 @@ EMRIgenarray (node *arg_node, info *arg_info)
             GENARRAY_ERC (arg_node) = NULL;
             if (INFO_RHSCAND (arg_info) != NULL) {
                 // we only want to pick the first one, so we free all the rest
-                if (EXPRS_NEXT (INFO_RHSCAND (arg_info)) != NULL) {
-                    EXPRS_NEXT (INFO_RHSCAND (arg_info))
-                      = FREEdoFreeTree (EXPRS_NEXT (INFO_RHSCAND (arg_info)));
-                }
+                EXPRS_NEXT (INFO_RHSCAND (arg_info)) = FREEoptFreeTree(EXPRS_NEXT (INFO_RHSCAND (arg_info)));
                 using_erc = TRUE;
                 INFO_USED_RCS (arg_info)
                   = TCappendExprs (INFO_USED_RCS (arg_info),
@@ -593,9 +585,7 @@ EMRImodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_RHSCAND (arg_info) != NULL) {
-        INFO_RHSCAND (arg_info) = FREEdoFreeTree (INFO_RHSCAND (arg_info));
-    }
+    INFO_RHSCAND (arg_info) = FREEoptFreeTree(INFO_RHSCAND (arg_info));
     DBUG_PRINT ("handling WL-modarray; resetting RHSCAND");
 
     INFO_RHSCAND (arg_info) = MODARRAY_RC (arg_node);
@@ -623,10 +613,7 @@ EMRImodarray (node *arg_node, info *arg_info)
             MODARRAY_ERC (arg_node) = NULL;
             if (INFO_RHSCAND (arg_info) != NULL) {
                 // we only want to pick the first one, so we free all the rest
-                if (EXPRS_NEXT (INFO_RHSCAND (arg_info)) != NULL) {
-                    EXPRS_NEXT (INFO_RHSCAND (arg_info))
-                      = FREEdoFreeTree (EXPRS_NEXT (INFO_RHSCAND (arg_info)));
-                }
+                EXPRS_NEXT (INFO_RHSCAND (arg_info)) = FREEoptFreeTree(EXPRS_NEXT (INFO_RHSCAND (arg_info)));
                 INFO_USED_RCS (arg_info)
                   = TCappendExprs (INFO_USED_RCS (arg_info),
                                    DUPdoDupNode (INFO_RHSCAND (arg_info)));

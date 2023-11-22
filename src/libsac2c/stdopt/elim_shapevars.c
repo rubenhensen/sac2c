@@ -127,13 +127,9 @@ ResetAvis (node *avis)
         AVIS_HASSAAARGUMENTS (avis) = FALSE;
     }
 
-    if (AVIS_DIM (avis) != NULL) {
-        AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
-    }
+    AVIS_DIM (avis) = FREEoptFreeNode(AVIS_DIM (avis));
 
-    if (AVIS_SHAPE (avis) != NULL) {
-        AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
-    }
+    AVIS_SHAPE (avis) = FREEoptFreeNode(AVIS_SHAPE (avis));
 
     AVIS_SUBST (avis) = NULL;
 

@@ -649,10 +649,7 @@ SSATfundef (node *arg_node, info *arg_info)
         /*
          * Remove all SSACNT nodes stored in the top-level block
          */
-        if (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)) != NULL) {
-            BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node))
-              = FREEdoFreeTree (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)));
-        }
+        BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)) = FREEoptFreeTree(BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)));
     }
 
     /* traverse next fundef */
@@ -714,9 +711,7 @@ SSATassign (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = arg_node;
 
     /* traverse expr */
-    if (ASSIGN_STMT (arg_node) != NULL) {
-        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-    }
+    ASSIGN_STMT (arg_node) = TRAVopt(ASSIGN_STMT (arg_node), arg_info);
 
     /* check for potentially required insertions */
     if (INFO_ASSIGN (arg_info) != arg_node) {
@@ -726,9 +721,7 @@ SSATassign (node *arg_node, info *arg_info)
     }
 
     /* traverse next exprs */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     /* restore old assignment link */
     INFO_ASSIGN (arg_info) = old_assign;
@@ -807,9 +800,7 @@ SSATarg (node *arg_node, info *arg_info)
     AVIS_SSAASSIGN (avis) = NULL;
 
     /* traverse next arg */
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -856,9 +847,7 @@ SSATvardec (node *arg_node, info *arg_info)
     AVIS_SSAELSE (avis) = NULL;
 
     /* traverse next vardec */
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    VARDEC_NEXT (arg_node) = TRAVopt(VARDEC_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

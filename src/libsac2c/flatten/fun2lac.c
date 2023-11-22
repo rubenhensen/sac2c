@@ -277,9 +277,7 @@ F2Lassign (node *arg_node, info *arg_info)
             INFO_RECAP (arg_info) = arg_node;
             arg_node = NULL;
         } else {
-            if (ASSIGN_NEXT (arg_node) != NULL) {
-                ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-            }
+            ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
         }
         break;
 
@@ -296,9 +294,7 @@ F2Lassign (node *arg_node, info *arg_info)
         /* When profiling is enabled, there can be annotations in loop-funs.
          * We don't want to break compilation in that case. */
 
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
+        ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
         break;
     default:
         DBUG_UNREACHABLE ("Unexpected node type %d in F2Lassign.",
@@ -540,9 +536,7 @@ F2Lmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

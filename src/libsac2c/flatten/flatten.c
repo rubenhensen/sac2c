@@ -188,9 +188,7 @@ FLATmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (MODULE_FUNS (arg_node)) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -225,18 +223,14 @@ FLATfundef (node *arg_node, info *arg_info)
     if ((FUNDEF_BODY (arg_node) != NULL) && !FUNDEF_WASIMPORTED (arg_node)
         && FUNDEF_ISLOCAL (arg_node)) {
         DBUG_PRINT ("flattening function %s:", FUNDEF_NAME (arg_node));
-        if (FUNDEF_ARGS (arg_node)) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     /*
      * Proceed with the next function...
      */
-    if (FUNDEF_NEXT (arg_node)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -586,9 +580,7 @@ FLATexprs (node *arg_node, info *arg_info)
     /*
      * Last but not least remaining exprs have to be done:
      */
-    if (EXPRS_NEXT (arg_node) != NULL) {
-        EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
-    }
+    EXPRS_NEXT (arg_node) = TRAVopt(EXPRS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -621,13 +613,9 @@ FLATcond (node *arg_node, info *arg_info)
 
     mem_last_assign = INFO_FLAT_LASTASSIGN (arg_info);
 
-    if (COND_THEN (arg_node)) {
-        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    }
+    COND_THEN (arg_node) = TRAVopt(COND_THEN (arg_node), arg_info);
 
-    if (COND_ELSE (arg_node)) {
-        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-    }
+    COND_ELSE (arg_node) = TRAVopt(COND_ELSE (arg_node), arg_info);
 
     INFO_FLAT_LASTASSIGN (arg_info) = mem_last_assign;
 
@@ -721,9 +709,7 @@ FLATwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVopt(WITH_WITHOP (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
@@ -766,9 +752,7 @@ FLATgenarray (node *arg_node, info *arg_info)
                      "return-node differs from arg_node while flattening an expr!");
     }
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -803,9 +787,7 @@ FLATmodarray (node *arg_node, info *arg_info)
     DBUG_ASSERT (expr == expr2,
                  "return-node differs from arg_node while flattening an expr!");
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -856,9 +838,7 @@ FLATspfold (node *arg_node, info *arg_info)
         INFO_FLAT_CONTEXT (arg_info) = old_ctxt;
     }
 
-    if (SPFOLD_NEXT (arg_node) != NULL) {
-        SPFOLD_NEXT (arg_node) = TRAVdo (SPFOLD_NEXT (arg_node), arg_info);
-    }
+    SPFOLD_NEXT (arg_node) = TRAVopt(SPFOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -892,9 +872,7 @@ FLATpropagate (node *arg_node, info *arg_info)
     DBUG_ASSERT (expr == expr2,
                  "return-node differs from arg_node while flattening an expr!");
 
-    if (PROPAGATE_NEXT (arg_node) != NULL) {
-        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
-    }
+    PROPAGATE_NEXT (arg_node) = TRAVopt(PROPAGATE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -928,9 +906,7 @@ FLATpart (node *arg_node, info *arg_info)
 
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
 
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt(PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1089,9 +1065,7 @@ FLATcode (node *arg_node, info *arg_info)
         }
     }
 
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

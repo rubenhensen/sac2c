@@ -487,9 +487,7 @@ CFWHfunbundle (node *arg_node, info *arg_info)
         INFO_INBUNDLE (arg_info) = FALSE;
     }
 
-    if (FUNBUNDLE_NEXT (arg_node) != NULL) {
-        FUNBUNDLE_NEXT (arg_node) = TRAVdo (FUNBUNDLE_NEXT (arg_node), arg_info);
-    }
+    FUNBUNDLE_NEXT (arg_node) = TRAVopt(FUNBUNDLE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -554,13 +552,9 @@ CFWHfundef (node *arg_node, info *arg_info)
             fprintf (INFO_FILE (arg_info), "%s%s\n", str, INFO_LANGSYM (arg_info));
             str = MEMfree (str);
 
-            if (FUNDEF_NEXT (arg_node) != NULL) {
-                FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-            }
+            FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
         } else if (INFO_DECL (arg_info) || INFO_DUMMY (arg_info)) {
-            if (FUNDEF_RETS (arg_node) != NULL) {
-                FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-            }
+            FUNDEF_RETS (arg_node) = TRAVopt(FUNDEF_RETS (arg_node), arg_info);
 
             if ((FUNDEF_RETS (arg_node) != NULL) && (FUNDEF_ARGS (arg_node) != NULL)) {
                 switch (INFO_LANG (arg_info)) {
@@ -576,12 +570,10 @@ CFWHfundef (node *arg_node, info *arg_info)
                 }
             }
 
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-            }
+            FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
         }
-    } else if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    } else {
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
     }
 
     holdr = FreeHolder (holdr);
@@ -636,9 +628,7 @@ CFWHarg (node *arg_node, info *arg_info)
           INFO_LANG (arg_info));
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     INFO_COUNTER (arg_info)--;
 
@@ -684,9 +674,7 @@ CFWHret (node *arg_node, info *arg_info)
                 fprintf (INFO_FILE (arg_info), ", ");
             }
         }
-        if (RET_NEXT (arg_node) != NULL) {
-            RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
-        }
+        RET_NEXT (arg_node) = TRAVopt(RET_NEXT (arg_node), arg_info);
         break;
     default:
         DBUG_UNREACHABLE (
@@ -769,16 +757,12 @@ CFWHmodule (node *arg_node, info *arg_info)
     /*
      * 2) print udt defines
      */
-    if (MODULE_TYPES (arg_node) != NULL) {
-        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
-    }
+    MODULE_TYPES (arg_node) = TRAVopt(MODULE_TYPES (arg_node), arg_info);
 
     /*
      * 3) print function headers
      */
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
     /*
      * 4) print the file footer

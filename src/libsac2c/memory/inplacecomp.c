@@ -6,7 +6,7 @@
  *
  * @{
  *     Concept:
- *    
+ *
  *     This traversal tries to propagate upwards suballoc operations to
  *     get rid of copy operations whenever possible
  *
@@ -34,7 +34,7 @@
  *              //  inner = fill (copy (res), inner_mem);  <<<< delete!
  *           } : res;                                      <<<< change!
  *         } : genarray( shp, def, a_mem);
- *     
+ *
  *     We can also deal with res_mem being a reuse of some other array!
  *     In that case, we simply follow the reused identifier further up.
  *
@@ -229,11 +229,11 @@ IPCdoInplaceComputation (node *syntax_tree)
  *
  * @fn node *copyOrArray(node *val, int *depth)
  *
- * @brief expects to obtain either 
+ * @brief expects to obtain either
  *        F_copy ( N_id)     or
  *        [...[ N_id ]...]   (all arrays are singletons!)
  *        as first argument.
- * @param val 
+ * @param val
  * @return returns N_id node and increments depth by the nesting of the N_array
  *         nodes (if val is an N_array)
  *
@@ -353,7 +353,7 @@ removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
  * @fn void ModifyBlock (node *alloc_ass, node *suballoc_ass, node *fill_ass,
  *                       node *new_ret_avis, node *old_rets)
  *
- * @brief performs the 4 modifications on the assignment chain staring with 
+ * @brief performs the 4 modifications on the assignment chain staring with
  *        the assignment that is to be changed into a suballoc:
  *        1) change alloc_ass RHS into ia copy of suballoc_ass
  *        2) delete suballoc_ass
@@ -362,7 +362,7 @@ removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
  *
  *        This also does some weird stuff that I (sbs) do not understand:
  *        - it strips suballoc_ass of potential extra arguments?!
- *        - in case the allocated value is a scalar, it turns it into a 
+ *        - in case the allocated value is a scalar, it turns it into a
  *          one element vector?????!
  *
  *****************************************************************************/
@@ -478,7 +478,7 @@ bool IsAllocReuseFill (node *copy_avis, node **new_copy_avis, node **mem_ass)
         break;
     }
 
-    if ((mem_op != NULL) && 
+    if ((mem_op != NULL) &&
         ((PRF_PRF (mem_op) == F_alloc)
          || (PRF_PRF (mem_op) == F_reuse)
          || (PRF_PRF (mem_op) == F_alloc_or_reuse))) {
@@ -671,7 +671,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
 
         avis = ID_AVIS (EXPRS_EXPR (rets));
 
-        if ((AVIS_SSAASSIGN (avis) != NULL) 
+        if ((AVIS_SSAASSIGN (avis) != NULL)
             && IsSuballocFill (block, avis, &cavis, &sub_ass, &depth)) {
             /*
              * we found:
@@ -902,9 +902,7 @@ IPCfundef (node *arg_node, info *arg_info)
      * Traverse next fundef
      */
     if (arg_info == NULL) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -993,7 +991,7 @@ IPCprf (node *arg_node, info *arg_info)
  *
  * @{
  *     This traversal checks wether the N_avis given in
- *       INFO_NOUSE or the N_avis given in 
+ *       INFO_NOUSE or the N_avis given in
  *       INFO_NOAP appear on the RHS of the given N_assign chain.
  *     The search for INFO_NOAP is restricted to udf function arguments,
  *     and that of INFO_NOUSE is restricted to uses outside of udf
@@ -1042,9 +1040,7 @@ IPCHassign (node *arg_node, info *arg_info)
     if (arg_node != INFO_LASTSAFE (arg_info)) {
         ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
+        ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

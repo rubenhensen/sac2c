@@ -57,15 +57,11 @@ IMPimport (node *arg_node, info *arg_info)
 
     INFO_IMP_CURRENT (arg_info) = IMPORT_MOD (arg_node);
 
-    if (IMPORT_SYMBOL (arg_node) != NULL) {
-        IMPORT_SYMBOL (arg_node) = TRAVdo (IMPORT_SYMBOL (arg_node), arg_info);
-    }
+    IMPORT_SYMBOL (arg_node) = TRAVopt(IMPORT_SYMBOL (arg_node), arg_info);
 
     INFO_IMP_CURRENT (arg_info) = NULL;
 
-    if (IMPORT_NEXT (arg_node) != NULL) {
-        IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
-    }
+    IMPORT_NEXT (arg_node) = TRAVopt(IMPORT_NEXT (arg_node), arg_info);
 
     tmp = IMPORT_NEXT (arg_node);
     arg_node = FREEdoFreeNode (arg_node);
@@ -78,9 +74,7 @@ IMPuse (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (USE_NEXT (arg_node) != NULL) {
-        USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
-    }
+    USE_NEXT (arg_node) = TRAVopt(USE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -90,9 +84,7 @@ IMPexport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (EXPORT_NEXT (arg_node) != NULL) {
-        EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
-    }
+    EXPORT_NEXT (arg_node) = TRAVopt(EXPORT_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -102,9 +94,7 @@ IMPprovide (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (PROVIDE_NEXT (arg_node) != NULL) {
-        PROVIDE_NEXT (arg_node) = TRAVdo (PROVIDE_NEXT (arg_node), arg_info);
-    }
+    PROVIDE_NEXT (arg_node) = TRAVopt(PROVIDE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -118,9 +108,7 @@ IMPsymbol (node *arg_node, info *arg_info)
     DSimportTypedefByName (SYMBOL_ID (arg_node), INFO_IMP_CURRENT (arg_info));
     DSimportObjdefByName (SYMBOL_ID (arg_node), INFO_IMP_CURRENT (arg_info));
 
-    if (SYMBOL_NEXT (arg_node) != NULL) {
-        SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);
-    }
+    SYMBOL_NEXT (arg_node) = TRAVopt(SYMBOL_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

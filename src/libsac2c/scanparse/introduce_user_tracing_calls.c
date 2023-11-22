@@ -223,17 +223,13 @@ IUTCfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNNAME (arg_info) = FUNDEF_NAME (arg_node);
 
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNNAME (arg_info) = NULL;
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -250,9 +246,7 @@ IUTCarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     INFO_BLOCKASSIGN (arg_info) = TBmakeAssign (
       TBmakeLet (NULL,
@@ -279,9 +273,7 @@ IUTCspids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (SPIDS_NEXT (arg_node) != NULL) {
-        SPIDS_NEXT (arg_node) = TRAVdo (SPIDS_NEXT (arg_node), arg_info);
-    }
+    SPIDS_NEXT (arg_node) = TRAVopt(SPIDS_NEXT (arg_node), arg_info);
 
     INFO_POSTASSIGN (arg_info) = TBmakeAssign (
       TBmakeLet (NULL,
@@ -329,9 +321,7 @@ IUTCassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     if (INFO_PREASSIGN (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)

@@ -233,9 +233,7 @@ RERAassign (node *arg_node, info *arg_info)
     xdelete = INFO_DELETE (arg_info);
     INFO_DELETE (arg_info) = FALSE;
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     /*
      * if this assignment is superflouus, delete it
@@ -287,9 +285,7 @@ RERAlet (node *arg_node, info *arg_info)
     /*
      * substitute LHS ids
      */
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
 
     /*
      * check whether this let is of form <id> = <id>
@@ -334,9 +330,7 @@ RERAids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
 
     while (AVIS_SUBST (IDS_AVIS (arg_node)) != NULL) {
         IDS_AVIS (arg_node) = AVIS_SUBST (IDS_AVIS (arg_node));
@@ -393,9 +387,7 @@ RERAfundef (node *arg_node, info *arg_info)
     /*
      * continue with other fundefs
      */
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     /*
      * clean up signature
@@ -509,17 +501,11 @@ RERAmodule (node *arg_node, info *arg_info)
      * to remove artificials from the bodies first. As this is
      * done top-down, FUNS has to be first
      */
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
 
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
+    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
 
-    if (MODULE_FUNSPECS (arg_node) != NULL) {
-        MODULE_FUNSPECS (arg_node) = TRAVdo (MODULE_FUNSPECS (arg_node), arg_info);
-    }
+    MODULE_FUNSPECS (arg_node) = TRAVopt(MODULE_FUNSPECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -529,13 +515,9 @@ RERAwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
+    WITH_CODE (arg_node) = TRAVopt(WITH_CODE (arg_node), arg_info);
 
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVopt(WITH_WITHOP (arg_node), arg_info);
 
     RemoveArtificialWithloopReturns (WITH_WITHOP (arg_node),
                                      CODE_CEXPRS (WITH_CODE (arg_node)),
@@ -549,13 +531,9 @@ RERAwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (WITH2_CODE (arg_node) != NULL) {
-        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-    }
+    WITH2_CODE (arg_node) = TRAVopt(WITH2_CODE (arg_node), arg_info);
 
-    if (WITH2_WITHOP (arg_node) != NULL) {
-        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
-    }
+    WITH2_WITHOP (arg_node) = TRAVopt(WITH2_WITHOP (arg_node), arg_info);
 
     RemoveArtificialWithloopReturns (WITH2_WITHOP (arg_node),
                                      CODE_CEXPRS (WITH2_CODE (arg_node)),

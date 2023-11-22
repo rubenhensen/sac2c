@@ -615,9 +615,7 @@ BTFdoBundleToFundef (node *syntax_tree)
     info = MakeInfo ();
 
     TRAVpush (TR_btf);
-    if (MODULE_FUNS (syntax_tree) != NULL) {
-        MODULE_FUNS (syntax_tree) = TRAVdo (MODULE_FUNS (syntax_tree), info);
-    }
+    MODULE_FUNS (syntax_tree) = TRAVopt(MODULE_FUNS (syntax_tree), info);
     TRAVpop ();
 
     info = FreeInfo (info);
@@ -659,9 +657,7 @@ BTFfunbundle (node *arg_node, info *arg_info)
     /*
      * bottom up
      */
-    if (FUNBUNDLE_NEXT (arg_node) != NULL) {
-        FUNBUNDLE_NEXT (arg_node) = TRAVdo (FUNBUNDLE_NEXT (arg_node), arg_info);
-    }
+    FUNBUNDLE_NEXT (arg_node) = TRAVopt(FUNBUNDLE_NEXT (arg_node), arg_info);
 
     args = ArgsToSacArgs (FUNDEF_ARGS (FUNBUNDLE_FUNDEF (arg_node)));
     rets = RetsToSacArgs (FUNDEF_RETS (FUNBUNDLE_FUNDEF (arg_node)));
@@ -699,9 +695,7 @@ BTFfunbundle (node *arg_node, info *arg_info)
     result = TCappendFundef (result, FUNBUNDLE_NEXT (arg_node));
     arg_node = FREEdoFreeNode (arg_node);
 
-    if (INFO_RETS (arg_info) != NULL) {
-        INFO_RETS (arg_info) = FREEdoFreeTree (INFO_RETS (arg_info));
-    }
+    INFO_RETS (arg_info) = FREEoptFreeTree(INFO_RETS (arg_info));
     INFO_ARGS (arg_info) = NULL;
 
     DBUG_RETURN (result);
@@ -754,9 +748,7 @@ BTFfundef (node *arg_node, info *arg_info)
             INFO_CODE (arg_info) = BuildApplication (arg_node, arg_info);
         }
     } else {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

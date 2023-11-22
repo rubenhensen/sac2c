@@ -356,9 +356,7 @@ RCIassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
 
     INFO_ASSIGN (arg_info) = arg_node;
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
@@ -388,9 +386,7 @@ RCIlet (node *arg_node, info *arg_info)
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (INFO_MUSTCOUNT (arg_info)) {
-        if (LET_IDS (arg_node) != NULL) {
-            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-        }
+        LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -412,9 +408,7 @@ RCIreturn (node *arg_node, info *arg_info)
     if (!FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
         INFO_MODE (arg_info) = rc_apuse;
 
-        if (RETURN_EXPRS (arg_node) != NULL) {
-            RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-        }
+        RETURN_EXPRS (arg_node) = TRAVopt(RETURN_EXPRS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -462,9 +456,7 @@ RCIids (node *arg_node, info *arg_info)
     INFO_POSTASSIGN (arg_info)
       = AdjustRC (IDS_AVIS (arg_node), count - 1, INFO_POSTASSIGN (arg_info));
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -794,9 +786,7 @@ RCIarray (node *arg_node, info *arg_info)
 
     INFO_MODE (arg_info) = rc_prfuse;
 
-    if (ARRAY_AELEMS (arg_node) != NULL) {
-        ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
-    }
+    ARRAY_AELEMS (arg_node) = TRAVopt(ARRAY_AELEMS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1064,9 +1054,7 @@ RCIcode (node *arg_node, info *arg_info)
     /*
      * count the references in next code
      */
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    CODE_NEXT (arg_node) = TRAVopt(CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1124,9 +1112,7 @@ RCIrange (node *arg_node, info *arg_info)
     /*
      * count the references in next code
      */
-    if (RANGE_NEXT (arg_node) != NULL) {
-        RANGE_NEXT (arg_node) = TRAVdo (RANGE_NEXT (arg_node), arg_info);
-    }
+    RANGE_NEXT (arg_node) = TRAVopt(RANGE_NEXT (arg_node), arg_info);
 
     /*
      * finally count the lowerbound, upperbound and chunksize in prf mode
@@ -1153,13 +1139,9 @@ RCIwithid (node *arg_node, info *arg_info)
 
     INFO_MODE (arg_info) = rc_prfuse;
 
-    if (WITHID_IDS (arg_node) != NULL) {
-        WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
-    }
+    WITHID_IDS (arg_node) = TRAVopt(WITHID_IDS (arg_node), arg_info);
 
-    if (WITHID_IDXS (arg_node) != NULL) {
-        WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
-    }
+    WITHID_IDXS (arg_node) = TRAVopt(WITHID_IDXS (arg_node), arg_info);
 
     if (INFO_WITHVECNEEDED (arg_info)) {
         WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
@@ -1196,9 +1178,7 @@ RCIgenarray (node *arg_node, info *arg_info)
      */
     INFO_MODE (arg_info) = rc_prfuse;
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
+    GENARRAY_DEFAULT (arg_node) = TRAVopt(GENARRAY_DEFAULT (arg_node), arg_info);
 
     GENARRAY_DEFSHAPEEXPR (arg_node)
       = TRAVopt (GENARRAY_DEFSHAPEEXPR (arg_node), arg_info);
@@ -1206,9 +1186,7 @@ RCIgenarray (node *arg_node, info *arg_info)
     INFO_MODE (arg_info) = rc_apuse;
     GENARRAY_MEM (arg_node) = TRAVdo (GENARRAY_MEM (arg_node), arg_info);
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1241,9 +1219,7 @@ RCImodarray (node *arg_node, info *arg_info)
     INFO_MODE (arg_info) = rc_apuse;
     MODARRAY_MEM (arg_node) = TRAVdo (MODARRAY_MEM (arg_node), arg_info);
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1282,9 +1258,7 @@ RCIfold (node *arg_node, info *arg_info)
         INFO_MODE (arg_info) = rc_apuse;
         FOLD_PARTIALMEM (arg_node) = TRAVdo (FOLD_PARTIALMEM (arg_node), arg_info);
     }
-    if (FOLD_NEXT (arg_node) != NULL) {
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-    }
+    FOLD_NEXT (arg_node) = TRAVopt(FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1309,9 +1283,7 @@ RCIpropagate (node *arg_node, info *arg_info)
     INFO_MODE (arg_info) = rc_apuse;
     PROPAGATE_DEFAULT (arg_node) = TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
 
-    if (PROPAGATE_NEXT (arg_node) != NULL) {
-        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
-    }
+    PROPAGATE_NEXT (arg_node) = TRAVopt(PROPAGATE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

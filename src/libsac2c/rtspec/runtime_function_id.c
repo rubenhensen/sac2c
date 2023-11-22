@@ -95,9 +95,7 @@ UIDarg (node *arg_node, info *arg_info)
         INFO_ISGENERIC (arg_info) = TRUE;
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt(ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -136,9 +134,7 @@ UIDfundef (node *arg_node, info *arg_info)
         INFO_ISGENERIC (arg_info) = FALSE;
         INFO_ISUSER (arg_info) = FALSE;
 
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
+        FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
 
         if (INFO_ISGENERIC (arg_info) && !INFO_ISUSER (arg_info)) {
             FUNDEF_RTSPECID (arg_node) = (char *)MEMmalloc (sizeof (char) * 37);

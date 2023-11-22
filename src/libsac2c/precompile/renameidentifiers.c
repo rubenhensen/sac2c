@@ -326,9 +326,7 @@ RIDtypedef (node *arg_node, info *arg_info)
     TYPEDEF_NAME (arg_node) = newname;
     TYPEDEF_NS (arg_node) = NSfreeNamespace (TYPEDEF_NS (arg_node));
 
-    if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
-    }
+    TYPEDEF_NEXT (arg_node) = TRAVopt(TYPEDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -380,9 +378,7 @@ RIDobjdef (node *arg_node, info *arg_info)
         }
     }
 
-    if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
-    }
+    OBJDEF_NEXT (arg_node) = TRAVopt(OBJDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -414,9 +410,7 @@ RIDfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     arg_node = RenameFun (arg_node);
 
@@ -476,9 +470,7 @@ RIDreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-    }
+    RETURN_EXPRS (arg_node) = TRAVopt(RETURN_EXPRS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -498,9 +490,7 @@ RIDap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
+    AP_ARGS (arg_node) = TRAVopt(AP_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -520,9 +510,7 @@ RIDicm (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (ICM_ARGS (arg_node) != NULL) {
-        ICM_ARGS (arg_node) = TRAVdo (ICM_ARGS (arg_node), arg_info);
-    }
+    ICM_ARGS (arg_node) = TRAVopt(ICM_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

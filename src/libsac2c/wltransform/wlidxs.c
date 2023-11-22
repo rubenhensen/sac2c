@@ -137,9 +137,7 @@ WLIDXfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -207,7 +205,7 @@ WLIDXwithid (node *arg_node, info *arg_info)
                  * To do this, we need pointers to the wlidx's and their corresponding
                  * lhs variables (as these do hold the result types).
                  * We hold these in 'idxs' and in 'ids2', respectively.
-                 * Originally, ids2 was simply using INFO_LHS. However, that is not 
+                 * Originally, ids2 was simply using INFO_LHS. However, that is not
                  * possible as issue 2270 demonstrates! The problem is that idxs can be shorter
                  * than INFO_LHS in case of re-uses! We can only guarantee a 1-1 correspondence
                  * between the two if we create a new ids-chain for ids2 that leaves out
@@ -271,9 +269,7 @@ WLIDXwithid (node *arg_node, info *arg_info)
         }
 
         INFO_WITHID (arg_info) = arg_node;
-        if (idsidx != NULL) {
-            idsidx = FREEdoFreeTree (idsidx);
-        }
+        idsidx = FREEoptFreeTree(idsidx);
     } else {
         WITHID_IDXS (arg_node) = DUPdoDupTree (WITHID_IDXS (INFO_WITHID (arg_info)));
     }

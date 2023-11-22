@@ -21,7 +21,7 @@
 /**
  * @file handle_with_loop_dots.c
  *
- * This file elides dots from With-Loop generators and it 
+ * This file elides dots from With-Loop generators and it
  * standardises all generator relations to (lb <= iv < ub ...)
  *
  * Dots at boundary positions within genarray/ modarray - withloops
@@ -32,7 +32,7 @@
  * The semantics has been refined as of Nov 2018! Now, the dots no
  * longer are necessarily of maximum length. Instead, the length
  * adjusts to the length of the scalar index-vector (if present)
- * or the length of the non-dot bound (if present). 
+ * or the length of the non-dot bound (if present).
  * In case both are absent, the old behaviour is maintained.
  *
  * The reason for this extension is that it makes the resolution
@@ -47,7 +47,7 @@
  * with the old semantics of the dot in the constraints would have meant
  *
  *   { [.,i] -> m[i] | [5] <= [i] < [9,9] }
- * 
+ *
  * which is illegal. With the new, more flexible semantics of the dot in
  * relations we obtain:
  *
@@ -180,7 +180,7 @@ HWLDwith (node *arg_node, info *arg_info)
      * trigger adjustments in the parts if needed:
      */
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    
+
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     INFO_HWLD_DOTSHAPE (arg_info) = olddotshape;
@@ -283,9 +283,7 @@ HWLDpart (node *arg_node, info *arg_info)
      * freed in HWLDgenerator, INFO_HWLD_DOTSHAPE is valid for all partitions
      * and, therefore, needs to be freed here.
      */
-    if (INFO_HWLD_DOTSHAPE (arg_info) != NULL) {
-        INFO_HWLD_DOTSHAPE (arg_info) = FREEdoFreeTree (INFO_HWLD_DOTSHAPE (arg_info));
-    }
+    INFO_HWLD_DOTSHAPE (arg_info) = FREEoptFreeTree(INFO_HWLD_DOTSHAPE (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -337,7 +335,7 @@ HWLDgenerator (node *arg_node, info *arg_info)
     if ((INFO_HWLD_DOTSHAPE (arg_info) == NULL)
         && (DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))
             || DOT_ISSINGLE (GENERATOR_BOUND2 (arg_node)))) {
-        CTIabort (LINE_TO_LOC (global.linenum), 
+        CTIabort (LINE_TO_LOC (global.linenum),
                   "Dot notation is only allowed in genarray and modarray with loops; ");
     }
 
@@ -347,7 +345,7 @@ HWLDgenerator (node *arg_node, info *arg_info)
      * generator components. Therefore, we make sure INFO_HWLD_IDXLEN
      * is set appropriately whenever some length info is given.
      * Note here, that we CANNOT put this info into INFO_HWLD_DOTSHAPE
-     * as that info is shared across multiple partitions while 
+     * as that info is shared across multiple partitions while
      * INFO_HWLD_IDXLEN is partition specific.
      */
     if (INFO_HWLD_IDXLEN (arg_info) == NULL) {
@@ -380,7 +378,7 @@ HWLDgenerator (node *arg_node, info *arg_info)
                                           DUPdoDupTree (GENERATOR_WIDTH (arg_node))));
             DBUG_PRINT ("IDXLEN set to width length!");
         }
-    } 
+    }
     DBUG_PRINT ("final IDXLEN %s", ((INFO_HWLD_IDXLEN (arg_info) == NULL)?
                                     "not set - full length!" :
                                     "set to"));
@@ -443,9 +441,7 @@ HWLDgenerator (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    if (INFO_HWLD_IDXLEN (arg_info) != NULL) {
-        INFO_HWLD_IDXLEN (arg_info) = FREEdoFreeTree (INFO_HWLD_IDXLEN (arg_info));
-    }
+    INFO_HWLD_IDXLEN (arg_info) = FREEoptFreeTree(INFO_HWLD_IDXLEN (arg_info));
 
     DBUG_RETURN (arg_node);
 }
