@@ -1,7 +1,7 @@
 // Check whether WLMP transforms aplmod using the range partitioning method when it has all information at compile-time
 
 // SAC_TEST|include common.mk
-// SAC_TEST|SAC2C_FLAGS += -v0 -maxoptcyc 3 -dowlmp -DINLINE_MACRO=noinline
+// SAC_TEST|SAC2C_FLAGS += -v0 -maxoptcyc 3 -dosop -dosrp -DINLINE_MACRO=noinline
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 
 

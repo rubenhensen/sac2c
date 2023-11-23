@@ -7,7 +7,7 @@
 // Remember that u is the upper bound, x is the divisor, and c is the offset.
 
 // SAC_TEST|include common.mk
-// SAC_TEST|SAC2C_FLAGS += -v0 -maxoptcyc 3 -noscs -dowlmp
+// SAC_TEST|SAC2C_FLAGS += -v0 -maxoptcyc 3 -noscs -dosop -dosrp
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 
 // SAC_TEST|all: <file-name-we>

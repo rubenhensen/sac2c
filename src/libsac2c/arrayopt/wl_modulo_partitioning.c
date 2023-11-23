@@ -425,6 +425,12 @@
  *     Details are explained in SRP section above.
  *   -suppress_wlmp_code_size
  *     This setting disables warnings for excessive code size increases.
+ *   -dosop / nosop (default: do)
+ *     These flags enable and disable Shared Offset Partitioning.
+ *     If srp is also disabled, traversal of this module is disabled.
+ *   -dosrp / nosrp (default: do)
+ *     These flags enable and disable Shared Result Partitioning.
+ *     If sop is also disabled, traversal of this module is disabled.
  *
  *
  * Limitations/Potential improvements:
@@ -1662,6 +1668,10 @@ DetermineNrSharedResultPartitions (bool is_const_lower_bound,
 
     DBUG_ENTER ();
 
+    if (!global.optimize.dosrp) { // Exit if SRP is disabled.
+         DBUG_RETURN (0); 
+    }
+
     if (!is_const_divisor || divisor == 0) {
         DBUG_RETURN (0);
     }
@@ -1713,6 +1723,10 @@ DetermineNrSharedOffsetPartitions (node *upper_bound_scalar,
     node *negative_divisor;
 
     DBUG_ENTER ();
+
+    if (!global.optimize.dosop) { // Exit if SOP is disabled.
+         DBUG_RETURN (0); 
+    }
 
     if (is_const_divisor && divisor == 0) {
         DBUG_PRINT ("Shared offset partitioning case C(x = 0)");
