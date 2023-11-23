@@ -225,38 +225,42 @@ const char *
 SAC_PrintShape (SAC_array_descriptor_t desc)
 {
     int pos;
-    char bufA[MAX_SHAPE_SIZE];
-    char bufB[MAX_SHAPE_SIZE];
-    char *from = bufA;
-    char *to = bufB;
+    char buf[MAX_SHAPE_SIZE];
+    char *buffer;
     char *res;
-    int written;
+    int space, written;
 
-    from[0] = '[';
-    from[1] = '\0';
+    buf[0] = '[';
+    buf[1] = '\0';
+    buffer = &buf[2];
+    space = MAX_SHAPE_SIZE-2;
+    
 
     for (pos = 0; pos < DESC_DIM (desc); pos++) {
         if (pos < DESC_DIM (desc) - 1) {
-            written = snprintf (to, MAX_SHAPE_SIZE - 5, "%s %d,", from,
-                                (int)DESC_SHAPE (desc, pos));
+            written = snprintf (buffer, space - 5, " %d,",
+                                        (int)DESC_SHAPE (desc, pos));
         } else {
-            written = snprintf (to, MAX_SHAPE_SIZE - 5, "%s %d", from,
-                                (int)DESC_SHAPE (desc, pos));
+            written = snprintf (buffer, space - 5, " %d ",
+                                        (int)DESC_SHAPE (desc, pos));
         }
-        if (written == MAX_SHAPE_SIZE - 5) {
-            snprintf (from, MAX_SHAPE_SIZE, "%s...", to);
+        if (written >= space - 5) {
+            buffer += (space -6);
+            space = 6;
+            snprintf (buffer, 6, "...");
+            buffer += 3;
+            space = 3;
             break;
         } else {
-            char *tmp = to;
-            to = from;
-            from = tmp;
+            buffer += (written-1);
+            space -= (written-1);
         }
     }
 
-    snprintf (to, MAX_SHAPE_SIZE, "%s]", from);
+    snprintf (buffer, 3, " ]");
 
-    res = (char *)malloc (strlen (to) + 1);
-    strcpy (res, to);
+    res = (char *)malloc (strlen (buf) + 1);
+    strcpy (res, buf);
 
     return (res);
 }

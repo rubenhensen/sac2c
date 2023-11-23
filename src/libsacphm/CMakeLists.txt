@@ -27,6 +27,9 @@ SET_TARGET_PROPERTIES (libsacphm-${TARGET}
   PROPERTIES
     OUTPUT_NAME sacphm
     LIBRARY_OUTPUT_DIRECTORY  "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}"
+    # we *must* not put any fpic in here as some compilers (eg nvcc) cannot handle this
+    # this implies that the COMPILE_RMOD setup needs to include this vi CFLAGS!
+    POSITION_INDEPENDENT_CODE False
 )
 
 ADD_LIBRARY (libsacphmdiag-${TARGET} SHARED ${LIBSAC_SRC})
@@ -35,4 +38,7 @@ SET_TARGET_PROPERTIES (libsacphmdiag-${TARGET}
     COMPILE_DEFINITIONS DIAG
     OUTPUT_NAME sacphm.diag
     LIBRARY_OUTPUT_DIRECTORY  "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}"
+    # we *must* not put any fpic in here as some compilers (eg nvcc) cannot handle this
+    # this implies that the COMPILE_RMOD setup needs to include this vi CFLAGS!
+    POSITION_INDEPENDENT_CODE False
 )

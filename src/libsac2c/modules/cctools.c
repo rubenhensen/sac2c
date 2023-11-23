@@ -75,16 +75,52 @@
  *    void CCTcompileOnly (void)  used by saccc (script that calls sac2c -cc...)
  *    void CCTlinkOnly (void)     used by saccc (script that calls sac2c -cc...)
  *
+ *
+ *  External Use in the Entire Build Process
+ *  ----------------------------------------
+ *
+ * What renders this a particular challenge is that it is difficult to
+ * figure how/ when these are used during the build process. Here, I try
+ * to capture what I reverse-engineered so far:
+ *
+ * We have at least 3 scenarios:
+ *  1) sac2c is compiling a sac program or a sac module (this includes 
+ *     the compilation of the sacprelude.sac!). In this scenario, we
+ *     always use CCTpreprocessCompileAndLink. It uses
+ *     CCP_PROG, COMPILE_PROG, and LINK_PROG  or 
+ *     CCP_MOD , COMPILE_MOD, and LINK_MOD 
+ *     to actually to the work.
+ *  2) we are compiling the runtime libraries. In this case, the build
+ *     system calls "saccc", a python script within the build-directory.
+ *     it takes cc-like arguments and figures out what needs to happen.
+ *     If compilation is needed, it calls "sac2c -cc ccrmod" which 
+ *     triggers CCTcompileOnly using COMPILE_RMOD. If linking is 
+ *     needed, this triggers CCTlinkOnly using LINK_RMOD.
+ *  3) When we compile the Stdlib, we have 3 cases:
+ *      a) it is a normal sac-module => 1)
+ *      b) it is an .xsac module => we copy it to rename
+ *                                  it into .sac => 1)
+ *      c) it is an .c module => similar to 2) but we call sac2c directly.
+ *
+ * Most likely, there are further cases in the context of sac4c but
+ * I have not yet reverse engineered that....
+ *
+ *
+ *  Implementation
+ *  ---------------
+ *
  * These three functions put together system calls for preprocessing,
  * compiling, and linking files, building on one static function for
  * each of these tasks:
  *
- *    void RunCpp (const char *command, const char *source_dir, const char *source,
- *                 const char *libname_subst)
+ *    void RunCpp (const char *command,
+ *                  const char *source_dir, const char *source, const char *sext,
+ *                  const char *target_dir, const char *target, const char *text)
  *
- *    void RunCc (const char *command, const char *source_dir, const char *source,
- *                const char *libname_subst, const char *source_ext, const char *obj_ext,
- *                str_buf *objs_buf)
+ *    void RunCc (const char *command,
+ *                 const char *source_dir, const char *source, const char *sext,
+ *                 const char *target_dir, const char *target, const char *text,
+ *                 str_buf *objs_buf)
  *
  *     void RunLd (const char *command, const char *path_subst, const char *objects_subst,
  *                 const char *target_subst, const char *libname_subst)
@@ -789,32 +825,31 @@ SubstituteAndRun (const char *command, const char *path_subst, const char *sourc
 
 /*******************************************************************************
  *
- * @fn void RunCpp (const char *command, const char *source_dir,
- *                  const char *source, const char *libname_subst)
+ * @fn void RunCpp (const char *command,
+ *                  const char *source_dir, const char *source, const char *sext,
+ *                  const char *target_dir, const char *target, const char *text)
  *
  * @brief central tool for calling cpp
  *
  *****************************************************************************/
 static void
 RunCpp (const char *command, const char *source_dir, const char *source,
-        const char *libname_subst)
+        const char *sext, const char *target_dir, const char *target, const char *text)
 {
-    const char *path_subst = "";
-    const char *objects_subst = "";
     char *source_subst;
     char *target_subst;
  
     DBUG_ENTER ();
 
-    source_subst = STRcatn (4, source_dir, "/", source, global.config.ccp_cext);
-    target_subst = STRcatn (4, source_dir, "/", source, global.config.ccp_objext);
+    source_subst = STRcatn (4, source_dir, "/", source, sext);
+    target_subst = STRcatn (4, target_dir, "/", target, text);
 
-    CTInote (EMPTY_LOC, "Preprocessing C source \"%s%s\"", source, global.config.ccp_cext);
+    CTInote (EMPTY_LOC, "Preprocessing C source \"%s\" into \"%s\"",
+                         source_subst, target_subst);
 
     InitPathList ();
 
-    SubstituteAndRun (command, path_subst, source_subst,
-                               objects_subst, target_subst, libname_subst);
+    SubstituteAndRun (command, "", source_subst, "", target_subst, "");
 
     source_subst = MEMfree (source_subst);
     target_subst = MEMfree (target_subst);
@@ -824,36 +859,35 @@ RunCpp (const char *command, const char *source_dir, const char *source,
 
 /*******************************************************************************
  *
- * @fn void RunCc (const char *command, const char *source_dir,
- *                 const char *source, const char *libname_subst,
- *                 const char *source_ext, const char *obj_ext, str_buf *objs_buf)
+ * @fn void RunCc (const char *command,
+ *                 const char *source_dir, const char *source, const char *sext,
+ *                 const char *target_dir, const char *target, const char *text,
+ *                 str_buf *objs_buf)
  *
- * @brief central tool for calling cc
+ * @brief central tool for calling cc; objs_buf is collecting targets (with path!)
  *
  *****************************************************************************/
 static void
 RunCc (const char *command, const char *source_dir, const char *source,
-       const char *libname_subst, const char *source_ext, const char *obj_ext,
+       const char *sext, const char *target_dir, const char *target, const char *text,
        str_buf *objs_buf)
 {
-    const char *path_subst = global.tmp_dirname;
-    const char *objects_subst = "";
-
-    DBUG_ENTER ();
     char *source_subst;
     char *target_subst;
 
-    source_subst = STRcatn (4, source_dir, "/", source, source_ext);
-    target_subst = STRcatn (4, source_dir, "/", source, obj_ext);
+    DBUG_ENTER ();
+
+    source_subst = STRcatn (4, source_dir, "/", source, sext);
+    target_subst = STRcatn (4, target_dir, "/", target, text);
 
     SBUFprintf (objs_buf, " %s", target_subst);
   
-    CTInote (EMPTY_LOC, "Compiling C source \"%s%s\"", source, source_ext);
+    CTInote (EMPTY_LOC, "Compiling C source \"%s\" into \"%s\"",
+                        source_subst, target_subst);
 
     InitPathList ();
 
-    SubstituteAndRun (command, path_subst, source_subst,
-                               objects_subst, target_subst, libname_subst);
+    SubstituteAndRun (command, "", source_subst, "", target_subst, "");
 
     source_subst = MEMfree (source_subst);
     target_subst = MEMfree (target_subst);
@@ -957,9 +991,13 @@ HandleProgram (void)
 
     objs_buf = SBUFcreate (1);
 
-    RunCpp (global.config.ccp_prog, global.targetdir, global.outfilename, "");
-    RunCc (global.config.compile_prog, global.targetdir, global.outfilename, "",
-           global.config.cext, global.config.objext, objs_buf);
+    RunCpp (global.config.ccp_prog,
+            global.targetdir, global.outfilename, global.config.ccp_cext,
+            global.targetdir, global.outfilename, global.config.ccp_objext);
+    RunCc (global.config.compile_prog,
+           global.targetdir, global.outfilename, global.config.cext,
+           global.targetdir, global.outfilename, global.config.objext,
+           objs_buf);
 
     // Link phase: append the object dependencies to objs_buf,
     // Then proceed to link command.
@@ -1006,37 +1044,58 @@ HandleModule (void)
 
     for (i = 1; i <= global.num_fun_files; ++i) {
         snprintf (source, 20, "fun%d", i);
-        RunCpp (global.config.ccp_mod, global.tmp_dirname, source, libname_subst);
-        RunCc (global.config.compile_mod, global.tmp_dirname, source, libname_subst,
-               global.config.cext, global.config.objext, objs_buf);
+        RunCpp (global.config.ccp_mod,
+                global.tmp_dirname, source, global.config.ccp_cext,
+                global.tmp_dirname, source, global.config.ccp_objext);
+        RunCc (global.config.compile_mod,
+               global.tmp_dirname, source, global.config.cext,
+               global.tmp_dirname, source, global.config.objext,
+               objs_buf);
     }
     MEMfree (source);
 
-    RunCpp (global.config.ccp_mod, global.tmp_dirname, "globals", libname_subst);
-    RunCc (global.config.compile_mod, global.tmp_dirname, "globals", libname_subst,
-           global.config.cext, global.config.objext, objs_buf);
+    RunCpp (global.config.ccp_mod,
+            global.tmp_dirname, "globals", global.config.ccp_cext,
+            global.tmp_dirname, "globals", global.config.ccp_objext);
+    RunCc (global.config.compile_mod,
+           global.tmp_dirname, "globals", global.config.cext,
+           global.tmp_dirname, "globals", global.config.objext, objs_buf);
 
     if (global.filetype == FT_cmod) {
-        RunCpp (global.config.ccp_mod, global.tmp_dirname, "interface", libname_subst);
-        RunCc (global.config.compile_mod, global.tmp_dirname, "interface", libname_subst,
-               global.config.cext, global.config.objext, objs_buf);
-        RunCpp (global.config.ccp_mod, global.tmp_dirname, "sacargcopy", libname_subst);
-        RunCc (global.config.compile_mod, global.tmp_dirname, "sacargcopy", libname_subst,
-               global.config.cext, global.config.objext, objs_buf);
-        RunCpp (global.config.ccp_mod, global.tmp_dirname, "sacargfree", libname_subst);
-        RunCc (global.config.compile_mod, global.tmp_dirname, "sacargfree", libname_subst,
-               global.config.cext, global.config.objext, objs_buf);
+        RunCpp (global.config.ccp_mod,
+                global.tmp_dirname, "interface", global.config.ccp_cext,
+                global.tmp_dirname, "interface", global.config.ccp_objext);
+        RunCc (global.config.compile_mod,
+               global.tmp_dirname, "interface", global.config.cext,
+               global.tmp_dirname, "interface", global.config.objext, objs_buf);
+        RunCpp (global.config.ccp_mod,
+                global.tmp_dirname, "sacargcopy", global.config.ccp_cext,
+                global.tmp_dirname, "sacargcopy", global.config.ccp_objext);
+        RunCc (global.config.compile_mod,
+               global.tmp_dirname, "sacargcopy", global.config.cext,
+               global.tmp_dirname, "sacargcopy", global.config.objext, objs_buf);
+        RunCpp (global.config.ccp_mod,
+                global.tmp_dirname, "sacargfree", global.config.ccp_cext,
+                global.tmp_dirname, "sacargfree", global.config.ccp_objext);
+        RunCc (global.config.compile_mod,
+               global.tmp_dirname, "sacargfree", global.config.cext,
+               global.tmp_dirname, "sacargfree", global.config.objext, objs_buf);
     } else if (!global.notree) {
-        RunCc (global.config.compile_tree, global.tmp_dirname, "serialize", libname_subst,
-               global.config.tree_cext, global.config.tree_objext, tree_objs_buf);
-        RunCc (global.config.compile_tree, global.tmp_dirname, "filenames", libname_subst,
-               global.config.tree_cext, global.config.tree_objext, tree_objs_buf);
-        RunCc (global.config.compile_tree, global.tmp_dirname, "namespacemap", libname_subst,
-               global.config.tree_cext, global.config.tree_objext, tree_objs_buf);
-        RunCc (global.config.compile_tree, global.tmp_dirname, "symboltable", libname_subst,
-               global.config.tree_cext, global.config.tree_objext, tree_objs_buf);
-        RunCc (global.config.compile_tree, global.tmp_dirname, "dependencytable", libname_subst,
-               global.config.tree_cext, global.config.tree_objext, tree_objs_buf);
+        RunCc (global.config.compile_tree,
+               global.tmp_dirname, "serialize", global.config.tree_cext,
+               global.tmp_dirname, "serialize", global.config.tree_objext, tree_objs_buf);
+        RunCc (global.config.compile_tree,
+               global.tmp_dirname, "filenames", global.config.tree_cext,
+               global.tmp_dirname, "filenames", global.config.tree_objext, tree_objs_buf);
+        RunCc (global.config.compile_tree,
+               global.tmp_dirname, "namespacemap", global.config.tree_cext,
+               global.tmp_dirname, "namespacemap", global.config.tree_objext, tree_objs_buf);
+        RunCc (global.config.compile_tree,
+               global.tmp_dirname, "symboltable", global.config.tree_cext,
+               global.tmp_dirname, "symboltable", global.config.tree_objext, tree_objs_buf);
+        RunCc (global.config.compile_tree,
+               global.tmp_dirname, "dependencytable", global.config.tree_cext,
+               global.tmp_dirname, "dependencytable", global.config.tree_objext, tree_objs_buf);
     }
 
     // Link phase: append the object dependencies to objects_buf,
@@ -1140,7 +1199,13 @@ node *CCTpreprocessCompileAndLink (node *syntax_tree)
  *****************************************************************************/
 void CCTcompileOnly (void)
 {
-    char *path_subst;
+    str_buf *objs_buf;
+    char *target_dir_subst;
+    char *target_subst;
+    char *target_subst_strip;
+    char *source_dir_subst;
+    char *source_subst;
+    const char *cpp_dir_subst;
 
     DBUG_ENTER ();
 
@@ -1153,21 +1218,53 @@ void CCTcompileOnly (void)
         CTIabort (EMPTY_LOC, "Cannot proceed: no output file specified");
     }
 
-    path_subst = FMGRdirname (global.outfilename);
-
-    CTInote (EMPTY_LOC, "Compiling C source \"%s\"", global.sacfilename);
+    source_dir_subst = FMGRdirname (global.sacfilename);
+    source_subst = FMGRbasename (global.sacfilename);
+    objs_buf = SBUFcreate (1);
+    target_dir_subst = FMGRdirname (global.outfilename);
+    if (STReqn (target_dir_subst, "/dev", 4)) {
+        cpp_dir_subst = global.tmp_dirname;
+        DBUG_PRINT ("outfile is a device using tmp dir \"%s\" for cpp output!",
+                    global.tmp_dirname);
+    } else {
+        DBUG_PRINT ("outfile dir \"%s\" reused for cpp output!",
+                    target_dir_subst);
+        cpp_dir_subst = target_dir_subst;
+    }
+    target_subst = FMGRbasename (global.outfilename);
+    target_subst_strip = FMGRstripExt (target_subst);
 
     InitPathList ();
-    /*
-     * Here we use global.config.compile_rmod for all cases as this is the
-     * only way to avoid splitting the compilation into CPP and CC.
-     * and COMPILE_PROG, COMPILE_MOD, COMPILE_RMOD are identical, otherwise.
-     */
-    SubstituteAndRun (global.config.compile_rmod, path_subst, global.sacfilename,
-                      "", global.outfilename, "");
+
+    if (global.do_ccompile == DO_C_rmod) {
+        RunCc (global.config.compile_rmod,
+               source_dir_subst, source_subst, "",  // source_subst HAS an extension!
+               target_dir_subst, target_subst, "", objs_buf); // so does target_subst
+
+    } else if (global.do_ccompile == DO_C_mod) {
+        RunCpp (global.config.ccp_mod,
+                source_dir_subst, source_subst, "", // as above!
+                cpp_dir_subst, target_subst_strip, global.config.ccp_objext);
+        RunCc (global.config.compile_mod,
+               cpp_dir_subst, target_subst_strip, global.config.ccp_objext,
+               target_dir_subst, target_subst, "", objs_buf);
+
+    } else { // DO_C_prog
+        RunCpp (global.config.ccp_prog,
+                source_dir_subst, source_subst, "", // as bove!
+                cpp_dir_subst, target_subst_strip, global.config.ccp_objext);
+        RunCc (global.config.compile_prog,
+               cpp_dir_subst, target_subst_strip, global.config.ccp_objext,
+               target_dir_subst, target_subst, "", objs_buf);
+    }
     DeletePathList ();
 
-    MEMfree (path_subst);
+    SBUFfree (objs_buf);
+    MEMfree (target_dir_subst);
+    MEMfree (target_subst);
+    MEMfree (target_subst_strip);
+    MEMfree (source_dir_subst);
+    MEMfree (source_subst);
 
     DBUG_RETURN ();
 }
@@ -1209,9 +1306,7 @@ void CCTlinkOnly (void)
 
     CTInote (EMPTY_LOC, "Linking C objects \"%s\"", global.outfilename);
 
-    InitPathList ();
-    SubstituteAndRun (cmd, path_subst, "", global.sacfilename, global.outfilename, libname_subst);
-    DeletePathList ();
+    RunLd (cmd, path_subst, global.sacfilename, global.outfilename, libname_subst);
 
     MEMfree (tmp);
     MEMfree (path_subst);

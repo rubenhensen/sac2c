@@ -437,43 +437,47 @@ SET (CUDA_ARCH)
 IF (CUDA)
   FIND_PACKAGE (CUDAToolkit)
   IF (CUDAToolkit_FOUND)
-    MESSAGE (STATUS "Testing CUDA Device...")
-    # the TRY_RUN uses the system CC to compile a program that
-    # probes the system for a CUDA device and determines the
-    # CUDA Compatibility of that devices - this is stored within
-    # the sac2crc as CUDA_ARCH. We use CC, rather than NVCC, as
-    # the code only calls CUDA runtime functions, no kernel or
-    # other GPU related operation is done (or can be done).
-    # If the code fails (either because the system doesn't have
-    # a CUDA device, or because of some runtime error), we still
-    # setup of build for CUDA, but use the lowest CC value
-    # per default.
-    TRY_RUN (CUDA_R_RESULT CUDA_C_RESULT
-      ${CMAKE_BINARY_DIR} ${PROJECT_SOURCE_DIR}/cmake/sac2c/cuda_get_compute_com.c
-      CMAKE_FLAGS
-        -DINCLUDE_DIRECTORIES:STRING=${CUDAToolkit_INCLUDE_DIRS}
-      LINK_LIBRARIES CUDA::cudart
-      COMPILE_OUTPUT_VARIABLE CUDA_C_OUTPUT
-      RUN_OUTPUT_VARIABLE CUDA_R_OUTPUT)
-    # C_RESULT it TRUE when compilation works
-    # R_RESULT is the status return (which should be 0, i.e. FALSE)
-    IF (CUDA_C_RESULT)
-      SET (ENABLE_CUDA ON)
-      # add further RT lib build targets
-      LIST (APPEND RT_TARGETS cuda cuda_reg cuda_alloc cuda_man cuda_manp)
-      LIST (APPEND SAC2CRC_LIBS_PATHS "${CUDAToolkit_LIBRARY_DIR}")
-      LIST (APPEND SAC2CRC_INCS "${CUDAToolkit_INCLUDE_DIRS}")
-      LIST (APPEND SAC2CRC_LIBS "-lcudart" "-lcublas")
-      SET (NVCC_PATH  "${CUDAToolkit_BIN_DIR}")
-      IF (NOT CUDA_R_RESULT)
-        MESSAGE (STATUS "Setting CUDA Device-CC: `${CUDA_R_OUTPUT}'")
-        SET (CUDA_ARCH  "${CUDA_R_OUTPUT}")
-      ELSEIF (CUDA_C_RESULT AND CUDA_R_RESULT) # no CUDA device
-        MESSAGE (STATUS "Unable to determine CUDA Device-CC, using `sm_35'")
-        SET (CUDA_ARCH  "sm_35")
+    IF (CUDAToolkit_VERSION VERSION_LESS "11.3")
+      MESSAGE (WARNING  "Required CUDA version >= 11.3")
+    ELSE ()
+      MESSAGE (STATUS "Testing CUDA Device...")
+      # the TRY_RUN uses the system CC to compile a program that
+      # probes the system for a CUDA device and determines the
+      # CUDA Compatibility of that devices - this is stored within
+      # the sac2crc as CUDA_ARCH. We use CC, rather than NVCC, as
+      # the code only calls CUDA runtime functions, no kernel or
+      # other GPU related operation is done (or can be done).
+      # If the code fails (either because the system doesn't have
+      # a CUDA device, or because of some runtime error), we still
+      # setup of build for CUDA, but use the lowest CC value
+      # per default.
+      TRY_RUN (CUDA_R_RESULT CUDA_C_RESULT
+        ${CMAKE_BINARY_DIR} ${PROJECT_SOURCE_DIR}/cmake/sac2c/cuda_get_compute_com.c
+        CMAKE_FLAGS
+          -DINCLUDE_DIRECTORIES:STRING=${CUDAToolkit_INCLUDE_DIRS}
+        LINK_LIBRARIES CUDA::cudart
+        COMPILE_OUTPUT_VARIABLE CUDA_C_OUTPUT
+        RUN_OUTPUT_VARIABLE CUDA_R_OUTPUT)
+      # C_RESULT it TRUE when compilation works
+      # R_RESULT is the status return (which should be 0, i.e. FALSE)
+      IF (CUDA_C_RESULT)
+        SET (ENABLE_CUDA ON)
+        # add further RT lib build targets
+        LIST (APPEND RT_TARGETS cuda cuda_reg cuda_alloc cuda_man cuda_manp)
+        LIST (APPEND SAC2CRC_LIBS_PATHS "${CUDAToolkit_LIBRARY_DIR}")
+        LIST (APPEND SAC2CRC_INCS "${CUDAToolkit_INCLUDE_DIRS}")
+        LIST (APPEND SAC2CRC_LIBS "-lcudart" "-lcublas")
+        SET (NVCC_PATH  "${CUDAToolkit_BIN_DIR}")
+        IF (NOT CUDA_R_RESULT)
+          MESSAGE (STATUS "Setting CUDA Device-CC: `${CUDA_R_OUTPUT}'")
+          SET (CUDA_ARCH  "${CUDA_R_OUTPUT}")
+        ELSEIF (CUDA_C_RESULT AND CUDA_R_RESULT) # no CUDA device
+          MESSAGE (STATUS "Unable to determine CUDA Device-CC, using `sm_35'")
+          SET (CUDA_ARCH  "sm_35")
+        ENDIF ()
+      ELSE () # something wrong with CUDA install
+        MESSAGE (WARNING "CUDA installation is not working: ${CUDA_C_OUTPUT}")
       ENDIF ()
-    ELSE () # something wrong with CUDA install
-      MESSAGE (WARNING "CUDA installation is not working: ${CUDA_C_OUTPUT}")
     ENDIF ()
   ENDIF ()
 ENDIF ()
