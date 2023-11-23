@@ -123,10 +123,8 @@ CCP_MOD          :=  "%cc% %cuda_arch% %cppflags% %compileflags% -cuda -o %targe
 CCP_PROG         :=  "%cc% %cuda_arch% %cppflags% %compileflags% -cuda -o %target% %source%"
 COMPILE_PROG     :=  "%cc% %cuda_arch% %compileflags% -c -o %target% %source%"
 COMPILE_MOD      :=  "%cc% %cuda_arch% %compileflags% -dw -o %target% %source%"
-COMPILE_RMOD     :=  "@CC@ %cppflags% %opt% %dbg% -pedantic -g @GENPIC@ @RCCCFLAGS@ %sacincludes% -c -o %target% %source%"
-LINK_MOD         :=  "%cc% %cuda_arch% -Xcompiler -fPIC -dlink -o dlink.o %objects% "
-                     "&& %ld% %objects% dlink.o %linkflags% -shared -Wl,--allow-multiple-definition "
-                     "-Wl,-allow-shlib-undefined -O3 -L%path% -Wl,-rpath,%path% -o %target%"
+COMPILE_RMOD     :=  "%cc% %cuda_arch% %cppflags% %compileflags% -dw -o %target% %source%"
+LINK_MOD         :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
 LINK_RMOD        :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
 
 /*

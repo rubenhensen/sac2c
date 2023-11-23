@@ -24,4 +24,7 @@ SET_TARGET_PROPERTIES (libsacdistmem-${TARGET}
   PROPERTIES
     OUTPUT_NAME sacdistmem
     LIBRARY_OUTPUT_DIRECTORY  "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}"
+    # we *must* not put any fpic in here as some compilers (eg nvcc) cannot handle this
+    # this implies that the COMPILE_RMOD setup needs to include this vi CFLAGS!
+    POSITION_INDEPENDENT_CODE False
 )
