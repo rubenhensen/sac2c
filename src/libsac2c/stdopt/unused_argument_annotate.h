@@ -17,6 +17,8 @@
  *
  ******************************************************************************/
 
+extern bool UAAcanHaveUnusedArguments (node *fundef);
+
 extern node *UAAdoUnusedArgumentAnnotate (node *arg_node);
 
 extern node *UAAfundef (node *arg_node, info *arg_info);

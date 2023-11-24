@@ -37,17 +37,18 @@
 
 /******************************************************************************
  *
- * @fn bool CanHaveUnusedArguments (node *fundef)
+ * @fn bool UAAcanHaveUnusedArguments (node *fundef)
  *
  * @returns Whether this N_fundef can have unused arguments in its signature.
  *
  ******************************************************************************/
-static bool
-CanHaveUnusedArguments (node *fundef)
+bool
+UAAcanHaveUnusedArguments (node *fundef)
 {
     DBUG_ENTER ();
     DBUG_RETURN (!FUNDEF_WASUSED (fundef)
               && !FUNDEF_ISSTICKY (fundef)
+              && !FUNDEF_ISEXTERN (fundef)
               && !FUNDEF_ISPROVIDED (fundef)
               && !FUNDEF_ISLACFUN (fundef)
               && FUNDEF_ARGS (fundef) != NULL);
@@ -88,7 +89,7 @@ UAAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (CanHaveUnusedArguments (arg_node)) {
+    if (UAAcanHaveUnusedArguments (arg_node)) {
         DBUG_PRINT ("----- annotating unused arguments of %s -----",
                     FUNDEF_NAME (arg_node));
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);

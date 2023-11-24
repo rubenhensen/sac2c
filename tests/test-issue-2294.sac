@@ -1,7 +1,7 @@
 // free on argument of function call that is replaced by F_type_error
 //
 // SAC_TEST|include common.mk
-// SAC_TEST|SAC2C_FLAGS +=
+// SAC_TEST|SAC2C_FLAGS += -nouar
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -noprelude -v0
 //
 // SAC_TEST|all: <file-name>

@@ -37,33 +37,16 @@
  * run at the same time.
  *
  ******************************************************************************/
+#include "free.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "free.h"
+#include "unused_argument_annotate.h"
 
 #define DBUG_PREFIX "UAR"
 #include "debug.h"
 
 #include "unused_function_argument_removal.h"
-
-/******************************************************************************
- *
- * @fn bool CanHaveUnusedArguments (node *fundef)
- *
- * @returns Whether this N_fundef can have unused arguments in its signature.
- *
- ******************************************************************************/
-static bool
-CanHaveUnusedArguments (node *fundef)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN (!FUNDEF_WASUSED (fundef)
-              && !FUNDEF_ISSTICKY (fundef)
-              && !FUNDEF_ISPROVIDED (fundef)
-              && !FUNDEF_ISLACFUN (fundef)
-              && FUNDEF_ARGS (fundef) != NULL);
-}
 
 /******************************************************************************
  *
@@ -100,7 +83,7 @@ UFARfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (CanHaveUnusedArguments (arg_node)) {
+    if (UAAcanHaveUnusedArguments (arg_node)) {
         DBUG_PRINT ("----- removing unused function arguments of %s -----",
                     FUNDEF_NAME (arg_node));
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
