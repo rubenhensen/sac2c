@@ -7,7 +7,7 @@
 // Argument y is marked as unused
 // SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "\/* unused *\/ int y" 1; <nlslash>
 // The value in the application of fst is replaced by a dummy
-// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "_dummy_type_" 1; <nlslash>
+// SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "_UAR_dummy_type_" 1; <nlslash>
 
 noinline
 int fst(int x, int y)

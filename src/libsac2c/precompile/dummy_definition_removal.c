@@ -8,7 +8,7 @@
  * }
  *
  * main () {
- *     dummy = _dummy_type_ (int);
+ *     dummy = _UAR_dummy_type_ (int);
  *     return fst (1, dummy);
  * }
  *
@@ -33,11 +33,12 @@
  * values provided in an application, must always line up.
  *
  ******************************************************************************/
+#include "free.h"
 #include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "free.h"
+#include "unused_argument_annotate.h"
 
 #define DBUG_PREFIX "DDR"
 #include "debug.h"
@@ -221,9 +222,12 @@ DDRap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    INFO_FORMALARGS (arg_info) = FUNDEF_ARGS (AP_FUNDEF (arg_node));
-    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
-    INFO_FORMALARGS (arg_info) = NULL;
+    // Nothing to do if the applied function cannot have unused arguments
+    if (UAAcanHaveUnusedArguments (AP_FUNDEF (arg_node))) {
+        INFO_FORMALARGS (arg_info) = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
+        INFO_FORMALARGS (arg_info) = NULL;
+    }
 
     DBUG_RETURN (arg_node);
 }

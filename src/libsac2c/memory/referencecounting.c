@@ -688,7 +688,7 @@ RCIprf (node *arg_node, info *arg_info)
         break;
 
     case F_accu:
-    case F_dummy_type:
+    case F_UAR_dummy_type:
     case F_prop_obj_in:
     case F_noop:
         /*

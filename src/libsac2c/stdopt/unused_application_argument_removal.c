@@ -18,7 +18,7 @@
  * very_slow().
  *
  * main () {
- *   dummy = _dummy_type_ (int);
+ *   dummy = _UAR_dummy_type_ (int);
  *   return fst (1, dummy);
  * }
  *
@@ -38,8 +38,8 @@
  *
  * Additionally we need to ensure that the type checker is happy; the dummy
  * should be of the correct type. For this reason a primitive function
- * _dummy_type_(type) has been added, which ensures that this dummy is of the
- * same type as the unused argument.
+ * _UAR_dummy_type_(type) has been added, which ensures that this dummy is of
+ * the same type as the unused argument.
  *
  * Doing this ensures that no modifications to existing traversers is required.
  * The only exception is memory/referencecounting. Since these dummies are
@@ -57,13 +57,14 @@
  *
  ******************************************************************************/
 #include "DupTree.h"
+#include "free.h"
 #include "memory.h"
 #include "new_types.h"
 #include "str.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "free.h"
+#include "unused_argument_annotate.h"
 
 #define DBUG_PREFIX "UAR"
 #include "debug.h"
@@ -142,7 +143,7 @@ AddNewDummyToFundef (node *fundef, ntype *type)
     AVIS_DECL (avis) = FUNDEF_VARDECS (fundef);
 
     // Create dummy assignment
-    res = TCmakePrf1 (F_dummy_type, TBmakeType (TYcopyType (type)));
+    res = TCmakePrf1 (F_UAR_dummy_type, TBmakeType (TYcopyType (type)));
     res = TBmakeLet (TBmakeIds (avis, NULL), res);
 
     // Prepend the generated assignment to the function's assignments
@@ -206,7 +207,7 @@ UAARfundef (node *arg_node, info *arg_info)
 
     while (INFO_UNUSEDARGS (arg_info) != NULL) {
         type = ARG_NTYPE (INFO_UNUSEDARGS (arg_info));
-        avis = AddNewDummyToFundef(arg_node, type);
+        avis = AddNewDummyToFundef (arg_node, type);
 
         DBUG_PRINT ("replacing actual argument %s by a dummy %s",
                     ID_NAME (EXPRS_EXPR (INFO_UNUSEDEXPRS (arg_info))),
@@ -220,11 +221,6 @@ UAARfundef (node *arg_node, info *arg_info)
         INFO_UNUSEDARGS (arg_info) = FREEdoFreeNode (INFO_UNUSEDARGS (arg_info));
         INFO_UNUSEDEXPRS (arg_info) = FREEdoFreeNode (INFO_UNUSEDEXPRS (arg_info));
     }
-
-    DBUG_ASSERT (INFO_UNUSEDARGS (arg_info) == NULL,
-                 "remaining unused formal parameters");
-    DBUG_ASSERT (INFO_UNUSEDEXPRS (arg_info) == NULL,
-                 "remaining unused actual arguments");
 
     DBUG_RETURN (arg_node);
 }
@@ -248,31 +244,35 @@ UAARap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    formal = FUNDEF_ARGS (AP_FUNDEF (arg_node));
-    actual = AP_ARGS (arg_node);
+    // Nothing to do if the applied function cannot have unused arguments
+    if (UAAcanHaveUnusedArguments (AP_FUNDEF (arg_node))) {
+        formal = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+        actual = AP_ARGS (arg_node);
 
-    while (formal != NULL) {
-        avis = ID_AVIS (EXPRS_EXPR (actual));
+        while (formal != NULL) {
+            avis = ID_AVIS (EXPRS_EXPR (actual));
 
-        if (!ARG_ISUSEDINBODY (formal) && !AVIS_ISDUMMY (avis)) {
-            DBUG_PRINT ("formal parameter %s is marked as not in use, "
-                        "replace actual argument %s by a dummy",
-                        ARG_NAME (formal), AVIS_NAME (avis));
+            if (!ARG_ISUSEDINBODY (formal) && !AVIS_ISDUMMY (avis)) {
+                DBUG_PRINT ("formal parameter %s is marked as not in use, "
+                            "replace actual argument %s by a dummy",
+                            ARG_NAME (formal), AVIS_NAME (avis));
 
-            INFO_UNUSEDARGS (arg_info) = TCappendArgs (
-                INFO_UNUSEDARGS (arg_info),
-                DUPdoDupNode (formal));
-            INFO_UNUSEDEXPRS (arg_info) = TCappendExprs (
-                INFO_UNUSEDEXPRS (arg_info),
-                TBmakeExprs (EXPRS_EXPR (actual), NULL));
+                INFO_UNUSEDARGS (arg_info) = TBmakeArg (
+                    DUPdoDupNode (ARG_AVIS (formal)),
+                    INFO_UNUSEDARGS (arg_info));
+                INFO_UNUSEDEXPRS (arg_info) = TBmakeExprs (
+                    EXPRS_EXPR (actual),
+                    INFO_UNUSEDEXPRS (arg_info));
+            }
+
+            formal = ARG_NEXT (formal);
+            actual = EXPRS_NEXT (actual);
         }
 
-        formal = ARG_NEXT (formal);
-        actual = EXPRS_NEXT (actual);
+        DBUG_ASSERT (actual == NULL,
+                     "%ld remaining actual arguments in application of %s",
+                     TCcountExprs (actual), FUNDEF_NAME (AP_FUNDEF (arg_node)));
     }
-
-    DBUG_ASSERT (formal == NULL, "remaining formal parameters");
-    DBUG_ASSERT (actual == NULL, "remaining actual arguments");
 
     DBUG_RETURN (arg_node);
 }
