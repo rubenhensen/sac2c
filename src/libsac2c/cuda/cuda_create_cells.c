@@ -5,6 +5,9 @@
  * prefix: CUCC
  *
  * description:
+ *      searches for N_assign nodes that are tagged as CUDA_DEVICE_SINGLE.
+ *      If a sequence of these is found, wrap them up in a N_cudast node
+ *      and make that node the RHS of an N_assign.
  *
  *****************************************************************************/
 

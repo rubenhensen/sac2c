@@ -2200,7 +2200,7 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
-    case F_noop:
+    case F_EMR_noop:
         /*
          * Special case for EMRL optimisation
          *
@@ -2213,20 +2213,20 @@ EMALprf (node *arg_node, info *arg_info)
          * a is *always* AKS, so shape and dim can be staticly evaluated.
          *
          */
-        if (AVIS_ISALLOCLIFT (als->avis))
-        {
-            new_node = TCmakePrf2 (F_alloc, TBmakeNum (TYgetDim (AVIS_TYPE (als->avis))),
-                                   SHshape2Array (TYgetShape (AVIS_TYPE (als->avis))));
-            arg_node = FREEdoFreeNode (arg_node);
-            arg_node = new_node;
-            AVIS_SSAASSIGN (als->avis) = INFO_ASSIGN (arg_info);
+        DBUG_ASSERT (AVIS_ISALLOCLIFT (als->avis),
+                     "found F_EMR_noop without AVIS_ISALLOCLIFT being set!");
+        new_node = TCmakePrf2 (F_alloc, TBmakeNum (TYgetDim (AVIS_TYPE (als->avis))),
+                               SHshape2Array (TYgetShape (AVIS_TYPE (als->avis))));
+        arg_node = FREEdoFreeNode (arg_node);
+        arg_node = new_node;
+        AVIS_SSAASSIGN (als->avis) = INFO_ASSIGN (arg_info);
 
-            /* we've changed the prf to an alloc, so we don't need another alloc */
-            INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-            INFO_MUSTFILL (arg_info) = EA_nofill;
-            break;
-        }
-        /* fall-through */
+        /* we've changed the prf to an alloc, so we don't need another alloc */
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        INFO_MUSTFILL (arg_info) = EA_nofill;
+        break;
+
+    case F_noop:
     case F_alloc:
     case F_suballoc:
     case F_fill:

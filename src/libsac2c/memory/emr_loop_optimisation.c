@@ -466,7 +466,8 @@ EMRLap (node * arg_node, info * arg_info)
 
                     new_vardec = TBmakeVardec (new_avis, NULL);
                     new_let = TBmakeLet (TBmakeIds (new_avis, NULL),
-                                         TBmakePrf (F_noop, NULL));
+                                         TCmakePrf1 (F_EMR_noop,
+                                                     TBmakeType (TYcopyType (AVIS_TYPE (new_avis)))));
                     AVIS_DECLTYPE (VARDEC_AVIS (new_vardec))
                       = TYcopyType (ARG_NTYPE (tmp));
                     INFO_VARDECS (arg_info)

@@ -1051,7 +1051,7 @@ SUBPHASE (emrci, "Collect extended WL reuse candidates", EMRCIdoWithloopExtended
 SUBPHASE (emrcf, "Filter extended WL reuse candidates", FRCdoFilterReuseCandidatesWL,
           global.optimize.doemrci && global.optimize.doemrcf, opt)
 
-SUBPHASE (emrl, "Lift allocations of WL using extended reuse candidates", EMRLdoExtendLoopMemoryPropagation,
+SUBPHASE (emrl, "Lift allocations of WLs out of loops by creating artificial ERCs", EMRLdoExtendLoopMemoryPropagation,
           global.optimize.doemrci && global.optimize.doemrl, opt)
 
 SUBPHASE (ts, "Displaying type specialisation statistics", TSdoPrintTypeStatistics,
@@ -1166,8 +1166,8 @@ ENDCYCLE (mtranexp)
 CYCLE (mtran, "Optimise memory transfers cycle (non-hybrid only)",
        global.optimize.domemopt && (global.backend == BE_cuda), cuda, RESET)
 
-CYCLEPHASE (mcstran, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
-            ALWAYS, cuda, mtran)
+CYCLEPHASE (mcstran, "Lift transfers out of CUDA cells", MCSTRANdoMinimizeCudastTransfers,
+            global.optimize.doexpar, cuda, mtran)
 
 CYCLEPHASE (mbtran, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
             ALWAYS, cuda, mtran)
