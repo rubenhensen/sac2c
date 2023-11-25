@@ -12,9 +12,9 @@
 // SAC_TEST|SAC2C_FLAGS += -doemrci -doemrcic -bopt:emrl -printfun main
 // SAC_TEST|all: <file-name>
 // SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "emr_lifted" 6
-// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "emr_lifted = _noop_();" 2
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "emr_lifted = _EMR_noop_( int" 2
 // SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -DALT $< | $(GREP_COMMAND_OUTPUT) "emr_lifted" 3
-// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -DALT $< | $(GREP_COMMAND_OUTPUT) "emr_lifted = _noop_();" 1
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -DALT $< | $(GREP_COMMAND_OUTPUT) "emr_lifted = _EMR_noop_( int" 1
 
 #include "mini-stdlib.sac"
 

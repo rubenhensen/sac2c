@@ -25,7 +25,7 @@
 #include "traverse.h"
 #include "globals.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "RCM"
 #include "debug.h"
 
 #include "free.h"
@@ -702,6 +702,10 @@ RCMprf (node *arg_node, info *arg_info)
              */
             NLUTincNum (INFO_ENV (arg_info), ID_AVIS (PRF_ARG1 (arg_node)),
                         NUM_VAL (PRF_ARG2 (arg_node)));
+            DBUG_PRINT ("dec_rc (%s, %d) in line %zu eliminated",
+                        ID_NAME (PRF_ARG1 (arg_node)),
+                        NUM_VAL (PRF_ARG2 (arg_node)),
+                        NODE_LINE (arg_node));
 
             INFO_REMASSIGN (arg_info) = TRUE;
         } else {
@@ -743,7 +747,16 @@ RCMprf (node *arg_node, info *arg_info)
          * remove inc_rc( x, 0)
          */
         if (NUM_VAL (PRF_ARG2 (arg_node)) == 0) {
+            DBUG_PRINT ("inc_rc (%s, %d) in line %zu eliminated",
+                        ID_NAME (PRF_ARG1 (arg_node)),
+                        n,
+                        NODE_LINE (arg_node));
             INFO_REMASSIGN (arg_info) = TRUE;
+        } else {
+            DBUG_PRINT ("inc_rc (%s, %d) in line %zu changed into inc_rc (%s, %d)",
+                        ID_NAME (PRF_ARG1 (arg_node)), n,
+                        NODE_LINE (arg_node),
+                        ID_NAME (PRF_ARG1 (arg_node)), n-min);
         }
         break;
 
@@ -754,6 +767,7 @@ RCMprf (node *arg_node, info *arg_info)
     case F_accu:
     case F_suballoc:
     case F_noop:
+    case F_EMR_noop:
         /*
          * Do nothing for these PRFs as the IV must not be artificially kept
          * alive
