@@ -1210,7 +1210,7 @@ SRPlowerBoundRec (node *previous, info *arg_info)
     DBUG_ENTER ();
     DBUG_RETURN (MAKE_PRF2_2AVIS (
         F_add_SxS,
-        INFO_LOWER_BOUND_SCALAR_AVIS (arg_info),
+        previous,
         MAKE_NUM_2AVIS (TBmakeNum (1), arg_info), arg_info)
     );
 }
