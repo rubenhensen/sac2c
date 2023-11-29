@@ -1033,14 +1033,14 @@ RTPFfundef (node *arg_node, info *arg_info)
      * these guards are removed after the optimisation cycle.
      */
     if (global.insertconformitychecks) {
-        if (RI_PRECHECKS (ri) != NULL) {
+        if (RI_PRECHECKS (ri) != NULL || FUNDEF_PRECONDS (arg_node) != NULL) {
             pre = GTPmakePreCheck (arg_node,
                                    RI_PRED (ri),
                                    RI_PREASSIGNS (ri),
                                    RI_PRECHECKS (ri));
         }
 
-        if (RI_POSTCHECKS (ri) != NULL) {
+        if (RI_POSTCHECKS (ri) != NULL || FUNDEF_POSTCONDS (arg_node) != NULL) {
             post = GTPmakePostCheck (arg_node,
                                      RI_PRED (ri),
                                      RI_POSTASSIGNS (ri),
@@ -1256,7 +1256,7 @@ RTPEfundef (node *arg_node, info *arg_info)
      * these guards are removed after the optimisation cycle.
      */
     if (global.insertconformitychecks) {
-        if (RI_PRECHECKS (ri) != NULL) {
+        if (RI_PRECHECKS (ri) != NULL || FUNDEF_PRECONDS (arg_node) != NULL) {
             pre = GTPmakePreCheck (arg_node,
                                    RI_PRED (ri),
                                    RI_PREASSIGNS (ri),
@@ -1265,7 +1265,7 @@ RTPEfundef (node *arg_node, info *arg_info)
                 TCappendFundef (INFO_NEWFUNDEFS (arg_info), pre);
         }
 
-        if (RI_POSTCHECKS (ri) != NULL) {
+        if (RI_POSTCHECKS (ri) != NULL || FUNDEF_POSTCONDS (arg_node) != NULL) {
             post = GTPmakePostCheck (arg_node,
                                      RI_PRED (ri),
                                      RI_POSTASSIGNS (ri),
