@@ -1,0 +1,24 @@
+// In issue 2359 we found that the following program fails with UAR.
+// The problem was that arguments used in genarrays and modarrays were being
+// considered as reuse-candidates, causing _alloc_or_reuse_ expressions to being
+// generated for these arguments. Arguments that are marked as not used should
+// not be included as reuse-candidates.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -douar -noprelude
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 0
+
+noinline
+int[10] foo (int[10] g)
+{
+   return with {} : genarray (_shape_A_ (g), 0);
+}
+
+int main()
+{
+    a = foo ([9,8,7,6,5,4,3,2,1,0]);
+    return _sel_VxA_ ([0], a);
+}
