@@ -243,14 +243,26 @@ FilterTrav (node *arg_node, info *arg_info)
         DBUG_PRINT ("Invalid reuse candidate removed: %s",
                     ID_NAME (EXPRS_EXPR (arg_node)));
         arg_node = FREEdoFreeNode (arg_node);
-    } else {
-        /* when dealing with ERCs, we don't want to add these to the mask
-         * as we eliminate all earlier references in other WLs. Furthermore,
-         * we treat ERCs differently within EMRI (reuse.c) by eliminating them
-         * from being selected more than once within a function scope.
-         */
-        if (!INFO_IS_ERC (arg_info))
-            EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+    }
+    /**
+     * If unused argument removal (UAR) marked this argument as not in use, it
+     * should not be considered as a reuse candidate. In the precompile phase
+     * this unused argument will be removed from the function signature.
+     */
+    else if (NODE_TYPE (ID_DECL (EXPRS_EXPR (arg_node))) == N_arg &&
+             !ARG_ISUSEDINBODY (ID_DECL (EXPRS_EXPR (arg_node)))) {
+        DBUG_PRINT ("Unused argument reuse candidate removed: %s",
+                    ID_NAME (EXPRS_EXPR (arg_node)));
+        arg_node = FREEdoFreeNode (arg_node);
+    }
+    /**
+     * When dealing with ERCs, we don't want to add these to the mask as we
+     * eliminate all earlier references in other WLs. Furthermore, we treat ERCs
+     * differently within EMRI (reuse.c) by eliminating them from being selected
+     * more than once within a function scope.
+     */
+    else if (!INFO_IS_ERC (arg_info)) {
+        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
