@@ -1140,6 +1140,10 @@ RTPFret (node *arg_node, info *arg_info)
     spid = TBmakeExprs (TBmakeSpid (NULL, STRcpy (name)), NULL);
     RI_RETURNIDS (ri) = TCappendExprs (RI_RETURNIDS (ri), spid);
 
+    // Add to defined to make sure no assign is created for the return type
+    TPCtryAddSpid (&RI_DEFINED (ri), name);
+    DBUG_PRINT ("added `%s' to defined", name);
+
     RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1359,6 +1363,10 @@ RTPEret (node *arg_node, info *arg_info)
 
     spid = TBmakeExprs (TBmakeSpid (NULL, STRcpy (name)), NULL);
     RI_RETURNIDS (ri) = TCappendExprs (RI_RETURNIDS (ri), spid);
+
+    // Add to defined to make sure no assign is created for the return type
+    TPCtryAddSpid (&RI_DEFINED (ri), name);
+    DBUG_PRINT ("added `%s' to defined", name);
 
     RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
 
