@@ -1196,6 +1196,67 @@ TUtypeSignature2String (node *fundef)
     DBUG_RETURN (tmp_str);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn char *TUwrapperTypeSignature2String( node *fundef)
+ *
+ *   @brief creates a multi-line string for wrapper functions; one line
+ *          per existing instance. To do so a local helper function 
+ *          createFunSigString is needed that is mapped onto all instances.
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+static node *
+createFunSigString( node *fundef, info *arg_info)
+{
+    char *tmp;
+    str_buf **buf;
+
+    buf = (str_buf **)arg_info;
+
+    tmp = TUtypeSignature2String (fundef);
+    *buf = SBUFprintf (*buf, "\\n***   %s :: %s", CTIitemName (fundef), tmp);
+    tmp = MEMfree (tmp);
+ 
+    arg_info = (info *)buf;
+    
+    return fundef;
+}
+
+char *
+TUwrapperTypeSignature2String (node *fundef)
+{
+    static str_buf *buf = NULL;
+    char *res_str;
+    char *tmp;
+
+    DBUG_ENTER ();
+    
+    DBUG_ASSERT (FUNDEF_WRAPPERTYPE (fundef) != NULL,
+                 "TUwrapperTypeSignature2String called on function"
+                 " without wrapper type!");
+
+    if (buf == NULL) {
+        buf = SBUFcreate (100);
+    }
+
+    tmp = TUtypeSignature2String (fundef);
+    buf = SBUFprintf (buf, "\\n***   %s :: %s", CTIitemName (fundef), tmp);
+    tmp = MEMfree (tmp);
+
+    buf = SBUFprintf (buf, "\\n*** instances present:");
+    FUNDEF_WRAPPERTYPE (fundef)
+        = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (fundef),
+                                  createFunSigString,
+                                  (info *)&buf);
+
+    res_str = SBUF2str (buf);
+    SBUFflush (buf);
+
+    DBUG_RETURN (res_str);
+}
+
 /******************************************************************************
  *
  * Function:

@@ -43,11 +43,10 @@ ICMCompileDISPATCH_ERROR (unsigned int cnt_to, char **to_ANY, char *funname, uns
     fprintf (global.outfile, "%i", cnt_from + 2);
     fprintf (global.outfile, ", ");
     fprintf (global.outfile,
-             "\"No appropriate instance of function \\\"\" %s"
-             " \"\\\" found!\"",
+             "\"No appropriate instance of function found:\" %s",
              funname);
     fprintf (global.outfile, ", ");
-    fprintf (global.outfile, "\"Shape of arguments:\"");
+    fprintf (global.outfile, "\"shapes of arguments:\"");
     fprintf (global.outfile, ", ");
     for (i = 0; i < cnt_from; i++) {
         if (ICUGetShapeClass (from_ANY[i]) == C_scl) {
