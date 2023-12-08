@@ -231,9 +231,8 @@ SAC_PrintShape (SAC_array_descriptor_t desc)
     int space, written;
 
     buf[0] = '[';
-    buf[1] = '\0';
-    buffer = &buf[2];
-    space = MAX_SHAPE_SIZE-2;
+    buffer = &buf[1];
+    space = MAX_SHAPE_SIZE-1;
     
 
     for (pos = 0; pos < DESC_DIM (desc); pos++) {
@@ -241,23 +240,21 @@ SAC_PrintShape (SAC_array_descriptor_t desc)
             written = snprintf (buffer, space - 5, " %d,",
                                         (int)DESC_SHAPE (desc, pos));
         } else {
-            written = snprintf (buffer, space - 5, " %d ",
+            written = snprintf (buffer, space - 5, " %d",
                                         (int)DESC_SHAPE (desc, pos));
         }
         if (written >= space - 5) {
-            buffer += (space -6);
-            space = 6;
-            snprintf (buffer, 6, "...");
+            buffer += (space - 6);
+            sprintf (buffer, "...");
             buffer += 3;
-            space = 3;
             break;
         } else {
-            buffer += (written-1);
-            space -= (written-1);
+            buffer += written;
+            space -= written;
         }
     }
 
-    snprintf (buffer, 3, " ]");
+    snprintf (buffer, 2, "]");
 
     res = (char *)malloc (strlen (buf) + 1);
     strcpy (res, buf);

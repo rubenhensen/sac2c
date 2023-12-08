@@ -9,6 +9,7 @@
 extern ntype *TUcreateFuntype (node *fundef);
 extern ntype *TUcreateFuntypeIgnoreArtificials (node *fundef);
 extern char *TUtypeSignature2String (node *fundef);
+extern char *TUwrapperTypeSignature2String( node *fundef);
 extern bool TUsignatureMatches (node *formal, ntype *actual_prod_type, bool exact);
 
 /**

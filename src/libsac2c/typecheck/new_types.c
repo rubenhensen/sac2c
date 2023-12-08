@@ -6944,11 +6944,11 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
     DBUG_RETURN (assigns);
 }
 
+
 node *
 TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 {
     node *assigns = NULL;
-    char *funsig;
     char *tmp;
 
     DBUG_ENTER ();
@@ -6963,17 +6963,13 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
         DBUG_ASSERT (!FUNDEF_HASDOTARGS (fundef),
                      "wrapper function with ... argument found!");
 
-        tmp = TUtypeSignature2String (fundef);
-        funsig = (char *)MEMmalloc (sizeof (char)
-                                    * (STRlen (CTIitemName (fundef)) + STRlen (tmp) + 5));
-        sprintf (funsig, "%s :: %s", CTIitemName (fundef), tmp);
+        tmp = TUwrapperTypeSignature2String (fundef);
 
-        assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0, funsig,
+        assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0, tmp,
                                      FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef),
                                      FUNDEF_RETS (fundef), vardecs, new_vardecs);
 
         tmp = MEMfree (tmp);
-        funsig = MEMfree (funsig);
     }
 
     DBUG_RETURN (assigns);
