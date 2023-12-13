@@ -291,11 +291,11 @@ WarnNoSupport (char *node_name, node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_HASTYPEPATTERN (arg_info)) {
-    }
         CTIwarn (NODE_LOCATION (arg_node),
                  "Type patterns are currently not supported for %s. "
                  "Ignoring all type variables.",
                  node_name);
+    }
 
     DBUG_RETURN ();
 }
