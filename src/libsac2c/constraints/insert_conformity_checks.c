@@ -394,7 +394,7 @@ ICCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (!FUNDEF_ISGUARDFUN (arg_node) && FUNDEF_BODY (arg_node) != NULL) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("traversing %s", FUNDEF_NAME (arg_node));
 
         arg_node = IDCinitialize (arg_node, FALSE);
