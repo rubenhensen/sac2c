@@ -49,8 +49,8 @@
  *
  * Consider a function with type patterns:
  *
- * int[2,d:shp] foo (int[d:shp] a, int[d:shp] b) {
- *     return [a, b];
+ * int[d:shp] sel (int[n] idx, int[n:outer,d:shp] arr) {
+ *     return { iv -> arr[idx ++ iv] | iv < shp };
  * }
  *
  * We first need to generate a function to check whether the arguments match
@@ -58,47 +58,57 @@
  * type with a descriptive error message.
  *
  * inline
- * bool foo_pre (int[*] a, int[*] b) {
- *     d = dim(a);
- *     shp = shape(a);
+ * bool sel_pre (int[.] idx, int[*] arr) {
+ *     n = shape (idx)[0];
+ *     outer = take (n, shape (arr));
+ *     d = dim (arr) - n;
+ *     shp = take (d, drop (n, shape (arr)));
  *
  *     pred = true;
- *     pred = dim(b) == d ? pred : _|_;
- *     pred = shape(b) == shp ? pred : _|_;
+ *     pred = n == dim (arr) - d ? pred : _|_;
  *     return pred;
  * }
+ *
+ * Consider the case where the length of idx is 3, but the dimensionality of arr
+ * is only 2. In this case, d = 2 - 3 = -1. This results in an erroneous take.
+ * To ensure that we do not generate erroneous assignments conformity checks
+ * should always be inserted for this generated code. No (significant) code
+ * duplication should occur because of this, because type pattern checks apply
+ * only to the conformity of type patterns, whereas conformity checks apply only
+ * to the conformity of primitive functions.
  *
  * We do the same for the returned values, which might depend on variables that
  * are defined by type patterns of arguments.
  *
  * inline
- * bool foo_post (int[*] a, int[*] b, int[+] res) {
- *     d = dim(a);
- *     shp = shape(a);
+ * bool sel_post (int[*] a, int[*] b, int[+] res) {
+ *     n = shape (idx)[0];
+ *     outer = take (n, shape (arr));
+ *     d = dim (arr) - n;
+ *     shp = take (d, drop (n, shape (arr)));
  *
  *     pred = true;
- *     pred = dim(res) >= 1 ? pred : _|_;
- *     pred = shape(res)[0] == 2 ? pred : _|_;
- *     pred = drop (1, shape(res)) == shp ? pred : _|_;
+ *     pred = d == dim(res) ? pred : _|_;
+ *     pred = all (shp == shape (res)) ? pred : _|_;
  *     return pred;
  * }
  *
- * Finally, we rename foo to foo_impl, and generate a new version of foo that
+ * Finally, we rename sel to sel_impl, and generate a new version of sel that
  * combines our generated functions.
  *
  * inline
- * int[+] foo (int[*] a, int[*] b) {
- *     pred = foo_pre (a, b);
- *     a, b = guard (a, b, pred);
- *     res = foo_impl (a, b);
+ * int[+] sel (int[*] idx, int[*] arr) {
+ *     pred = sel_pre (idx, arr);
+ *     idx, arr = guard (idx, arr, pred);
+ *     res = sel_impl (idx, arr);
  *     res = guard (res, pred);
- *     pred' = foo_post (a, b, res);
+ *     pred' = sel_post (idx, arr, res);
  *     res = guard (res, pred');
  *     return res;
  * }
  *
  * Note here that we added an additional guard using the pre-condition result,
- * after applying the implementation foo_impl. This ensures that the post-check
+ * after applying the implementation sel_impl. This ensures that the post-check
  * does not accidentally consume and hide an erroneous result.
  *
  * We do this by first traversing the type patterns of arguments and return
