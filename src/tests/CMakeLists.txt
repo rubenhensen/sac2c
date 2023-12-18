@@ -47,7 +47,7 @@ ADD_LIBRARY (base-test-environment OBJECT "base-test-environment.cpp")
 
 SET_TARGET_PROPERTIES (base-test-environment
         PROPERTIES
-            CXX_STANDARD 11
+            CXX_STANDARD 14
             CXX_STANDARD_REQUIRED YES
             INCLUDE_DIRECTORIES /opt/local/include)
 # Generated dummy runtime library, includes dummy functions to satisfy linker
@@ -67,7 +67,7 @@ MACRO (ADD_FUNC_TEST BIN_NAME SRC_NAME)
     # Make sure we compile with at least C++11
     SET_TARGET_PROPERTIES (${BIN_NAME}
         PROPERTIES
-            CXX_STANDARD 11
+            CXX_STANDARD 14
             CXX_STANDARD_REQUIRED YES)
     # Make it a part of the global testsuite so that it is executed via ctests.
     GTEST_DISCOVER_TESTS (${BIN_NAME})
@@ -107,7 +107,7 @@ MACRO (ADD_RUNTIME_FUNC_TEST BIN_NAME SRC_NAME LIB_TARGET EXTRA_LINKS)
     # Make sure we compile with at least C++11
     SET_TARGET_PROPERTIES (${BIN_NAME}
         PROPERTIES
-            CXX_STANDARD 11
+            CXX_STANDARD 14
             CXX_STANDARD_REQUIRED YES)
     # Make it a part of the global testsuite so that it is executed via ctests.
     GTEST_DISCOVER_TESTS (${BIN_NAME})
