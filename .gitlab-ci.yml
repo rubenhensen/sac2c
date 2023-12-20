@@ -216,26 +216,6 @@ stdlib-ubuntu20:
         - job: test-ubuntu20
           artifacts: true
 
-### UBUNTU 18 ###
-
-build-ubuntu18:
-    <<: *build-template
-    image: sacbuild/ubuntu18:1.7.1
-
-test-ubuntu18:
-    <<: *test-template
-    image: sacbuild/ubuntu18:1.7.1
-    needs:
-        - job: build-ubuntu18
-          artifacts: true
-
-stdlib-ubuntu18:
-    <<: *build-stdlib-template
-    image: sacbuild/ubuntu18:1.7.1
-    needs:
-        - job: test-ubuntu18
-          artifacts: true
-
 ### MacOS Apple Silicon (ARM) ###
 
 build-macosARM:
