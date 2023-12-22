@@ -1,6 +1,4 @@
-/**
- *
- * @file markmemvals.c
+/******************************************************************************
  *
  * 1. In this traversal all fill operations and unnecessary MemVal-variables
  *    are removed by means of a substitution traversal.
@@ -83,31 +81,45 @@
  *
  *    Descriptors of with3 suballocs are moved around
  *
- */
-#include "markmemvals.h"
-
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "traverse.h"
-#include "str.h"
-#include "globals.h"
-#include "memory.h"
-#include "LookUpTable.h"
-#include "print.h"
+ ******************************************************************************/
 #include "DupTree.h"
 #include "free.h"
-#include "scheduling.h"
+#include "globals.h"
+#include "LookUpTable.h"
+#include "memory.h"
 #include "new_types.h"
+#include "print.h"
+#include "scheduling.h"
+#include "str.h"
+#include "traverse.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "tree_utils.h"
 
 #define DBUG_PREFIX "MMV"
 #include "debug.h"
 
-/**
- * INFO structure
- */
+#include "markmemvals.h"
+
+/******************************************************************************
+ *
+ * @struct INFO
+ *
+ * @param INFO_LUT
+ * @param INFO_A2A_LUT Avis of param point to avis of arg.
+ * @param INFO_LHS
+ * @param INFO_LHS_WL
+ * @param INFO_WITHOP
+ * @param INFO_FUNDEF
+ * @param INFO_PROP_IN
+ * @param INFO_TOPLEVEL
+ * @param INFO_WITH
+ * @param INFO_VARDECS
+ *
+ ******************************************************************************/
 struct INFO {
     lut_t *lut;
-    lut_t *a2a_lut; /* avis of param point to avis of arg */
+    lut_t *a2a_lut;
     node *lhs;
     node *lhs_wl;
     node *withop;
@@ -129,9 +141,6 @@ struct INFO {
 #define INFO_WITH(n) ((n)->with)
 #define INFO_VARDECS(n) ((n)->vardecs)
 
-/**
- * INFO functions
- */
 static info *
 MakeInfo (void)
 {
@@ -167,13 +176,7 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/**
- *
- *  TRAVERSAL FUNCTIONS
- *
- * @{
- ****************************************************************************/
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVblock
  *
@@ -184,7 +187,7 @@ FreeInfo (info *info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVblock (node *arg_node, info *arg_info)
 {
@@ -207,7 +210,7 @@ MMVblock (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVdo
  *
@@ -218,7 +221,7 @@ MMVblock (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVdo (node *arg_node, info *arg_info)
 {
@@ -233,7 +236,7 @@ MMVdo (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVfundef
  *
@@ -244,7 +247,7 @@ MMVdo (node *arg_node, info *arg_info)
  *
  *  @return the given fundef with substituted identifiers.
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVfundef (node *arg_node, info *arg_info)
 {
@@ -285,7 +288,7 @@ MMVfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!-- ****************************************************************** -->
+/******************************************************************************
  * @fn node *MMVmodule( node *arg_node, info *arg_info)
  *
  * @brief Traverses only the fundef chain and leaves out special thread
@@ -306,7 +309,7 @@ MMVmodule (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVlet
  *
@@ -318,7 +321,7 @@ MMVmodule (node *arg_node, info *arg_info)
  *
  *  @return modified let node.
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVlet (node *arg_node, info *arg_info)
 {
@@ -333,11 +336,11 @@ MMVlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
  * @fn node *MMVids( node *arg_node, info *arg_info)
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 MMVids (node *arg_node, info *arg_info)
 {
@@ -361,19 +364,16 @@ MMVids (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVid
  *
- *  @brief Substitutes the current reference with a reference from the
- *         LUT if possible
+ * @brief Substitutes the current reference with a reference from the
+ * LUT if possible.
  *
- *  @param arg_node
- *  @param arg_info
+ * @returns Potentially, a new N_id node.
  *
- *  @return potentially, a new N_id node
- *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVid (node *arg_node, info *arg_info)
 {
@@ -415,11 +415,11 @@ pairArgs2Args (lut_t *lut, node *args_in, node *args_out)
     DBUG_RETURN (lut);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
  * @fn node *MMVap( node *arg_node, info *arg_info)
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 MMVap (node *arg_node, info *arg_info)
 {
@@ -491,7 +491,7 @@ MMVap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVprfFill
  *
@@ -502,7 +502,7 @@ MMVap (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 static node *
 MMVprfFill (node *arg_node, info *arg_info)
 {
@@ -546,7 +546,7 @@ MMVprfFill (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVprfAccu
  *
@@ -557,7 +557,7 @@ MMVprfFill (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 static node *
 MMVprfAccu (node *arg_node, info *arg_info)
 {
@@ -613,7 +613,7 @@ MMVprfAccu (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVprfSuballoc
  *
@@ -624,7 +624,7 @@ MMVprfAccu (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 static node *
 MMVprfSuballoc (node *arg_node, info *arg_info)
 {
@@ -736,7 +736,7 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVprfWLAssign
  *
@@ -747,7 +747,7 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 static node *
 MMVprfWLAssign (node *arg_node, info *arg_info)
 {
@@ -773,7 +773,7 @@ MMVprfWLAssign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVprfPropObjIn
  *
@@ -784,7 +784,7 @@ MMVprfWLAssign (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 static node *
 MMVprfPropObjIn (node *arg_node, info *arg_info)
 {
@@ -828,7 +828,7 @@ MMVprfPropObjIn (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVprfPropObjOut
  *
@@ -839,7 +839,7 @@ MMVprfPropObjIn (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 static node *
 MMVprfPropObjOut (node *arg_node, info *arg_info)
 {
@@ -885,15 +885,15 @@ MMVprfPropObjOut (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
  * @fn node *MMVprfGuard( node *arg_node, info *arg_info)
  *
- * @brief x1', ..., xn' = guard (x1, ..., xn, p)
- * - rename x1, ..., xn, p
+ * @brief x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+ * - rename x1, .., xn, p1, .., pm
  * - insert (xi', xi) into LUT
  *
- *****************************************************************************/
+ ******************************************************************************/
 static node *
 MMVprfGuard (node *arg_node, info *arg_info)
 {
@@ -906,11 +906,9 @@ MMVprfGuard (node *arg_node, info *arg_info)
     lhs = INFO_LHS (arg_info);
     args = PRF_ARGS (arg_node);
 
-    DBUG_ASSERT (TCcountIds (lhs) == TCcountExprs (args) - 1,
-                 "guard function should return n-1 values");
-
     while (lhs != NULL) {
         e = EXPRS_EXPR (args);
+        DBUG_PRINT ("renaming %s -> %s", IDS_NAME (lhs), ID_NAME (e));
         LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (lhs), ID_NAME (e));
         LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (lhs), ID_AVIS (e));
         lhs = IDS_NEXT (lhs);
@@ -920,36 +918,7 @@ MMVprfGuard (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *MMVprfAfterGuard( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-static node *
-MMVprfAfterGuard (node *arg_node, info *arg_info)
-{
-    node *v;
-    node *a;
-
-    DBUG_ENTER ();
-
-    /*
-     * v = guard(a,p1,..pn);
-     *
-     * 1. rename a,p1,..,pn
-     * 2. Insert (v,a) into LUT
-     */
-    PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-
-    v = INFO_LHS (arg_info);
-    a = PRF_ARG1 (arg_node);
-    LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (v), ID_NAME (a));
-    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (v), ID_AVIS (a));
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVprf
  *
@@ -963,7 +932,7 @@ MMVprfAfterGuard (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVprf (node *arg_node, info *arg_info)
 {
@@ -998,10 +967,6 @@ MMVprf (node *arg_node, info *arg_info)
         arg_node = MMVprfGuard (arg_node, arg_info);
         break;
 
-    case F_afterguard:
-        arg_node = MMVprfAfterGuard (arg_node, arg_info);
-        break;
-
     default:
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     }
@@ -1009,7 +974,7 @@ MMVprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVwith
  *
@@ -1020,7 +985,7 @@ MMVprf (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVwith (node *arg_node, info *arg_info)
 {
@@ -1055,7 +1020,7 @@ MMVwith (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVwith2
  *
@@ -1066,7 +1031,7 @@ MMVwith (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVwith2 (node *arg_node, info *arg_info)
 {
@@ -1101,7 +1066,7 @@ MMVwith2 (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVwith3
  *
@@ -1112,7 +1077,7 @@ MMVwith2 (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVwith3 (node *arg_node, info *arg_info)
 {
@@ -1146,7 +1111,7 @@ MMVwith3 (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVwlseg
  *
@@ -1157,7 +1122,7 @@ MMVwith3 (node *arg_node, info *arg_info)
  *
  * @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVwlseg (node *arg_node, info *arg_info)
 {
@@ -1179,7 +1144,7 @@ MMVwlseg (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVgenarray
  *
@@ -1190,7 +1155,7 @@ MMVwlseg (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVgenarray (node *arg_node, info *arg_info)
 {
@@ -1218,7 +1183,7 @@ MMVgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVpropagate
  *
@@ -1229,7 +1194,7 @@ MMVgenarray (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVpropagate (node *arg_node, info *arg_info)
 {
@@ -1245,7 +1210,7 @@ MMVpropagate (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVmodarray
  *
@@ -1256,7 +1221,7 @@ MMVpropagate (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVmodarray (node *arg_node, info *arg_info)
 {
@@ -1280,7 +1245,7 @@ MMVmodarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVbreak
  *
@@ -1291,7 +1256,7 @@ MMVmodarray (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVbreak (node *arg_node, info *arg_info)
 {
@@ -1313,7 +1278,7 @@ MMVbreak (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVfold
  *
@@ -1325,7 +1290,7 @@ MMVbreak (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVfold (node *arg_node, info *arg_info)
 {
@@ -1352,7 +1317,7 @@ MMVfold (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn MMVcode
  *
@@ -1365,7 +1330,7 @@ MMVfold (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 MMVcode (node *arg_node, info *arg_info)
 {
@@ -1416,7 +1381,7 @@ MMVcode (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!-- ****************************************************************** -->
+/******************************************************************************
  * @fn node *MMVreturn( node *arg_node, info *arg_info)
  *
  * @brief Removes results of fill operations to submemory from the return
@@ -1475,7 +1440,7 @@ MMVreturn (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!-- ****************************************************************** -->
+/******************************************************************************
  * @fn node *MMVret( node *arg_node, info *arg_info)
  *
  * @brief Removes results of fill operations to submemory from the ret chain
@@ -1511,23 +1476,17 @@ MMVret (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**
- * @}
- */
-
-/** <!--******************************************************************-->
+/******************************************************************************
  *
- * @fn MarkMemVals
+ * @fn MMVdoMarkMemVals (node *arg_node)
  *
- *  @brief Starting function of MarkMemVals traversal
+ * @brief Starts mem val marking traversal.
  *
- *  @param syntax_tree
+ * @returns The modified syntax tree.
  *
- *  @return modified syntax tree
- *
- ***************************************************************************/
+ ******************************************************************************/
 node *
-MMVdoMarkMemVals (node *syntax_tree)
+MMVdoMarkMemVals (node *arg_node)
 {
     info *info;
 
@@ -1536,14 +1495,12 @@ MMVdoMarkMemVals (node *syntax_tree)
     info = MakeInfo ();
 
     TRAVpush (TR_mmv);
-
-    syntax_tree = TRAVdo (syntax_tree, info);
-
+    arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 #undef DBUG_PREFIX

@@ -392,12 +392,9 @@ USSATcond (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   bool IdGivenByFillOperation( node *id)
+ * @fn bool IdGivenByFillOperation( node *id)
  *
- * description:
- *
- *****************************************************************************/
+ ******************************************************************************/
 static bool
 IdGivenByFillOperation (node *idavis)
 {
@@ -412,9 +409,9 @@ IdGivenByFillOperation (node *idavis)
         expr = ASSIGN_RHS (AVIS_SSAASSIGN (idavis));
 
         switch (NODE_TYPE (expr)) {
-        case N_prf: {
-            res = ((PRF_PRF (expr) == F_fill) || (PRF_PRF (expr) == F_afterguard));
-        } break;
+        case N_prf:
+            res = PRF_PRF (expr) == F_fill || PRF_PRF (expr) == F_guard;
+            break;
 
         case N_with:
         case N_with2: {
@@ -431,12 +428,13 @@ IdGivenByFillOperation (node *idavis)
                 ops = WITHOP_NEXT (ops);
             }
 
-            res = (((NODE_TYPE (ops) == N_genarray) || (NODE_TYPE (ops) == N_modarray)
-                    || (NODE_TYPE (ops) == N_break))
-                   && (WITHOP_MEM (ops) != NULL));
+            res = NODE_TYPE (ops) == N_genarray
+                || NODE_TYPE (ops) == N_modarray
+                || NODE_TYPE (ops) == N_break;
+            res = res && (WITHOP_MEM (ops) != NULL);
         } break;
 
-        case N_ap: {
+        case N_ap:
             if (FUNDEF_ISLOOPFUN (AP_FUNDEF (expr))) {
                 res = TRUE;
             } else {
@@ -451,14 +449,14 @@ IdGivenByFillOperation (node *idavis)
                     node *args = FUNDEF_ARGS (AP_FUNDEF (expr));
                     while (args != NULL) {
                         if (ARG_HASLINKSIGNINFO (args)
-                            && (ARG_LINKSIGN (args) == RET_LINKSIGN (rets))) {
+                            && ARG_LINKSIGN (args) == RET_LINKSIGN (rets)) {
                             res = TRUE;
                         }
                         args = ARG_NEXT (args);
                     }
                 }
             }
-        } break;
+            break;
 
         default:
             break;
@@ -508,7 +506,7 @@ USSATfuncond (node *arg_node, info *arg_info)
      *    The renaming scheme applied by PREC:MMV for good reasons relies on the
      *    presence of a subsequent copy assignment
      *
-     *  - t,e are not be given by an afterguard for the same reasons
+     *  - t,e are not be given by a guard for the same reasons
      *    see IdGivenByFillOperation
      *
      *  - t,e are not given by genarray oder modarray with-loops

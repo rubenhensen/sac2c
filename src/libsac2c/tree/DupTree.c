@@ -2003,6 +2003,8 @@ DUPprf (node *arg_node, info *arg_info)
 
     new_node = TBmakePrf (PRF_PRF (arg_node), DUPTRAV (PRF_ARGS (arg_node)));
 
+    PRF_NUMVARIABLERETS (new_node) = PRF_NUMVARIABLERETS (arg_node);
+
     PRF_FLAGSTRUCTURE (new_node) = PRF_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);

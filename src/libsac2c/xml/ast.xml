@@ -2051,16 +2051,6 @@
           <node name="Vardec" />
         </travuser>
       </traversal>
-      <traversal id="STPC" name="Strip Type Pattern Checks" default="sons" include="strip_type_pattern_checks.h" >
-        <travuser>
-          <node name="Block" />
-          <node name="Assign" />
-          <node name="Prf" />
-          <node name="Let" />
-          <node name="Id" />
-          <node name="Vardec" />
-        </travuser>
-      </traversal>
       <traversal id="TPS" name="Print Type Pattern Statistics" default="sons" include="type_pattern_statistics.h" >
         <travuser>
           <node name="Prf" />
@@ -8476,6 +8466,27 @@
             up on a folding attempt after some N iterations.
           </description>
           <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="NumVariableRets" inconstructor="no">
+          <description>
+            If this primitive function has a variable amount of return values,
+            this attribute it positive and describes how many values this
+            function returns. This is necessary because we must always be able
+            to statically figure out the number of the return values, which we
+            should not provide as an argument to the primitive function because
+            it conflicts with the assumed structure of the AST in many phases.
+            Currently, it is only used by the primitive function F_guard.
+          </description>
+          <type name="Sizet">
             <targets>
               <target mandatory="no">
                 <any />

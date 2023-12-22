@@ -2354,15 +2354,13 @@ GenerateExtremaComputations (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *PropagatePrfExtrema( node *arg_node, info *arg_info)
+ * @fn node *PropagatePrfExtrema( node *arg_node, info *arg_info)
  *
- * description:
- *   Propagate any extrema from RHS (etc.) to LHS for N_prf nodes
+ * @brief Propagate any extrema from RHS (etc.) to LHS for N_prf nodes.
  *
- * param: arg_node: N_let node.
+ * @param arg_node N_let node.
  *
- * result: The updated arg_node.
+ * @returns The updated arg_node.
  *
  ******************************************************************************/
 static node *
@@ -2390,7 +2388,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     lhsavis = IDS_AVIS (lhsid);
     rhs = LET_EXPR (arg_node);
     withid = INFO_CURWITH (arg_info);
-    withid = (NULL != withid) ? PART_WITHID (WITH_PART (withid)) : NULL;
+    withid = (withid != NULL) ? PART_WITHID (WITH_PART (withid)) : NULL;
 
     switch (PRF_PRF (rhs)) {
 
@@ -2404,45 +2402,21 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         }
         break;
 
+    /**
+     * Case 1: If AVIS_MIN (lhsavis) is negative, replace it by zero, as this
+     * tightens the constraint.
+     *
+     * Case 2: If AVIS_MIN (lhsavis) is not NULL, and AVIS_MIN (rhsavis) are
+     * both are constant, propagate the larger one.
+     * This can arise if GenerateExtremaComputationsPrf has created a zero
+     * AVIS_MIN (lhsavis), and we have a non-NULL AVIS_MIN (rhsavis).
+     * If we are unable to compute the larger of the two, we must propagate the
+     * rhsavis. E.g., rhsavis is a WITHIDS_IDS with non-zero GENERATOR_BOUND1.
+     *
+     * Case 3: If AVIS_MIN (lhsavis) is NULL, propagate AVIS_MIN (rhsavis).
+     */
     case F_non_neg_val_S:
     case F_non_neg_val_V:
-#ifdef DUMBIDEA
-
-        This does not work at all well when PRF_ARG1 is a WITHID_IDS with extant AVIS_MIN
-          > 0.
-
-          // Overwrite/propagate minval only if it is known to be >= 0.
-          // Otherwise, we will generate a minval (elsewhere).
-          rhsavis
-          = ID_AVIS (PRF_ARG1 (rhs));
-        if ((NULL != AVIS_MIN (rhsavis)) && SCSisNonNegative (AVIS_MIN (rhsavis))) {
-            AVIS_MIN (lhsavis)
-              = (NULL != AVIS_MIN (lhsavis)) ? FREEdoFreeNode (AVIS_MIN (lhsavis)) : NULL;
-            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)), TRUE);
-        }
-        if (NULL != AVIS_MAX (rhsavis)) {
-            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MAX (rhsavis)));
-        }
-        break;
-#endif // DUMBIDEA
-
-        /*
-         * Case 1: If AVIS_MIN( lhsavis) is negative, replace it by zero,
-         *         as this tightens the constraint.
-         * Case 2: If AVIS_MIN( lhsavis) is not NULL, and AVIS_MIN( rhsavis)
-         *         are both are constant, propagate the larger one.
-         *
-         *         This can arise if GenerateExtremaComputationsPrf has
-         *         created a zero AVIS_MIN( lhsavis), and we have a
-         *         non-NULL AVIS_MIN( rhsavis).
-         *
-         *         If we are unable to compute the larger of the two,
-         *         we must propagate the rhsavis. E.g., rhsavis is
-         *         a WITHIDS_IDS with non-zero GENERATOR_BOUND1.
-         *
-         * Case 3: If AVIS_MIN( lhsavis) is NULL, propagate AVIS_MIN( rhsavis).
-         *
-         */
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
 
         if ((NULL != AVIS_MIN (lhsavis)) && (SCSisConstantNonZero (AVIS_MIN (lhsavis)))
@@ -2472,16 +2446,48 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
             patrhs = PMfree (patrhs);
         }
 
-        if (NULL != AVIS_MIN (rhsavis)) { // Case 3
+        // Case 3
+        if (NULL != AVIS_MIN (rhsavis)) {
             IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)));
         }
-
         if (NULL != AVIS_MAX (rhsavis)) {
             IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MAX (rhsavis)));
         }
         break;
 
-    case F_afterguard:
+    /**
+     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+     * - propagate extrema of xi to xi'
+     * - ignore pi
+     */
+    case F_guard:
+        // Propagate extrema of xi to xi'
+        while (lhsid != NULL) {
+            rhsavis = ID_AVIS (EXPRS_EXPR (rhs));
+            lhsavis = IDS_AVIS (lhsid);
+
+            if (AVIS_MIN (rhsavis) != NULL) {
+                IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)));
+            }
+            if (AVIS_MAX (rhsavis) != NULL) {
+                IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MAX (rhsavis)));
+            }
+            if (TYisAKV (AVIS_TYPE (rhsavis))) {
+                IVEXPsetMinvalIfNotNull (lhsavis, rhsavis);
+                if (AVIS_MAX (lhsavis) == NULL) {
+                    maxv = IVEXPadjustExtremaBound (rhsavis, 1,
+                                                    &INFO_VARDECS (arg_info),
+                                                    &INFO_PREASSIGNS (arg_info),
+                                                    "dsf9");
+                    IVEXPsetMaxvalIfNotNull (lhsavis, maxv);
+                }
+            }
+
+            rhs = EXPRS_NEXT (rhs);
+            lhsid = IDS_NEXT (lhsid);
+        }
+        break;
+
     case F_noteintersect:
     case F_shape_matches_dim_VxA:
     case F_val_lt_shape_VxA:
@@ -2489,17 +2495,19 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     case F_val_le_val_VxV:
     case F_val_lt_val_SxS:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
-        if (NULL != AVIS_MIN (rhsavis)) {
+        if (AVIS_MIN (rhsavis) != NULL) {
             IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)));
         }
-        if (NULL != AVIS_MAX (rhsavis)) {
+        if (AVIS_MAX (rhsavis) != NULL) {
             IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MAX (rhsavis)));
         }
-        if (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (rhs))))) {
-            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (PRF_ARG1 (rhs)));
-            if (NULL == AVIS_MAX (lhsavis)) {
-                maxv = IVEXPadjustExtremaBound (rhsavis, 1, &INFO_VARDECS (arg_info),
-                                                &INFO_PREASSIGNS (arg_info), "dsf9");
+        if (TYisAKV (AVIS_TYPE (rhsavis))) {
+            IVEXPsetMinvalIfNotNull (lhsavis, rhsavis);
+            if (AVIS_MAX (lhsavis) == NULL) {
+                maxv = IVEXPadjustExtremaBound (rhsavis, 1,
+                                                &INFO_VARDECS (arg_info),
+                                                &INFO_PREASSIGNS (arg_info),
+                                                "dsf9");
                 IVEXPsetMaxvalIfNotNull (lhsavis, maxv);
             }
         }

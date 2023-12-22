@@ -1,37 +1,40 @@
-#include "restore_reference_args.h"
-
-#define DBUG_PREFIX "UNDEFINED"
-#include "debug.h"
-
+#include "DupTree.h"
 #include "free.h"
+#include "memory.h"
+#include "str.h"
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "str.h"
-#include "memory.h"
-#include "DupTree.h"
+#include "tree_utils.h"
 
-/*
- * INFO structure
- */
+#define DBUG_PREFIX "RERA"
+#include "debug.h"
+
+#include "restore_reference_args.h"
+
+
+/******************************************************************************
+ *
+ * @struct INFO
+ *
+ * @param INFO_LHS
+ * @param INFO_ARGS
+ * @param INFO_PREASSIGNS
+ * @param INFO_DELETE
+ *
+ ******************************************************************************/
 struct INFO {
     node *lhs;
     node *args;
     node *preassigns;
-    bool mdelete;
+    bool delete;
 };
 
-/*
- * INFO macros
- */
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_ARGS(n) ((n)->args)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
-#define INFO_DELETE(n) ((n)->mdelete)
+#define INFO_DELETE(n) ((n)->delete)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo (void)
 {
@@ -59,9 +62,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/*
- * helper functions
- */
 static node *
 ReintroduceReferenceArgs (node *args)
 {
@@ -118,17 +118,17 @@ RemoveArtificialReturnValues (node *form_args, node *act_args, node *ids)
         DBUG_ASSERT (act_args != NULL, "formal and actual args do not match");
 
         if (ARG_WASREFERENCE (form_args)) {
-            /*
-             * prior to freeing the ids node, we have to make
-             * sure that its lhs appearances are replaced with the
-             * reference arg
+            /**
+             * Prior to freeing the ids node, we have to make sure that its lhs
+             * appearances are replaced with the reference arg.
              */
             AVIS_SUBST (IDS_AVIS (ids)) = ID_AVIS (EXPRS_EXPR (act_args));
 
             ids = FREEdoFreeNode (ids);
         }
 
-        ids = RemoveArtificialReturnValues (ARG_NEXT (form_args), EXPRS_NEXT (act_args),
+        ids = RemoveArtificialReturnValues (ARG_NEXT (form_args),
+                                            EXPRS_NEXT (act_args),
                                             ids);
     }
 
@@ -141,8 +141,10 @@ RemoveArtificialWithloopReturns (node *withops, node *withexprs, node *letlhs)
     DBUG_ENTER ();
 
     while (withops != NULL) {
-        /* If the withop is of type N_propagate, then the LHS is artificial
-         * and we should replace the LHS N_id by the with N_expr. */
+        /**
+         * If the withop is of type N_propagate, then the LHS is artificial and
+         * we should replace the LHS N_id by the with N_expr.
+         */
         if (NODE_TYPE (withops) == N_propagate) {
             AVIS_SUBST (IDS_AVIS (letlhs)) = ID_AVIS (EXPRS_EXPR (withexprs));
         }
@@ -162,23 +164,23 @@ TransformArtificialReturnExprsIntoAssignments (node *args, node *exprs, node **a
 
     if (args != NULL) {
         if (ARG_WASREFERENCE (args)) {
-            /*
-             * create an assignment of the expression to the original
-             * reference argument if they are not the same anyways
+            /**
+             * Create an assignment of the expression to the original reference
+             * argument if they are not the same anyways.
              */
             if (ID_AVIS (EXPRS_EXPR (exprs)) != ARG_AVIS (args)) {
-                *assigns = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (args), NULL),
-                                                    DUPdoDupTree (EXPRS_EXPR (exprs))),
-                                         *assigns);
+                *assigns = TBmakeAssign (
+                    TBmakeLet (TBmakeIds (ARG_AVIS (args), NULL),
+                               DUPdoDupTree (EXPRS_EXPR (exprs))),
+                    *assigns);
             }
 
-            /*
-             * remove the return expression
-             */
+            // Remove the return expression
             exprs = FREEdoFreeNode (exprs);
         }
 
-        exprs = TransformArtificialReturnExprsIntoAssignments (ARG_NEXT (args), exprs,
+        exprs = TransformArtificialReturnExprsIntoAssignments (ARG_NEXT (args),
+                                                               exprs,
                                                                assigns);
     }
 
@@ -215,38 +217,30 @@ RemoveSubstitutedVardecs (node *vardecs)
     DBUG_RETURN (vardecs);
 }
 
-/*
- * traversal functions
- */
-
 node *
 RERAassign (node *arg_node, info *arg_info)
 {
     bool xdelete;
     DBUG_ENTER ();
 
-    /*
-     * traverse the instruction to check for substitutions
-     */
+    // Traverse the instruction to check for substitutions
     INFO_DELETE (arg_info) = FALSE;
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     xdelete = INFO_DELETE (arg_info);
     INFO_DELETE (arg_info) = FALSE;
 
-    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    /*
-     * if this assignment is superflouus, delete it
-     */
+    // If this assignment is superflouus, delete it
     if (xdelete) {
         arg_node = FREEdoFreeNode (arg_node);
     }
 
-    /*
-     * insert any preassignments coming up from the traversal
+    /**
+     * Insert any preassignments coming up from the traversal.
      *
-     * it is save to do it like this as only the return statement
-     * creates new assignments to be inserted and thus if PREASSIGNS != NULL
+     * It is save to do it like this as only the return statement creates
+     * new assignments to be inserted and thus if PREASSIGNS != NULL then
      * ASSIGN_NEXT == NULL!
      */
     if (INFO_PREASSIGNS (arg_info) != NULL) {
@@ -273,8 +267,8 @@ RERAlet (node *arg_node, info *arg_info)
     LET_IDS (arg_node) = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = oldlhs;
 
-    /*
-     * check whether rhs is a reference arg and in that case substitute
+    /**
+     * Check whether rhs is a reference arg and in that case substitute
      * the lhs by the rhs.
      */
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_id) {
@@ -282,17 +276,12 @@ RERAlet (node *arg_node, info *arg_info)
         SubstituteReferenceArg (LET_IDS (arg_node), arg);
     }
 
-    /*
-     * substitute LHS ids
-     */
-    LET_IDS (arg_node) = TRAVopt(LET_IDS (arg_node), arg_info);
+    // Substitute LHS ids
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
-    /*
-     * check whether this let is of form <id> = <id>
-     * and thus superflouus
-     */
-    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_id)
-        && (IDS_AVIS (LET_IDS (arg_node)) == ID_AVIS (LET_EXPR (arg_node)))) {
+    // Check whether this let is of form <id> = <id> and thus superflous
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_id
+        && IDS_AVIS (LET_IDS (arg_node)) == ID_AVIS (LET_EXPR (arg_node))) {
         INFO_DELETE (arg_info) = TRUE;
     }
 
@@ -330,7 +319,7 @@ RERAids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    IDS_NEXT (arg_node) = TRAVopt(IDS_NEXT (arg_node), arg_info);
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     while (AVIS_SUBST (IDS_AVIS (arg_node)) != NULL) {
         IDS_AVIS (arg_node) = AVIS_SUBST (IDS_AVIS (arg_node));
@@ -344,9 +333,7 @@ RERAreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /*
-     * first ensure that all substitutions have taken place!
-     */
+    // First ensure that all substitutions have taken place
     arg_node = TRAVcont (arg_node, arg_info);
 
     RETURN_EXPRS (arg_node)
@@ -362,36 +349,24 @@ RERAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /*
-     * clean up body first
-     */
+    // Clean up body first
     if (FUNDEF_BODY (arg_node) != NULL) {
-        /*
-         * initialise AVIS_SUBST
-         */
+        // Initialise AVIS_SUBST
         FUNDEF_VARDECS (arg_node) = InitialiseVardecs (FUNDEF_VARDECS (arg_node));
 
-        /*
-         * remove references to artificials in body
-         */
+        // Remove references to artificials in body
         INFO_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         INFO_ARGS (arg_info) = NULL;
 
-        /*
-         * remove superflous vardecs
-         */
+        // Remove superflous vardecs
         FUNDEF_VARDECS (arg_node) = RemoveSubstitutedVardecs (FUNDEF_VARDECS (arg_node));
     }
 
-    /*
-     * continue with other fundefs
-     */
-    FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
+    // Continue with other fundefs
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
-    /*
-     * clean up signature
-     */
+    // Clean up signature
     FUNDEF_ARGS (arg_node) = ReintroduceReferenceArgs (FUNDEF_ARGS (arg_node));
     FUNDEF_RETS (arg_node) = RemoveArtificialRets (FUNDEF_RETS (arg_node));
 
@@ -401,87 +376,61 @@ RERAfundef (node *arg_node, info *arg_info)
 node *
 RERAprf (node *arg_node, info *arg_info)
 {
-    node *lhs, *args, *arg;
+    node *lhs, *args;
 
     DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
+    lhs = INFO_LHS (arg_info);
+
     switch (PRF_PRF (arg_node)) {
+    /**
+     * For these prfs we have to remove all LHS return vars that correspond to a
+     * reference argument in the corresponding function call that this prf
+     * resembles. However, we don't know which result corresponds to a reference
+     * arg, as these prfs don't have args anymore. Even worse, we might not have
+     * a function call at all anymore that would provide this information
+     * anymore via the AVIS_SUBST flag.
+     * Luckily, we are so late in compilation that we can just get rid of all
+     * results. These two prfs terminate execution and in reality don't have a
+     * result anyway.
+     */
     case F_dispatch_error:
     case F_type_error:
-        /*
-         * for these prfs we have to remove all LHS return vars that
-         * correspond to a reference argument in the corresponding
-         * function call that this prf resembles. However, we don't
-         * know which result corresponds to a reference arg, as these
-         * prfs don't have args anymore. Even worse, we might not have
-         * a function call at all anymore that would provide this
-         * information anymore via the AVIS_SUBST flag.
-         * Luckily, we are so late in compilation that we can just get
-         * rid of all results. These two prfs terminate execution
-         * and in reality don't have a result anyway.
-         */
-        INFO_LHS (arg_info) = FREEdoFreeTree (INFO_LHS (arg_info));
+        INFO_LHS (arg_info) = FREEdoFreeTree (lhs);
         break;
 
+    /**
+     * check whether rhs is a prop_obj and in that case substitute lhs of any
+     * reference arguments by rhs.
+     */
     case F_prop_obj_out:
     case F_prop_obj_in:
-        /*
-         * check whether rhs is a prop_obj() and in that case substitute
-         * lhs of any reference args by rhs.
-         */
-        lhs = INFO_LHS (arg_info);
         args = PRF_ARGS (arg_node);
 
         if (PRF_PRF (arg_node) == F_prop_obj_in) {
-            args = EXPRS_NEXT (args); /* skip iv arg */
+            // Skip iv arg
+            args = EXPRS_NEXT (args);
         }
 
         while (args != NULL) {
-            arg = AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)));
-            SubstituteReferenceArg (lhs, arg);
-
-            /* iterate */
+            SubstituteReferenceArg (lhs, ID_DECL (EXPRS_EXPR (args)));
             args = EXPRS_NEXT (args);
             lhs = IDS_NEXT (lhs);
         }
         break;
 
+    /**
+     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+     */
     case F_guard:
-        /*
-         * x1', ..., xn' = guard (x1, ..., xn, p)
-         * - guard is the identity on the first n arguments
-         */
-        lhs = INFO_LHS (arg_info);
         args = PRF_ARGS (arg_node);
-
-        DBUG_ASSERT (TCcountIds (lhs) == TCcountExprs (args) - 1,
-                     "guard function should return n-1 values");
-
         while (lhs != NULL) {
-            if (NODE_TYPE (EXPRS_EXPR (args)) == N_id) {
-                arg = AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)));
-                SubstituteReferenceArg (lhs, arg);
-            }
-
+            SubstituteReferenceArg (lhs, ID_DECL (EXPRS_EXPR (args)));
             lhs = IDS_NEXT (lhs);
             args = EXPRS_NEXT (args);
         }
-        break;
-
-    case F_afterguard:
-        /*
-         * x' = afterguard (x, p1, ..., pn)
-         * - after guard is the identity on the first argument
-         */
-        lhs = INFO_LHS (arg_info);
-        arg = AVIS_DECL (ID_AVIS (PRF_ARG1 (arg_node)));
-
-        DBUG_ASSERT (IDS_NEXT (lhs) == NULL,
-                     "afterguard should return only 1 value");
-
-        SubstituteReferenceArg (lhs, arg);
         break;
 
     default:
@@ -496,16 +445,15 @@ RERAmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /*
-     * we have to traverse the FUNS first here, as we have
-     * to remove artificials from the bodies first. As this is
-     * done top-down, FUNS has to be first
+    /**
+     * We have to traverse the FUNS first here, as we have to remove artificials
+     * from the bodies first. As this is done top-down, FUNS has to be first.
      */
-    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
-    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
+    MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
 
-    MODULE_FUNSPECS (arg_node) = TRAVopt(MODULE_FUNSPECS (arg_node), arg_info);
+    MODULE_FUNSPECS (arg_node) = TRAVopt (MODULE_FUNSPECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -515,9 +463,9 @@ RERAwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    WITH_CODE (arg_node) = TRAVopt(WITH_CODE (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
 
-    WITH_WITHOP (arg_node) = TRAVopt(WITH_WITHOP (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
 
     RemoveArtificialWithloopReturns (WITH_WITHOP (arg_node),
                                      CODE_CEXPRS (WITH_CODE (arg_node)),
@@ -531,9 +479,9 @@ RERAwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    WITH2_CODE (arg_node) = TRAVopt(WITH2_CODE (arg_node), arg_info);
+    WITH2_CODE (arg_node) = TRAVopt (WITH2_CODE (arg_node), arg_info);
 
-    WITH2_WITHOP (arg_node) = TRAVopt(WITH2_WITHOP (arg_node), arg_info);
+    WITH2_WITHOP (arg_node) = TRAVopt (WITH2_WITHOP (arg_node), arg_info);
 
     RemoveArtificialWithloopReturns (WITH2_WITHOP (arg_node),
                                      CODE_CEXPRS (WITH2_CODE (arg_node)),
@@ -552,11 +500,8 @@ RERAblock (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- * traversal start function
- */
 node *
-RERAdoRestoreReferenceArguments (node *syntax_tree)
+RERAdoRestoreReferenceArguments (node *arg_node)
 {
     info *info;
 
@@ -565,14 +510,12 @@ RERAdoRestoreReferenceArguments (node *syntax_tree)
     info = MakeInfo ();
 
     TRAVpush (TR_rera);
-
-    syntax_tree = TRAVdo (syntax_tree, info);
-
+    arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 #undef DBUG_PREFIX

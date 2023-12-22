@@ -203,7 +203,6 @@ ${CMAKE_CURRENT_SOURCE_DIR}/constraints/insert_conformity_checks.c
 ${CMAKE_CURRENT_SOURCE_DIR}/constraints/insert_domain_constraints.c
 ${CMAKE_CURRENT_SOURCE_DIR}/constraints/polyhedral_guard_optimization.c
 ${CMAKE_CURRENT_SOURCE_DIR}/constraints/strip_conformity_checks.c
-${CMAKE_CURRENT_SOURCE_DIR}/constraints/strip_type_pattern_checks.c
 ${CMAKE_CURRENT_SOURCE_DIR}/constraints/type_pattern_statistics.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/adjust_shmem_access.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/adjust_stknl_rets.c

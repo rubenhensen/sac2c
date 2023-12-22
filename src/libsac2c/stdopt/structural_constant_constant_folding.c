@@ -1,129 +1,105 @@
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @defgroup cf  Structural Constant Constant Folding
+ * @defgroup CF Structural Constant Constant Folding
  *
  * This module implements Constant Folding on Structural Constants.
  *
  * By "Structural Constant", we mean anything represented by an N_array node.
  *
- * Description:
- *   The code here assumes that the compiler is running with -ecc.
- *   Therefore, it does not make any error checks that will have been
- *   made by various guards.
- *   E.g., the modarray code assumes that arg3 is always a scalar.
+ * The code here assumes that the compiler is running with -ecc. Therefore, it
+ * does not make any error checks that will have been made by various guards.
+ * E.g., the modarray code assumes that arg3 is always a scalar.
  *
- *  @ingroup opt
- *
- *  @{
- *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @file structural_constant_constant_folding.c
- *
- * Prefix: SCCF
- *
- *****************************************************************************/
-#include "structural_constant_constant_folding.h"
+ ******************************************************************************/
+#include "compare_tree.h"
+#include "constant_folding_info.h"
+#include "constants.h"
+#include "ctinfo.h"
+#include "DupTree.h"
+#include "flattengenerators.h"
+#include "free.h"
+#include "globals.h"
+#include "indexvectorutils.h"
+#include "ivextrema.h"
+#include "memory.h"
+#include "namespaces.h"
+#include "narray_utilities.h"
+#include "new_typecheck.h"
+#include "new_types.h"
+#include "pattern_match.h"
+#include "phase.h"
+#include "print.h"
+#include "remove_vardecs.h"
+#include "shape.h"
+#include "str.h"
+#include "symbolic_constant_simplification.h"
+#include "traverse.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "tree_utils.h"
+#include "type_utils.h"
+#include "with_loop_utilities.h"
 
 #define DBUG_PREFIX "SCCF"
 #include "debug.h"
 
-#include "tree_basic.h"
-#include "node_basic.h"
-#include "tree_compound.h"
-#include "str.h"
-#include "memory.h"
-#include "new_types.h"
-#include "tree_utils.h"
-#include "type_utils.h"
-#include "new_typecheck.h"
-#include "globals.h"
-#include "traverse.h"
-#include "free.h"
-#include "DupTree.h"
-#include "constants.h"
-#include "shape.h"
-#include "ctinfo.h"
-#include "compare_tree.h"
-#include "namespaces.h"
-#include "remove_vardecs.h"
-#include "constant_folding_info.h"
-#include "symbolic_constant_simplification.h"
-#include "pattern_match.h"
-#include "print.h"
-#include "phase.h"
-#include "indexvectorutils.h"
-#include "ivextrema.h"
-#include "flattengenerators.h"
-#include "narray_utilities.h"
-#include "with_loop_utilities.h"
+#include "structural_constant_constant_folding.h"
 
 /******************************************************************************
  *
- * function:
- *   node *StructOpSel(node *arg_node, info *arg_info)
+ * @fn node *StructOpSel (node *arg_node, info *arg_info)
  *
- * description:
- *   computes sel on array expressions with constant structural constant
- *   arguments, as follows:
- *
- *      z = _sel_VxA_ (constant iv, structconstant X)
- *   E.g.,
- *      a = [0,1,2];
- *      b = [3,4,5];
- *      c = [6,7,8];
- *      X   = [a,b,c,d];
+ * @brief Computes sel on array expressions with constant structural constant
+ * arguments, as follows:
+ *    z = _sel_VxA_ (constant iv, structconstant X)
+ * E.g.,
+ *    a = [0,1,2];
+ *    b = [3,4,5];
+ *    c = [6,7,8];
+ *    X   = [a,b,c,d];
  *
  * Case 1:  (shape(iv) == frame_dim(X)):
  *
- *      z = sel([2], X);
- *      --->
- *      z = c;
+ *   z = sel([2], X);
+ *   --->
+ *   z = c;
  *
  * Case 2: (shape(iv) > frame_dim(X)):
  *
- *      z = sel([2,1], X);
- *      --->
- *      tmpX   = c;
- *      tmpiv = [ 1];
- *      z = sel( tmpiv, tmpX);
+ *   z = sel([2,1], X);
+ *   --->
+ *   tmpX   = c;
+ *   tmpiv = [ 1];
+ *   z = sel (tmpiv, tmpX);
  *
  * Case 3: (shape(iv) < frame_dim(X):
  *
- *    Illegal.
+ *   Illegal.
  *
- * Note:
- *   In order to make iotan.sac work properly, Case 1 has to
- *   work across extrema. E.g.:
+ * @note In order to make iotan.sac work properly, Case 1 has to work across
+ * extrema. E.g.:
  *
- *      x = [a,b,c,...];
- *      x' = _noteminval( x, ...);
- *      z = _sel_VxA_( [0], x');
+ *   x = [a,b,c,...];
+ *   x' = _noteminval (x, ...);
+ *   z = _sel_VxA_ ([0], x');
  *
- * Note:
+ * @note In order to make CF unit test bug964.sac work properly, Case 1 (and
+ * perhaps others) has to work across guards. In that case, we have _idx_sel_
+ * (constant, guard (structcon)).
+ * Re the note about Bug #1060 below, I think what happens is this:
  *
- *   In order to make CF unit test bug964.sac work properly,
- *   Case 1 (and perhaps others) has to work across guards.
- *   In that case, we have _idx_sel_( constant, guard (structcon)).
- *   Re the note about Bug #1060 below, I think what happens is this:
+ *   x = [ v];
+ *   x' = _non_neg_val_V_ (x);
+ *   z = _idx_sel_ (0, x'];
  *
- *      x = [ v];
- *      x' = _non_neg_val_V_( x);
- *      z = _idx_sel_( 0, x'];
+ * If we optimize across, e.g. v', p = non_neg_val (v) guard, then we lose the
+ * AVIS_MIN on x'. I think this is the intent of Bug #1060, but saczilla remains
+ * off the air, months later...
  *
- *   If we optimize across, e.g., v', p= _non_neg_val( v) guard, then
- *   we lose the AVIS_MIN on x'. I think this is the intent of Bug #1060,
- *   but saczilla remains off the air, months later...
- *
- *
- *****************************************************************************/
-
+ ******************************************************************************/
 static node *
 StructOpSelHelper (node *prfarg1, node *prfarg2, info *arg_info)
 {
-
     node *result = NULL;
     int iv_len;
     int X_dim;
@@ -143,7 +119,7 @@ StructOpSelHelper (node *prfarg1, node *prfarg2, info *arg_info)
     DBUG_ENTER ();
 
     /**
-     *   Match for    _sel_VxA_( constant, N_array)
+     *   Match for    _sel_VxA_ (constant, N_array)
      *   and bind      con1    to constant
      *                 arg2    to N_array-node
      *                 arg2fs  to the frameshape of N_array
@@ -157,7 +133,7 @@ StructOpSelHelper (node *prfarg1, node *prfarg2, info *arg_info)
         /* Unfortunately, doing so introduces Bug #1060. */
         /* I'd go look up that bug, but saczilla remains off the air
          * this month, too. However, CF unit test funnyivecyc
-         * suffers from failure to remove _idx_sel_( 0, WITHID_VEC),
+         * suffers from failure to remove _idx_sel_ (0, WITHID_VEC),
          * because of the noteintersect in the WL. Hence, we try
          * introducing extrema-skipping here.
          *
@@ -185,7 +161,7 @@ StructOpSelHelper (node *prfarg1, node *prfarg2, info *arg_info)
         tmpXid = DUPdoDupNode (TCgetNthExprsExprOrNull (offset, ARRAY_AELEMS (arg2)));
         if (iv_len == X_dim) {
             // Case 1 : Exact selection: do the sel operation now.
-            DBUG_PRINT ("Exact selection performed for %s = _sel_VxA_( %s, %s)",
+            DBUG_PRINT ("Exact selection performed for %s = _sel_VxA_ (%s, %s)",
                         AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))),
                         AVIS_NAME (ID_AVIS (prfarg1)), AVIS_NAME (ID_AVIS (prfarg2)));
             result = tmpXid;
@@ -235,30 +211,27 @@ StructOpSel (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *IdxselStructOpSel(node *arg_node, info *arg_info)
+ * @fn node *IdxselStructOpSel(node *arg_node, info *arg_info)
  *
- * description:
- *  Like StructOpSel(), but for _idx_sel().
+ * @brief Like StructOpSel(), but for _idx_sel().
+ * We may have the following situation:
  *
- *  We may have the following situation:
+ *   offset = _vect2offset ([1] [0]);
+ *   z = _idx_sel_ (offset, _notemaxval_ (WITHID_VEC));
  *
- *     offset = _vect2offset( [1] [0]);
- *     z = _idx_sel_( offset, _notemaxval_( WITHID_VEC));
+ * Even though the offset is constant, we have to preserve it
+ * until after saacyc for use in AWLF, CWLE, etc.
  *
- *  Even though the offset is constant, we have to preserve it
- *  until after saacyc for use in AWLF, CWLE, etc.
+ * We can not make the PMmatchFlat below skip the extrema on
+ * WITHID_VEC, or we would end up at WITH_IDS, which have no
+ * extrema on them.
  *
- *  We can not make the PMmatchFlat below skip the extrema on
- *  WITHID_VEC, or we would end up at WITH_IDS, which have no
- *  extrema on them.
+ * Effectively, we now rebuild the iv from the offset.
+ * Hence, the call to StructOpSelHelper...
  *
- *  Effectively, we now rebuild the iv from the offset.
- *  Hence, the call to StructOpSelHelper...
+ * If that fails, we look for a WITHID_IDS reference.
  *
- *  If that fails, we look for a WITHID_IDS reference.
- *
- *****************************************************************************/
+ ******************************************************************************/
 static node *
 IdxselStructOpSel (node *arg_node, info *arg_info)
 {
@@ -288,7 +261,7 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
             iv_len = SHgetUnrLen (COgetShape (con1));
             pat3 = PMany (1, PMAgetNode (&arg2), 0);
             /* Code for matching WITHID_IDS:
-             * The PM( pat1...) in StructOpSelHelper  must not skip the extrema
+             * The PM (pat1...) in StructOpSelHelper  must not skip the extrema
              * or we lose that information on the CF result.
              * This is due to the fact that WITH_IDS names are the same
              * across N_part nodes, and can't have extrema on them.
@@ -306,7 +279,7 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
                                                  &INFO_VARDECS (arg_info));
                     if (NULL != result) {
                         DBUG_PRINT (
-                          "Replaced _idx_sel( offset, WITHID_ID by WITHID_IDS=%s",
+                          "Replaced _idx_sel (offset, WITHID_ID by WITHID_IDS=%s",
                           AVIS_NAME (result));
                         result = TBmakeId (result);
                     }
@@ -322,17 +295,13 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_reshape(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_reshape(node *arg_node, info *arg_info)
  *
- * description:
- *   Eliminates structural constant reshape expression
- *      _reshape_VxA_( shp, structcon)
-
- *   when it can determine that shp is a constant,
- *   and that ( times reduce shp) == times reduce shape(structcon)
+ * @brief Eliminates structural constant reshape expression _reshape_VxA_ (shp,
+ * structcon) when it can determine that shp is a constant, and that (times
+ * reduce shp) == times reduce shape (structcon)
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_reshape (node *arg_node, info *arg_info)
 {
@@ -376,24 +345,21 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_take_SxV(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_take_SxV(node *arg_node, info *arg_info)
  *
- * description:
+ * @brief
+ * Case 1: Idempotent take, e.g, _take_SxV_ (k, iota (k));
+ * with non-constant k. Unfortunately, today, this does not
+ * handle:  _take_SxV_ ((-k), iota (k));
  *
- *  Case 1: Idempotent take, e.g, _take_SxV_( k, iota( k));
- *          with non-constant k. Unfortunately, today, this does not
- *          handle:  _take_SxV_( (-k), iota( k));
+ * Case 2: Undertake on array expression with constant arg1,
+ * and arg2 an N_array.
  *
+ * Case 3: Like Case 1, except constant k.
  *
- *  Case 2: Undertake on array expression with constant arg1,
- *          and arg2 an N_array.
+ * (If both arguments are constant, CF was done by the typechecker.)
  *
- *  Case 3: Like Case 1, except constant k.
- *
- *   [If both arguments are constant, CF was done by the typechecker.]
- *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_take_SxV (node *arg_node, info *arg_info)
 {
@@ -430,7 +396,7 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
         /* Case 1 */
         if ((NULL != AVIS_SHAPE (ID_AVIS (arg2)))
             && (PMmatchFlat (pat2, AVIS_SHAPE (ID_AVIS (arg2))))) {
-            // match shape( arg2)[0] against arg1
+            // match shape (arg2)[0] against arg1
             el0 = TCgetNthExprs (0, ARRAY_AELEMS (arg2array));
             if (TULSisValuesMatch (el0, PRF_ARG1 (arg_node))) {
                 res = DUPdoDupNode (PRF_ARG2 (arg_node)); /* Idempotent take */
@@ -478,20 +444,18 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_drop_SxV(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_drop_SxV(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements drop for constants
- *   If both arguments are constant, CF was done by the typechecker.
- *   This handles the first two following cases:
+ * @brief Implements drop for constants
+ * If both arguments are constant, CF was done by the typechecker.
+ * This handles the first two following cases:
  *
- *     1. arg1 is constant zero.
- *     2. arg1 is constant non-zero, and arg2 is an N_array.
- *     3. arg1 is constant, of value matching shape of arg2:
- *        Handled by saaconstant_folding.
+ * 1. arg1 is constant zero.
+ * 2. arg1 is constant non-zero, and arg2 is an N_array.
+ * 3. arg1 is constant, of value matching shape of arg2:
+ *    Handled by saaconstant_folding.
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 {
@@ -546,29 +510,22 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @function:
- *   node *ModarrayModarray_AxSxS(node *arg_node, info *arg_info)
+ * @fn node *ModarrayModarray_AxSxS (node *arg_node, info *arg_info)
  *
- * @param: arg_node is a _modarray_AxSxS_ N_prf.
+ * @brief
+ *   b = _modarray_AxSxS_(arr, offset, val1);
+ *   z = _modarray_AxSxS_(b,   offset, val2);
+ * This becomes, eventually:
+ *   z = _modarray_AxSxS_((arr, offset, val3);
  *
- * @result: If two consecutive modarray operations modify
- *      the same array element, then the first modarray
- *      can safely be removed.
+ * @param arg_node A _modarray_AxSxS_ N_prf.
  *
- *      This is done merely by marking the first modarray (b)
- *      for later removal. This is an easy to preserve the
- *      guards on the creation of b.
+ * @returns If two consecutive modarray operations modify the same array
+ * element, then the first modarray can safely be removed. This is done merely
+ * by marking the first modarray (b) for later removal. This is an easy to
+ * preserve the guards on the creation of b.
  *
- * @brief:
- *
- *      b = _modarray_AxSxS_(arr, offset, val1);
- *      z = _modarray_AxSxS_(b,   offset, val2);
- *
- *      This becomes, eventually:
- *
- *      z = _modarray_AxSxS_((arr, offset, val3);
- *
- *****************************************************************************/
+ ******************************************************************************/
 static node *
 ModarrayModarray_AxSxS (node *arg_node, info *arg_info)
 {
@@ -585,11 +542,11 @@ ModarrayModarray_AxSxS (node *arg_node, info *arg_info)
     pattern *pat1;
     pattern *pat2;
 
-    /* z = _modarray_AxSxS_( b, offset, val2)  */
+    /* z = _modarray_AxSxS_ (b, offset, val2)  */
     pat1 = PMprf (1, PMAisPrf (F_idx_modarray_AxSxS), 3, PMany (1, PMAgetNode (&b), 0),
                   PMany (1, PMAgetNode (&offset), 0), PMskip (0));
 
-    /* b = _modarray_AxSxS_( arr, offset, val1)  */
+    /* b = _modarray_AxSxS_ (arr, offset, val1)  */
     pat2 = PMprf (2, PMAgetNode (&prf), PMAisPrf (F_idx_modarray_AxSxS), 3,
                   PMany (1, PMAgetNode (&arr), 0), PMany (1, PMAisNode (&offset)),
                   PMskip (0));
@@ -609,28 +566,21 @@ ModarrayModarray_AxSxS (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @function:
- *   node *ModarrayModarray_AxVxS(node *arg_node, info *arg_info)
+ * @fn node *ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
  *
- * @param: arg_node is a _modarray_AxVxS_ N_prf.
+ * @brief
+ *   b = modarray(arr, iv, val1);
+ *   z = modarray(b,   iv, val2);
+ * This becomes, eventually:
+ *   z = modarray(arr, iv, val3);
  *
- * @result: If two consecutive modarray operations modify
- *      the same array element, then the first modarray
- *      can safely be removed.
+ * @param arg_node A _modarray_AxVxS_ N_prf.
  *
- *      This is done merely by marking the first modarray
- *      for later removal.
+ * @returns If two consecutive modarray operations modify the same array
+ * element, then the first modarray can safely be removed. This is done merely
+ * by marking the first modarray for later removal.
  *
- * @brief:
- *
- *      b = modarray(arr, iv, val1);
- *      z = modarray(b,   iv, val2);
- *
- *      This becomes, eventually:
- *
- *      z = modarray(arr, iv, val3);
- *
- *****************************************************************************/
+ ******************************************************************************/
 static node *
 ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
 {
@@ -646,11 +596,11 @@ ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
     pattern *pat1;
     pattern *pat2;
 
-    /* z = _modarray_AxVxS_( b, iv, val2)  */
+    /* z = _modarray_AxVxS_ (b, iv, val2)  */
     pat1 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMany (1, PMAgetNode (&b), 0),
                   PMany (1, PMAgetNode (&iv), 0), PMskip (0));
 
-    /* b = _modarray_AxVxS_( arr, iv, val1)  */
+    /* b = _modarray_AxVxS_ (arr, iv, val1)  */
     pat2
       = PMprf (2, PMAgetNode (&prf), PMAisPrf (F_modarray_AxVxS), 3,
                PMany (1, PMAgetNode (&arr), 0), PMany (1, PMAisNode (&iv)), PMskip (0));
@@ -669,17 +619,16 @@ ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function: node *ReplaceNarrayElementHelper( node *X, int offset, node *val,
- *                  info *arg_info)
+ * @fn node *ReplaceNarrayElementHelper (node *X, int offset, node *val,
+ *                                       info *arg_info)
  *
- * description: X is an N_array. Perform X[offset] = val;
+ * @brief X is an N_array. Perform X[offset] = val;
+ * This entails flattening each element of the N_array, so that we do not end up
+ * with a mongrel such as [666, val];
  *
- *              This entails flattening each element of the N_array, so
- *              that we do not end up with a mongrel such as [ 666, val];
+ * @returns A new N_array node.
  *
- * result: Shiny, new N_array node.
- *
- *****************************************************************************/
+ ******************************************************************************/
 static node *
 ReplaceNarrayElementHelper (node *X, size_t offset, node *val, info *arg_info)
 {
@@ -689,8 +638,11 @@ ReplaceNarrayElementHelper (node *X, size_t offset, node *val, info *arg_info)
     DBUG_ENTER ();
 
     z = DUPdoDupNode (X);
-    ARRAY_AELEMS (z) = FLATGflattenExprsChain (ARRAY_AELEMS (z), &INFO_VARDECS (arg_info),
-                                               &INFO_PREASSIGN (arg_info), NULL);
+    ARRAY_AELEMS (z) = FLATGflattenExprsChain (ARRAY_AELEMS (z),
+                                               &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGN (arg_info),
+                                               NULL);
+
     if (offset >= TCcountExprs (ARRAY_AELEMS (z))) {
         DBUG_PRINT ("index error performing indexed assign into %s",
                     AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
@@ -705,35 +657,26 @@ ReplaceNarrayElementHelper (node *X, size_t offset, node *val, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_idx_modarray_AxSxS(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_idx_modarray_AxSxS(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements modarray for structural constant X.
+ * @brief Implements modarray for structural constant X.
+ *   z = _modarray_AxSxS_(X, offset, val);
+ * Also handles scalar X:
+ *   z = _modarray_AxSxS_(scalarX, anyoffset, val);
+ * becomes val.
  *
- *     z = _modarray_AxSxS_(X, offset, val);
+ * Case 1: Degenerate scalar PRF_ARG1 case.
  *
- *   Also handles scalar X:
+ * Case 2: PRF_ARG1 is a vector. NB. The SCCFprf_modarray_AxVxS does a fancier
+ * job on this. FIXME - this could be extended to handle higher-rank PRF_ARG1.
  *
- *     z = _modarray_AxSxS_(scalarX, anyoffset, val);
+ * PRF_ARG1 is a structural constant, and PRF_ARG2 is a constant.
  *
- *   becomes val.
+ * We do the modarray here, returning a new structural constant.
  *
- *   Case 1: Degenerate scalar PRF_ARG1 case.
+ * Case 3: Remove the N_prf if SelModarray() has marked this N_prf as a no-op.
  *
- *   Case 2: PRF_ARG1 is a vector. NB. The SCCFprf_modarray_AxVxS does
- *           a fancier job on this. FIXME - this could be extended to
- *           handle higher-rank PRF_ARG1.
- *
- *           PRF_ARG1 is a structural constant, and PRF_ARG2 is
- *           a constant.
- *
- *           We do the modarray here, returning a new structural constant.
- *
- *   Case 3: Remove the N_prf if SelModarray() has marked this N_prf as a no-op.
- *
- *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
 {
@@ -750,14 +693,14 @@ SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
     arg_node = ModarrayModarray_AxSxS (arg_node, arg_info);
 
     /*
-     *  Case 1:  z = F_modarray_AxSxS( X, offset, val)
+     *  Case 1:  z = F_modarray_AxSxS (X, offset, val)
      *           where X and val are both scalars, becomes:
      *           z = val;
      */
     if ((TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
         && (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG3 (arg_node)))))) {
         z = DUPdoDupNode (PRF_ARG3 (arg_node));
-        DBUG_PRINT ("_modarray_AxVxS( %s, [], %s) replaced by %s",
+        DBUG_PRINT ("_modarray_AxVxS (%s, [], %s) replaced by %s",
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                     AVIS_NAME (ID_AVIS (PRF_ARG3 (arg_node))),
                     AVIS_NAME (ID_AVIS (PRF_ARG3 (arg_node))));
@@ -799,17 +742,14 @@ SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_modarray_AxVxS(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_modarray_AxVxS(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements modarray for structural constant X.
+ * @brief Implements modarray for structural constant X.
  *   z = _modarray_AxVxS_(X, iv, val)
+ * This also removes the N_prf if SelModarray() has marked this N_prf
+ * as a no-op.
  *
- *   This also removes the N_prf if SelModarray() has
- *   marked this N_prf as a no-op.
- *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
 {
@@ -831,10 +771,10 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
      * if iv is an empty vector, we simply replace the entire
      * expression by val!
      * Well, not quite!!! This is only valid, iff
-     *      shape( val) ==  shape(X)
+     *      shape (val) ==  shape(X)
      * If we do not know this, then the only thing we can do is
      * to replace the modarray by
-     *      _type_conv_( type(X), val))
+     *      _type_conv_ (type(X), val))
      * iff a is AKS! * cf bug246 !!!
      *
      *
@@ -849,7 +789,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
                   PMconst (1, PMAgetVal (&coiv)), PMvar (1, PMAgetNode (&val), 0));
 
     /*
-     *  Case 1:  z = F_modarray_AxVxS( X, [], val)
+     *  Case 1:  z = F_modarray_AxVxS (X, [], val)
      *           where X and val are both scalars, becomes:
      *           z = val;
      */
@@ -860,7 +800,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     }
 
     /*
-     * Case 2: F_modarray_AxVxS( X = [x0, x1,...xn], iv = [c0,...,cn], val)
+     * Case 2: F_modarray_AxVxS (X = [x0, x1,...xn], iv = [c0,...,cn], val)
      *         where val is scalar, and the shapes of X and iv match.
      */
     if (NULL == z) {
@@ -896,16 +836,14 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_modarray_AxVxA(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_modarray_AxVxA(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements modarray for structural constant X.
+ * @brief Implements modarray for structural constant X.
  *   z = _modarray_AxVxA_(X, iv, val)
- *   shape(iv) <= dim(X). This makes things a bit harder
- *   than the _modarray_AxVxS case.
+ * shape(iv) <= dim(X). This makes things a bit harder
+ * than the _modarray_AxVxS case.
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
 {
@@ -930,7 +868,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /**
-     * match F_modarray_AxVxA( _, [], val)
+     * match F_modarray_AxVxA (_, [], val)
      */
     emptyVec = COmakeConstant (T_int, SHcreateShape (1, 0), NULL);
     pat1 = PMprf (1, PMAisPrf (F_modarray_AxVxA), 3, PMvar (0, 0),
@@ -940,7 +878,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG3 (arg_node));
     } else {
         /**
-         *   match F_modarray_AxVxA( X = [...], [c0,...,cn], val)
+         *   match F_modarray_AxVxA (X = [...], [c0,...,cn], val)
          */
         pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxA), 3,
                       PMarray (2, PMAgetNode (&X), PMAgetFS (&fsX), 1, PMskip (0)),
@@ -962,23 +900,23 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                  *  NB: The only way to get this version of modarray is by means
                  *  of WLUR!! Therefore, it is guaranteed that in fact shape(iv) <=
                  * dim(X)! However, this does not guarantee that shape(iv) <= shape(
-                 * frameshape( X))! Example: foo( int[2,2] a)
+                 * frameshape (X))! Example: foo (int[2,2] a)
                  *    {
                  *      X = [a,a];
                  *      ...
                  *    }
-                 *  => frameshape( X) = [2]  but shape(X) = [2,2,2] !!
+                 *  => frameshape (X) = [2]  but shape(X) = [2,2,2] !!
                  */
                 DBUG_ASSERT (COgetDim (fsval) == 1,
                              "illegal frameshape on last arg to modarray");
                 /**
                  * we have to distinguish 3 cases here:
-                 * a) COgetExtent( coiv, 0) + COgetExtent( fsval, 0)
-                 *     == COgetExtent( fsX, 0)) :
+                 * a) COgetExtent (coiv, 0) + COgetExtent (fsval, 0)
+                 *     == COgetExtent (fsX, 0)) :
                  *     this is the trivial case. All we need to do is to replace
                  *     the correct elements in X by the elements of val
-                 * b) COgetExtent( coiv, 0) + COgetExtent( fsval, 0)
-                 *    < COgetExtent( fsX, 0)) :
+                 * b) COgetExtent (coiv, 0) + COgetExtent (fsval, 0)
+                 *    < COgetExtent (fsX, 0)) :
                  *    i.e. "we know more more about the array X than needed".
                  *    Example:
                  *       X = [[[a,b],[c,d]], [[a,b],[c,d]]]
@@ -989,8 +927,8 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                  *       B = [c,d]
                  *    and then replace with:
                  *       res = [ [A, B], [q,r] ]
-                 * c) COgetExtent( coiv, 0) + COgetExtent( fsval, 0)
-                 *    > COgetExtent( fsX, 0)) :
+                 * c) COgetExtent (coiv, 0) + COgetExtent (fsval, 0)
+                 *    > COgetExtent (fsX, 0)) :
                  *    i.e., "we know more avout the value than needed".
                  *    Example:
                  *       X = [[a,b], [c,d]]
@@ -1029,7 +967,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
             } else if (PMmatchFlatSkipExtrema (pat4, val) && (COgetDim (coiv) == 1)
                        && (COgetExtent (coiv, 0) == COgetExtent (fsX, 0))) {
                 /*
-                 * match F_modarray_AxVxA( X = [...], iv = [co,...,cn], val = V)
+                 * match F_modarray_AxVxA (X = [...], iv = [co,...,cn], val = V)
                  *
                  * we only do the simple case (case a above) where V fits neatly
                  * into X as an element.
@@ -1061,14 +999,11 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_cat_VxV(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_cat_VxV(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements vector catenate
+ * @brief Implements vector catenate.
  *
- *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_cat_VxV (node *arg_node, info *arg_info)
 {
@@ -1150,8 +1085,7 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @function:
- *   node *SelModarray(node *arg_node)
+ * @fn node *SelModarray(node *arg_node)
  *
  * @param: arg_node is a _sel_ N_prf.
  *
@@ -1164,30 +1098,30 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
  *
  *  Case 1. We have one of the following code patterns:
  *
- *    X = modarray_AxVxS_( M, iv, val);
- *    z = sel_VxA( iv, X);
+ *    X = modarray_AxVxS_ (M, iv, val);
+ *    z = sel_VxA (iv, X);
  *
  *     or
  *
- *    X = modarray_AxVxA_( M, iv, val);
- *    z = sel_VxA( iv, X);
+ *    X = modarray_AxVxA_ (M, iv, val);
+ *    z = sel_VxA (iv, X);
  *
  *     or
  *
- *    X = idx_modarray_AxVxS_( M, iv, val);
- *    z = idx_sel_VxA( iv, X);
+ *    X = idx_modarray_AxVxS_ (M, iv, val);
+ *    z = idx_sel_VxA (iv, X);
  *
  *    All of these will turn into:
  *
  *    z = val;
  *
- * Case 4: M' = _modarray( M, iv, q);
- *         X  = _afterguard( M', p0, p1, ...);
- *         z  = _sel_VxA_( iv, X);
+ * Case 4: M' = _modarray (M, iv, q);
+ *         X  = guard (M', p0, p1, ...);
+ *         z  = _sel_VxA_ (iv, X);
  *
  *     We map this into:
  *
- *         z  = _afterguard( q, p0, p1, ...);
+ *         z  = guard (q, p0, p1, ...);
  *
  * Case 5: This arises when compiling with -ecc or -check c and AWLF:
  *         Scalar index variant.
@@ -1195,37 +1129,37 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
  *     lim = ...;
  *     iv = [ i ];
  *     q = 42;
- *     M' = _modarray_AxVxS_( M, iv, q);
- *     M''  = _afterguard_( M' , p0...);
- *     i' , p1 = _val_lt_val_SxS_( i, lim);
+ *     M' = _modarray_AxVxS_ (M, iv, q);
+ *     M'' = guard (1, M' , p0...);
+ *     i', p1 = _val_lt_val_SxS_ (i, lim);
  *     iv'' = [ i'];
- *     z' = _sel_VxA_( iv'', M'');
- *     z  = _afterguard_( z', p1);
+ *     z' = _sel_VxA_ (iv'', M'');
+ *     z  = guard (1, z', p1);
  *
  *     We map this into:
  *
  *     z' = q;
- *     z  = _afterguard( z', p0, p1, ...);
+ *     z  = guard (1, z', p0, p1, ...);
  *
- *     FIXME: We don't get the afterguard just yet...
+ *     FIXME: We don't get the guard just yet...
  *
  * Case 6: Index vector variant of Case 5:
  *
  *     lim = [...];
  *     iv = [ i ];
  *     q = 42;
- *     M' = _modarray_AxVxS_( M, iv, q);
- *     M''  = _afterguard_( M' , p10, p11, ...);
- *     iv',  p2 = _shape_matches_dim_VxA_( iv, M'');
- *     iv'' ,p1 = _val_lt_shape_VxA_( iv', M'');
- *     z' = _sel_VxA_( iv'', M'');
- *     z  = _afterguard_( z', p1, p2);
+ *     M' = _modarray_AxVxS_ (M, iv, q);
+ *     M'' = guard (1, M' , p10, p11, ...);
+ *     iv', p2 = _shape_matches_dim_VxA_ (iv, M'');
+ *     iv'', p1 = _val_lt_shape_VxA_ (iv', M'');
+ *     z' = _sel_VxA_ (iv'', M'');
+ *     z  = guard (1, z', p1, p2);
  *
  *  We have to show that iv'' == iv, and that M'' == M; then
  *  we can replace the _sel_VxA by:
  *
- *     z' = _afterguard( q, p10, p11,...);
- *     z  = _afterguard_( z', p1, p2);
+ *     z' = guard (1, q, p10, p11,...);
+ *     z  = guard (1, z', p1, p2);
  *
  *
  * @comments:
@@ -1305,8 +1239,7 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
  * @result: If the selection can be folded, val from the modarray.
  *          Else, NULL.
  *
- *****************************************************************************/
-
+ ******************************************************************************/
 static node *
 SelModarray (node *arg_node, info *arg_info)
 {
@@ -1330,31 +1263,31 @@ SelModarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    /* z = _sel_VxA_( iv'', X); */
+    /* z = _sel_VxA_ (iv'', X); */
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&ivpp), 0),
                   PMvar (1, PMAgetNode (&X), 0));
 
     /* Chase  iv'' to iv's RHS */
     pativ = PMany (1, PMAgetNode (&iv), 0);
 
-    /* _X = modarray_AxVxS_( M, iv, val) */
+    /* _X = modarray_AxVxS_ (M, iv, val) */
     pat2 = PMprf (2, PMAgetNode (&modar), PMAisPrf (F_modarray_AxVxS), 3, PMvar (0, 0),
                   PMvar (1, PMAgetNode (&iv2), 0), PMvar (1, PMAgetNode (&val), 0));
 
-    /* _X = modarray_AxSxA_( M, iv, val) */
+    /* _X = modarray_AxSxA_ (M, iv, val) */
     pat3 = PMprf (2, PMAgetNode (&modar), PMAisPrf (F_modarray_AxVxA), 3, PMvar (0, 0),
                   PMvar (1, PMAgetNode (&iv2), 0), PMvar (1, PMAgetNode (&val), 0));
 
-    /* X' = _afterguard_( X, p0, p1, ... ); */
-    pat4 = PMprf (2, PMAisPrf (F_afterguard), PMAgetNode (&Mprime), 1, PMskip (0));
+    /* x' = guard (x, p0, .., pm); */
+    pat4 = PMprf (2, PMAisPrf (F_guard), PMAgetNode (&Mprime), 1, PMskip (0));
 
     /* Chase iv' in _modarray(X, iv', val) back to iv */
     pat5 = PMany (1, PMAisNode (&iv), 0);
-    /* Ditto for iv2 in _sel_VxA_( iv2, Mprime) */
+    /* Ditto for iv2 in _sel_VxA_ (iv2, Mprime) */
     pat6 = PMany (1, PMAgetNode (&iv3), 0);
     pat7 = PMany (1, PMAgetNode (&iv), 0);
 
-    /* Skip guards on iv and afterguard on X */
+    /* Skip guards on iv and guard on X */
     if (PMmatchFlat (pat1, arg_node) && PMmatchFlatSkipGuards (pativ, ivpp)
         && (PMmatchFlatSkipGuards (pat2, X) || PMmatchFlatSkipGuards (pat3, X))
         && PMmatchFlatSkipGuards (pat5, iv2)) {
@@ -1369,7 +1302,7 @@ SelModarray (node *arg_node, info *arg_info)
 
         /* Case 4 */
         /*
-         * Mprime will be the F_afterguard N_prf node.
+         * Mprime will be the F_guard N_prf node.
          */
         if ((NULL != ivpp) && (PMmatchFlat (pativ, ivpp)) && (PMmatchFlat (pat4, X))
             && ((PMmatchFlat (pat2, PRF_ARG1 (Mprime))
@@ -1399,17 +1332,16 @@ SelModarray (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @function:
- *   node *IdxselModarray(node *arg_node)
+ * @fn node *IdxselModarray(node *arg_node)
  *
  * @param: arg_node is a _idx_sel_ N_prf.
  *
  * @brief: Like SelModarray, but works on _idx_sel/_idx_modarray pairs.
  *         See there for details.
  *
- *                  offset = vect2offset( shape(M), iv);
- *                  X = idx_modarray_AxSxS_( M, offset, val);
- *                  z = _idx_sel( offset, X);
+ *                  offset = vect2offset (shape(M), iv);
+ *                  X = idx_modarray_AxSxS_ (M, offset, val);
+ *                  z = _idx_sel (offset, X);
  *
  *         becomes:
  *                  z = val;
@@ -1420,8 +1352,7 @@ SelModarray (node *arg_node, info *arg_info)
  * @result: If the selection can be folded, val from the modarray.
  *          Else, NULL.
  *
- *****************************************************************************/
-
+ ******************************************************************************/
 static node *
 IdxselModarray (node *arg_node, info *arg_info)
 {
@@ -1436,16 +1367,16 @@ IdxselModarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    /* z = _idx_sel( offset, X); */
+    /* z = _idx_sel (offset, X); */
     pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset1), 0),
                   PMvar (1, PMAgetNode (&X), 0));
 
-    /* _X = idx_modarray_AxSxS_( M, offset, val) */
+    /* _X = idx_modarray_AxSxS_ (M, offset, val) */
     pat2
       = PMprf (2, PMAisPrf (F_idx_modarray_AxSxS), PMAgetNode (&modar), 3, PMvar (0, 0),
                PMvar (1, PMAgetNode (&offset2), 0), PMvar (1, PMAgetNode (&val), 0));
 
-    /* Must skip afterguard on X */
+    /* Must skip guard on X */
     if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, X))
         && (IVUToffsetMatchesOffset (offset1, offset2))) {
 #ifdef BUG897
@@ -1463,8 +1394,7 @@ IdxselModarray (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @function:
- *   node *SelModarrayCase2(node *arg_node, info *arg_info)
+ * @fn node *SelModarrayCase2(node *arg_node, info *arg_info)
  *
  * @param: arg_node is a _sel_ N_prf.
  *
@@ -1491,7 +1421,7 @@ IdxselModarray (node *arg_node, info *arg_info)
  * @result: if the selection can be folded, the result is the
  *          val5 from the first modarray. Otherwise, NULL.
  *
- *****************************************************************************/
+ ******************************************************************************/
 static node *
 SelModarrayCase2 (node *arg_node, info *arg_info)
 {
@@ -1507,11 +1437,11 @@ SelModarrayCase2 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    /* z = _sel_VxA_( ivc1, X); */
+    /* z = _sel_VxA_ (ivc1, X); */
     pat1 = PMprf (2, PMAisPrf (F_sel_VxA), PMAgetNode (&modar), 2,
                   PMconst (1, PMAgetVal (&ivc1)), PMvar (1, PMAgetNode (&X), 0));
 
-    /* X = _modarray_AxVxS_( M, ivc2, val)  */
+    /* X = _modarray_AxVxS_ (M, ivc2, val)  */
     pat2 = PMprf (2, PMAisPrf (F_modarray_AxVxS), PMAgetNode (&modar), 3,
                   PMvar (1, PMAgetNode (&X2), 0), PMconst (1, PMAgetVal (&ivc2)),
                   PMvar (1, PMAgetNode (&val), 0));
@@ -1544,8 +1474,7 @@ SelModarrayCase2 (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @function:
- *   node *IdxselModarrayCase2(node *arg_node, info *arg_info)
+ * @fn node *IdxselModarrayCase2(node *arg_node, info *arg_info)
  *
  * @param: arg_node is an idx_sel N_prf.
  *
@@ -1572,7 +1501,7 @@ SelModarrayCase2 (node *arg_node, info *arg_info)
  * @result: if the selection can be folded, the result is the
  *          val5 from the first modarray. Otherwise, NULL.
  *
- *****************************************************************************/
+ ******************************************************************************/
 static node *
 IdxselModarrayCase2 (node *arg_node, info *arg_info)
 {
@@ -1588,11 +1517,11 @@ IdxselModarrayCase2 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    /* z = _idx_sel( ivc3, d); */
+    /* z = _idx_sel (ivc3, d); */
     pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAgetVal (&ivc1)),
                   PMvar (1, PMAgetNode (&X), 0));
 
-    /* X = _idx_modarray_AxSxS_( M, ivc2, val)  */
+    /* X = _idx_modarray_AxSxS_ (M, ivc2, val)  */
     pat2 = PMprf (2, PMAisPrf (F_idx_modarray_AxSxS), PMAgetNode (&modar), 3,
                   PMvar (1, PMAgetNode (&X2), 0), PMconst (1, PMAgetVal (&ivc2)),
                   PMvar (1, PMAgetNode (&val), 0));
@@ -1625,15 +1554,13 @@ IdxselModarrayCase2 (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node * SelEmptyScalar(node *arg_node, info *arg_info)
+ * @fn node * SelEmptyScalar(node *arg_node, info *arg_info)
  *
- * description:
- *   Detects:                  z = sel([], scalar);
+ * @brief Detects:                  z = sel([], scalar);
  *     and converts it into:   z = scalar;
  *
  *
- *****************************************************************************/
+ ******************************************************************************/
 static node *
 SelEmptyScalar (node *arg_node, info *arg_info)
 {
@@ -1657,12 +1584,13 @@ SelEmptyScalar (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *SelArrayOfEqualElements( node *arg_node, info *arg_info)
+/******************************************************************************
+ *
+ * @fn node *SelArrayOfEqualElements (node *arg_node, info *arg_info)
  *
  * @brief Matches selections of the following form
  *
- *        z = sel( iv, [i, i, i, i, i]);
+ *        z = sel (iv, [i, i, i, i, i]);
  *
  *        where the length of iv matches the length of the frameshape of
  *        the array.
@@ -1716,19 +1644,20 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *IdxselArrayOfEqualElements( node *arg_node, info *arg_info)
+/******************************************************************************
+ *
+ * @fn node *IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
  *
  * @brief Matches selections of the following form
  *
- *        z = sel( iv, [i, i, i, i, i]);
+ *        z = sel (iv, [i, i, i, i, i]);
  *
  *        where the length of iv matches the length of the frameshape of
  *        the array.
  *
  *        or
  *
- *        z =_idx_sel( offset, [ i, i, i, i, i]);
+ *        z =_idx_sel (offset, [ i, i, i, i, i]);
  *
  *
  * @param arg_node N_prf node of sel
@@ -1784,23 +1713,24 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *SelProxyArray( node *arg_node, info *arg_info)
+/******************************************************************************
+ *
+ * @fn node *SelProxyArray (node *arg_node, info *arg_info)
  *
  * @brief This matches the case where elements are selected from an
  *        array via a proxy array built just for this purpose.
  *
- *        vi = sel( [l1, ..., lm, i], A);
+ *        vi = sel ([l1, ..., lm, i], A);
  *        P = [v1, ..., vn]
  *
  *        ...
  *
- *        x = sel( [iv], P);
+ *        x = sel ([iv], P);
  *
  *        where iv_x is the index of some withloop. We cannot replace P by A,
  *        as P might be just a subarray. However, we can replace the sel by
  *
- *        x = sel( [l1, ..., lm, iv], A);
+ *        x = sel ([l1, ..., lm, iv], A);
  *
  *        Furthermore, we can filter out the prefix of all elements from
  *        axes that have an extent of 1. In these cases, the corresponding
@@ -1812,7 +1742,7 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
  *
  *        ...
  *
- *        x = sel( {iv_1, iv_2], P);
+ *        x = sel ({iv_1, iv_2], P);
  *
  *        we can ignore iv_1 as it has to be 0 anyway. We lose a check here
  *        but ecc should catch these cases for us.
@@ -1951,7 +1881,7 @@ SelProxyArray (node *arg_node, info *arg_info)
              *
              * A = ...
              * P = [[sel(p_iv1, A), ..., [sel(p_ivn, A)]];
-             * r = sel( iv, P);
+             * r = sel (iv, P);
              *
              * where the outer indices of iv have no correspondence in the p_ivx.
              * Note, however, that this transformation is still correct if the
@@ -1985,7 +1915,7 @@ SelProxyArray (node *arg_node, info *arg_info)
                  *
                  * check whether all sels are of the form
                  *
-                 * sel_VxA( [v1, ..., vn, c1, ..., cn], A)
+                 * sel_VxA ([v1, ..., vn, c1, ..., cn], A)
                  *
                  */
                 if (tlen == flen) {
@@ -2007,7 +1937,7 @@ SelProxyArray (node *arg_node, info *arg_info)
                 /*
                  * if that worked out, we can replace the selection by
                  *
-                 * sel ( [v1, ..., vn, i1, ..., in]], A)
+                 * sel  ([v1, ..., vn, i1, ..., in]], A)
                  */
                 if (tmp != IPS_FAILED) {
                     DBUG_PRINT_TAG ("CF_PROXY", "Replacing a proxy sel!");
@@ -2090,7 +2020,7 @@ IdxselProxyArray (node *arg_node, info *arg_info)
              *
              * A = ...
              * P = [[sel(p_iv1, A), ..., [sel(p_ivn, A)]];
-             * r = sel( iv, P);
+             * r = sel (iv, P);
              *
              * where the outer indices of iv have no correspondence in the p_ivx.
              * Note, however, that this transformation is still correct if the
@@ -2124,7 +2054,7 @@ IdxselProxyArray (node *arg_node, info *arg_info)
                  *
                  * check whether all sels are of the form
                  *
-                 * sel_VxA( [v1, ..., vn, c1, ..., cn], A)
+                 * sel_VxA ([v1, ..., vn, c1, ..., cn], A)
                  *
                  */
                 if (tlen == flen) {
@@ -2145,7 +2075,7 @@ IdxselProxyArray (node *arg_node, info *arg_info)
                 /*
                  * if that worked out, we can replace the selection by
                  *
-                 * sel ( [v1, ..., vn, i1, ..., in]], A)
+                 * sel  ([v1, ..., vn, i1, ..., in]], A)
                  */
                 if (tmp != IPS_FAILED) {
                     DBUG_PRINT_TAG ("CF_PROXY", "Replacing a proxy sel!");
@@ -2187,14 +2117,12 @@ IdxselProxyArray (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_sel(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_sel(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements sel(arg1, arg2) for structural constants
+ * @brief Implements sel(arg1, arg2) for structural constants
  *
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_sel (node *arg_node, info *arg_info)
 {
@@ -2228,14 +2156,12 @@ SCCFprf_sel (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node * IdxselEmptyScalar(node *arg_node, info *arg_info)
+ * @fn node * IdxselEmptyScalar(node *arg_node, info *arg_info)
  *
- * description:
- *   Detects:                  z = _idx_sel( 0, scalar);
+ * @brief Detects:                  z = _idx_sel (0, scalar);
  *     and converts it into:   z = scalar;
  *
- *****************************************************************************/
+ ******************************************************************************/
 static node *
 IdxselEmptyScalar (node *arg_node, info *arg_info)
 {
@@ -2257,7 +2183,7 @@ IdxselEmptyScalar (node *arg_node, info *arg_info)
     if ((NULL != arg1c) && (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))
         && (COisZero (arg1c, TRUE))) {
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
-        DBUG_PRINT ("Replaced _idx_sel( 0, Scalar) by %s", AVIS_NAME (ID_AVIS (res)));
+        DBUG_PRINT ("Replaced _idx_sel (0, Scalar) by %s", AVIS_NAME (ID_AVIS (res)));
     }
     arg1c = (NULL != arg1c) ? COfreeConstant (arg1c) : arg1c;
     pat = PMfree (pat);
@@ -2265,24 +2191,23 @@ IdxselEmptyScalar (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/** <!-- ****************************************************************** -->
+/******************************************************************************
  *
- * @fn node *HandleCompositionWithGenarray( node *arg_node...)
+ * @fn node *HandleCompositionWithGenarray (node *arg_node...)
  *
  * @brief Handler for compositions of indexing on genarray result:
- *        Currently supported:
- *          Q = genarray([shp], scalar);
- *          el = idx_sel( offset, Q);  OR
- *          el = _sel_VxA_( iv, Q);
+ * Currently supported:
+ *   Q = genarray([shp], scalar);
+ *   el = idx_sel (offset, Q);  OR
+ *   el = _sel_VxA_ (iv, Q);
  *
- * @param  arg_node: The putative N_prf for el
+ * @param arg_node The putative N_prf for el.
  *
- * @return If we can prove that all elements of Q are identical,
- *         we can replace the selection operation by el = scalar.
+ * @returns If we can prove that all elements of Q are identical,
+ * we can replace the selection operation by el = scalar.
  *
- *         This code assumes that -check c will ensure that
- *         shp satisfies rank, shape, and value requirements
- *         ( index error checking) for the index operation.
+ * @note This code assumes that -check c will ensure that shp satisfies rank,
+ * shape, and value requirements (index error checking) for the index operation.
  *
  ******************************************************************************/
 static node *
@@ -2297,10 +2222,10 @@ HandleCompositionWithGenarray (node *arg_node)
 
     DBUG_ENTER ();
 
-    /* z = _sel_VxA_( iv, q); */
+    /* z = _sel_VxA_ (iv, q); */
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
                   PMvar (1, PMAgetNode (&q), 0));
-    /* z = _idx_sel( offset, q); */
+    /* z = _idx_sel (offset, q); */
     pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
                   PMvar (1, PMAgetNode (&q), 0));
     if ((PMmatchFlat (pat1, arg_node) || PMmatchFlat (pat2, arg_node))) {
@@ -2319,13 +2244,11 @@ HandleCompositionWithGenarray (node *arg_node)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_idx_sel(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_idx_sel (node *arg_node, info *arg_info)
  *
- * description:
- *   Implements idx_sel(arg1, arg2) for structural constants
+ * @brief Implements idx_sel (arg1, arg2) for structural constants.
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_idx_sel (node *arg_node, info *arg_info)
 {
@@ -2369,30 +2292,25 @@ SCCFprf_idx_sel (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_mask_SxSxS(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_mask_SxSxS(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements mask function, used by ALWFI.
- *   The semantics of z = mask( p, x, y) are, essentially, the same as
- *   the ill-named <where> function of the SAC stdlib:
+ * @brief Implements mask function, used by ALWFI. The semantics of z = mask (p,
+ * x, y) are, essentially, the same as the ill-named <where> function of the SAC
+ * stdlib:
  *
- *     z = p ? x : y;
+ *   z = p ? x : y;
  *
- *   We implement this so that it is a primitive, rather than
- *   a CONDFUN. The intent here is to let extrema pass through
- *   the argument, which does not happen for CONDFUNs.
+ * We implement this so that it is a primitive, rather than a CONDFUN. The
+ * intent here is to let extrema pass through the argument, which does not
+ * happen for CONDFUNs.
  *
- * result:
- *   If p is constant, then we perform the above substutition.
- *   If x and y match, the result is x, regardless of p.
+ * @returns If p is constant, then we perform the above substutition. If x and y
+ * match, the result is x, regardless of p. Otherwise, we do nothing.
  *
- *   Otherwise, we do nothing.
+ * @note In all of the mask() CF code, we skip extrema and guards for analysis
+ * only: results are PRF_ARG values.
  *
- *   In all of the mask() CF code, we skip extrema and guards for
- *   analysis only: results are PRF_ARG values.
- *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_mask_SxSxS (node *arg_node, info *arg_info)
 {
@@ -2405,7 +2323,7 @@ SCCFprf_mask_SxSxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
-        DBUG_PRINT ("Replacing mask( p, x, x) by x");
+        DBUG_PRINT ("Replacing mask (p, x, x) by x");
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else {
         pat = PMprf (1, PMAisPrf (F_mask_SxSxS), 3, PMconst (1, PMAgetVal (&p)),
@@ -2432,24 +2350,19 @@ SCCFprf_mask_SxSxS (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_mask_SxSxV(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_mask_SxSxV(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements mask function, used by ALWFI.
- *   The semantics of z = mask( p, x, y) are, essentially, the same as
- *   the ill-named <where> function of the SAC stdlib:
+ * @brief Implements mask function, used by ALWFI. The semantics of z = mask (p,
+ * x, y) are, essentially, the same as the ill-named <where> function of the SAC
+ * stdlib:
  *
- *    z[i] = x if p;  else y[i];
+ *   z[i] = x if p;  else y[i];
  *
- * result:
- *   If p is constant, then we perform the above substutition.
- *   We also do a quick check to see if p is all TRUE or all FALSE.
- *   If so, we don't care if y is an N_array node or not.
+ * @returns If p is constant, then we perform the above substutition. We also do
+ * a quick check to see if p is all TRUE or all FALSE. If so, we don't care if y
+ * is an N_array node or not. Otherwise, we do nothing.
  *
- *   Otherwise, we do nothing.
- *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_mask_SxSxV (node *arg_node, info *arg_info)
 {
@@ -2491,22 +2404,18 @@ SCCFprf_mask_SxSxV (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_mask_SxVxS(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_mask_SxVxS(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements mask function, used by ALWFI.
- *   The semantics of z = mask( p, x, y) are, essentially, the same as
- *   the ill-named <where> function of the SAC stdlib:
+ * @brief Implements mask function, used by ALWFI. The semantics of z = mask (p,
+ * x, y) are, essentially, the same as the ill-named <where> function of the SAC
+ * stdlib:
  *
- *    z[i] = x[i] if p;  else y;
+ *   z[i] = x[i] if p;  else y;
  *
- * result:
- *   If p is constant, then we perform the above substutition.
+ * @returns If p is constant, then we perform the above substutition. Otherwise,
+ * we do nothing.
  *
- *   Otherwise, we do nothing.
- *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_mask_SxVxS (node *arg_node, info *arg_info)
 {
@@ -2548,24 +2457,18 @@ SCCFprf_mask_SxVxS (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_mask_SxVxV(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_mask_SxVxV(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements mask function, used by AWLFI, and stdlib
- *   The semantics of z = mask( p, x, y) are, essentially, the same as
- *   the ill-named <where> function of the SAC stdlib:
+ * @brief Implements mask function, used by AWLFI, and stdlib The semantics of z
+ * = mask (p, x, y) are, essentially, the same as the ill-named <where> function
+ * of the SAC stdlib:
  *
- *    z] = x if p;  else y;
+ *   z] = x if p;  else y;
  *
- * result:
- *   If p is constant, then we perform the above substutition.
+ * @returns If p is constant, then we perform the above substutition. Finally,
+ * if x and y match, the result is x, regardless of p. Otherwise, we do nothing.
  *
- *   Finally, if x and y match, the result is x, regardless of p.
- *
- *   Otherwise, we do nothing.
- *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_mask_SxVxV (node *arg_node, info *arg_info)
 {
@@ -2578,7 +2481,7 @@ SCCFprf_mask_SxVxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
-        DBUG_PRINT ("Replacing mask( p, x, x) by x");
+        DBUG_PRINT ("Replacing mask (p, x, x) by x");
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else {
         pat = PMprf (1, PMAisPrf (F_mask_SxVxV), 3, PMconst (1, PMAgetVal (&p)),
@@ -2602,17 +2505,15 @@ SCCFprf_mask_SxVxV (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_mask_VxSxS(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_mask_VxSxS(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements mask function, used by ALWFI.
- *   The semantics of z = mask( p, x, y) are, essentially, the same as
- *   the ill-named <where> function of the SAC stdlib:
+ * @brief Implements mask function, used by ALWFI. The semantics of z = mask (p,
+ * x, y) are, essentially, the same as the ill-named <where> function of the SAC
+ * stdlib:
  *
- *    z[i] = x[i] if p;  else y;
+ *   z[i] = x[i] if p;  else y;
  *
- * result:
+ * @returns
  *   If p is constant, then we perform the above substutition.
  *   We also do a quick check to see if p is all TRUE or all FALSE.
  *
@@ -2620,7 +2521,7 @@ SCCFprf_mask_SxVxV (node *arg_node, info *arg_info)
  *
  *   Otherwise, we do nothing.
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_mask_VxSxS (node *arg_node, info *arg_info)
 {
@@ -2640,7 +2541,7 @@ SCCFprf_mask_VxSxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
-        DBUG_PRINT ("Replacing mask( p, x, x) by x");
+        DBUG_PRINT ("Replacing mask (p, x, x) by x");
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else {
         pat = PMprf (1, PMAisPrf (F_mask_VxSxS), 3,
@@ -2675,12 +2576,10 @@ SCCFprf_mask_VxSxS (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_mask_VxSxV(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_mask_VxSxV(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements mask function, used by ALWFI.
- *   The semantics of z = mask( p, x, y) are, essentially, the same as
+ * @brief Implements mask function, used by ALWFI.
+ *   The semantics of z = mask (p, x, y) are, essentially, the same as
  *   the ill-named <where> function of the SAC stdlib:
  *
  *    z[i] = x if p[i];  else y;
@@ -2693,7 +2592,7 @@ SCCFprf_mask_VxSxS (node *arg_node, info *arg_info)
  *   Otherwise, we do nothing.
  *
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_mask_VxSxV (node *arg_node, info *arg_info)
 {
@@ -2741,12 +2640,10 @@ SCCFprf_mask_VxSxV (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_mask_VxVxS(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_mask_VxVxS(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements mask function, used by ALWFI.
- *   The semantics of z = mask( p, x, y) are, essentially, the same as
+ * @brief Implements mask function, used by ALWFI.
+ *   The semantics of z = mask (p, x, y) are, essentially, the same as
  *   the ill-named <where> function of the SAC stdlib:
  *
  *    z[i] = x[i] if p[i];  else y;
@@ -2759,7 +2656,7 @@ SCCFprf_mask_VxSxV (node *arg_node, info *arg_info)
  *   Otherwise, we do nothing.
  *
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_mask_VxVxS (node *arg_node, info *arg_info)
 {
@@ -2805,12 +2702,10 @@ SCCFprf_mask_VxVxS (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_mask_VxVxV(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_mask_VxVxV(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements mask function, used by ALWFI.
- *   The semantics of z = mask( p, x, y) are, essentially, the same as
+ * @brief Implements mask function, used by ALWFI.
+ *   The semantics of z = mask (p, x, y) are, essentially, the same as
  *   the ill-named <where> function of the SAC stdlib:
  *
  *    z[i] = x[i] if p[i];  else y[i];
@@ -2824,7 +2719,7 @@ SCCFprf_mask_VxVxS (node *arg_node, info *arg_info)
  *
  *   Otherwise, we do nothing.
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_mask_VxVxV (node *arg_node, info *arg_info)
 {
@@ -2842,7 +2737,7 @@ SCCFprf_mask_VxVxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
-        DBUG_PRINT ("Replacing mask( p, x, x) by x");
+        DBUG_PRINT ("Replacing mask (p, x, x) by x");
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else {
         pat = PMprf (1, PMAisPrf (F_mask_VxVxV), 3,
@@ -2878,17 +2773,15 @@ SCCFprf_mask_VxVxV (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *SCCFprf_idxs2offset(node *arg_node, info *arg_info)
+ * @fn node *SCCFprf_idxs2offset(node *arg_node, info *arg_info)
  *
- * description:
- *   Implements _idxs2offset( shp)
+ * @brief Implements _idxs2offset (shp)
  *   Case 1: This is the degenerate case, when shp is an empty vector.
  *   Case 2: Indexing a vector
  *
  *   FIXME : temp kludge pending TC/CO fixup!
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SCCFprf_idxs2offset (node *arg_node, info *arg_info)
 {

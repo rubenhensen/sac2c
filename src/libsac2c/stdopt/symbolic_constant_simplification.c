@@ -1,107 +1,88 @@
-/** <!--********************************************************************-->
+/******************************************************************************
  *
  * @defgroup SCS Symbolic Constant Simplification
  *
- *   This module contains the function table entries that
- *   implement symbolic constant simplification.
+ * This module contains the function table entries that implement symbolic
+ * constant simplification.
  *
- *   Specifically, the following replacements are made by
- *   functions here:
+ * Specifically, the following replacements are made by functions here:
  *
- *    add (x+0          ->x,     0+x ->x),
- *    add (x+esdneg(x)  -> 0
- *    add (esdneg(x)+x  -> 0
- *    sub (x-0          ->x,     x-x ->0)
- *    mul (x*0          ->0,     0*x ->0, x*0 -> 0, x*1 ->x, 1*x. ->x),
- *    div (x/0          ->error, x/1 ->x),
- *    and (x&1          ->x,     1&x ->x, x&1 -> x, x&0 ->0, 0&x. ->0),
- *    or  (x|1          ->1,     1|x ->1, x|1 -> 1, x|0 ->x, 0|x. ->x)
+ *   add (x+0          -> x,     0+x ->x),
+ *   add (x+esdneg(x)  -> 0
+ *   add (esdneg(x)+x  -> 0
+ *   sub (x-0          -> x,     x-x ->0)
+ *   mul (x*0          -> 0,     0*x ->0, x*0 -> 0, x*1 ->x, 1*x. ->x),
+ *   div (x/0          -> error, x/1 ->x),
+ *   and (x&1          -> x,     1&x ->x, x&1 -> x, x&0 ->0, 0&x. ->0),
+ *   or  (x|1          -> 1,     1|x ->1, x|1 -> 1, x|0 ->x, 0|x. ->x)
  *
- *    eq ((x == y)  -> TRUE  IFF (x == y))
- *    neq((x != y)  -> FALSE IFF (x == y))
- *    ge ((x >= x)  -> TRUE  IFF (x == x))
- *    le ((x <= x)  -> TRUE  IFF (x == x))
- *    not(x)        -> TRUE  iFF (FALSE == x), FALSE IFF (TRUE == x)
- *    tob(boolean)  -> Boolean and other coercion identities (int->int, char->char,
- *                     float->float, double->double
+ *   eq  ((x == y)  -> TRUE  IFF (x == y))
+ *   neq ((x != y)  -> FALSE IFF (x == y))
+ *   ge  ((x >= x)  -> TRUE  IFF (x == x))
+ *   le  ((x <= x)  -> TRUE  IFF (x == x))
+ *   not (x)        -> TRUE  iFF (FALSE == x), FALSE IFF (TRUE == x)
+ *   tob (boolean)  -> Boolean and other coercion identities
+ *                     (int->int, char->char, float->float, double->double)
  *
- *  Conformability checking CF:
+ * Conformability checking CF:
  *
- *    In _afterguard(x, p1, p2, p3...), remove any predicates that are true.
- *    If all predicates are removed, replace
- *     _afterguard(x) by x
+ * In: x1', .., xn' = guard (n, x1, .., xn, p1, .., pm) remove any predicates
+ * that are true. If all predicates are removed, replace by just x1, .., xn.
  *
- *    In:  iv', p1 = _non_neg_val_V_( iv), replace by
- *         iv', p1 = iv, TRUE;
- *         if we can know that all elements of iv are >= 0.
+ * In: iv', p1 = _non_neg_val_V_( iv), replace by iv', p1 = iv, TRUE; if we can
+ * know that all elements of iv are >= 0.
  *
- *    Also, if we discover ANY predicates that are false,
- *    signal an error, and abort compilation.
+ * Also, if we discover ANY predicates that are false, signal an error, and
+ * abort compilation.
  *
- *  For the redesign of AS/AL/DL, the following optimizations
- *  are introduced:
+ * For the redesign of AS/AL/DL, the following optimizations are introduced:
  *
- *     neg( neg( x)) => x
- *     neg( x+y) => neg(x) + neg(y)
+ *   neg (neg(x)) => x
+ *   neg (x + y)  => neg(x) + neg(y)
  *
- *     rec( rec( x)) => x
- *     rec( x*y) => rec(x) * rec( y)
+ *   rec (rec(x)) => x
+ *   rec (x * y)  => rec(x) * rec( y)
  *
- *     neg(x) + x  => zero
- *     x + neg(x)  => zero
- *     rec(x) * x  => one
- *     x * rec(x)  => one
+ *   neg(x) + x  => zero
+ *   x + neg(x)  => zero
+ *   rec(x) * x  => one
+ *   x * rec(x)  => one
  *
- * TODO: Most of the optimizations could be extended to operate
- *       on VxV data, when we can detect that the array shapes
- *       must match. Perhaps I should go try to pull this stuff
- *       out of SAA-land.
+ * @todo Most of the optimizations could be extended to operate on VxV data,
+ * when we can detect that the array shapes must match. Perhaps I should go try
+ * to pull this stuff out of SAA-land.
  *
- * The functions in this module are called from the generic
- * constant-folding traversal in constant_folding.c, via function table prf_scs[]
+ * The functions in this module are called from the generic constant-folding
+ * traversal in constant_folding.c, via function table prf_scs[].
  *
- *  @ingroup opt
- *
- *  @{
- *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @file symbolic_constant_simplification.c
- *
- * Prefix: SCS
- *
- *****************************************************************************/
-#include "symbolic_constant_simplification.h"
+ ******************************************************************************/
+#include "compare_tree.h"
+#include "constants.h"
+#include "constant_folding.h"
+#include "constant_folding_info.h"
+#include "ctinfo.h"
+#include "DupTree.h"
+#include "flattengenerators.h"
+#include "free.h"
+#include "globals.h"
+#include "ivexpropagation.h"
+#include "new_typecheck.h"
+#include "new_types.h"
+#include "pattern_match.h"
+#include "phase.h"
+#include "polyhedral_utilities.h"
+#include "saa_constant_folding.h"
+#include "shape.h"
+#include "traverse.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "tree_utils.h"
+#include "type_utils.h"
 
 #define DBUG_PREFIX "SCS"
 #include "debug.h"
 
-#include "ctinfo.h"
-#include "tree_basic.h"
-#include "node_basic.h"
-#include "tree_compound.h"
-#include "traverse.h"
-#include "new_types.h"
-#include "tree_utils.h"
-#include "type_utils.h"
-#include "new_typecheck.h"
-#include "free.h"
-#include "globals.h"
-#include "DupTree.h"
-#include "constants.h"
-#include "shape.h"
-#include "compare_tree.h"
-#include "ctinfo.h"
-#include "pattern_match.h"
-#include "constant_folding_info.h"
-#include "phase.h"
-#include "flattengenerators.h"
-#include "constant_folding.h"
-#include "saa_constant_folding.h"
-#include "ivexpropagation.h"
-#include "polyhedral_utilities.h"
+#include "symbolic_constant_simplification.h"
 
 /******************************************************************************
  *
@@ -1009,39 +990,51 @@ MatchNegS (node *arg1, node *arg2)
     DBUG_RETURN (res);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn static node *StripTrues( node *args)
- * Takes N_exprs chain and returns same with TRUE predicates removed.
+ * @fn static bool StripTrues (node **args)
  *
- * If we find a FALSE predicate, we complain, bitterly. The other choice
- * is to have TC complain, and it gives no hint as to what might be
- * wrong.
+ * @brief Takes N_exprs chain and returns same with TRUE predicates removed.
  *
- *****************************************************************************/
-
-static node *
-StripTrues (node *args)
+ * If we find a FALSE predicate, we complain, bitterly. The other choice is to
+ * have TC complain, and it gives no hint as to what might be wrong.
+ *
+ * @returns Whether any arguments were stripped.
+ *
+ ******************************************************************************/
+static bool
+StripTrues (node **args)
 {
-    ntype *predtyp;
+    bool changed = FALSE;
+    ntype *pred_type;
 
-    if (args != NULL) {
-        DBUG_ASSERT (N_exprs == NODE_TYPE (args), "expected exprs chain");
-        EXPRS_NEXT (args) = StripTrues (EXPRS_NEXT (args));
-        /* Delete predicate if true */
-        predtyp = ID_NTYPE (EXPRS_EXPR (args));
-        DBUG_PRINT ("Looking at: %s", AVIS_NAME (ID_AVIS (EXPRS_EXPR (args))));
-        if (TYisAKV (predtyp)) {
-            if (COisTrue (TYgetValue (predtyp), TRUE)) {
-                args = FREEdoFreeNode (args); /* Pop one predicate off the chain */
-            } else {
-                if (COisFalse (TYgetValue (predtyp), TRUE)) {
-                    DBUG_UNREACHABLE ("afterguard with FALSE element found");
-                }
-            }
+    DBUG_ENTER ();
+
+    if (*args != NULL) {
+        DBUG_ASSERT (NODE_TYPE (*args) == N_exprs,
+                     "N_exprs chain expected, got %s",
+                     global.mdb_nodetype[NODE_TYPE (*args)]);
+
+        // Strip truthy arguments bottom-up
+        changed = StripTrues (&EXPRS_NEXT (*args));
+
+        DBUG_PRINT ("Looking at: %s", ID_NAME (EXPRS_EXPR (*args)));
+
+        // Delete predicate if truthy
+        pred_type = ID_NTYPE (EXPRS_EXPR (*args));
+        if (TYisAKV (pred_type)) {
+            DBUG_ASSERT (COisTrue (TYgetValue (pred_type), TRUE),
+                         "guard is statically known to be false");
+
+            DBUG_PRINT ("Stripping: %s", ID_NAME (EXPRS_EXPR (*args)));
+
+            // Pop the predicate off the chain
+            *args = FREEdoFreeNode (*args);
+            changed = TRUE;
         }
     }
-    return (args);
+
+    DBUG_RETURN (changed);
 }
 
 /** <!--********************************************************************-->
@@ -3240,71 +3233,54 @@ SCSprf_reshape (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @fn node *SCSprf_guard( node *arg_node, info *arg_info)
+ * @fn node *SCSprf_guard (node *arg_node, info *arg_info)
  *
- * @brief x1', ..., xn' = guard (x1, ..., xn, p)
- * If p is true, then result is x1, ... xn.
+ * @brief x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+ * If all boolean predicates pi are true, then guard behaves as the identity
+ * function, and the result is x1, .., xn.
+ *
+ * @returns NULL if no predicates could be stripped, a new N_prf with updated
+ * predicates if some but not all predicates could be stripped, or an N_exprs
+ * chain of the arguments x1, .., xn if all predicates could be stripped.
  *
  ******************************************************************************/
 node *
 SCSprf_guard (node *arg_node, info *arg_info)
 {
-    node *exprs, *pred_expr;
-    ntype *pred_type;
-    node *res = NULL;
+    bool changed;
+    size_t num_args, num_rets;
+    node *last_arg, *preds, *res;
 
     DBUG_ENTER ();
 
-    // The last argument is the predicate
-    pred_expr = TCgetLastExprsExpr (PRF_ARGS (arg_node));
-    pred_type = ID_NTYPE (pred_expr);
+    num_rets = PRF_NUMVARIABLERETS (arg_node);
+    DBUG_ASSERT (num_rets > 0, "guard has no return values");
+    num_args = TCcountExprs (PRF_ARGS (arg_node));
+    DBUG_ASSERT (num_args >= num_rets + 1,
+                 "guard requires at least %lu arguments, got %lu",
+                 num_rets + 1, num_args);
 
-    if (TYisAKV (pred_type)) {
-        if (COisTrue (TYgetValue (pred_type), TRUE)) {
-            // Copy all but the last argument
-            exprs = PRF_ARGS (arg_node);
-            while (EXPRS_NEXT (exprs) != NULL) {
-                res = TCappendExprs (res, DUPdoDupNode (exprs));
-                exprs = EXPRS_NEXT (exprs);
-            }
+    // Skip x1, .., xn
+    last_arg = TCgetNthExprs (num_rets - 1, PRF_ARGS (arg_node));
+    preds = EXPRS_NEXT (last_arg);
+
+    // Strip all predicates that we statically know are true
+    changed = StripTrues (&preds);
+    EXPRS_NEXT (last_arg) = preds;
+
+    if (changed) {
+        if (preds == NULL) {
+            DBUG_PRINT ("No predicates remain, replacing guard with identity");
+            // Duplicate N_exprs chain x1, .., xn
+            res = DUPdoDupTree (PRF_ARGS (arg_node));
         } else {
-            CTIabort (NODE_LOCATION (arg_node), "guard failed");
+            DBUG_PRINT ("Guard predicates changed, updating predicates chain");
+            // Preds have already been updated, duplicate the entire N_prf
+            res = DUPdoDupTree (arg_node);
         }
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SCSprf_afterguard( node *arg_node, info *arg_info)
- *
- * In _afterguard(x, p1, p2, p3...), remove any predicates that are true.
- * If all predicates are removed, replace
- *     _afterguard(x) by x
- *
- *****************************************************************************/
-node *
-SCSprf_afterguard (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-    node *arg2up;
-    node *stripd;
-
-    DBUG_ENTER ();
-    arg2up = DUPdoDupTree (EXPRS_NEXT (PRF_ARGS (arg_node)));
-    DBUG_ASSERT (NULL != arg2up, "Some joker caught us off guard with no guard");
-    stripd = StripTrues (arg2up);
-    if ((NULL != stripd)
-        && (CMPT_NEQ == CMPTdoCompareTree (stripd, EXPRS_NEXT (PRF_ARGS (arg_node))))) {
-        res = DUPdoDupNode (arg_node); /* Some, but not all predicates gone */
-        FREEdoFreeTree (EXPRS_NEXT (PRF_ARGS (res)));
-        EXPRS_NEXT (PRF_ARGS (res)) = stripd;
     } else {
-        if (NULL == stripd) {
-            /* If no predicates remain, the afterguard becomes an identity */
-            res = DUPdoDupNode (PRF_ARG1 (arg_node));
-        }
+        DBUG_PRINT ("All guard predicates remain");
+        res = NULL;
     }
 
     DBUG_RETURN (res);

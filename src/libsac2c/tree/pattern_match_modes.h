@@ -21,7 +21,7 @@ extern node *PMMskipPrf (intptr_t param, node *expr);
 extern bool PMMisInExtrema (prf prfun);
 extern bool PMMisInGuards (prf prfun);
 extern bool PMMisInExtremaOrGuards (prf prfun);
-extern bool PMMisAfterguard (prf prfun);
+extern bool PMMisGuard (prf prfun);
 
 /**
  *

@@ -1527,10 +1527,10 @@ PMmultiExprs (int num_nodes, ...)
  *
  * @brief Matches pat against expr in the specified mode.
  *
- * @param pm_mode - The mode in which the pattern matcher should run. 
+ * @param pm_mode - The mode in which the pattern matcher should run.
  * @param pat     - The pattern used to match expr.
  * @param expr    - The expression the pattern is matched against.
- * 
+ *
  * @return Whether the pattern is successfully matched.
  *
  *****************************************************************************/
@@ -1555,10 +1555,10 @@ PMmatch (pm_mode_t *pm_mode, pattern *pat, node *expr)
  *
  * @brief Matches pat against expr in the specified mode, then frees pat.
  *
- * @param pm_mode - The mode in which the pattern matcher should run. 
+ * @param pm_mode - The mode in which the pattern matcher should run.
  * @param pat     - The pattern used to match expr. Always gets freed.
  * @param expr    - The expression the pattern is matched against.
- * 
+ *
  * @return Whether the pattern is successfully matched.
  *
  * Note on the function's design:
@@ -1627,7 +1627,7 @@ PMmatchFlatSkipExtremaAndGuards (pattern *pat, node *expr)
 bool
 PMmatchFlatWith (pattern *pat, node *expr)
 {
-    return (PMmatch (PMMflatPrf (PMMisAfterguard), pat, expr));
+    return (PMmatch (PMMflatPrf (PMMisGuard), pat, expr));
 }
 
 #undef DBUG_PREFIX

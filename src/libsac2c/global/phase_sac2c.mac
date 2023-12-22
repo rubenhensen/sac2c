@@ -471,15 +471,15 @@ CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistributiveLawOptimization,
 
 CYCLEPHASEFUN (wlirimp, "Applying with-loop invariant removal inference for WLMP",
                WLIRIdoLoopInvariantRemovalInference,
-               global.optimize.dowlir 
+               global.optimize.dowlir
                && (global.optimize.dosop || global.optimize.dosrp), opt, cyc)
 
 CYCLEPHASEFUN (wlirmp, "Applying with-loop invariant removal for WLMP",
-               WLIRdoLoopInvariantRemoval, global.optimize.dowlir 
+               WLIRdoLoopInvariantRemoval, global.optimize.dowlir
                && (global.optimize.dosop || global.optimize.dosrp),
                opt, cyc)
 
-CYCLEPHASEFUN (wlmp, "Partitioning modulo computations in with-loops", 
+CYCLEPHASEFUN (wlmp, "Partitioning modulo computations in with-loops",
                WLMPdoWithLoopModuloPartitioning,
                global.optimize.dosop || global.optimize.dosrp, opt, cyc)
 
@@ -924,10 +924,6 @@ SUBPHASE (dcr5, "Removing dead code", DCRdoDeadCodeRemoval,
 SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
           SCCdoStripConformityChecks,
           global.doivext || global.optimize.doawlf || global.insertconformitychecks, opt)
-
-SUBPHASE (stpc, "Stripping type pattern guards",
-          STPCdoStripTypePatternChecks,
-          global.insertconformitychecks, opt)
 
 /*
  *   TC must run after IVE and before LS/LIR,

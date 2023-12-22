@@ -56,12 +56,13 @@ extern te_info *TEmakeInfoUdf (size_t linenum, const char *file, te_kind_t kind,
                                node *assign, te_info *parent);
 extern te_info *TEmakeInfoPrf (size_t linenum, const char *file, te_kind_t kind,
                                const char *name_str, prf prf_no, size_t num_rets);
-extern size_t TEone (ntype *args);
-extern size_t TEtwo (ntype *args);
-extern size_t TEthree (ntype *args);
-extern size_t TEnMinusOne (ntype *args);
-extern size_t TEn (ntype *args);
-extern size_t TEval (ntype *args);
+
+extern size_t TEone (node *prf, ntype *args);
+extern size_t TEtwo (node *prf, ntype *args);
+extern size_t TEthree (node *prf, ntype *args);
+extern size_t TEn (node *prf, ntype *args);
+extern size_t TEvar (node *prf, ntype *args);
+extern size_t TEval (node *prf, ntype *args);
 
 extern void TEfreeAllTypeErrorInfos (void);
 

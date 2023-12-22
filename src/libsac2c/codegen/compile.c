@@ -8860,37 +8860,32 @@ COMPprfMask_VxVxV (node *arg_node, info *arg_info)
  *
  * @fn node *COMPprfGuard (node *arg_node, info *arg_info)
  *
- * @brief Creates a single guard for every guarded value.
- *
- * @example Given a statement: y1, .., yn = guard (x1, .., xn, pred),
- * we generate: y1 = guard (x1, pred); .. yn = guard (xn, pred).
+ * @brief markmemvals has already modified guards such that the returned
+ * arguments are named the same as the inputs, e.g.
+ *   x1, .., xn = (n, x1, .., xn, p1, .., pm);
+ * Therefore an assignment is no longer necessary, so all we need to do is to
+ * check whether all predicates pi hold, and give an error otherwise.
  *
  ******************************************************************************/
 static node *
 COMPprfGuard (node *arg_node, info *arg_info)
 {
-    node *ids, *exprs, *pred, *guard;
+    size_t num_rets;
+    node *preds, *guard;
     node *ret_node = NULL;
 
     DBUG_ENTER ();
 
-    ids = INFO_LASTIDS (arg_info);
-    exprs = PRF_ARGS (arg_node);
-    pred = TCgetLastExprsExpr (exprs);
+    num_rets = PRF_NUMVARIABLERETS (arg_node);
+    DBUG_ASSERT (num_rets > 0, "guard has no return values");
+    preds = TCgetNthExprs (num_rets, PRF_ARGS (arg_node));
 
-    DBUG_ASSERT (TCcountIds (ids) == TCcountExprs (exprs) - 1,
-                 "guard function should return n-1 values");
-
-    while (ids != NULL) {
-        guard = TCmakeAssignIcm3 ("ND_PRF_GUARD",
-                                  DUPdupIdsIdNt (ids),
-                                  DUPdupNodeNt (EXPRS_EXPR (exprs)),
-                                  DUPdupNodeNt (pred),
+    while (preds != NULL) {
+        guard = TCmakeAssignIcm1 ("ND_PRF_GUARD",
+                                  DUPdupNodeNt (EXPRS_EXPR (preds)),
                                   NULL);
         ret_node = TCappendAssign (ret_node, guard);
-
-        ids = IDS_NEXT (ids);
-        exprs = EXPRS_NEXT (exprs);
+        preds = EXPRS_NEXT (preds);
     }
 
     DBUG_RETURN (ret_node);
