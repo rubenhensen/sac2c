@@ -15,7 +15,6 @@
  *   - type_pattern_resolve_(fundefs,externals)
  *     - type_pattern_constraints
  *     - type_pattern_guard
- *   - strip_type_pattern_checks
  *   - type_pattern_statistics
  *
  * Note that the implementations of type_pattern_resolve_fundefs.h, and

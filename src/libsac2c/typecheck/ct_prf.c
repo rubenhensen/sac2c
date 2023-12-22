@@ -1,18 +1,19 @@
-#define DBUG_PREFIX "UNDEFINED"
-#include "debug.h"
-
-#include "ct_prf.h"
-#include "constants.h"
-#include "new_types.h"
-#include "type_errors.h"
-#include "type_utils.h"
-#include "user_types.h"
-#include "shape.h"
 #include "constants.h"
 #include "ctinfo.h"
 #include "globals.h"
-#include "str.h"
 #include "memory.h"
+#include "new_types.h"
+#include "shape.h"
+#include "str.h"
+#include "tree_utils.h"
+#include "type_errors.h"
+#include "type_utils.h"
+#include "user_types.h"
+
+#define DBUG_PREFIX "CTPRF"
+#include "debug.h"
+
+#include "ct_prf.h"
 
 static constant *
 ApplyCF (te_info *info, ntype *args)
@@ -447,94 +448,80 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
  *
  * @fn ntype *NTCCTprf_guard (te_info *info, ntype *args)
  *
- * @brief x1', ..., xn' = guard (x1, ..., xn, p)
- * xi are anything and p is a boolean scalar.
- * If p then xi' = xi, else error.
+ * @brief x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+ * Where xi are anything and pi are boolean scalars.
+ * - If all boolean predicates pi are true, then guard behaves as the identity
+ *   function, and the result is x1, .., xn.
+ * - If all boolean predicates are false, we raise an error.
+ * - If not all predicates are true, but at least one predicate is true or
+ *   unknown, then all true predicates are removed from the guard.
  *
  ******************************************************************************/
 ntype *
 NTCCTprf_guard (te_info *info, ntype *args)
 {
-    ntype *pred, *member, *res;
-    size_t num_rets, i;
     char *err_msg;
+    bool all_true = TRUE;
+    ntype *member, *res;
+    size_t i, num_args, num_rets;
 
     DBUG_ENTER ();
 
-    num_rets = TYgetProductSize (args) - 1;
+    num_rets = TEgetNumRets (info);
+    DBUG_ASSERT (num_rets > 0,
+                 "expected at least one return value for guard, got %lu",
+                 num_rets);
 
-    pred = TYgetProductMember (args, num_rets);
-    TEassureBoolS ("guard predicate", pred);
+    num_args = TYgetProductSize (args);
+    DBUG_ASSERT (num_args >= num_rets + 1,
+                 "guard requires at least %lu arguments, got %lu",
+                 num_rets + 1, num_args);
+
+    // Skip xi, and check each predicate pi
+    for (i = num_rets; i < num_args; i++) {
+        member = TYgetProductMember (args, i);
+        TEassureBoolS ("guard predicate", member);
+
+        if (TYisAKV (member)) {
+            /**
+             * The predicate is AKV, so it is either true or false.
+             * - If it is true, there is nothing to do.
+             * - If it is false we handle an error, but keep going so that we
+             *   can check if there are any more failed predicates.
+             */
+            if (COisFalse (TYgetValue (member), FALSE)) {
+                all_true = FALSE;
+                TEhandleError (global.linenum, global.filename,
+                               "guard predicate failed");
+            }
+        } else {
+            // At least one predicate is unknown
+            all_true = FALSE;
+        }
+    }
+
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
-        CTIabort (EMPTY_LOC, "%s", err_msg);
-    }
+        // One of the predicates failed
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYmakeEmptyProductType (num_rets);
+        for (i = 0; i < num_rets; i++) {
+            member = TYgetProductMember (args, i);
 
-    if (TYisAKV (pred) && COisFalse (TYgetValue (pred), FALSE)) {
-        CTIabort (EMPTY_LOC, "guard failed");
-    }
+            if (all_true) {
+                // We statically know all predicates are true
+                member = TYcopyType (member);
+            } else {
+                // The predicates could be true, but we are not sure
+                member = TYeliminateAKV (member);
+            }
 
-    res = TYmakeEmptyProductType (num_rets);
-
-    for (i = 0; i < num_rets; i++) {
-        member = TYcopyType (TYgetProductMember (args, i));
-        TYsetProductMember (res, i, member);
+            TYsetProductMember (res, i, TYcopyType (member));
+        }
     }
 
     DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *    ntype *NTCCTprf_afterguard( te_info *info, ntype *elems)
- *
- * description: X' = afterguard( X, p1, p2, ...);
- *             p1,... are Boolean scalar
- *             X can be anything.
- *             If( p1 && ...), X' = X;
- *             else error.
- *
- ******************************************************************************/
-
-ntype *
-NTCCTprf_afterguard (te_info *info, ntype *args)
-{
-    ntype *arg;
-    ntype *res = NULL, *pred;
-    char *err_msg;
-    size_t i;
-    bool all_true = TRUE;
-
-    DBUG_ENTER ();
-    arg = TYgetProductMember (args, 0);
-
-    for (i = 1; (i < TYgetProductSize (args)) && (res == NULL); i++) {
-        pred = TYgetProductMember (args, i);
-        TEassureBoolS ("requires expression", pred);
-        err_msg = TEfetchErrors ();
-
-        if (err_msg != NULL) {
-            res = TYmakeBottomType (err_msg);
-        } else {
-            if (TYisAKV (pred)) {
-                if (COisFalse (TYgetValue (pred), TRUE)) {
-                    res = TYmakeBottomType (err_msg);
-                }
-            } else {
-                all_true = FALSE;
-            }
-        }
-    }
-    if (res == NULL) {
-        if (all_true) {
-            res = TYcopyType (arg);
-        } else {
-            res = TYeliminateAKV (arg);
-        }
-    }
-
-    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************

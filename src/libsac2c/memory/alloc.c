@@ -318,14 +318,14 @@ FreeInfo (info *info)
  * @}
  */
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @name Functions for manipulating alloclist structures
  *
  * @{
- ****************************************************************************/
+ ******************************************************************************/
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  *  @fn alloclist_struct *MakeALS( alloclist_struct *als, node *avis,
                                    node *dim, node *shape)
@@ -339,7 +339,7 @@ FreeInfo (info *info)
  *  @param shape A suitable description of the shape of the array to
  *               be stored.
  *
- ***************************************************************************/
+ ******************************************************************************/
 static alloclist_struct *
 MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
 {
@@ -359,7 +359,7 @@ MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
     DBUG_RETURN (res);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn alloclist_struct *FreeALS( alloclist_struct *als)
  *
@@ -369,7 +369,7 @@ MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
  *
  *  @return NULL
  *
- ***************************************************************************/
+ ******************************************************************************/
 static alloclist_struct *
 FreeALS (alloclist_struct *als)
 {
@@ -390,7 +390,7 @@ FreeALS (alloclist_struct *als)
     DBUG_RETURN (als);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn alloclist_struct *Ids2ALS( node *ids)
  *
@@ -398,7 +398,7 @@ FreeALS (alloclist_struct *als)
  *
  *  @param ids N_ids chain to be converted.
  *
- ***************************************************************************/
+ ******************************************************************************/
 static alloclist_struct *
 Ids2ALS (node *ids)
 {
@@ -414,14 +414,14 @@ Ids2ALS (node *ids)
 }
 
 #if 0
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn bool AlloclistContains( alloclist_struct *als, node *avis)
  *
  *  @brief Checks wheter the given alloclist contains an entry for the
  *         designated element.
  *
- ***************************************************************************/
+ ******************************************************************************/
 static bool AlloclistContains( alloclist_struct *als, node *avis)
 {
   bool res;
@@ -444,7 +444,7 @@ static bool AlloclistContains( alloclist_struct *als, node *avis)
 }
 #endif
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *MakeAllocAssignment( alloclist_struct *als, node *next_node)
  *
@@ -457,7 +457,7 @@ static bool AlloclistContains( alloclist_struct *als, node *avis)
  *
  *  @return An allocation assignment for the given als
  *
- ***************************************************************************/
+ ******************************************************************************/
 static node *
 MakeAllocAssignment (alloclist_struct *als, node *next_node)
 {
@@ -506,7 +506,7 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
     DBUG_RETURN (alloc);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *MakeDimArg( node *arg)
  *
@@ -515,7 +515,7 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
  *
  *  @param arg A N_num, N_float, N_char, N_bool, N_double, N_array, or N_id
  *
- ***************************************************************************/
+ ******************************************************************************/
 static node *
 MakeDimArg (node *arg)
 {
@@ -564,7 +564,7 @@ MakeDimArg (node *arg)
     DBUG_RETURN (arg);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *MakeShapeArg( node *arg)
  *
@@ -573,7 +573,7 @@ MakeDimArg (node *arg)
  *
  *  @param arg A N_num, N_float, N_char, N_bool, N_double, N_array, or N_id
  *
- ***************************************************************************/
+ ******************************************************************************/
 static node *
 MakeShapeArg (node *arg)
 {
@@ -616,7 +616,7 @@ MakeShapeArg (node *arg)
     DBUG_RETURN (arg);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *MakeSizeArg( node *arg)
  *
@@ -627,7 +627,7 @@ MakeShapeArg (node *arg)
  *  @param arg A N_num, N_float, N_char, N_bool, N_double, N_array, or N_id
  *             nodes representing VECTORS.
  *
- ***************************************************************************/
+ ******************************************************************************/
 static node *
 MakeSizeArg (node *arg)
 {
@@ -674,7 +674,8 @@ ASTisScalar (node *ast)
     DBUG_RETURN (res);
 }
 
-/** <!-- ****************************************************************** -->
+/******************************************************************************
+ *
  * @brief Adds a suballoc/fill combination for the withops. Furthermore,
  *        shape and dimensionality information is added to the alloclist
  *        if possible.
@@ -688,6 +689,7 @@ ASTisScalar (node *ast)
  * @param arg_info  info node used to access INFO_INDEXVECTOR, INFO_ALLOCLIST.
  *
  * @return N_assign change to be prepended to the body of this part
+ *
  ******************************************************************************/
 static node *
 AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node *cexprs,
@@ -1176,9 +1178,9 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
  * @name Traversal functions
  *
  * @{
- ****************************************************************************/
+ ******************************************************************************/
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALap( node *arg_node, info *arg_info)
  *
@@ -1192,7 +1194,7 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
  *
  *  @return arg_node (unmodified) and modified ALLOCLIST
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALap (node *arg_node, info *arg_info)
 {
@@ -1204,7 +1206,7 @@ EMALap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALarray( node *arg_node, info *arg_info)
  *
@@ -1224,7 +1226,7 @@ EMALap (node *arg_node, info *arg_info)
  *
  *  @return unmodified N_array node. ALLOCLIST has been updated, though.
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALarray (node *arg_node, info *arg_info)
 {
@@ -1284,7 +1286,7 @@ EMALarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALassign( node *arg_node, info *arg_info)
  *
@@ -1298,7 +1300,7 @@ EMALarray (node *arg_node, info *arg_info)
  *
  *  @return assignmentchain with allocs and fills.
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALassign (node *arg_node, info *arg_info)
 {
@@ -1331,7 +1333,7 @@ EMALassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALcode( node *arg_node, info *arg_info)
  *
@@ -1342,7 +1344,7 @@ EMALassign (node *arg_node, info *arg_info)
  *
  *  @return with-code appended with suballoc/fill combinations
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALcode (node *arg_node, info *arg_info)
 {
@@ -1390,12 +1392,12 @@ EMALcode (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * Macro for defining the traversal of nodes representing the primitive
  * data types.
  *
- ***************************************************************************/
+ ******************************************************************************/
 #define EMALCONST(name)                                                                  \
     node *EMAL##name (node *arg_node, info *arg_info)                                    \
     {                                                                                    \
@@ -1418,7 +1420,7 @@ EMALcode (node *arg_node, info *arg_info)
         DBUG_RETURN (arg_node);                                                          \
     }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALbool( node *arg_node, info *arg_info)
  * @fn node *EMALchar( node *arg_node, info *arg_info)
@@ -1426,7 +1428,7 @@ EMALcode (node *arg_node, info *arg_info)
  * @fn node *EMALdouble( node *arg_node, info *arg_info)
  * @fn node *EMALnum( node *arg_node, info *arg_info)
  *
- ***************************************************************************/
+ ******************************************************************************/
 EMALCONST (bool)
 EMALCONST (char)
 EMALCONST (float)
@@ -1444,7 +1446,7 @@ EMALCONST (numuint)
 EMALCONST (numulong)
 EMALCONST (numulonglong)
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALfuncond( node *arg_node, info *arg_info)
  *
@@ -1455,7 +1457,7 @@ EMALCONST (numulonglong)
  *
  *  @return arg_node (unmodified) and modified ALLOCLIST
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALfuncond (node *arg_node, info *arg_info)
 {
@@ -1466,7 +1468,7 @@ EMALfuncond (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALfundef( node *fundef, info *arg_info)
  *
@@ -1478,7 +1480,7 @@ EMALfuncond (node *arg_node, info *arg_info)
  *
  *  @return fundef
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALfundef (node *fundef, info *arg_info)
 {
@@ -1499,7 +1501,7 @@ EMALfundef (node *fundef, info *arg_info)
     DBUG_RETURN (fundef);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALid( node *arg_node, info *arg_info)
  *
@@ -1510,7 +1512,7 @@ EMALfundef (node *fundef, info *arg_info)
  *
  *  @return arg_node (unmodified) and modified ALLOCLIST
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALid (node *arg_node, info *arg_info)
 {
@@ -1521,7 +1523,7 @@ EMALid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALlet( node *arg_node, info *arg_info)
  *
@@ -1532,7 +1534,7 @@ EMALid (node *arg_node, info *arg_info)
  *
  *  @return
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALlet (node *arg_node, info *arg_info)
 {
@@ -1612,18 +1614,13 @@ EMALlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
- * @fn node *EMALprf( node *arg_node, info *arg_info)
+ * @fn node *EMALprf (node *arg_node, info *arg_info)
  *
- *  @brief updates ALLOCLIST with shape information about the given prf
+ * @brief Updates ALLOCLIST with shape information about the given prf.
  *
- *  @param arg_node prf
- *  @param arg_info
- *
- *  @return prf
- *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALprf (node *arg_node, info *arg_info)
 {
@@ -1634,9 +1631,7 @@ EMALprf (node *arg_node, info *arg_info)
 
     als = INFO_ALLOCLIST (arg_info);
 
-    /*
-     * Signal EMALlet to wrap this prf in a fill-operation
-     */
+    // Signal EMALlet to wrap this prf in a fill-operation
     INFO_MUSTFILL (arg_info) = EA_fill;
 
 #if 0
@@ -1645,92 +1640,87 @@ EMALprf (node *arg_node, info *arg_info)
 #endif
 
     switch (PRF_PRF (arg_node)) {
+    /**
+     * dim (A); or size (a);
+     * alloc (0, []);
+     */
     case F_dim_A:
     case F_size_A:
-        /*
-         * dim( A );   -or-   size( A );
-         * alloc( 0, [] );
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    /**
+     * _isDist_A_ always yields a scalar
+     * _isDist_A_ (A);
+     * alloc (0, []);
+     */
     case F_isDist_A:
-        /*
-         * _isDist_A_ always yields a scalar
-         *
-         * _isDist_A_( A);
-         * alloc( 0, []);
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_bool);
         break;
 
+    /**
+     * _firstElems_A_ always yields a scalar.
+     * _firstElems_A_ (A);
+     * alloc (0, []);
+     */
     case F_firstElems_A:
-        /*
-         * _firstElems_A_ always yields a scalar
-         *
-         * _firstElems_A_( A);
-         * alloc( 0, []);
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_ulong);
         break;
 
+    /**
+     * _localFrom_A_ always yields a scalar.
+     * _localFrom_A_ (A);
+     * alloc (0, []);
+     */
     case F_localFrom_A:
-        /*
-         * _localFrom_A_ always yields a scalar
-         *
-         * _localFrom_A_( A);
-         * alloc( 0, []);
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_ulong);
         break;
 
+    /**
+     * _localCount_A_ always yields a scalar.
+     * _localCount_A_ (A);
+     * alloc (0, []);
+     */
     case F_localCount_A:
-        /*
-         * _localCount_A_ always yields a scalar
-         *
-         * _localCount_A_( A);
-         * alloc( 0, []);
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_ulong);
         break;
 
+    /**
+     * _offs_A_ always yields a scalar.
+     * _offs_A_ (A);
+     * alloc (0, []);
+     */
     case F_offs_A:
-        /*
-         * _offs_A_ always yields a scalar
-         *
-         * _offs_A_( A);
-         * alloc( 0, []);
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_ulong);
         break;
 
+    /**
+     * shape (A);
+     * alloc (1, shape (shape (A)))
+     */
     case F_shape_A:
-        /*
-         * shape( A );
-         * alloc(1, shape( shape( A )))
-         */
         als->dim = TBmakeNum (1);
         als->shape = TCmakePrf1 (F_shape_A, DUPdoDupTree (arg_node));
         break;
 
+    /**
+     * reshape (sh, A );
+     * alloc_or_reshape (shape (sh)[0], sh, A);
+     * copy (A);
+     */
     case F_reshape_VxA:
-        /*
-         * reshape( sh, A );
-         * alloc_or_reshape( shape( sh )[0], sh, A );
-         * copy( A);
-         */
         als->dim = MakeSizeArg (PRF_ARG1 (arg_node));
         als->shape = TCmakePrf1 (F_shape_A, DUPdoDupTree (arg_node));
 
-        /*
+        /**
          * For reshaping to work, both RHS and LHS must be non-scalar
-         * This caused bug #145
+         * This caused bug #145.
          */
         if (((!TUdimKnown (ID_NTYPE (PRF_ARG2 (arg_node))))
              || (TYgetDim (ID_NTYPE (PRF_ARG2 (arg_node))) > 0))
@@ -1744,26 +1734,26 @@ EMALprf (node *arg_node, info *arg_info)
         arg_node = new_node;
         break;
 
+    /**
+     * drop (dv, V );
+     * alloc (1, shape (drop (dv, V)));
+     * take( tv, V );
+     * alloc (1, shape (take (tv, V)));
+     * cat (V1, V2);
+     * alloc (1, shape (cat (V1, V2)));
+     */
     case F_drop_SxV:
     case F_take_SxV:
     case F_cat_VxV:
-        /*
-         * drop( dv, V );
-         * alloc( 1, shape( drop( dv, V )));
-         * take( tv, V );
-         * alloc( 1, shape( take( tv, V )));
-         * cat( V1, V2 );
-         * alloc( 1, shape( cat( V1, V2 )));
-         */
         als->dim = TBmakeNum (1);
         als->shape = TCmakePrf1 (F_shape_A, DUPdoDupTree (arg_node));
         break;
 
+    /**
+     * sel (iv, A );
+     * alloc (dim (A) - shape (iv)[0], shape (sel (iv, A)))
+     */
     case F_sel_VxA:
-        /*
-         * sel( iv, A );
-         * alloc( dim(A) - shape(iv)[0], shape( sel( iv, A)))
-         */
         als->dim = TCmakePrf2 (F_sub_SxS,
                                TCmakePrf1 (F_dim_A, DUPdoDupNode (PRF_ARG2 (arg_node))),
                                MakeSizeArg (PRF_ARG1 (arg_node)));
@@ -1771,56 +1761,52 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCmakePrf1 (F_shape_A, DUPdoDupNode (arg_node));
         break;
 
+    /**
+     * _all_V_ always yields a scalar.
+     * _all_V_ (A);
+     * alloc (0, []);
+     */
     case F_all_V:
-        /*
-         * _all_V_ always yields a scalar
-         *
-         * _all_V_( A);
-         * alloc( 0, []);
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_bool);
         break;
 
     case F_sel_VxIA:
-        // DBUG_UNREACHABLE ("IMPLEMENT THIS");
         als->dim = TCmakePrf2 (F_sub_SxS,
                                TCmakePrf1 (F_dim_A, DUPdoDupNode (PRF_ARG2 (arg_node))),
                                MakeSizeArg (PRF_ARG1 (arg_node)));
-
         als->shape = TCmakePrf1 (F_shape_A, DUPdoDupNode (arg_node));
         break;
 
+    /**
+     * idx_sel can only occur when the result shape is known!
+     * a = idx_sel (idx, A);
+     * alloc (dim (a), shape (idx_sel (idx, A)));
+     */
     case F_idx_sel:
-        /*
-         * idx_sel can only occur when the result shape is known!!!
-         *
-         * a = idx_sel( idx, A);
-         * alloc( dim( a), shape( idx_sel( idx, A)));
-         */
-        DBUG_ASSERT (/* No AKDs allowed here! */
-                     TUshapeKnown (AVIS_TYPE (als->avis)),
+        // No AKD allowed here
+        DBUG_ASSERT (TUshapeKnown (AVIS_TYPE (als->avis)),
                      "idx_sel with unknown result shape found!");
         als->dim = TBmakeNum (TYgetDim (AVIS_TYPE (als->avis)));
         als->shape = TCmakePrf1 (F_shape_A, DUPdoDupNode (arg_node));
         break;
 
+    /**
+     * If the type of the array is shared memory, we do not attempt to reuse it.
+     * Instead, we create a normal F_alloc. This F_alloc will eventually be
+     * removed from the cuda kernel s.
+     *
+     * modarray_AxVxS (A, iv, val);
+     * modarray_AxVxA (A, iv, val);
+     * idx_modarray_AxSxS (A, idx, val);
+     * idx_modarray_AxSxA (A, idx, val);
+     *
+     * reuse (A);
+     */
     case F_modarray_AxVxS:
     case F_modarray_AxVxA:
     case F_idx_modarray_AxSxS:
     case F_idx_modarray_AxSxA:
-        /*
-         * modarray_AxVxS( A, iv, val);
-         * modarray_AxVxA( A, iv, val);
-         * idx_modarray_AxSxS( A, idx, val);
-         * idx_modarray_AxSxA( A, idx, val);
-         *
-         * reuse( A);
-         */
-        /* If the type of the array is shared memory, we do not
-         * attempt to reuse it. Instead, we create a normal F_alloc.
-         * This F_alloc will eventually be removed from the cuda
-         * kernel s*/
         if (CUisShmemTypeNew (ID_NTYPE (PRF_ARG1 (arg_node)))) {
             als->dim = MakeDimArg (PRF_ARG1 (arg_node));
             als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
@@ -1837,29 +1823,31 @@ EMALprf (node *arg_node, info *arg_info)
         arg_node = TCmakePrf1 (F_copy, DUPdoDupNode (PRF_ARG2 (arg_node)));
         break;
 
+    /**
+     * Shape_sel always yields a scalar.
+     * a = shape_sel (idx, A)
+     * alloc (0, []);
+     */
     case F_idx_shape_sel:
-        /*
-         * shape_sel always yields a scalar
-         *
-         * a = shape_sel( idx, A)
-         * alloc( 0, []);
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    /**
+     * Offset is always a scalar.
+     * a = shape_sel (idx, A)
+     * alloc (0, []);
+     */
     case F_idxs2offset:
     case F_vect2offset:
-        /*
-         * offset is always a scalar
-         *
-         * a = shape_sel( idx, A)
-         * alloc( 0, []);
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    /*
+     * Simple scalar operations.
+     * alloc (0, [])
+     */
     case F_add_SxS:
     case F_sub_SxS:
     case F_mul_SxS:
@@ -1893,10 +1881,6 @@ EMALprf (node *arg_node, info *arg_info)
     case F_tof_S:
     case F_tod_S:
     case F_not_S:
-        /*
-         * simple scalar operations
-         * alloc( 0, [])
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
         break;
@@ -1944,16 +1928,15 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
-    /* SIMD stuff  */
+    /**
+     * SIMD: The first argument is a stupid scalar, so the second or the third
+     * (as they are identical shape-wise) argument is a right shape for the
+     * allocation.
+     */
     case F_add_SMxSM:
     case F_sub_SMxSM:
     case F_mul_SMxSM:
     case F_div_SMxSM:
-        /*
-         * The first argument is a stupid scalar, so the second
-         * or the third (as they are identical shape-wise) argument
-         * is a right shape for the allocation.
-         */
         als->dim = MakeDimArg (PRF_ARG2 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
         break;
@@ -1973,7 +1956,7 @@ EMALprf (node *arg_node, info *arg_info)
 
         als->dim = MakeDimArg (TBmakeNum (1));
 
-        /* 1-d vector, with the value defined in the first agument.  */
+        // 1-d vector, with the value defined in the first agument
         simd_length = DUPdoDupTree (PRF_ARG1 (arg_node));
         als->shape = TCmakeIntVector (TBmakeExprs (simd_length, NULL));
         break;
@@ -1995,8 +1978,9 @@ EMALprf (node *arg_node, info *arg_info)
     case F_neq_VxV:
     case F_ge_VxV:
     case F_gt_VxV:
-        /* XXX Why does it matter if the type of the argument is id or not
-         * it still has a shape, right?
+        /**
+         * Why does it matter if the type of the argument is id or not it still
+         * has a shape, right?
          */
         if (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id) {
             als->dim = MakeDimArg (PRF_ARG1 (arg_node));
@@ -2040,6 +2024,13 @@ EMALprf (node *arg_node, info *arg_info)
         }
         break;
 
+    /**
+     * a,... = accu (iv, n, ...) and prop_obj
+     * v = unshare (a, iv1, .., ivn) where v aliases a
+     * v,... = type_error (...)
+     * Require a special treatment as none of their return values must be
+     * allocated.
+     */
     case F_prop_obj_in:
     case F_prop_obj_out:
     case F_accu:
@@ -2050,44 +2041,27 @@ EMALprf (node *arg_node, info *arg_info)
     case F_type_conv:
     case F_dispatch_error:
     case F_unshare:
-        /*
-         * a,... = accu( iv, n, ...) (and prop_obj)
-         * v = unshare( a, iv1,...,ivn)   (v is aliases a)
-         * v,... = _type_error_( ...)
-         * require a special treatment as
-         * none of its return value must be allocated
-         */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
+    /**
+     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+     * Guard allocations will be removed from the final program,
+     * and thus no allocation must occur.
+     */
     case F_guard:
-        /*
-         * x1', ..., xn' = guard (x1, ..., xn, p)
-         * - xi' are an alias of xi
-         * - consumes p
-         */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
-    case F_afterguard:
-        /*
-         * x' = afterguard (x, p1, ..., pn)
-         * - x' is an alias of x
-         * - consumes all pi
-         */
-        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-        INFO_MUSTFILL (arg_info) = EA_nofill;
-        break;
-
+    /**
+     * p = type_constraint( t, a)
+     * - t is a type argument which has no runtime representation
+     * - a is consumed
+     * - p is a boolean scalarresult
+     */
     case F_type_constraint:
-        /*
-         * p = type_constraint( t, a)
-         * - t is a type argument which has no runtime representation
-         * - a is consumed
-         * - p is a boolean scalarresult
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
         break;
@@ -2097,6 +2071,11 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
+    /**
+     * p = constraint(a1,..,an)
+     * - a_i are consumed
+     * - p is a boolean result
+     */
     case F_same_shape_AxA:
     case F_shape_matches_dim_VxA:
     case F_non_neg_val_S:
@@ -2105,11 +2084,6 @@ EMALprf (node *arg_node, info *arg_info)
     case F_val_le_val_VxV:
     case F_val_lt_val_SxS:
     case F_prod_matches_prod_shape_VxA:
-        /*
-         * p = constraint(a1,..,an)
-         * - a_i are consumed
-         * - p is a boolean result
-         */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
         break;
@@ -2118,38 +2092,39 @@ EMALprf (node *arg_node, info *arg_info)
     case F_prefetch2host:
         if (AVIS_ISALLOCLIFT (ID_AVIS (PRF_ARG1 (arg_node))))
         {
-            /* rhs EMR lifted avis is never previously assigned to,
+            /**
+             * Rhs EMR lifted avis is never previously assigned to,
              * we need to explicitly allocate it.
              */
             als->avis = ID_AVIS (PRF_ARG1 (arg_node));
             als->dim = MakeDimArg (PRF_ARG1 (arg_node));
             als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         } else {
-            /* we perform no allocation of the lhs */
+            // We perform no allocation of the lhs
             INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
         }
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
+    /*
+     * CUDA MLTRAN identifies what N_avis needs to be transferred to the CUDA
+     * device. Ordinarily its selections are sane, except when handling EMR loop
+     * optimisation lifted N_avis. These are not assigned to in the calling
+     * context, meaning that EMAL does not handle these (no alloc materialises).
+     * We need to handle this separately, and do so by using the alternative
+     * fill/alloc insertion in EMALlet (see EA_fillnoop). This elides the
+     * host2device prf, instead using fill (noop (...), ...).
+     */
     case F_host2device:
     case F_host2device_start:
-        /*
-         * CUDA MLTRAN identifies what N_avis needs to be transferred to the
-         * CUDA device. Ordinarily its selections are sane, except when handling
-         * EMR loop optimisation lifted N_avis. These are not assigned to in the
-         * calling context, meaning that EMAL does not handle these (no alloc
-         * materialises). We need to handle this separately, and do so by using
-         * the alternative fill/alloc insertion in EMALlet (see EA_fillnoop). This
-         * elides the host2device prf, instead using fill (noop (...), ...).
-         */
         if (AVIS_ISALLOCLIFT (ID_AVIS (PRF_ARG1 (arg_node))))
         {
             INFO_MUSTFILL (arg_info) = EA_fillnoop;
-            /* we perform no allocation of the lhs */
+            // We perform no allocation of the lhs
             INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
             break;
         }
-        /* Fall-through */
+        // Fall-through!
     case F_device2host:
     case F_device2host_start:
         als->dim = MakeDimArg (PRF_ARG1 (arg_node));
@@ -2200,19 +2175,14 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
+    /**
+     * Special case for EMRL optimisation, where:
+     *   a = noop ();
+     * becomes:
+     *   a = alloc (...);
+     * a is *always* AKS, so shape and dim can be staticly evaluated.
+     */
     case F_EMR_noop:
-        /*
-         * Special case for EMRL optimisation
-         *
-         * a = noop ();
-         *
-         *   =>
-         *
-         * a = alloc (...);
-         *
-         * a is *always* AKS, so shape and dim can be staticly evaluated.
-         *
-         */
         DBUG_ASSERT (AVIS_ISALLOCLIFT (als->avis),
                      "found F_EMR_noop without AVIS_ISALLOCLIFT being set!");
         new_node = TCmakePrf2 (F_alloc, TBmakeNum (TYgetDim (AVIS_TYPE (als->avis))),
@@ -2221,7 +2191,24 @@ EMALprf (node *arg_node, info *arg_info)
         arg_node = new_node;
         AVIS_SSAASSIGN (als->avis) = INFO_ASSIGN (arg_info);
 
-        /* we've changed the prf to an alloc, so we don't need another alloc */
+        // We've changed the prf to an alloc, so we don't need another alloc
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        INFO_MUSTFILL (arg_info) = EA_nofill;
+        break;
+
+    /**
+     * Require a special treatment as its return value must not be allocated.
+     */
+    case F_sync:
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        INFO_MUSTFILL (arg_info) = EA_nofill;
+        break;
+
+    /**
+     * Both enclose and disclose do not really create new structures.
+     */
+    case F_enclose:
+    case F_disclose:
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
@@ -2241,26 +2228,8 @@ EMALprf (node *arg_node, info *arg_info)
     case F_run_mt_genarray:
     case F_run_mt_modarray:
     case F_run_mt_fold:
-
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
         DBUG_UNREACHABLE ("invalid prf found!");
-        break;
-
-    case F_sync:
-        /*
-         * require a special treatment as
-         * its return value must not  be allocated
-         */
-        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-        INFO_MUSTFILL (arg_info) = EA_nofill;
-        break;
-
-    /*
-     * Both enclose and disclose do not really create new structures.
-     */
-    case F_enclose:
-    case F_disclose:
-        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-        INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
     default:
@@ -2272,7 +2241,7 @@ EMALprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALwith( node *arg_node, info *arg_info)
  *
@@ -2283,7 +2252,7 @@ EMALprf (node *arg_node, info *arg_info)
  *
  *  @return with-loop
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALwith (node *arg_node, info *arg_info)
 {
@@ -2368,7 +2337,7 @@ EMALwith (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALwith2( node *arg_node, info *arg_info)
  *
@@ -2379,7 +2348,7 @@ EMALwith (node *arg_node, info *arg_info)
  *
  *  @return with-loop2
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALwith2 (node *arg_node, info *arg_info)
 {
@@ -2449,11 +2418,11 @@ EMALwith2 (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--*******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALwithid( node *arg_node, info *arg_info)
  *
- ****************************************************************************/
+ ******************************************************************************/
 node *
 EMALwithid (node *arg_node, info *arg_info)
 {
@@ -2519,7 +2488,7 @@ EMALwithid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALwiths( node *arg_node, info *arg_info)
  *
@@ -2531,7 +2500,7 @@ EMALwithid (node *arg_node, info *arg_info)
  *
  *  @return with-loop
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALwiths (node *arg_node, info *arg_info)
 {
@@ -2577,7 +2546,7 @@ EMALwiths (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALgenarray( node *arg_node, info *arg_info)
  *
@@ -2588,7 +2557,7 @@ EMALwiths (node *arg_node, info *arg_info)
  *
  *  @return with-loop
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALgenarray (node *arg_node, info *arg_info)
 {
@@ -2723,7 +2692,7 @@ EMALgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALmodarray( node *arg_node, info *arg_info)
  *
@@ -2734,7 +2703,7 @@ EMALgenarray (node *arg_node, info *arg_info)
  *
  *  @return with-loop
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALmodarray (node *arg_node, info *arg_info)
 {
@@ -2807,7 +2776,7 @@ EMALmodarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALbreak( node *arg_node, info *arg_info)
  *
@@ -2818,7 +2787,7 @@ EMALmodarray (node *arg_node, info *arg_info)
  *
  *  @return with-loop
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALbreak (node *arg_node, info *arg_info)
 {
@@ -2884,7 +2853,7 @@ EMALbreak (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALpropagate( node *arg_node, info *arg_info)
  *
@@ -2895,7 +2864,7 @@ EMALbreak (node *arg_node, info *arg_info)
  *
  *  @return with-loop
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALpropagate (node *arg_node, info *arg_info)
 {
@@ -2942,7 +2911,7 @@ EMALpropagate (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALfold( node *arg_node, info *arg_info)
  *
@@ -2953,7 +2922,7 @@ EMALpropagate (node *arg_node, info *arg_info)
  *
  *  @return with-loop
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALfold (node *arg_node, info *arg_info)
 {
@@ -3157,7 +3126,7 @@ EMALrange (node *arg_node, info *arg_info)
  * @{
  */
 
-/** <!--******************************************************************-->
+/******************************************************************************
  *
  * @fn node *EMALdoAlloc( node *syntax_tree)
  *
@@ -3167,7 +3136,7 @@ EMALrange (node *arg_node, info *arg_info)
  *
  *  @return modified syntax tree containing explicit alloc and fill prfs
  *
- ***************************************************************************/
+ ******************************************************************************/
 node *
 EMALdoAlloc (node *syntax_tree)
 {

@@ -1,4 +1,6 @@
-/* If you wish to add a new primitive to the compiler, you
+/******************************************************************************
+ *
+ * If you wish to add a new primitive to the compiler, you
  * likely ended up here. Here's a recipe for doing that.
  *
  * 1. Add an entry for the primitive to the table below.
@@ -28,7 +30,8 @@
  * 8. Do a make clean on BOTH sac2c and the stdlib, or you will
  *    see VERY strange things happening. I think this is due to
  *    assumptions about PRF_PRF values.
- */
+ *
+ ******************************************************************************/
 
 #ifndef PRFname
 #define PRFname(name)
@@ -94,7 +97,8 @@
 #define PRFicc_fun(icc_fun)
 #endif
 
-/* Function, indicating a number of return values.  Normally
+/**
+ * Function, indicating a number of return values. Normally
  * we use function TEone, TEtwo, etc, which are defined in
  * typecheck/type_errors.c
  */
@@ -122,7 +126,8 @@
                 PRFicc_fun (icc_fun) PRFte_fun (te_fun) PRFunused2 (unused2)             \
                   PRFunused3 (unused3)
 
-/*
+/******************************************************************************
+ *
  *  Outline of prf info table:
  *
  *   name                     arg_encoding
@@ -166,19 +171,21 @@
  *   te_fn          I think this is the number of results created by the
  *                  function.
  *
- */
+ ******************************************************************************/
 
-/*******************************************************************************
+/******************************************************************************
  *
- *  Primitive compiler operations:
+ * Primitive compiler operations
  *
- *******************************************************************************/
+ ******************************************************************************/
 
 #ifndef PRF_INTERNAL_ONLY
 
-/*******************************************************************************
+/******************************************************************************
+ *
  * Built-in type conversion operations
- */
+ *
+ ******************************************************************************/
 
 PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPprfOp_S,
      SCSprf_tobool_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
@@ -236,9 +243,11 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
        SCSprf_tod_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
        ICCnone, TEone, NULL, NULL),
 
-  /*******************************************************************************
-   * Boolean operations
-   */
+/******************************************************************************
+ *
+ * Boolean operations
+ *
+ ******************************************************************************/
 
   PRF (not_S, (PA_S, PA_x, PA_x), 1, NOT, NTCCTprf_log_op_S, COnot, COMPprfOp_S, NULL,
        NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS, ICCnone, TEone, NULL,
@@ -777,7 +786,7 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
    */
 
    PRF (EMR_noop, (PA_x, PA_x, PA_x), 1, XXX, NTCCTprf_id, NULL, COMPprfNoop, NULL, NULL,
-       NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL), 
+       NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
 
   /*******************************************************************************
@@ -926,26 +935,22 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
    *     constraints are contiguous in this table!
    */
 
-  /*
-   * Expects n values, and a boolean predicate. If the predicate is true, these
-   * n values are returned. Otherwise an error will be raised. These guard are
-   * inserted by type patterns, and serve as a barrier to optimisation for the
-   * provided arguments, ensuring that the predicate must hold before optimising
-   * further.
+  /**
+   * x1', .., xn' = guard (n, x1, .., xn, pred1, .., predm);
+   * Guards expects n values and m boolean predicates. If all predicates are
+   * true then guard behaves as the identify function on arguments xi, otherwise
+   * an error will be raised. These guards serve as a barrier for optimisation
+   * and code rewrites around conformity checks and type pattern checks.
+   * Not indended to be used externally.
+   *
+   * @todo: Include the context:
+   * x1', .., xn' = guard (x1, .., xn, pred1, .., predm, "context string");
+   * @todo: Include argument types:
+   * x1', .., xn' = guard (x1, .., xn, typ1, .., typn, pred1, .., predm);
    */
   PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_guard, NULL, COMPprfGuard,
        SCSprf_guard, NULL, NULL, SAAdim_guard, SAAshp_guard, NULL, 0, NULL,
-       NULL, TEnMinusOne, NULL, NULL),
-
-  /*
-   * Expects one value, and any number of boolean predicates. If all predicate
-   * are true, the value is returned. Otherwise an error will be raised. This
-   * guard serves as a barrier to optimisation for the provided arguments,
-   * ensuring that the predicate must hold before optimising further.
-   */
-  PRF (afterguard, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_afterguard, NULL, COMPprfNoop,
-       SCSprf_afterguard, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL, NULL,
-       TEone, NULL, NULL),
+       NULL, TEvar, NULL, NULL),
 
   PRF (type_constraint, (PA_x, PA_x, PA_x), 2, XXX, NTCCTprf_type_constraint, NULL,
        COMPprfTypeConstraint, NULL, NULL, NULL, SAAdim_type_constraint,

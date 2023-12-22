@@ -635,7 +635,7 @@ typedef enum {
 } te_kind_t;
 
 typedef struct TE_INFO te_info;
-typedef size_t (*te_funptr) (ntype *args);
+typedef size_t (*te_funptr) (node *prf, ntype *args);
 
 /*******************************************************************************
  *

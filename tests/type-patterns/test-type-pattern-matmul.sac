@@ -5,7 +5,7 @@
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
 // SAC_TEST|all: <file-name-we>
-// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 224
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 3
 
 inline int + (int a, int b) { return _add_SxS_ (a, b); }
 inline int * (int a, int b) { return _mul_SxS_ (a, b); }
@@ -38,15 +38,13 @@ int[u,w] matmul (int[u,v] a, int[v,w] b)
 
 int[u,v] createMatrix (int u, int v)
 {
-    return with {
-        ([0,0] <= [i,j] < [u,v]) : i + (j * u);
-    } : genarray ([u,v], 0);
+    return { [i,j] -> i | [i,j] < [u,v] };
 }
 
 int main()
 {
-    a = createMatrix (3, 4);
-    b = createMatrix (4, 5);
+    a = createMatrix (2, 3);
+    b = createMatrix (3, 3);
     c = matmul (a, b);
     return c[[1,2]];
 }

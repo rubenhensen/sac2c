@@ -3203,6 +3203,11 @@ PRTprf (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, ")");
 
+    if (PRF_NUMVARIABLERETS (arg_node) > 0) {
+        fprintf (global.outfile, " /* %lu rets */",
+                 PRF_NUMVARIABLERETS (arg_node));
+    }
+
     DBUG_RETURN (arg_node);
 }
 

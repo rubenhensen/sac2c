@@ -1739,43 +1739,97 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
  * argument types (for prfs needed)
  */
 
+/******************************************************************************
+ *
+ * @fn size_t TEone (node *prf, ntype *args)
+ *
+ * @brief Primitive functions that always return a single value.
+ *
+ ******************************************************************************/
 size_t
-TEone (ntype *args)
+TEone (node *prf, ntype *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (1);
 }
 
+/******************************************************************************
+ *
+ * @fn size_t TEtwo (node *prf, ntype *args)
+ *
+ * @brief Primitive functions that always return two values.
+ *
+ ******************************************************************************/
 size_t
-TEtwo (ntype *args)
+TEtwo (node *prf, ntype *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (2);
 }
 
+/******************************************************************************
+ *
+ * @fn size_t TEthree (node *prf, ntype *args)
+ *
+ * @brief Primitive functions that always return three values.
+ *
+ ******************************************************************************/
 size_t
-TEthree (ntype *args)
+TEthree (node *prf, ntype *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (3);
 }
 
+/******************************************************************************
+ *
+ * @fn size_t TEn (node *prf, ntype *args)
+ *
+ * @brief Primitive functions that return a value for each argument.
+ *
+ * @example Returns n for `prf (x1, .., xn)`.
+ *
+ ******************************************************************************/
 size_t
-TEnMinusOne (ntype *args)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN (TYgetProductSize (args) - 1);
-}
-
-size_t
-TEn (ntype *args)
+TEn (node *prf, ntype *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (TYgetProductSize (args));
 }
 
+/******************************************************************************
+ *
+ * @fn size_t TEvar (node *prf, ntype *args)
+ *
+ * @brief Primitive functions that return an amount of values given by the
+ * NumVariableRets attribute in the N_prf node.
+ *
+ ******************************************************************************/
 size_t
-TEval (ntype *args)
+TEvar (node *prf, ntype *args)
+{
+    size_t num_rets;
+
+    DBUG_ENTER ();
+
+    num_rets = PRF_NUMVARIABLERETS (prf);
+    DBUG_ASSERT (num_rets > 0, "expected at least one return value");
+
+    DBUG_RETURN (num_rets);
+}
+
+/******************************************************************************
+ *
+ * @fn size_t TEval (node *prf, ntype *args)
+ *
+ * @brief Primitive functions that return an amount of values given by the
+ * first argument of the function.
+ *
+ * @example Returns n for `prf (n, x1, x2, ..)`.
+ *
+ ******************************************************************************/
+size_t
+TEval (node *prf, ntype *args)
 {
     ntype *num_rets_t;
     constant *co;

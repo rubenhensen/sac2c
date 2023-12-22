@@ -335,19 +335,32 @@ ConvertRets (node *rets, node **spids, node **exprs)
  *
  * @fn node *MakeGuardLet (node *ids, node *exprs, char *pred)
  *
- * @brief Creates an expression: id1, .., idn = guard (id1, .., idn, pred).
+ * @brief Creates a guard assignment:
+ *   x1', ..., xn' = guard (x1, .., xn, pred)
+ * That guards the given identifiers, based on the given predicate.
  *
  ******************************************************************************/
 static node *
 MakeGuardLet (node *ids, node *exprs, char *pred)
 {
-    node *res;
+    node *spid, *prf, *res;
+    size_t num_rets;
 
     DBUG_ENTER ();
 
-    res = TBmakeSpid (NULL, STRcpy (pred));
-    res = TCappendExprs (exprs, TBmakeExprs (res, NULL));
-    res = TBmakeLet (ids, TBmakePrf (F_guard, res));
+    num_rets = TCcountExprs (exprs);
+
+    // Add predicate
+    spid = TBmakeSpid (NULL, STRcpy (pred));
+    exprs = TCappendExprs (exprs, TBmakeExprs (spid, NULL));
+
+    // Set number of return values
+    prf = TBmakePrf (F_guard, exprs);
+    PRF_NUMVARIABLERETS (prf) = num_rets;
+    DBUG_PRINT ("guard created with %lu return values", num_rets);
+
+    // Create let-expression
+    res = TBmakeLet (ids, prf);
 
     DBUG_RETURN (res);
 }

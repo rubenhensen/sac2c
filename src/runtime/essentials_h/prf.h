@@ -1,23 +1,19 @@
-/*****************************************************************************
- *
- * file:   sac_prf.h
- *
- * description:
- *   This file is part of the SAC standard header file sac.h
- *
- *   It provides definitions of Intermediate Code Macros (ICM)
- *   implemented as real macros.
- *
- *****************************************************************************/
-
 #ifndef _SAC_PRF_H_
 #define _SAC_PRF_H_
+
+/*****************************************************************************
+ *
+ * This file is part of the SaC standard header file sac.h
+ *
+ * It provides definitions of Intermediate Code Macros (ICM)
+ * implemented as real macros.
+ *
+ ******************************************************************************/
 
 /******************************************************************************
  *
  * core ICMs for built-in operators
  * =====================================
- *
  *
  ******************************************************************************/
 
@@ -47,7 +43,7 @@
 
 /* Modulus definition (integer only) taken from ISO APL Standard N8485 */
 /* Make sure that the code below matches that in constants/zipcv.c */
-/* APLREM is altered to use % since it is equivalent, more readable, and 
+/* APLREM is altered to use % since it is equivalent, more readable, and
    perhaps faster if the C compiler can't figure out that we mean remainder. */
 
 #define SIGNUM(x) ((0 == (x)) ? 0 : (0 < (x)) ? 1 : -1)
@@ -451,15 +447,10 @@
         SAC_ND_A_FIELD (to_NT) = SAC_all;                                                \
     }
 
-#define SAC_ND_PRF_GUARD(to_NT, from_NT, pred_NT)                                        \
-    {                                                                                    \
-        int SAC_i;                                                                       \
-        if (!SAC_ND_READ (pred_NT, 0)) {                                                 \
-            SAC_RuntimeError ("Guard failed in " __FILE__ ":" TO_STR (__LINE__) ".");    \
-        }                                                                                \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from_NT); SAC_i++) {                      \
-            SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from_NT, SAC_i), );            \
-        }                                                                                \
+#define SAC_ND_PRF_GUARD(pred_NT)                                                        \
+    if (!SAC_ND_READ (pred_NT, 0)) {                                                     \
+        SAC_RuntimeError ("Guard predicate " #pred_NT " failed in "                      \
+                          __FILE__ ":" TO_STR (__LINE__) ".");                           \
     }
 
 #define SAC_ND_PRF_TYPE_CONSTRAINT_AKD(to_NT, from_NT, scl)                              \

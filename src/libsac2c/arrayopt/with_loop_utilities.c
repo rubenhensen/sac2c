@@ -106,19 +106,19 @@ WLUTisIdsMemberPartition (node *arg_node, node *partn)
 /*******************************************************************************
  * @fn node *WLUTcreatePartitionCopies( node *fundef, node *partn,
  *                                      size_t nr_required_partitions)
- * 
+ *
  * @brief: Creates copies of the given partition and its associated code block
  *         in SSA form, reusing the partition and code block if possible.
- * 
+ *
  * @param: fundef                 - An N_fundef node
  *         partn                  - An N_part node within the N_fundef
  *         nr_required_partitions - The desired number of partitions
- * 
+ *
  * @return: A partition chain consisting of the requested number of partitions.
  *          Each partition points to its own N_code.
  *          Each N_code is added to the N_code chain of the original partition's
  *          code
- * 
+ *
  * @note: This function has the following preconditions:
  *        1. fundef must be of type N_fundef
  *        2. partition must be of type N_part
@@ -139,16 +139,16 @@ WLUTisIdsMemberPartition (node *arg_node, node *partn)
  *        \|/      \|/
  *        ...  ->  ...
  *         |        |
- *        \|/      \|/ 
+ *        \|/      \|/
  *       partN -> codeN
  *         |        |
  *        \|/      \|/
  *        NULL     NULL
  *
- * 
+ *
  ******************************************************************************/
 node *
-WLUTcreatePartitionCopies (node *fundef, node *partn, 
+WLUTcreatePartitionCopies (node *fundef, node *partn,
                            size_t nr_required_partitions)
 {
     int dbug_orig_code_used;
@@ -158,22 +158,22 @@ WLUTcreatePartitionCopies (node *fundef, node *partn,
     node *current_code;
     node *previous_partition;
     node *current_partition;
-    
+
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "Expected an N_fundef node but got %s!", NODE_TEXT (fundef));
-    DBUG_ASSERT (NODE_TYPE (partn) == N_part, 
+    DBUG_ASSERT (NODE_TYPE (partn) == N_part,
                  "Expected an N_Part node but got %s!", NODE_TEXT (partn));
     DBUG_ASSERT (nr_required_partitions != 0, "Unable to make 0 copies!");
     DBUG_ASSERT (PART_NEXT (partn) == NULL,
                  "Partition must not have a next!");
     DBUG_ASSERT (CODE_NEXT (PART_CODE (partn)) == NULL,
                  "Partition's code must not have a next!");
-    
+
     original_code = PART_CODE (partn);
     dbug_orig_code_used = CODE_USED (original_code);
-    DBUG_ASSERT (dbug_orig_code_used > 0, 
+    DBUG_ASSERT (dbug_orig_code_used > 0,
                  "The AST is in an illegal state: the code belonging to this"
                  " partition indicates it is not used!");
 
@@ -199,7 +199,7 @@ WLUTcreatePartitionCopies (node *fundef, node *partn,
     DBUG_ASSERT (dbug_orig_code_used == 1
                  || CODE_USED (original_code) == dbug_orig_code_used - 1,
                  "CODE_USED was originally %d, should now be %d, but is %d!",
-                 dbug_orig_code_used, dbug_orig_code_used - 1, 
+                 dbug_orig_code_used, dbug_orig_code_used - 1,
                  CODE_USED (original_code));
     original_code = NULL;
 
@@ -216,7 +216,7 @@ WLUTcreatePartitionCopies (node *fundef, node *partn,
 
         // Copying the partition implicitly increments the CODE_USED counter,
         // of the partition's code, so we we decrement it to compensate.
-        CODE_DEC_USED (PART_CODE (partn)); 
+        CODE_DEC_USED (PART_CODE (partn));
         CODE_INC_USED (current_code); // Copies start at 0, we need it to be 1.
 
         PART_CODE (current_partition) = current_code;
@@ -266,7 +266,7 @@ WLUTfindArrayForBound (node *bound)
     pattern *pat;
 
     DBUG_ENTER ();
-    
+
     if (bound == NULL) {
         DBUG_RETURN (NULL);
     }
@@ -292,13 +292,13 @@ WLUTfindArrayForBound (node *bound)
 }
 
 /*******************************************************************************
- * @fn void *WLUTupdateBoundNthDim( node **bound, size_t dimension, 
+ * @fn void *WLUTupdateBoundNthDim( node **bound, size_t dimension,
  *                                  node *new_scalar_avis, node **vardecs,
  *                                  node **preassigns)
  *
  * @brief: Replaces the `dimension`-th value in the given `bound`, step, or width
  *         with the `new_scalar_avis` argument.
- *         If `bound` points at an array, the update is done in-place, and the 
+ *         If `bound` points at an array, the update is done in-place, and the
  *         function returns.
  *         If the `bound` points to an N_id, the underlying array is copied,
  *         given an avis, and added to the preassigns. The update is applied to
@@ -306,7 +306,7 @@ WLUTfindArrayForBound (node *bound)
  *         new array. The new id replaces the freed id.
  *         Memory management is done internally. The call site does not have to
  *         do anything other than call this function.
- * 
+ *
  * @param:  bound           - Pointer to a pointer of an N_id or N_array, to be
  *                            replaced with an N_id if vardecs/preassigns are
  *                            given, and replaced with an N_array otherwise.
@@ -321,7 +321,7 @@ WLUTfindArrayForBound (node *bound)
  *          Ensure with-loop has with-ids before calling this function.
  ******************************************************************************/
 void
-WLUTupdateBoundNthDim (node **bound, size_t dimension, 
+WLUTupdateBoundNthDim (node **bound, size_t dimension,
                        node *new_scalar_avis, node **vardecs, node **preassigns)
 {
     node *bound_array;
@@ -340,7 +340,7 @@ WLUTupdateBoundNthDim (node **bound, size_t dimension,
 
     bound_is_id = NODE_TYPE (*bound) == N_id;
     bound_array = WLUTfindArrayForBound (*bound);
-    DBUG_ASSERT (bound_array != NULL, 
+    DBUG_ASSERT (bound_array != NULL,
                  "The array belonging to the bound could not be found!");
 
     if (bound_is_id) {
@@ -348,17 +348,17 @@ WLUTupdateBoundNthDim (node **bound, size_t dimension,
         // array, so we create a copy to replace the id later
         bound_array = DUPdoDupNode (bound_array);
     }
-    
+
     // Replace the nth element of bound_array.
     ARRAY_AELEMS (bound_array) = TCputNthExprs (
-        dimension, 
-        ARRAY_AELEMS (bound_array), 
+        dimension,
+        ARRAY_AELEMS (bound_array),
         TBmakeId (new_scalar_avis));
 
     if (bound_is_id) {
         // Replace the id with a newly generated id for the modified array.
         *bound = FREEdoFreeTree (*bound);
-        *bound = TBmakeId (FLATGexpression2Avis (bound_array, vardecs, 
+        *bound = TBmakeId (FLATGexpression2Avis (bound_array, vardecs,
                                                  preassigns, NULL));
     }
     DBUG_RETURN ();
@@ -478,7 +478,7 @@ ivMatchCase1 (node *withid, node *cexpr)
  *              iv'' = _notemaxval( iv', [lim]);
  *              iv''', p0 = _val_lt_val_VxV_( iv'', [lim]);
  *              el = _sel_VxA_( iv''', producerWL);
- *              el' = _afterguard_( el, p0);
+ *              el' = guard (el, p0);
  *             } : el';
  *
  *        We also have to handle the scalar i equivalent of this,
@@ -491,7 +491,7 @@ ivMatchCase1 (node *withid, node *cexpr)
  *              i''', p0 = _val_lt_val_SxS_( i'', lim);
  *              iv' = [ i'''];
  *              el = _sel_VxA_( iv', producerWL);
- *              el' = _afterguard_( el, p0);
+ *              el' = guard (el, p0);
  *             } : el';
  *
  *

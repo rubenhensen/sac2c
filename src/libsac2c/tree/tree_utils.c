@@ -1,87 +1,80 @@
-/**
+/******************************************************************************
  *
  * This file contains several utility functions for inspecting or manipulating
  * ASTs or their elements.
- */
-
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "tree_utils.h"
-#include "types.h"
+ *
+ ******************************************************************************/
+#include "compare_tree.h"
+#include "constants.h"
+#include "free.h"
+#include "free_lhs_avis_sons.h"
+#include "globals.h"
 #include "new_types.h"
 #include "pattern_match.h"
+#include "print.h"
+#include "shape.h"
+#include "symbolic_constant_simplification.h"
+#include "traverse.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "types.h"
+#include "type_utils.h"
 
 #define DBUG_PREFIX "TULS"
 #include "debug.h"
 
-#include "constants.h"
-#include "shape.h"
-#include "type_utils.h"
-#include "free.h"
-#include "compare_tree.h"
-#include "traverse.h"
-#include "free_lhs_avis_sons.h"
-#include "symbolic_constant_simplification.h"
+#include "tree_utils.h"
 
-/**
+/******************************************************************************
  *
  * Functions for dealing with With-Loops:
  *
  * Terminology:
+ * - lb: Lower bound (GENERATOR_BOUND1) of a With-Loop generator.
+ * - ub: Upper bound (GENERATOR_BOUND2) of a With-Loop generator.
+ * - Zero-trip generator: A generator for which 0 == product (ub - lb)
+ *   @note We name these generators zero-trip rather than empty here as we want
+ *   them not to be confused with the one-trip generators that have empty
+ *   bounds: ([:int] <= iv < [:int]). For those we have product (ub - lb) =
+ *   product ([]) == 1.
+ *   @note We make use of the condition all (lb <= ub) here!
  *
- *   lb: Lower bound (GENERATOR_BOUND1) of a With-Loop generator.
- *
- *   ub: Upper bound (GENERATOR_BOUND2) of a With-Loop generator.
- *
- *   Zero-trip generator:  A generator for which 0 == product( ub - lb)
- *    NB: we name these generators zero-trip rather than empty here
- *        as we want them not to be confused with the one-trip generators
- *        that have empty bounds: ( [:int] <= iv < [:int] ).
- *        For those we have product( ub - lb) = product( []) == 1 !!!
- *
- *    IMPORTANT: we make use of the condition all( lb <= ub) here!!!
- *
- */
+ ******************************************************************************/
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn bool isZeroTripGeneratorComposition( node *lb, node *ub)
+ * @fn bool isZeroTripGeneratorComposition (node *lb, node *ub)
  *
- * @brief Predicate for determining if WL generator bounds lb and ub
- *        are zero-trip, when we need to analyze a function composition to do so.
+ * @brief Predicate for determining if WL generator bounds lb and ub are
+ * zero-trip, when we need to analyze a function composition to do so.
+ * Where lb and ub must be N_id or N_array nodes.
  *
- *        lb and ub must be N_id or N_array nodes.
+ * A typical case shows up in the wlcondoAPL.sac unit test, where one partition
+ * looks like this:
  *
- *        A typical case shows up in the wlcondoAPL.sac unit test,
- *        where one partition looks like this:
+ *   lb = _max_SxS_ (x, N);
+ *   ub = N;
+ *   z = with {
+ *         ([lb] <= iv < [ub]) : ...
+ *       } ...
  *
- *          lb = _max_SxS_( x, N);
- *          ub = N;
- *          z = with {
- *            ( [ lb] <= iv < [ ub]) ...
- *            }
+ * We have a zero-trip generator if lb >= ub. Plugging the arguments into the
+ * relational gives us:
  *
- *        We have a zero-trip generator if lb >= ub. Plugging
- *        the arguments into the relational gives us:
+ *   _max_SxS_ (x, N) >= N
  *
- *           _max_SxS_( x, N) >= N
+ * Which can be solved by SCS. Two other ways we could solve this in a cleaner,
+ * more general manner are:
+ * - Extend extrema past the point where GENWIDTH is introduced. Were that done,
+ *   a trip through IVEXP and CF should provide extrema for the GENWIDTH value,
+ *   which we could examine here.
+ * - Introduce a new Boolean N_generator field, similar to GENWIDTH, but
+ *   containing the desired relational: lb >= ub.
  *
- *        which can be solved by SCS. Two other ways we could
- *        solve this in a cleaner, more general manner are:
+ * @return TRUE if the relational above is satisfied for any generator
+ * element pairs.
  *
- *          - extend extrema past the point where GENWIDTH is
- *            introduced. Were that done, a trip through IVEXP and CF
- *            should provide extrema for the GENWIDTH value, which
- *            we could examine here.
- *
- *          - Introduce a new Boolean N_generator field, similar to GENWIDTH,
- *            but containing the desired relational: lb >= ub.
- *
- *
- * @result: TRUE if the relational above is satisfied for
- *          any generator element pairs.
- *
- *****************************************************************************/
+ ******************************************************************************/
 static bool
 isZeroTripGeneratorComposition (node *lb, node *ub)
 {
@@ -109,6 +102,7 @@ isZeroTripGeneratorComposition (node *lb, node *ub)
         aelemslb = ARRAY_AELEMS (lb);
         lenlb = SHgetUnrLen (ARRAY_FRAMESHAPE (lb));
     }
+
     if (NULL != fslb) {
         lenlb = SHgetUnrLen (COgetShape (fslb));
     }
@@ -117,6 +111,7 @@ isZeroTripGeneratorComposition (node *lb, node *ub)
         aelemsub = ARRAY_AELEMS (ub);
         lenub = SHgetUnrLen (ARRAY_FRAMESHAPE (ub));
     }
+
     if (NULL != fsub) {
         lenub = SHgetUnrLen (COgetShape (fsub));
     }
@@ -144,31 +139,27 @@ isZeroTripGeneratorComposition (node *lb, node *ub)
     DBUG_RETURN (z);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn bool TULSisZeroTripGenerator( node *lb, node *ub, node *width)
+ * @fn bool TULSisZeroTripGenerator (node *lb, node *ub, node *width)
  *
  * @brief checks for the following 5 criteria:
+ * 1) (a <= iv < a)
+ *    Where a::int[n] with n > 0
+ * 2) (lb <= iv < ub)
+ *    Where lb::int[n]{vec1}, ub::int[n]{vec2} and any (vec1 >= vec2) and n > 0.
+ * 3) ([l1, ..., ln] <= iv < [u1, ..., un])
+ *    Where n > 0 and exists k>=0 so that: lk and uk are the same variable,
+ *    or lk >= uk.
+ * 4) (lb <= iv <= ub width a)
+ *    Where a::int[n]{vec} and vec contains a 0.
+ * 5) (lb <= iv <= ub width [v1,...,vn])
+ *    Where exists i such that vi == 0.
+ * 6) See isZeroTripGeneratorComposition, above.
  *
- *    1) (  a <= iv <  a)    where a::int[n]  with n>0  !
- *    2) ( lb <= iv < ub)    where lb::int[n]{vec1}, ub::int[n]{vec2}
- *                                 and any( vec1 >= vec2)
- *                                 and n>0!
- *    3) ( [l1, ..., ln] <= iv < [u1, ..., un])
- *                           where n > 0
- *                           and exists k>=0 so that:
- *                                 lk and uk are the same variable
- *                                 or lk >= uk
- *    4) ( lb <= iv <= ub width a)
- *                           where a::int[n]{vec} and vec contains a 0
- *    5) ( lb <= iv <= ub width [v1,...,vn])
- *                           where exists i such that vi == 0
+ * @return True if any of these criteria hold.
  *
- *    6) See isZeroTripGeneratorComposition, above.
- *
- *   If any of these is true, it returns TRUE.
- *
- *****************************************************************************/
+ ******************************************************************************/
 bool
 TULSisZeroTripGenerator (node *lb, node *ub, node *width)
 {
@@ -196,34 +187,24 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
                                          PMint (1, PMAleIVal (&lk), 0), PMskip (0))));
 
     DBUG_PRINT ("checking criteria 1, 2, and 3:");
+
+    // Criteria 1
     if (PMmatchFlat (pat1, PMmultiExprs (2, lb, ub)) && (TUshapeKnown (ID_NTYPE (lb)))
         && (TYgetDim (ID_NTYPE (lb)) == 1)
         && (SHgetExtent (TYgetShape (ID_NTYPE (lb)), 0) > 0)) {
-        /**
-         * criteria 1) (  a <= iv <  a)    where a::int[n]  with n>0  !
-         */
         DBUG_PRINT ("criterion 1 met!");
         res = TRUE;
-    } else if (PMmatchFlat (pat2, PMmultiExprs (2, lb, ub))
-               && (SHgetExtent (COgetShape (c), 0) > 0)) {
-        /**
-         * criteria 2) ( lb <= iv < ub)    where lb::int[n]{vec1},
-         *                                       ub::int[n]{vec2},
-         *                                       vec1 >= vec2
-         *                                       n > 0!
-         */
+    }
+    // Criteria 2
+    else if (PMmatchFlat (pat2, PMmultiExprs (2, lb, ub))
+             && (SHgetExtent (COgetShape (c), 0) > 0)) {
         DBUG_PRINT ("criterion 2 met!");
         res = TRUE;
-    } else if ((PMmatchFlat (pat3, PMmultiExprs (2, lb, ub))
+    }
+    // Criteria 3
+    else if ((PMmatchFlat (pat3, PMmultiExprs (2, lb, ub))
                 || PMmatchFlat (pat4, PMmultiExprs (2, lb, ub)))
-               && (n > 0)) {
-        /**
-         * criteria 3) ( [l1, ..., ln] <= iv < [u1, ..., un])
-         *             where n > 0
-         *             and exists k>=0 so that:
-         *                   lk and uk are the same variable
-         *                   || lk >= uk
-         */
+              && (n > 0)) {
         DBUG_PRINT ("criterion 3 met!");
         res = TRUE;
     }
@@ -244,18 +225,14 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
                         PMretryAny (&i, &l, 3, PMskipN (&i, 0),
                                     PMint (1, PMAisIVal (&zero)), PMskip (0)));
         DBUG_PRINT ("checking criteria 4 and 5:");
+
+        // Criteria 4
         if (PMmatchFlat (pat1, width) && COisZero (c, FALSE)) {
-            /**
-             * criteria 4) ( lb <= iv <= ub width a)
-             *              where a::int[n]{vec} and vec contains a 0
-             */
             DBUG_PRINT ("criterion 4 met!");
             res = TRUE;
-        } else if (PMmatchFlat (pat2, width)) {
-            /**
-             * criteria 5) ( lb <= iv <= ub width [v1,...,vn])
-             *             where exists i such that vi == 0
-             */
+        }
+        // Criteria 5
+        else if (PMmatchFlat (pat2, width)) {
             DBUG_PRINT ("criterion 5 met!");
             res = TRUE;
         }
@@ -264,27 +241,27 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
         c = (NULL != c) ? COfreeConstant (c) : NULL;
     }
 
-    if (!res) {
-        res = isZeroTripGeneratorComposition (lb, ub);
-        if (res)
-            DBUG_PRINT ("criterion 6 met!");
+    // Criteria 6
+    if (!res && isZeroTripGeneratorComposition (lb, ub)) {
+        DBUG_PRINT ("criterion 6 met!");
+        res = TRUE;
     }
 
     DBUG_RETURN (res);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn static bool checkStepWidth( node *generator)
+ * @fn static bool checkStepWidth (node *generator)
  *
  * @brief Predicate for determining if step (and/or width) is one of:
- *     NULL
- *     step matches width
- *     all 1's
+ * - NULL
+ * - step matches width
+ * - all 1's
  *
- * @result: TRUE if predicate is satisfied.
+ * @result: True if predicate is satisfied.
  *
- *****************************************************************************/
+ ******************************************************************************/
 static bool
 checkStepWidth (node *generator)
 {
@@ -293,6 +270,7 @@ checkStepWidth (node *generator)
     pattern *pat;
 
     DBUG_ENTER ();
+
     pat = PMconst (1, PMAgetVal (&sw));
     z = (NULL == GENERATOR_STEP (generator))
         || (GENERATOR_STEP (generator) == GENERATOR_WIDTH (generator))
@@ -305,15 +283,17 @@ checkStepWidth (node *generator)
     sw = (NULL != sw) ? COfreeConstant (sw) : sw;
 
     PMfree (pat);
+
     DBUG_RETURN (z);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn bool checkBoundShape( node *arg1, node *arg2)
- * Predicate for arg1 matching arg2
+ * @fn bool checkBoundShape (node *arg1, node *arg2)
  *
- *****************************************************************************/
+ * @brief Predicate for arg1 matching arg2.
+ *
+ ******************************************************************************/
 static bool
 checkBoundShape (node *arg1, node *arg2)
 {
@@ -335,35 +315,25 @@ checkBoundShape (node *arg1, node *arg2)
     DBUG_RETURN (res);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn bool TULSisValuesMatch( node *arg1, node *arg2)
+ * @fn bool TULSisValuesMatch (node *arg1, node *arg2)
  *
- * Predicate to determine if two nodes have the same algebraic value.
+ * @brief Predicate to determine if two nodes have the same algebraic value.
+ * Nodes may be anything that can appear in a GENERATOR_BOUND node. I.e. N_num,
+ * N_id, or  N_array, in any combination. But not N_avis nodes. We can safely
+ * skip guards and extrema, because this is a predicate only.
  *
- * Nodes may be anything that can appear in a GENERATOR_BOUND node.
- * I.e.: N_num, N_id, or  N_array, in any combination.
- * NB. N_avis nodes do NOT work.
+ * @note If you were planning to use this function to pick one arg over the
+ * other (say, for something like VP), do NOT do so, or we will have unguarded
+ * values propagating past their guards, and other unpleasantness.
  *
- * We can safely skip guards and extrema, because this is a predicate
- * only.
- *
- * NB: If you were planning to use this function to pick one arg
- * over the other (say, for something like VP), do NOT do so,
- * or we will have unguarded values propagating past their guards,
- * and other unpleasantness.
- *
- *****************************************************************************/
+ ******************************************************************************/
 bool
 TULSisValuesMatch (node *arg1, node *arg2)
 {
-    pattern *pat1;
-    pattern *pat2;
-    pattern *pat3;
-    pattern *pat4;
-    pattern *pat5;
-    pattern *pat6;
     bool res = FALSE;
+    pattern *pat1, *pat2, *pat3, *pat4, *pat5, *pat6;
     node *elem = NULL;
     constant *con = NULL;
     node *aelems1 = NULL;
@@ -375,6 +345,7 @@ TULSisValuesMatch (node *arg1, node *arg2)
 
     DBUG_ASSERT (N_avis != NODE_TYPE (arg1), "arg1 not expected to be N_avis");
     DBUG_ASSERT (N_avis != NODE_TYPE (arg2), "arg2 not expected to be N_avis");
+
     pat1 = PMvar (1, PMAgetNode (&elem), 0);
     pat2 = PMvar (1, PMAisVar (&elem), 0);
 
@@ -384,18 +355,17 @@ TULSisValuesMatch (node *arg1, node *arg2)
     pat5 = PMarray (1, PMAgetFS (&fs1), 1, PMskip (1, PMAgetNode (&aelems1)));
     pat6 = PMarray (1, PMAgetFS (&fs2), 1, PMskip (1, PMAgetNode (&aelems2)));
 
-    /* Try N_ids first */
+    // Try N_ids first
     res = PMmatchFlatSkipExtremaAndGuards (pat1, arg1)
           && PMmatchFlatSkipExtremaAndGuards (pat2, arg2);
 
-    /* And then constants */
-
+    // And then constants
     res = res
           || (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)
               && PMmatchFlatSkipExtremaAndGuards (pat4, arg2));
     con = (NULL != con) ? COfreeConstant (con) : NULL;
 
-    /* And, failing that, N_arrays of same shape and all same values */
+    // And, failing that, N_arrays of same shape and all same values
     if ((!res)
         && (PMmatchFlatSkipExtremaAndGuards (pat5, arg1)
             && PMmatchFlatSkipExtremaAndGuards (pat6, arg2))
@@ -421,45 +391,35 @@ TULSisValuesMatch (node *arg1, node *arg2)
     DBUG_RETURN (res);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn bool TULSisFullGenerator( node *generator, node *operator)
+ * @fn bool TULSisFullGenerator (node *generator, node *operator)
  *
- * @brief
+ * @brief Predicate for determining if generator covers index set of WL result.
  *
- *    Predicate for determining if generator covers index set of
- *    WL result.
+ * Specifically, it checks for the following criteria:
  *
- *    Specifically, it checks for the following criteria:
+ * - In case of fold, propagate: always considered full!
+ *   NB: is only correct when the generator is the ONLY non-default generator!
+ *   This is the caller's responsbility to check.
+ * - In case of genarray (shp, def):
+ *   (lb <= iv < shp) where lb::int[n]{0,...,0}
+ * - In case of modarray (a):
+ *   (lb <= iv < shp) where lb::int[n]{0,...,0}
+ *     and a::<xyz>[s1, ..., sm]
+ *     and shp::int[n]{s1, ..., sn}
+ *     and sn <= sm (for the case of non-scalar cells) - not checked.
+ *   Or (lb <= iv < shp) where lb::int[n]{0,...,0}
+ *     and AVIS_SHAPE (a) = shp
  *
- *    in case of fold, propagate: always considered full!
- *        NB: is only correct when the generator is the ONLY
- *            non-default generator!!
- *            This is the caller's responsbility to check.
+ * - Genarray or modarray: both these cases may have step and width expressions
+ *   provided that these satisfy one of the following conditions:
+ *     step a where a::int[n]{1,...,1}
+ *     step a width a
  *
- *    in case of  genarray( shp, def) :
- *        ( lb <= iv < shp)    where lb::int[n]{0,...,0}
+ * @returns True if either of these cases holds.
  *
- *    in case of modarray( a) :
- *        ( lb <= iv < shp)    where lb::int[n]{0,...,0}
- *                                   and a::<xyz>[s1, ..., sm]
- *                                   and shp::int[n]{s1, ..., sn}
- *                                   and sn<=sm (for the case of
- *                                       non-scalar cells) - not checked.
- *        or
- *
- *        ( lb <= iv < shp)    where lb::int[n]{0,...,0}
- *                                   and AVIS_SHAPE( a) = shp
- *
- *    genarray/ modarray: both these cases may have step and width expressions
- *    provided that these satisfy one of the following conditions:
- *       step a          where a::int[n]{1,...,1}
- *       step a width a
- *
- *   In case either of these is true, it returns TRUE.
- *
- *****************************************************************************/
-
+ ******************************************************************************/
 bool
 TULSisFullGenerator (node *generator, node *op)
 {
@@ -529,6 +489,7 @@ TULSisFullGenerator (node *generator, node *op)
 
     default:
         z = FALSE;
+        break;
     }
 
     PMfree (patlb);
@@ -539,16 +500,15 @@ TULSisFullGenerator (node *generator, node *op)
     DBUG_RETURN (z);
 }
 
-/** <!--********************************************************************--> *
- * @fn void  TUclearSsaAssign( node *arg_node)
+/******************************************************************************
  *
- * @brief Clear AVIS_SSAASSIGN nodes associated with arg_node
- *        N_ids entry/entries.
+ * @fn void  TUclearSsaAssign (node *arg_node)
  *
- * @param: arg_node: N_assign node, which we believe points to an N_let
+ * @brief Clear AVIS_SSAASSIGN nodes associated with arg_node N_ids entries.
  *
+ * @param arg_node N_assign node, which we believe points to an N_let.
  *
- *****************************************************************************/
+ ******************************************************************************/
 void
 TUclearSsaAssign (node *arg_node)
 {
@@ -557,7 +517,7 @@ TUclearSsaAssign (node *arg_node)
     DBUG_ENTER ();
 
     DBUG_ASSERT (N_let == NODE_TYPE (ASSIGN_STMT (arg_node)), "Expected N_let");
-    ids = LET_IDS (ASSIGN_STMT (arg_node));
+    ids = ASSIGN_LHS (arg_node);
 
     while (NULL != ids) {
         AVIS_SSAASSIGN (IDS_AVIS (ids)) = NULL;
@@ -567,16 +527,15 @@ TUclearSsaAssign (node *arg_node)
     DBUG_RETURN ();
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn void  TUsetSsaAssign( node *arg_node)
+ * @fn void TUsetSsaAssign (node *arg_node)
  *
- * @brief Set AVIS_SSAASSIGN nodes associated with arg_node
- *        N_ids entry/entries.
+ * @brief Set AVIS_SSAASSIGN nodes associated with arg_node N_ids entries.
  *
- * @param: arg_node: N_assign node, which we believe points to an N_let
+ * @param arg_node N_assign node, which we believe points to an N_let.
  *
- *****************************************************************************/
+ ******************************************************************************/
 void
 TUsetSsaAssign (node *arg_node)
 {
@@ -586,7 +545,7 @@ TUsetSsaAssign (node *arg_node)
 
     DBUG_ASSERT (N_assign == NODE_TYPE (arg_node), "Expected N_assign");
     DBUG_ASSERT (N_let == NODE_TYPE (ASSIGN_STMT (arg_node)), "Expected N_let");
-    ids = LET_IDS (ASSIGN_STMT (arg_node));
+    ids = ASSIGN_LHS (arg_node);
 
     while (NULL != ids) {
         AVIS_SSAASSIGN (IDS_AVIS (ids)) = arg_node;
@@ -596,20 +555,19 @@ TUsetSsaAssign (node *arg_node)
     DBUG_RETURN ();
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn node *TUmakeIntVec(...)
+ * @fn node *TUmakeIntVec (int i, node **preassign, node **vardec)
  *
- * @brief Create one-element integer vector, i.
- *        Return N_avis pointer for same.
+ * @brief Create one-element integer vector i.
  *
- * @param: i: the value of vector.
- *         preassigns: pointer to pointer of preassigns chain.
- *         vardecs:    pointer to pointer of vardecs chain.
+ * @param i The value of vector.
+ * @param preassigns Pointer to pointer of preassigns chain.
+ * @param vardecs Pointer to pointer of vardecs chain.
  *
- * @result: N_avis node for resulting vector..
+ * @result: N_avis node for resulting vector.
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 TUmakeIntVec (int i, node **preassign, node **vardec)
 {
@@ -617,41 +575,41 @@ TUmakeIntVec (int i, node **preassign, node **vardec)
 
     DBUG_ENTER ();
     selarravis = TBmakeAvis (TRAVtmpVar (),
-                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
+                             TYmakeAKS (TYmakeSimpleType (T_int),
+                                        SHcreateShape (1, 1)));
     *vardec = TBmakeVardec (selarravis, *vardec);
-    *preassign
-      = TBmakeAssign (TBmakeLet (TBmakeIds (selarravis, NULL),
-                                 TCmakeIntVector (TBmakeExprs (TBmakeNum (i), NULL))),
-                      *preassign);
+    *preassign = TBmakeAssign (
+        TBmakeLet (TBmakeIds (selarravis, NULL),
+                   TCmakeIntVector (TBmakeExprs (TBmakeNum (i), NULL))),
+        *preassign);
     AVIS_SSAASSIGN (selarravis) = *preassign;
 
     DBUG_RETURN (selarravis);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn node *TUscalarizeVector(...)
+ * @fn node *TUscalarizeVector (node *arg_node, node **preassigns, node **vardecs)
  *
- * @brief  Scalarize vector arg_node.
- *         arg_node must be an AKS/AKV vector.
- *         We produce the following:
+ * @brief Scalarize vector arg_node.
+ * We produce the following:
  *
- *         i0 = [0];
- *         s0 = _sel_VxA_( i0, arg_node);
- *         i1 = [1];
- *         s1 = _sel_VxA_( i1, arg_node);
- *         ...
- *         iz = [n-1];
- *         sz = _sel_VxA_( iz, arg_node);
- *         z = [ s0, s1, ..., sz];
+ *   i0 = [0];
+ *   s0 = _sel_VxA_ (i0, arg_node);
+ *   i1 = [1];
+ *   s1 = _sel_VxA_ (i1, arg_node);
+ *   ...
+ *   iz = [n-1];
+ *   sz = _sel_VxA_ (iz, arg_node);
+ *   z = [ s0, s1, ..., sz];
  *
- * @param: arg_node: The N_avis of the vector to be scalarized.
- *         preassigns: pointer to pointer of preassigns chain.
- *         vardecs:    pointer to pointer of vardecs chain.
+ * @param arg_node The AKS/AKV N_avis of the vector to be scalarized.
+ * @param preassigns Pointer to pointer of preassigns chain.
+ * @param vardecs Pointer to pointer of vardecs chain.
  *
- * @result: N_avis node for z.
+ * @returns N_avis node for z.
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 TUscalarizeVector (node *arg_node, node **preassigns, node **vardecs)
 {
@@ -668,54 +626,65 @@ TUscalarizeVector (node *arg_node, node **preassigns, node **vardecs)
 
     restyp = AVIS_TYPE (arg_node);
     scalartype = TYgetSimpleType (TYgetScalar (restyp));
-    DBUG_ASSERT (TYisAKV (restyp) || TYisAKS (restyp), "Expected AKS or AKD restyp");
-    DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis arg_node");
+
+    DBUG_ASSERT (TYisAKV (restyp) || TYisAKS (restyp),
+                 "Expected AKS or AKD restyp");
+    DBUG_ASSERT (N_avis == NODE_TYPE (arg_node),
+                 "Expected N_avis arg_node");
+
     lim = SHgetUnrLen (TYgetShape (restyp));
 
-    /* Build i0, s0, i1,s1...,iz,sz */
+    // Build i0, s0, i1, s1, .., iz, sz
     for (i = 0; i < lim; i++) {
-        selarravis = TUmakeIntVec (i, preassigns, vardecs); /*  i0 = [i] */
+        selarravis = TUmakeIntVec (i, preassigns, vardecs); // i0 = [i]
         zavis = TBmakeAvis (TRAVtmpVarName ("ausv"),
-                            TYmakeAKS (TYmakeSimpleType (scalartype), SHcreateShape (0)));
+                            TYmakeAKS (TYmakeSimpleType (scalartype),
+                                       SHcreateShape (0)));
+
         *vardecs = TBmakeVardec (zavis, *vardecs);
-        asgn = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
-                                        TCmakePrf2 (F_sel_VxA, TBmakeId (selarravis),
-                                                    TBmakeId (arg_node))),
-                             NULL);
+        asgn = TBmakeAssign (
+            TBmakeLet (TBmakeIds (zavis, NULL),
+                       TCmakePrf2 (F_sel_VxA,
+                                   TBmakeId (selarravis),
+                                   TBmakeId (arg_node))),
+            NULL);
         *preassigns = TCappendAssign (*preassigns, asgn);
         AVIS_SSAASSIGN (zavis) = asgn;
+
         z = TCappendExprs (z, TBmakeExprs (TBmakeId (zavis), NULL));
     }
 
     /* Build N_array result, z */
     zavis = TBmakeAvis (TRAVtmpVarName ("ausv"), TYcopyType (restyp));
     *vardecs = TBmakeVardec (zavis, *vardecs);
-    asgn
-      = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
-                                 TCmakeVector (TYmakeAKS (TYmakeSimpleType (scalartype),
-                                                          SHcreateShape (0)),
-                                               z)),
-                      NULL);
+    asgn = TBmakeAssign (
+        TBmakeLet (TBmakeIds (zavis, NULL),
+                   TCmakeVector (TYmakeAKS (TYmakeSimpleType (scalartype),
+                                            SHcreateShape (0)),
+                                 z)),
+        NULL);
+
     *preassigns = TCappendAssign (*preassigns, asgn);
     AVIS_SSAASSIGN (zavis) = asgn;
 
     DBUG_RETURN (zavis);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
  * @fn node *TUmoveAssign(node *avis, node *preassigns)
  *
- *   @brief Find N_assign for avis in preassigns chain,
- *          and move it to the end of the preassigns chain.
+ * @brief Find N_assign for avis in preassigns chain, and move it to the end of
+ * the preassigns chain.
  *
- *   @param  node *avis: An N_avis for the LHS we want to move.
- *           node *preassigns: A non-NULL N_assign chain that
- *                             contains an assign for N_avis
- *   @return node *      : modified N_assign chain
+ * @param node An N_avis for the LHS we want to move.
+ * @param preassigns A non-NULL N_assign chain that contains an assign
+ * for N_avis.
  *
- *   NB. We only look at the first N_ids element in the LHS.
- *       This is pure laziness on my part.
+ * @note We only look at the first N_ids element in the LHS.
+ * This is pure laziness on my part.
+ *
+ * @returns Modified N_assign chain.
  *
  ******************************************************************************/
 node *
@@ -729,32 +698,37 @@ TUmoveAssign (node *avis, node *preassigns)
 
     z = preassigns;
 
-    /* Locate avis in assign chain */
-    while ((NULL != preassigns) && (AVIS_SSAASSIGN (avis) != preassigns)) {
+    // Locate avis in assign chain
+    while (preassigns != NULL && AVIS_SSAASSIGN (avis) != preassigns) {
         pred = preassigns;
         preassigns = ASSIGN_NEXT (preassigns);
     }
-    DBUG_ASSERT (NULL != preassigns, "Did not find ournode in preassigns chain");
+
+    DBUG_ASSERT (preassigns != NULL,
+                 "Did not find our node in preassigns chain");
     ournode = preassigns;
 
     if (preassigns == z) {
-        z = ASSIGN_NEXT (preassigns); /* head-of-chain ournode removed from chain */
+        // Head-of-chain ournode removed from chain
+        z = ASSIGN_NEXT (preassigns);
     } else {
-        /* non-head of chain ournode removed*/
+        // Non-head of chain ournode removed
         ASSIGN_NEXT (pred) = ASSIGN_NEXT (ournode);
     }
 
-    ASSIGN_NEXT (ournode) = NULL; /* ournode has no successor */
+    // Ournode has no successor
+    ASSIGN_NEXT (ournode) = NULL;
 
-    /* Find end-of-chain */
-    preassigns = pred; /* NULL if ournode was head-of-chain */
-    while (NULL != preassigns) {
+    // Find end-of-chain, NULL if ournode was head-of-chain
+    preassigns = pred;
+    while (preassigns != NULL) {
         pred = preassigns;
         preassigns = ASSIGN_NEXT (preassigns);
     }
 
-    if (NULL != pred) {
-        ASSIGN_NEXT (pred) = ournode; /* append ournode assign to end of chain */
+    if (pred != NULL) {
+        // Append ournode assign to end of chain
+        ASSIGN_NEXT (pred) = ournode;
     } else {
         z = ournode;
     }
@@ -762,66 +736,62 @@ TUmoveAssign (node *avis, node *preassigns)
     DBUG_RETURN (z);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn int TULSsearchAssignChainForAssign( node *chn, node *assgn)
+ * @fn int TULSsearchAssignChainForAssign (node *chn, node *assgn)
  *
- * @brief Search the N_assign chain chn for N_assign assgn.
- *        Return the 0-origin index of its location in the chain,
- *        if it exists, and otherwise -1.
+ * @brief Search the N_assign chain chn for N_assign assgn. Return the 0-origin
+ * index of its location in the chain, if it exists, and otherwise -1.
  *
- *        This could have been written as a set-membership predicate,
- *        but I thought this version might come in handy for something.
+ * @note This could have been written as a set-membership predicate, but I
+ * thought this version might come in handy for something.
  *
+ * @param chn An N_assign chain.
+ * @param assgn An N_assign node.
  *
- * @param  chn: An N_assign chain
- * @param  assgn: An N_assign node
- *
- * @return As above. If assgn's SSA_ASSIGN is NULL, return -1.
- *         This situation will arise if assgn is a WITH_ID or the
- *         formal parameter of a defined function.
+ * @return As above. If assgn's SSA_ASSIGN is NULL, return -1. This situation
+ * will arise if assgn is a WITH_ID or the formal parameter of a defined
+ * function.
  *
  ******************************************************************************/
 int
 TULSsearchAssignChainForAssign (node *chn, node *assgn)
 {
-    int z = -1;
+    int res = -1;
     int cnt = 0;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (chn) == N_assign, "Expected N_assign chn");
 
-    while ((-1 == z) && (NULL != chn)) {
+    while (res == -1 && chn != NULL) {
         if (assgn != chn) {
-            cnt++;
             chn = ASSIGN_NEXT (chn);
+            cnt++;
         } else {
-            z = cnt;
+            res = cnt;
         }
     }
 
-    DBUG_RETURN (z);
+    DBUG_RETURN (res);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn bool TULSisInPrfFamily( prf fun, prf funfam)
- * @fn prf TULSgetPrfFamilyName( prf fun)
+ * @fn bool TULSisInPrfFamily (prf fun, prf funfam)
+ * @fn prf TULSgetPrfFamilyName (prf fun)
  *
  * @brief Predicate for determining if an N_prf is in the same function
- *        family as funfam.
+ * family as funfam.
  *
- * @param fun: the function we are curious about, e.g, F_add_SxS, F_add_SxV,
- *            F_add_VxS, F_add_VxV, F_sub_SxS.
+ * @param fun The function we are curious about, e.g, F_add_SxS, F_add_SxV,
+ * F_add_VxS, F_add_VxV, F_sub_SxS.
+ * @param funfam The prototypical function that represents the function. In most
+ * cases, this is the SxS version of the function. E.g., for addition, it is
+ * F_add_SxS.
  *
- * @param funfam: the prototypical function that represents the function.
- *                In most cases, this is the SxS version of the function.
- *                E.g., for addition, it is F_add_SxS.
- *
- * @return TRUE if fun is a member of funfam; else FALSE. For example, all four
- *         addition functions above are members of F_add_SxS, but F_sub_SxS
- *         is not.
+ * @returns True if fun is a member of funfam; else false. For example, all four
+ * addition functions above are members of F_add_SxS, but F_sub_SxS is not.
  *
  ******************************************************************************/
 bool
@@ -885,28 +855,23 @@ TULSgetPrfFamilyName (prf fun)
     DBUG_RETURN (z);
 }
 
-/** <!--*******************************************************************-->
+/******************************************************************************
  *
- * @fn bool TUisPrfGuard(node *arg_node)
+ * @fn bool TUisPrfGuard (node *arg_node)
  *
- * @brief If arg_node is an N_prf and is a guard with PRF_ARG1 as
- *        its primary result, return TRUE; else FALSE.
- * @param
- * @return
+ * @brief If arg_node is an N_prf and is a guard with PRF_ARG1 as its primary
+ * result, return TRUE; else FALSE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 bool
 TUisPrfGuard (node *arg_node)
 {
-    bool z;
+    bool res = FALSE;
 
     DBUG_ENTER ();
-    z = (N_prf == NODE_TYPE (arg_node));
-    if (z) {
+
+    if (NODE_TYPE (arg_node) == N_prf) {
         switch (PRF_PRF (arg_node)) {
-        default:
-            z = FALSE;
-            break;
         case F_noteminval:
         case F_notemaxval:
         case F_noteintersect:
@@ -917,24 +882,28 @@ TUisPrfGuard (node *arg_node)
         case F_val_le_val_SxS:
         case F_val_le_val_VxV:
         case F_shape_matches_dim_VxA:
-            z = TRUE;
+            res = TRUE;
+            break;
+
+        default:
+            res = FALSE;
             break;
         }
     }
 
-    DBUG_RETURN (z);
+    DBUG_RETURN (res);
 }
 
-/** <!-- ****************************************************************** -->
+/******************************************************************************
  *
- * @fn node *TUnode2Avis( node *arg_node)
+ * @fn node *TUnode2Avis (node *arg_node)
  *
- * @brief Find N_avis node for arg_node
+ * @brief Find N_avis node for arg_node.
  *
- * @param An N_avis, N_id, N_num, or N_ids node
+ * @param arg_node N_avis, N_id, N_num, or N_ids node.
  *
- * @return the associated N_avis node, or NULL if this is an N_num
- *         or if arg_node is NULL
+ * @returns the associated N_avis node, or NULL if this is an N_num or if
+ * arg_node is NULL.
  *
  ******************************************************************************/
 node *
@@ -944,7 +913,7 @@ TUnode2Avis (node *arg_node)
 
     DBUG_ENTER ();
 
-    if (NULL != arg_node) {
+    if (arg_node != NULL) {
         switch (NODE_TYPE (arg_node)) {
         case N_id:
             avis = ID_AVIS (arg_node);
@@ -963,7 +932,7 @@ TUnode2Avis (node *arg_node)
             break;
 
         default:
-            DBUG_ASSERT (NULL != avis, "Expected N_id, N_avis, or N_ids node");
+            DBUG_UNREACHABLE ("Expected N_id, N_avis, or N_ids node");
         }
     }
 

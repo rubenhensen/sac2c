@@ -1,33 +1,36 @@
-#include "restore_objects.h"
+#include "free.h"
+#include "memory.h"
+#include "new_types.h"
+#include "print.h"
+#include "str.h"
+#include "traverse.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 
 #define DBUG_PREFIX "RESO"
 #include "debug.h"
 
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "traverse.h"
-#include "free.h"
-#include "str.h"
-#include "memory.h"
-#include "new_types.h"
+#include "restore_objects.h"
 
-/*
- * INFO structure
- */
+/******************************************************************************
+ *
+ * @struct INFO
+ *
+ * @param INFO_LHS
+ * @param INFO_DELETE
+ * @param INFO_DOSPMD
+ *
+ ******************************************************************************/
 struct INFO {
-    bool mdelete;
+    node *lhs;
+    bool delete;
     bool dospmd;
 };
 
-/*
- * INFO macros
- */
-#define INFO_DELETE(n) ((n)->mdelete)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_DELETE(n) ((n)->delete)
 #define INFO_DOSPMD(n) ((n)->dospmd)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo (void)
 {
@@ -37,6 +40,7 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
+    INFO_LHS (result) = NULL;
     INFO_DELETE (result) = FALSE;
     INFO_DOSPMD (result) = FALSE;
 
@@ -53,18 +57,17 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/*
- * static helper functions
- */
-/** <!-- ****************************************************************** -->
- * @fn node *ResetAvisSubst( node *vardecs)
+/******************************************************************************
  *
- * @brief Resets the AVIS_SUBST field of all AVIS sons of the given VARDEC
- *        chain to NULL.
+ * @fn node *ResetAvisSubst (node *vardecs)
  *
- * @param vardecs a chain of N_vardec nodes
+ * @brief Resets the AVIS_SUBST field of all N_avis sons of the given N_vardec
+ * chain to NULL.
  *
- * @return chain of initialised N_vardec nodes
+ * @param vardecs a chain of N_vardec nodes.
+ *
+ * @return chain of initialised N_vardec nodes.
+ *
  ******************************************************************************/
 static node *
 ResetAvisSubst (node *vardecs)
@@ -73,32 +76,38 @@ ResetAvisSubst (node *vardecs)
 
     if (vardecs != NULL) {
         AVIS_SUBST (VARDEC_AVIS (vardecs)) = NULL;
-
         VARDEC_NEXT (vardecs) = ResetAvisSubst (VARDEC_NEXT (vardecs));
     }
 
     DBUG_RETURN (vardecs);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *DeleteSubstVardecs( node *vardecs)
+/******************************************************************************
  *
- * @brief Removes all vardecs that have a AVIS son with AVIS_SUBST set to
- *        something other than NULL from the vardec chain.
+ * @fn node *DeleteSubstVardecs (node *vardecs)
  *
- * @param vardecs a chain of N_vardec nodes
+ * @brief Removes all vardecs that have a N_avis son with AVIS_SUBST set to
+ * something other than NULL from the N_vardec chain.
  *
- * @return chain of N_vardec nodes with the mentioned vardecs removed.
+ * @param vardecs a chain of N_vardec nodes.
+ *
+ * @return Chain of N_vardec nodes with the mentioned vardecs removed.
+ *
  ******************************************************************************/
 static node *
 DeleteSubstVardecs (node *vardecs)
 {
+    node *subst;
+
     DBUG_ENTER ();
 
     if (vardecs != NULL) {
         VARDEC_NEXT (vardecs) = DeleteSubstVardecs (VARDEC_NEXT (vardecs));
 
-        if (AVIS_SUBST (VARDEC_AVIS (vardecs)) != NULL) {
+        subst = AVIS_SUBST (VARDEC_AVIS (vardecs));
+        if (subst != NULL) {
+            DBUG_PRINT ("freeing vardec %s with subst %s",
+                        VARDEC_NAME (vardecs), OBJDEF_NAME (subst));
             vardecs = FREEdoFreeNode (vardecs);
         }
     }
@@ -106,15 +115,16 @@ DeleteSubstVardecs (node *vardecs)
     DBUG_RETURN (vardecs);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *StripArtificialArgs( node *args)
+/******************************************************************************
  *
- * @brief Removes all args that are marked as artificial from the given
- *        chain.
+ * @fn node *StripArtificialArgs (node *args)
+ *
+ * @brief Removes all args that are marked as artificial from the given chain.
  *
  * @param args a chain of N_arg nodes.
  *
  * @return Cleaned chain of N_arg nodes.
+ *
  ******************************************************************************/
 static node *
 StripArtificialArgs (node *args)
@@ -125,6 +135,7 @@ StripArtificialArgs (node *args)
         ARG_NEXT (args) = StripArtificialArgs (ARG_NEXT (args));
 
         if (ARG_ISARTIFICIAL (args)) {
+            DBUG_PRINT ("stripping artificial arg %s", ARG_NAME (args));
             args = FREEdoFreeNode (args);
         }
     }
@@ -132,43 +143,49 @@ StripArtificialArgs (node *args)
     DBUG_RETURN (args);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *StripArtificialArgExprs( node *form_args, node *act_args)
+/******************************************************************************
+ *
+ * @fn node *StripArtificialArgExprs (node *form_args, node *act_args)
  *
  * @brief Removes all expressions form the chain of actual args that have
- *        a corresponding artificial argument in the chain of formal args.
+ * a corresponding artificial argument in the chain of formal args.
  *
- * @param form_args formal args (N_arg chain)
- * @param act_args actual args (N_exprs chain)
+ * @param form_args Formal arguments (N_arg chain).
+ * @param act_args Actual arguments (N_exprs chain).
  *
- * @return Cleaned actual args (N_exprs chain)
+ * @return Cleaned actual args (N_exprs chain).
+ *
  ******************************************************************************/
 static node *
 StripArtificialArgExprs (node *form_args, node *act_args)
 {
     DBUG_ENTER ();
 
-    if (form_args != NULL) {
+    while (form_args != NULL) {
         if (ARG_ISARTIFICIAL (form_args)) {
+            DBUG_PRINT ("stripping actual arg %s with artificial arg %s",
+                        ID_NAME (EXPRS_EXPR (act_args)), ARG_NAME (form_args));
             act_args = FREEdoFreeNode (act_args);
         }
 
-        act_args = StripArtificialArgExprs (ARG_NEXT (form_args), act_args);
+        form_args = ARG_NEXT (form_args);
     }
 
     DBUG_RETURN (act_args);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *DeleteLHSforRHSobjects( node *lhs, node *rhs)
+/******************************************************************************
  *
- * @brief Removes all LHS ids form the chain that have
- *        a corresponding RHS object.
+ * @fn node *DeleteLHSforRHSobjects (node *lhs, node *rhs)
  *
- * @param lhs left hand side of assignment (N_ids chain)
- * @param rhs right hand side expressions (N_exprs chain)
+ * @brief Removes all LHS ids form the chain that have a corresponding
+ * RHS object.
  *
- * @return New left hand side (N_ids chain)
+ * @param lhs left hand side of assignment (N_ids chain).
+ * @param rhs right hand side expressions (N_exprs chain).
+ *
+ * @return New left hand side (N_ids chain).
+ *
  ******************************************************************************/
 node *
 DeleteLHSforRHSobjects (node *lhs, node *rhs)
@@ -182,37 +199,37 @@ DeleteLHSforRHSobjects (node *lhs, node *rhs)
 
     while (rhs != NULL) {
         if (NODE_TYPE (EXPRS_EXPR (rhs)) == N_globobj) {
-
-            /* Remove lhs ids */
+            // Remove lhs ids
             lhs = FREEdoFreeNode (lhs);
             if (prevlhs != NULL) {
                 IDS_NEXT (prevlhs) = lhs;
             } else {
                 lhs_out = lhs;
             }
-
         } else {
-            /* Iterate lhs ids */
+            // Iterate lhs ids
             prevlhs = lhs;
             lhs = IDS_NEXT (lhs);
         }
 
-        /* Iterate rhs expr */
+        // Iterate rhs expr
         rhs = EXPRS_NEXT (rhs);
     }
 
     DBUG_RETURN (lhs_out);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *DeleteRHSobjects( node *rhs)
+/******************************************************************************
+ *
+ * @fn node *DeleteRHSobjects (node *rhs)
  *
  * @brief Removes all RHS objects from the chain.
  *
- * @param lhs left hand side of assignment (N_ids chain)
- * @param rhs right hand side expressions (N_exprs chain)
+ * @param lhs left hand side of assignment (N_ids chain).
+ * @param rhs right hand side expressions (N_exprs chain).
  *
- * @return New left hand side (N_ids chain)
+ * @return New left hand side (N_ids chain).
+ *
  ******************************************************************************/
 node *
 DeleteRHSobjects (node *rhs)
@@ -224,17 +241,15 @@ DeleteRHSobjects (node *rhs)
 
     while (rhs != NULL) {
         if (NODE_TYPE (EXPRS_EXPR (rhs)) == N_globobj) {
-
-            /* Remove rhs object */
+            // Remove rhs object
             rhs = FREEdoFreeNode (rhs);
             if (prevrhs != NULL) {
                 EXPRS_NEXT (prevrhs) = rhs;
             } else {
                 rhs_out = rhs;
             }
-
         } else {
-            /* Iterate rhs */
+            // Iterate rhs
             prevrhs = rhs;
             rhs = EXPRS_NEXT (rhs);
         }
@@ -243,24 +258,29 @@ DeleteRHSobjects (node *rhs)
     DBUG_RETURN (rhs_out);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node * MarkArtificialArgs( node *fundef_args, node *ap_args)
+/******************************************************************************
+ *
+ * @fn node *MarkArtificialArgs (node *fundef_args, node *ap_args)
  *
  * @brief Whoever wrote me, didn't comment me. However, it seems as if this
- *        function propagates the ISARTIFICIAL property from actual to
- *        formal arguments.
+ * function propagates the ISARTIFICIAL property from actual to formal
+ * arguments.
  *
- * @param fundef_args formal arguments
- * @param ap_args     actual arguments
+ * @param fundef_args formal arguments.
+ * @param ap_args actual arguments.
  *
  * @return the updated formal arguments.
+ *
  ******************************************************************************/
 static node *
 MarkArtificialArgs (node *fundef_args, node *ap_args)
 {
+    node *avis;
+
     DBUG_ENTER ();
+
     if (fundef_args != NULL) {
-        node *avis = ID_AVIS (EXPRS_EXPR (ap_args));
+        avis = ID_AVIS (EXPRS_EXPR (ap_args));
         if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
             if (ARG_ISARTIFICIAL (AVIS_DECL (avis))) {
                 DBUG_PRINT ("Marking %s", AVIS_NAME (avis));
@@ -268,71 +288,74 @@ MarkArtificialArgs (node *fundef_args, node *ap_args)
                 ARG_OBJDEF (fundef_args) = ARG_OBJDEF (AVIS_DECL (avis));
             }
         }
-        ARG_NEXT (fundef_args)
-          = MarkArtificialArgs (ARG_NEXT (fundef_args), EXPRS_NEXT (ap_args));
+
+        ARG_NEXT (fundef_args) = MarkArtificialArgs (ARG_NEXT (fundef_args),
+                                                     EXPRS_NEXT (ap_args));
     }
+
     DBUG_RETURN (fundef_args);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn bool SignaturesIdenticalModuloArtificials( node *fun1, node *fun2)
+/******************************************************************************
+ *
+ * @fn bool SignaturesIdenticalModuloArtificials (node *fun1, node *fun2)
  *
  * @brief Checks whether the signature of fun1 and fun2 are identical after
- *        all artificial args and rets have been removed.
+ * all artificial args and rets have been removed.
  *
- * @param fun1 first function to compare
- * @param fun2 second function to compare
+ * @param fun1 first function to compare.
+ * @param fun2 second function to compare.
  *
- * @return TRUE iff the signatures match
+ * @return TRUE iff the signatures match.
+ *
  ******************************************************************************/
 static bool
 SignaturesIdenticalModuloArtificials (node *fun1, node *fun2)
 {
-    bool result = TRUE;
     node *rets1, *rets2, *args1, *args2;
+    bool res = TRUE;
 
     DBUG_ENTER ();
 
-    /* first check return types */
+    // First check return types
     rets1 = FUNDEF_RETS (fun1);
     rets2 = FUNDEF_RETS (fun2);
 
-    while (result && (rets1 != NULL) && (rets2 != NULL)) {
+    while (res && (rets1 != NULL) && (rets2 != NULL)) {
         if (RET_ISARTIFICIAL (rets1)) {
             rets1 = RET_NEXT (rets1);
         } else if (RET_ISARTIFICIAL (rets2)) {
             rets2 = RET_NEXT (rets2);
         } else {
-            result = TYeqTypes (RET_TYPE (rets1), RET_TYPE (rets2));
+            res = TYeqTypes (RET_TYPE (rets1), RET_TYPE (rets2));
             rets1 = RET_NEXT (rets1);
             rets2 = RET_NEXT (rets2);
         }
     }
-    result = result && (rets1 == NULL) && (rets2 == NULL);
 
-    /* same for argument types */
+    res = res && (rets1 == NULL) && (rets2 == NULL);
+
+    // Same for argument types
     args1 = FUNDEF_ARGS (fun1);
     args2 = FUNDEF_ARGS (fun2);
 
-    while (result && (args1 != NULL) && (args2 != NULL)) {
+    while (res && (args1 != NULL) && (args2 != NULL)) {
         if (ARG_ISARTIFICIAL (args1)) {
             args1 = ARG_NEXT (args1);
         } else if (ARG_ISARTIFICIAL (args2)) {
             args2 = ARG_NEXT (args2);
         } else {
-            result = TYeqTypes (ARG_NTYPE (args1), ARG_NTYPE (args2));
+            res = TYeqTypes (ARG_NTYPE (args1), ARG_NTYPE (args2));
             args1 = ARG_NEXT (args1);
             args2 = ARG_NEXT (args2);
         }
     }
-    result = result && (args1 == NULL) && (args2 == NULL);
 
-    DBUG_RETURN (result);
+    res = res && (args1 == NULL) && (args2 == NULL);
+
+    DBUG_RETURN (res);
 }
 
-/*
- * traversal functions
- */
 node *
 RESOid (node *arg_node, info *arg_info)
 {
@@ -344,10 +367,7 @@ RESOid (node *arg_node, info *arg_info)
 
     if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
         if (ARG_ISARTIFICIAL (AVIS_DECL (avis))) {
-            /*
-             * found a reference to an objdef-argument, so
-             * replace it.
-             */
+            // Found a reference to an objdef-argument, so replace it
             DBUG_ASSERT (ARG_OBJDEF (AVIS_DECL (avis)) != NULL,
                          "found artificial arg without objdef pointer!");
 
@@ -355,9 +375,7 @@ RESOid (node *arg_node, info *arg_info)
             arg_node = TBmakeGlobobj (ARG_OBJDEF (AVIS_DECL (avis)));
         }
     } else if (AVIS_SUBST (avis) != NULL) {
-        /*
-         * found an alias to an objdef-argument, so replace it.
-         */
+        // Found an alias to an objdef-argument, so replace it
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = TBmakeGlobobj (AVIS_SUBST (avis));
     }
@@ -368,36 +386,46 @@ RESOid (node *arg_node, info *arg_info)
 node *
 RESOap (node *arg_node, info *arg_info)
 {
+    node *fundef;
+
     DBUG_ENTER ();
 
-    if (FUNDEF_ISSPMDFUN (AP_FUNDEF (arg_node))) {
-        FUNDEF_ARGS (AP_FUNDEF (arg_node))
-          = MarkArtificialArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node));
+    fundef = AP_FUNDEF (arg_node);
+    DBUG_PRINT ("looking at application of %s", FUNDEF_NAME (fundef));
+    DBUG_EXECUTE (PRTdoPrintNode (arg_node));
+
+    if (FUNDEF_ISSPMDFUN (fundef)) {
+        FUNDEF_ARGS (fundef) = MarkArtificialArgs (FUNDEF_ARGS (fundef),
+                                                   AP_ARGS (arg_node));
     }
 
-    AP_ARGS (arg_node)
-      = StripArtificialArgExprs (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node));
+    AP_ARGS (arg_node) = StripArtificialArgExprs (FUNDEF_ARGS (fundef),
+                                                  AP_ARGS (arg_node));
 
-    /*
-     * unwrap function if necessary and possible.
-     * be aware that functions may get wrapped multiple times
-     * if they are imported more than once!
-     * furthermore, we can only unwrap the object wrapper if it
-     * has not been specialized and the signatures still match.
+    /**
+     * Unwrap function if necessary and possible. Be aware that functions may
+     * get wrapped multiple times if they are imported more than once!
+     * Furthermore, we can only unwrap the object wrapper if it has not been
+     * specialized and the signatures still match.
      */
-    while (FUNDEF_ISOBJECTWRAPPER (AP_FUNDEF (arg_node))
-           && SignaturesIdenticalModuloArtificials (AP_FUNDEF (arg_node),
-                                                    FUNDEF_IMPL (AP_FUNDEF (arg_node)))) {
-        DBUG_ASSERT (FUNDEF_IMPL (AP_FUNDEF (arg_node)) != NULL,
-                     "found object wrapper with FUNDEF_IMPL not set!");
-        AP_FUNDEF (arg_node) = FUNDEF_IMPL (AP_FUNDEF (arg_node));
+    while (FUNDEF_ISOBJECTWRAPPER (fundef)
+           && SignaturesIdenticalModuloArtificials (fundef,
+                                                    FUNDEF_IMPL (fundef))) {
+        DBUG_ASSERT (FUNDEF_IMPL (fundef) != NULL,
+                     "found object wrapper with FUNDEF_IMPL not set");
+        DBUG_PRINT ("unwrapping application of %s to %s",
+                    FUNDEF_NAME (fundef), FUNDEF_NAME (FUNDEF_IMPL (fundef)));
+        fundef = FUNDEF_IMPL (fundef);
     }
 
-    if (FUNDEF_ISSPMDFUN (AP_FUNDEF (arg_node))) {
+    if (FUNDEF_ISSPMDFUN (fundef)) {
         INFO_DOSPMD (arg_info) = TRUE;
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+        fundef = TRAVdo (fundef, arg_info);
         INFO_DOSPMD (arg_info) = FALSE;
     }
+
+    AP_FUNDEF (arg_node) = fundef;
+
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -406,22 +434,32 @@ RESOap (node *arg_node, info *arg_info)
 node *
 RESOprf (node *arg_node, info *arg_info)
 {
-    node *avis;
+    node *lhs, *args, *decl;
 
     DBUG_ENTER ();
 
-    switch (PRF_PRF (arg_node)) {
-    case F_afterguard:
-        avis = ID_AVIS (PRF_ARG1 (arg_node));
+    lhs = INFO_LHS (arg_info);
+    args = PRF_ARGS (arg_node);
 
-        if ((NODE_TYPE (AVIS_DECL (avis)) == N_arg)
-            && (ARG_ISARTIFICIAL (AVIS_DECL (avis)))) {
-            INFO_DELETE (arg_info) = TRUE;
-        } else {
-            arg_node = TRAVsons (arg_node, arg_info);
+    switch (PRF_PRF (arg_node)) {
+    /**
+     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+     */
+    case F_guard:
+        INFO_DELETE (arg_info) = TRUE;
+        while (lhs != NULL) {
+            decl = ID_DECL (EXPRS_EXPR (args));
+            if (NODE_TYPE (decl) != N_arg || !ARG_ISARTIFICIAL (decl)) {
+                EXPRS_EXPR (args) = TRAVdo (EXPRS_EXPR (args), arg_info);
+                INFO_DELETE (arg_info) = FALSE;
+            }
+
+            lhs = IDS_NEXT (lhs);
+            args = EXPRS_NEXT (args);
         }
 
         break;
+
     default:
         arg_node = TRAVsons (arg_node, arg_info);
         break;
@@ -433,125 +471,121 @@ RESOprf (node *arg_node, info *arg_info)
 node *
 RESOlet (node *arg_node, info *arg_info)
 {
+    node *lhs, *rhs, *expr;
+
     DBUG_ENTER ();
 
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
     arg_node = TRAVcont (arg_node, arg_info);
 
-    /*
-     * detect assignments of the form
-     *
-     * <ids> = <globobj>
-     *
-     * and trigger the substitution if
-     * <ids>. Furthermore, we can mark the
-     * assignment to be deleted.
+    lhs = LET_IDS (arg_node);
+    rhs = LET_EXPR (arg_node);
+
+    switch (NODE_TYPE (rhs)) {
+    /**
+     * Detect assignments of the form
+     *   <ids> = <globobj>
+     * and trigger the substitution if <ids>.
+     * Furthermore, we can mark the assignment to be deleted.
      */
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_globobj) {
-        DBUG_ASSERT (((AVIS_SUBST (IDS_AVIS (LET_IDS (arg_node))) == NULL)
-                      || (AVIS_SUBST (IDS_AVIS (LET_IDS (arg_node)))
-                          == GLOBOBJ_OBJDEF (LET_EXPR (arg_node)))),
-                     "found an ids node that is a potential alias for two objects!");
-
-        AVIS_SUBST (IDS_AVIS (LET_IDS (arg_node))) = GLOBOBJ_OBJDEF (LET_EXPR (arg_node));
-
+    case N_globobj:
+        DBUG_ASSERT (AVIS_SUBST (IDS_AVIS (lhs)) == NULL
+                     || AVIS_SUBST (IDS_AVIS (lhs)) == GLOBOBJ_OBJDEF (rhs),
+                     "found an N_ids that is a potential alias for two objects");
+        AVIS_SUBST (IDS_AVIS (lhs)) = GLOBOBJ_OBJDEF (rhs);
         INFO_DELETE (arg_info) = TRUE;
-    }
+        break;
 
-    /*
-     * detect assignments of the form
-     *
-     * <ids> = with ... : <globobj> ...
-     *
+    /**
+     * Detect assignments of the form
+     *   <ids> = with (...) : <globobj> ...
      * and delete both, as it is an identity assignment.
      */
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_with
-        || NODE_TYPE (LET_EXPR (arg_node)) == N_with2) {
-        node *with_code;
+    case N_with:
+    case N_with2: {
+        expr = NODE_TYPE (rhs) == N_with ? WITH_CODE (rhs) : WITH2_CODE (rhs);
 
-        if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
-            with_code = WITH_CODE (LET_EXPR (arg_node));
-        } else {
-            with_code = WITH2_CODE (LET_EXPR (arg_node));
+        LET_IDS (arg_node) = DeleteLHSforRHSobjects (lhs, CODE_CEXPRS (expr));
+
+        // Delete RHS for every with generator
+        while (expr != NULL) {
+            CODE_CEXPRS (expr) = DeleteRHSobjects (CODE_CEXPRS (expr));
+            expr = CODE_NEXT (expr);
         }
+    } break;
 
-        LET_IDS (arg_node)
-          = DeleteLHSforRHSobjects (LET_IDS (arg_node), CODE_CEXPRS (with_code));
+    case N_prf: {
+        node *args = PRF_ARGS (rhs);
+        switch (PRF_PRF (rhs)) {
+        /**
+         * Detect assignments of the form
+         *   <ids> = _prop_obj_in_ (iv, <globobj>);
+         * or
+         *   <ids> = _prop_obj_out_ (<globobj>);
+         * and delete lhs where rhs is a globobj,
+         * as it is an identity assignment.
+         */
+        case F_prop_obj_in:
+        case F_prop_obj_out:
+            expr = PRF_PRF (rhs) == F_prop_obj_in ? EXPRS_NEXT (args) : args;
 
-        /* Delete RHS for every with generator! */
-        while (with_code != NULL) {
-            CODE_CEXPRS (with_code) = DeleteRHSobjects (CODE_CEXPRS (with_code));
-            with_code = CODE_NEXT (with_code);
+            LET_IDS (arg_node) = DeleteLHSforRHSobjects (lhs, expr);
+            expr = DeleteRHSobjects (expr);
+
+            if (PRF_PRF (rhs) == F_prop_obj_in) {
+                EXPRS_NEXT (args) = expr;
+            } else {
+                PRF_ARGS (rhs) = expr;
+            }
+            break;
+
+        /**
+         * Detect assignments of the form
+         *   x1', .., xn' = guard (x1, .., xn, p1, .., pn)
+         * and delete lhs where rhs is a globobj,
+         * as it is an identity assignment.
+         */
+        case F_guard:
+            INFO_DELETE (arg_info) = TRUE;
+            while (lhs != NULL) {
+                expr = EXPRS_EXPR (args);
+                if (NODE_TYPE (expr) == N_globobj) {
+                    AVIS_SUBST (IDS_AVIS (lhs)) = GLOBOBJ_OBJDEF (expr);
+                } else {
+                    INFO_DELETE (arg_info) = FALSE;
+                }
+
+                lhs = IDS_NEXT (lhs);
+                args = EXPRS_NEXT (args);
+            }
+            break;
+
+        default:
+            break;
         }
+    } break;
+
+    default:
+        break;
     }
 
-    /*
-     * detect assignments of the form
-     *
-     * <ids> = F_prop_obj_in( iv, <globobj> );
-     *   or
-     * <ids> = F_prop_obj_out( <globobj> );
-     *
-     * and delete lhs where rhs is a globobj, as it is
-     * and identity assignment.
-     */
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf
-        && (PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_in
-            || PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_out)) {
-        node *prf_args;
-        node *exprs;
-
-        prf_args = PRF_ARGS (LET_EXPR (arg_node));
-
-        if (PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_in) {
-            exprs = EXPRS_NEXT (prf_args);
-        } else {
-            exprs = prf_args;
-        }
-
-        LET_IDS (arg_node) = DeleteLHSforRHSobjects (LET_IDS (arg_node), exprs);
-        exprs = DeleteRHSobjects (exprs);
-
-        if (PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_in) {
-            EXPRS_NEXT (prf_args) = exprs;
-        } else {
-            PRF_ARGS (LET_EXPR (arg_node)) = exprs;
-        }
-    }
-
-    /*
-     * detect assignments of the form
-     *
-     * <ids> = F_afterguard( <globobj>, ...);
-     *
-     * and delete lhs as it is
-     * and identity assignment.
-     */
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf
-        && (PRF_PRF (LET_EXPR (arg_node)) == F_afterguard)
-        && (NODE_TYPE (PRF_ARG1 (LET_EXPR (arg_node))) == N_globobj)) {
-        AVIS_SUBST (IDS_AVIS (LET_IDS (arg_node)))
-          = GLOBOBJ_OBJDEF (PRF_ARG1 (LET_EXPR (arg_node)));
-
-        INFO_DELETE (arg_info) = TRUE;
-    }
     DBUG_RETURN (arg_node);
 }
 
 node *
 RESOassign (node *arg_node, info *arg_info)
 {
-    bool xdelete;
+    bool delete;
 
     DBUG_ENTER ();
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-
-    xdelete = INFO_DELETE (arg_info);
+    delete = INFO_DELETE (arg_info);
     INFO_DELETE (arg_info) = FALSE;
 
-    ASSIGN_NEXT (arg_node) = TRAVopt(ASSIGN_NEXT (arg_node), arg_info);
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    if (xdelete) {
+    if (delete) {
         arg_node = FREEdoFreeNode (arg_node);
     }
 
@@ -578,31 +612,28 @@ RESOfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_ISSPMDFUN (arg_node) && !INFO_DOSPMD (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         DBUG_RETURN (arg_node);
     }
 
-    /*
-     * process all bodies first
-     */
-    FUNDEF_BODY (arg_node) = TRAVopt(FUNDEF_BODY (arg_node), arg_info);
+    // Process all bodies first
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-    if (FUNDEF_NEXT (arg_node) != NULL && !FUNDEF_ISSPMDFUN (arg_node)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (!FUNDEF_ISSPMDFUN (arg_node)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    /*
-     * then clean up the signatures
-     */
+    // Then clean up the signatures
     FUNDEF_ARGS (arg_node) = StripArtificialArgs (FUNDEF_ARGS (arg_node));
 
-    /*
-     * finally, we can remove those object wrappers where the signature of the
+    /**
+     * Finally, we can remove those object wrappers where the signature of the
      * object wrapper still matches that of the wrapped function (modulo
      * artificial args), i.e., those, that have not been specialized.
      */
     if (FUNDEF_ISOBJECTWRAPPER (arg_node)
-        && SignaturesIdenticalModuloArtificials (arg_node, FUNDEF_IMPL (arg_node))) {
+        && SignaturesIdenticalModuloArtificials (arg_node,
+                                                 FUNDEF_IMPL (arg_node))) {
         arg_node = FREEdoFreeNode (arg_node);
     }
 
@@ -614,15 +645,15 @@ RESOmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /*
-     * we have to traverse the fundefs first, as the bodies have
-     * to be transformed prior to transforming the signatures!
+    /**
+     * We have to traverse the fundefs first, as the bodies have to be
+     * transformed prior to transforming the signatures!
      */
-    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
-    MODULE_FUNDECS (arg_node) = TRAVopt(MODULE_FUNDECS (arg_node), arg_info);
+    MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
 
-    MODULE_FUNSPECS (arg_node) = TRAVopt(MODULE_FUNSPECS (arg_node), arg_info);
+    MODULE_FUNSPECS (arg_node) = TRAVopt (MODULE_FUNSPECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -634,10 +665,9 @@ RESOpropagate (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    PROPAGATE_NEXT (arg_node) = TRAVopt(PROPAGATE_NEXT (arg_node), arg_info);
+    PROPAGATE_NEXT (arg_node) = TRAVopt (PROPAGATE_NEXT (arg_node), arg_info);
 
     arg = AVIS_DECL (ID_AVIS (PROPAGATE_DEFAULT (arg_node)));
-
     if (NODE_TYPE (arg) == N_arg && ARG_ISARTIFICIAL (arg)) {
         arg_node = FREEdoFreeNode (arg_node);
     }
@@ -645,26 +675,22 @@ RESOpropagate (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- * traversal start function
- */
-
 node *
-RESOdoRestoreObjects (node *syntax_tree)
+RESOdoRestoreObjects (node *arg_node)
 {
     info *info;
 
     DBUG_ENTER ();
 
     info = MakeInfo ();
+
     TRAVpush (TR_reso);
-
-    syntax_tree = TRAVdo (syntax_tree, info);
-
+    arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
+
     info = FreeInfo (info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 #undef DBUG_PREFIX

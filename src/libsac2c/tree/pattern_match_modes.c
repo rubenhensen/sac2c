@@ -165,22 +165,21 @@ PMMskipId (intptr_t param, node *expr)
     DBUG_RETURN (expr);
 }
 
-/** <!--*******************************************************************-->
+/******************************************************************************
  *
  * @fn node *PMMskipPrf( void *param, node * expr)
  *
- * @brief follows "expr" to its definition if "expr" is an N_id node and
- *        is locally defined (AVIS_SSAASSIGN) by a prf contained in a set
- *        of prfs characterised through "param".
- *        If so, the corresponding (in position) argument is returned.
+ * @brief follows "expr" to its definition if "expr" is an N_id node and is
+ * locally defined (AVIS_SSAASSIGN) by a prf contained in a set of prfs
+ * characterised through "param". If so, the corresponding (in position)
+ * argument is returned.
  *
- * @param param: predicate on prfs
- *        expr: expression to skip
+ * @param param Predicate on prfs.
+ * @param expr Expression to skip.
  *
- * @return either 'expr' or pointer to the corresponding argument.
+ * @return Either 'expr' or pointer to the corresponding argument.
  *
- *****************************************************************************/
-
+ ******************************************************************************/
 node *
 PMMskipPrf (intptr_t param, node *expr)
 {
@@ -198,30 +197,31 @@ PMMskipPrf (intptr_t param, node *expr)
             rhs = LET_EXPR (let);
             if ((NODE_TYPE (rhs) == N_prf) && (prfInspectFun (PRF_PRF (rhs)))) {
                 switch (PRF_PRF(rhs)) {
-                    case F_guard:            // X1', ... = guard (X1, ..., p)
-                    case F_afterguard:       // X' = afterguard (X, p1, ...)
-                    case F_same_shape_AxA:   // X', Y', p = same_shape (X, Y)
-                    case F_non_neg_val_S:    // X', p = non_neg (X)
-                    case F_non_neg_val_V:    // X', p = non_neg (X)
-                    case F_noteminval:       // iv'  = noteminval(iv, bound)
-                    case F_notemaxval:       // iv'  = notemaxval(iv, bound)
-                    case F_noteintersect:    // iv'  = noteintersect(iv, bound)
+                    case F_guard:           // x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+                    case F_same_shape_AxA:  // x', y', p = same_shape (x, y)
+                    case F_non_neg_val_S:   // x', p = non_neg (x)
+                    case F_non_neg_val_V:   // x', p = non_neg (x)
+                    case F_noteminval:      // iv'  = noteminval(iv, bound)
+                    case F_notemaxval:      // iv'  = notemaxval(iv, bound)
+                    case F_noteintersect:   // iv'  = noteintersect(iv, bound)
                         expr = findCorrespondingArg (avis, ids, PRF_ARGS (rhs));
                         break;
-                    case F_type_constraint:  // X' = type_constraint (type, X')
+
+                    case F_type_constraint: // x' = type_constraint (type, x')
                         expr = (avis == IDS_AVIS (ids) ? PRF_ARG2 (rhs) : expr);
                         break;
-                    case F_shape_matches_dim_VxA:  // idx', p = shp_m_dim (idx, a)
-                    case F_val_lt_shape_VxA:       // idx', p = val_lt_shape (idx, a)
-                    case F_val_le_val_VxV:         // v1', p = val_le_val (v1, v2)
-                    case F_val_le_val_SxS:         // v1', p = val_le_val (v1, v2)
-                    case F_val_lt_val_SxS:         // v1', p = val_lt_val (v1, v2)
+
+                    case F_shape_matches_dim_VxA: // idx', p = shp_m_dim (idx, a)
+                    case F_val_lt_shape_VxA:      // idx', p = val_lt_shape (idx, a)
+                    case F_val_le_val_VxV:        // v1', p = val_le_val (v1, v2)
+                    case F_val_le_val_SxS:        // v1', p = val_le_val (v1, v2)
+                    case F_val_lt_val_SxS:        // v1', p = val_lt_val (v1, v2)
                     case F_prod_matches_prod_shape_VxA: // s, p = p_m_p_s (s, a)
                         expr = (avis == IDS_AVIS (ids) ? PRF_ARG1 (rhs) : expr);
                         break;
+
                     default:
                         break;
-                    
                 }
             }
         }
@@ -239,21 +239,40 @@ bool
 PMMisInExtrema (prf prfun)
 {
     DBUG_ENTER ();
-    DBUG_RETURN ((prfun == F_noteminval) || (prfun == F_notemaxval)
-                 || (prfun == F_noteintersect));
+    DBUG_RETURN (prfun == F_noteminval
+              || prfun == F_notemaxval
+              || prfun == F_noteintersect);
 }
 
 bool
 PMMisInGuards (prf prfun)
 {
+    bool res;
+
     DBUG_ENTER ();
-    DBUG_RETURN ((prfun == F_afterguard)
-                 || (prfun == F_type_constraint) || (prfun == F_same_shape_AxA)
-                 || (prfun == F_shape_matches_dim_VxA) || (prfun == F_non_neg_val_S)
-                 || (prfun == F_non_neg_val_V) || (prfun == F_val_lt_shape_VxA)
-                 || (prfun == F_val_le_val_VxV) || (prfun == F_val_le_val_SxS)
-                 || (prfun == F_val_lt_val_SxS)
-                 || (prfun == F_prod_matches_prod_shape_VxA));
+
+    switch (prfun)
+    {
+    case F_guard:
+    case F_type_constraint:
+    case F_non_neg_val_S:
+    case F_non_neg_val_V:
+    case F_val_lt_val_SxS:
+    case F_val_le_val_SxS:
+    case F_val_le_val_VxV:
+    case F_same_shape_AxA:
+    case F_val_lt_shape_VxA:
+    case F_shape_matches_dim_VxA:
+    case F_prod_matches_prod_shape_VxA:
+        res = TRUE;
+        break;
+
+    default:
+        res = FALSE;
+        break;
+    }
+
+    DBUG_RETURN (res);
 }
 
 bool
@@ -264,10 +283,10 @@ PMMisInExtremaOrGuards (prf prfun)
 }
 
 bool
-PMMisAfterguard (prf prfun)
+PMMisGuard (prf prfun)
 {
     DBUG_ENTER ();
-    DBUG_RETURN ((prfun == F_afterguard));
+    DBUG_RETURN (prfun == F_guard);
 }
 
 /**

@@ -1172,8 +1172,8 @@ NTClet (node *arg_node, info *arg_info)
             /* A likely cause of failure in next line is multiple
              * assigns of LHS (This is SSA, remember.)
              */
-            DBUG_ASSERT (TYisAlpha (existing_type), 
-                         "non-alpha type \"%s\" for LHS found!", 
+            DBUG_ASSERT (TYisAlpha (existing_type),
+                         "non-alpha type \"%s\" for LHS found!",
                          TYtype2String (existing_type, FALSE, 0));
             ok = SSInewTypeRel (inferred_type, existing_type);
             if (!ok) {
@@ -1319,22 +1319,18 @@ NTCap (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *    node *NTCprf(node *arg_node, info *arg_info)
- *
- * description:
+ * @fn node *NTCprf (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
-
 node *
 NTCprf (node *arg_node, info *arg_info)
 {
+    te_info *info;
     ntype *args, *res;
+    ntype *alpha, *def_obj;
     node *argexprs;
     size_t pos;
     prf prf;
-    te_info *info;
-    ntype *alpha, *def_obj;
 
     DBUG_ENTER ();
 
@@ -1342,12 +1338,11 @@ NTCprf (node *arg_node, info *arg_info)
 
     if (prf == F_accu) {
         if (INFO_EXP_ACCU (arg_info) != NULL) {
-            /**
-             * we are dealing with a non-first partition of a MG-WL here!
-             */
+            // We are dealing with a non-first partition of a MG-WL here
             res = TYcopyType (INFO_EXP_ACCU (arg_info));
         } else {
-            argexprs = PRF_EXPRS2 (arg_node); /* skip iv! */
+            // Skip iv
+            argexprs = PRF_EXPRS2 (arg_node);
             pos = 0;
 
             res = TYmakeEmptyProductType (TCcountExprs (argexprs));
@@ -1355,20 +1350,20 @@ NTCprf (node *arg_node, info *arg_info)
             while (argexprs != NULL) {
                 alpha = TYmakeAlphaType (NULL);
                 res = TYsetProductMember (res, pos, alpha);
-                pos++;
+
                 argexprs = EXPRS_NEXT (argexprs);
+                pos++;
             }
 
             INFO_EXP_ACCU (arg_info) = TYcopyType (res);
         }
     } else if (prf == F_prop_obj_in) {
         if (INFO_PROP_OBJS (arg_info) != NULL) {
-            /**
-             * we are dealing with a non-first partition of a MG-WL here!
-             */
+            // We are dealing with a non-first partition of a MG-WL here
             res = TYcopyType (INFO_PROP_OBJS (arg_info));
         } else {
-            argexprs = PRF_EXPRS2 (arg_node); /* skip iv! */
+            // Skip iv
+            argexprs = PRF_EXPRS2 (arg_node);
             pos = 0;
 
             res = TYmakeEmptyProductType (TCcountExprs (argexprs));
@@ -1378,21 +1373,23 @@ NTCprf (node *arg_node, info *arg_info)
                 def_obj = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (argexprs)));
                 SSInewTypeRel (def_obj, alpha);
                 res = TYsetProductMember (res, pos, alpha);
-                pos++;
+
                 argexprs = EXPRS_NEXT (argexprs);
+                pos++;
             }
 
             INFO_PROP_OBJS (arg_info) = TYcopyType (res);
         }
     } else {
-        /*
-         * First we collect the argument types. NTCexprs puts them into a product type
-         * which is expected in INFO_TYPE( arg_info) afterwards!
-         * INFO_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+        /**
+         * First we collect the argument types. NTCexprs puts them into a
+         * product type which is expected in INFO_TYPE (arg_info) afterwards!
+         * INFO_NUM_EXPRS_SOFAR is used to count the number of exprs "on the
+         * fly"!
          */
         INFO_NUM_EXPRS_SOFAR (arg_info) = 0;
 
-        if (NULL != PRF_ARGS (arg_node)) {
+        if (PRF_ARGS (arg_node) != NULL) {
             PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         } else {
             INFO_TYPE (arg_info) = TYmakeProductType (0);
@@ -1405,10 +1402,12 @@ NTCprf (node *arg_node, info *arg_info)
         INFO_TYPE (arg_info) = NULL;
 
         info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf,
-                              global.prf_name[prf], prf, prf_te_funtab[prf](args));
+                              global.prf_name[prf], prf,
+                              prf_te_funtab[prf](arg_node, args));
         res = NTCCTcomputeType (prf_tc_funtab[prf], info, args);
         TYfreeType (args);
     }
+
     INFO_TYPE (arg_info) = res;
 
     DBUG_RETURN (arg_node);
