@@ -117,6 +117,7 @@ TUNE_generic     :=  ""
 CFLAGS           :=  "--maxrregcount 20 -Xcompiler -Wall -Xcompiler -fPIC "
                      "-Xcompiler -Wno-unused -Wno-deprecated-gpu-targets -Xcompiler -fno-builtin "
                      "-Xcudafe '--diag_suppress=set_but_not_used --diag_suppress=declared_but_not_referenced --diag_suppress=expr_has_no_effect' "
+OPT_O3           := "-O3"
 LIBS             +=  " @CCDLLINK@ -lstdc++"
 
 CCP_MOD          :=  "%cc% %cuda_arch% %cppflags% %compileflags% -cuda -o %target% %source%"

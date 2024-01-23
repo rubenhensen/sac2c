@@ -613,13 +613,7 @@ GLOBAL (bool, cc_debug_extra, FALSE, xfree_dummy, )
  * this sets cc_debug to TRUE as well.
  */
 
-#ifdef PRODUCTION
 GLOBAL (int, cc_optimize, 3, xfree_dummy, )
-#else  /* PRODUCTION */
-GLOBAL (int, cc_optimize, 0, xfree_dummy, )
-#endif /* PRODUCTION
-        * C compiler level of optimization
-        */
 
 GLOBAL (bool, cc_tune_generic, FALSE, xfree_dummy, )
 /* On true, we wil build using the C compilers tune=generic
