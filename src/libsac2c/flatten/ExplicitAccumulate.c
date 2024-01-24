@@ -255,8 +255,9 @@ InjectAccuIds (node *ids, info *arg_info)
     AVIS_SSAASSIGN (avis) = INFO_FOLD_ACCU_ASSIGN (arg_info);
 
     lhs = LET_IDS (ASSIGN_STMT (INFO_FOLD_ACCU_ASSIGN (arg_info)));
+    /* FIXME O(n^2) complexity */
     LET_IDS (ASSIGN_STMT (INFO_FOLD_ACCU_ASSIGN (arg_info)))
-        = TBmakeIds (avis, lhs);
+        = TCappendIds (lhs, TBmakeIds(avis, NULL));
 
     DBUG_RETURN (avis);
 }
