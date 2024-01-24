@@ -1,0 +1,40 @@
+// This used to test the bug from issue 2369
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 130
+
+#define N 10
+
+int add(int a, int b)
+{
+  return _add_SxS_(a, b);
+}
+
+noinline
+int, int, int sum(int[N] eren, int[N] mikasa, int[N] reiner)
+{
+  eren_res, mikasa_res, reiner_res =
+        with {
+          ([0] <= iv < [N]) {
+             eren_term   = _sel_VxA_(iv, eren);
+             mikasa_term = _sel_VxA_(iv, mikasa);
+             reiner_term = _sel_VxA_(iv, reiner);
+           }: (eren_term, mikasa_term, reiner_term);
+        }: (fold(add, 0), fold(add, 0), fold(add, 0));
+
+  return (eren_res, mikasa_res, reiner_res);
+}
+
+int main()
+{
+  eren = with {}: genarray([N], 1);
+  mikasa = with {}: genarray([N], 5);
+  reiner = with {}: genarray([N], 13);
+
+  eren_sum, mikasa_sum, reiner_sum = sum(eren, mikasa, reiner);
+
+  return reiner_sum;
+}
