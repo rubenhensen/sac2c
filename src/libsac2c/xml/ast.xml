@@ -2028,9 +2028,10 @@
       <traversal id="ICC" name="Insert Conformity Checks" default="sons" include="insert_conformity_checks.h" >
         <travuser>
           <node name="Fundef" />
+          <node name="Block" />
           <node name="Assign" />
-          <node name="Prf" />
           <node name="Let" />
+          <node name="Prf" />
           <node name="With" />
           <node name="Generator" />
           <node name="Code" />
@@ -2038,7 +2039,6 @@
           <node name="Modarray" />
           <node name="Fold" />
           <node name="Propagate" />
-          <node name="Block" />
         </travuser>
       </traversal>
       <traversal id="SCC" name="Strip Conformity Checks" default="sons" include="strip_conformity_checks.h" >
@@ -8399,11 +8399,7 @@
 	      </attribute>
       </attributes>
       <flags>
-        <flag name="IsGuard" default="FALSE">
-          <description>
-            Whether this type is used in a guard by a type pattern constraint.
-	        </description>
-        </flag>
+        <flag name="DummyFlag" default="FALSE" />
       </flags>
     </node>
 <!--
@@ -8476,10 +8472,29 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="NumVariableRets" inconstructor="no">
+        <attribute name="ContextString" default="NULL" inconstructor="no">
+          <description>
+            A human-readable string that describes the context of this primitive
+            function. It is used ONLY by the F_guard function in order to keep
+            track of the primitive function that is being guarded, so that a
+            more descriptive error message can be raised in the case that a
+            guard fails.
+          </description>
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="pre_rtpf" to="cg_cpl" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="NumVariableRets" default="0" inconstructor="no">
           <description>
             If this primitive function has a variable amount of return values,
-            this attribute it positive and describes how many values this
+            this attribute is positive and describes how many values this
             function returns. This is necessary because we must always be able
             to statically figure out the number of the return values, which we
             should not provide as an argument to the primitive function because
@@ -8491,7 +8506,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <all />
+                  <range from="pre_rtpf" to="cg_cpl" />
                 </phases>
               </target>
             </targets>

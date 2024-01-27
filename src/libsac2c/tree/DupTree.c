@@ -1997,12 +1997,15 @@ DUParray (node *arg_node, info *arg_info)
 node *
 DUPprf (node *arg_node, info *arg_info)
 {
+    char *context;
     node *new_node;
 
     DBUG_ENTER ();
 
     new_node = TBmakePrf (PRF_PRF (arg_node), DUPTRAV (PRF_ARGS (arg_node)));
 
+    context = PRF_CONTEXTSTRING (arg_node);
+    PRF_CONTEXTSTRING (new_node) = context != NULL ? STRcpy (context) : NULL;
     PRF_NUMVARIABLERETS (new_node) = PRF_NUMVARIABLERETS (arg_node);
 
     PRF_FLAGSTRUCTURE (new_node) = PRF_FLAGSTRUCTURE (arg_node);

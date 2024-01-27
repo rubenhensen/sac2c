@@ -8,6 +8,7 @@ extern char *CVtype2String (ntype *type, int flag, bool all);
 extern char *CVdouble2String (double);
 extern char *CVfloat2String (float);
 extern char *CVfloatvec2String (floatvec val);
+extern char *CVshape2String (int dim, int *shp);
 extern char *CVbasetype2String (simpletype type);
 extern char *CVbasetype2ShortString (simpletype type);
 extern char *CVspids2String (node *spids);

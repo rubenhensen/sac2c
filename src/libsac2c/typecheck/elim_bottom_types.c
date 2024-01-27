@@ -578,7 +578,7 @@ EBTprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (PRF_PRF (arg_node) == F_type_error) {
+    if (PRF_PRF (arg_node) == F_type_error || PRF_PRF (arg_node) == F_guard_error) {
         DBUG_PRINT ("F_type_error found, duplicating for argument preservation");
         INFO_TYPEERROR (arg_info) = DUPdoDupTree (arg_node);
     }

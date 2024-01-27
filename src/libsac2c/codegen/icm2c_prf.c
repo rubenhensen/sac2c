@@ -1954,45 +1954,97 @@ ICMCompileND_PRF_PROP_OBJ_OUT (unsigned int vararg_cnt, char **vararg)
     DBUG_RETURN ();
 }
 
-/** <!--********************************************************************-->
+#define ECC_ERROR1(array1, message, ...)                                       \
+    indout ("SAC_RuntimeWarningLoc (\"%s\", %ld, %ld, "                        \
+            "\"Array `\" TO_STR (NT_NAME (%s))"                                \
+            "\"' with shape %%s \""                                            \
+            "\"" message "\""                                                  \
+            ", SAC_PrintShape (SAC_ND_A_DESC (%s))"                            \
+            ");\n",                                                            \
+            global.filename, global.linenum, global.colnum,                    \
+            array1, __VA_ARGS__, array1)
+
+#define ECC_ERROR2(array1, array2, message, ...)                               \
+    indout ("SAC_RuntimeWarningLoc (\"%s\", %ld, %ld, "                        \
+            "\"Arrays `\" TO_STR (NT_NAME (%s))"                               \
+            "\"' with shape %%s \""                                            \
+            "\"And `\" TO_STR (NT_NAME (%s))"                                  \
+            "\"' with shape %%s \""                                            \
+            "\"" message "\""                                                  \
+            ", SAC_PrintShape (SAC_ND_A_DESC (%s))"                            \
+            ", SAC_PrintShape (SAC_ND_A_DESC (%s))"                            \
+            ");\n",                                                            \
+            global.filename, global.linenum, global.colnum,                    \
+            array1, array2, __VA_ARGS__, array1, array2)
+
+/******************************************************************************
  *
- * @fn void ICMCompileND_PRF_TYPE_CONSTRAINT_AKS
+ * @fn void ICMCompileND_PRF_TYPE_CONSTRAINT_AKS (char *to_NT, char *from_NT,
+ *                                                int dim, int *shp)
  *
- *****************************************************************************/
+ * @note This and the following conformity check primitives currently set
+ * SAC_ND_A_FIELD before raising a runtime error, even though such an error will
+ * abort the program anyways. The idea is that in the future we raise warnings
+ * here instead (by replacing RUNTIME_ERROR with RUNTIME_WARN), and instead
+ * catching the false-value that was returned in a following guard, allowing us
+ * to raise multiple error messages at once.
+ *
+ ******************************************************************************/
 void
-ICMCompileND_PRF_TYPE_CONSTRAINT_AKS (char *to_NT, char *from_NT, int dim, int *shp)
+ICMCompileND_PRF_TYPE_CONSTRAINT_AKS (char *to_NT, char *from_NT,
+                                      int dim, int *shp)
 {
     int i;
 
     DBUG_ENTER ();
 
-    indout ("if (SAC_ND_A_DIM(%s) != %d ", from_NT, dim);
-    for (i = 0; i < dim; i++) {
-        out ("|| (SAC_ND_A_SHAPE(%s,%d) != %d)", from_NT, i, shp[i]);
+    IF_BEGIN ("SAC_ND_A_DIM (%s) != %d", from_NT, dim);
+    {
+        indout ("SAC_ND_A_FIELD (%s) = 0;\n", to_NT);
+        ECC_ERROR1 (from_NT,
+                    "does not adhere to `dim == %d' constraint",
+                    dim);
     }
-    out (")");
+    IF_END ();
 
-    BLOCK_NOVAR_BEGIN ()
-        ;
-        out ("SAC_RuntimeErrorLine(%zu, \"Array '\" TO_STR( NT_NAME( %s)) \"' does not "
-             "adhere "
-             "to type constraint\");\n",
-             global.linenum, from_NT);
-    BLOCK_END ();
+    ELSE_BEGIN ();
+    {
+        indout ("if (0");
+        for (i = 0; i < dim; i++) {
+            out (" || (SAC_ND_A_SHAPE (%s, %d) != %d)",
+                 from_NT, i, shp[i]);
+        }
+        out (")\n");
 
-    indout ("SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
+        BLOCK_NOVAR_BEGIN ();
+        {
+            indout ("SAC_ND_A_FIELD (%s) = 0;\n", to_NT);
+            ECC_ERROR1 (from_NT,
+                        "does not adhere to `shp == %s' constraint",
+                        CVshape2String (dim, shp));
+        }
+        BLOCK_END ();
+        ELSE_BEGIN ();
+        {
+            indout ("SAC_ND_A_FIELD (%s) = 1;\n", to_NT);
+        }
+        ELSE_END ();
+    }
+    ELSE_END ();
 
     DBUG_RETURN ();
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn void ICMCompileND_PRF_SAME_SHAPE
+ * @fn void ICMCompileND_PRF_SAME_SHAPE (char *to_NT,
+ *                                       char *from_NT, int from_sdim,
+ *                                       char *from2_NT, int from2_sdim)
  *
- *****************************************************************************/
+ ******************************************************************************/
 void
-ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim, char *from2_NT,
-                             int from2_sdim)
+ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim,
+                             char *from2_NT, int from2_sdim)
 {
     int dim = ARRAY_OR_SCALAR;
 
@@ -2004,57 +2056,70 @@ ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim, char *fr
         dim = DIM_NO_OFFSET (from2_sdim);
     }
 
-    if (dim != ARRAY_OR_SCALAR) {
-        /*
-         * At least one array has a known number of axes:
-         * access shape vectors using compile-time constants, thereby
-         * potentially accessing mirrors
-         */
-        indout ("if (SAC_ND_A_DIM(%s) != SAC_ND_A_DIM(%s) ", from_NT, from2_NT);
-        for (int i = 0; i < dim; i++) {
-            out ("|| (SAC_ND_A_SHAPE(%s,%d) != SAC_ND_A_SHAPE(%s,%d))", from_NT, i,
-                 from2_NT, i);
-        }
-        out (")\n");
-
-        BLOCK_NOVAR_BEGIN ()
-            ;
-            indout ("SAC_RuntimeError(\"Arrays do not adhere "
-                    "to same shape constraint\");\n");
-        BLOCK_END ();
-
-    } else {
-        /*
-         * Both arrays are AUD:
-         * Compare descriptor contents using a run-time for-loop
-         */
-        IF_BEGIN ("SAC_ND_A_DIM(%s) != SAC_ND_A_DIM(%s)", from_NT, from2_NT)
-            ;
-            indout ("SAC_RuntimeError(\"Arrays do not adhere "
-                    "to same shape constraint\");\n");
-        IF_END ();
-
-        FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_DIM(%s); SAC_i++", from_NT)
-            ;
-            IF_BEGIN ("SAC_ND_A_SHAPE(%s,SAC_i) != SAC_ND_A_SHAPE(%s,SAC_i)", from_NT,
-                      from2_NT)
-                ;
-                indout ("SAC_RuntimeError(\"Arrays do not adhere "
-                        "to same shape constraint\");\n");
-            IF_END ();
-        FOR_LOOP_END ();
+    IF_BEGIN ("SAC_ND_A_DIM (%s) != SAC_ND_A_DIM (%s)", from_NT, from2_NT);
+    {
+        indout ("SAC_ND_A_FIELD (%s) = 0;\n", to_NT);
+        ECC_ERROR2 (from_NT, from2_NT, "%s",
+                    "do not adhere to same dim constraint");
     }
+    IF_END ();
 
-    indout ("SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
+    ELSE_BLOCK_BEGIN ("int SAC_all = 1;");
+    {
+        if (dim != ARRAY_OR_SCALAR) {
+            /**
+             * At least one array has a known number of axes:
+             * access shape vectors using compile-time constants
+             * thereby potentially accessing mirrors.
+             */
+            indout ("if (0");
+            for (int i = 0; i < dim; i++) {
+                out (" || (SAC_ND_A_SHAPE (%s, %d) != SAC_ND_A_SHAPE (%s, %d))",
+                    from_NT, i, from2_NT, i);
+            }
+            out (")\n");
+
+            BLOCK_NOVAR_BEGIN ();
+            {
+                indout ("SAC_all = 0;\n");
+                ECC_ERROR2 (from_NT, from2_NT, "%s",
+                            "do not adhere to same shape constraint");
+            }
+            BLOCK_END ();
+        } else {
+            /**
+             * Both arrays are AUD:
+             * compare descriptor contents using a run-time for-loop.
+             */
+            FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_DIM (%s); SAC_i++",
+                            from_NT);
+            {
+                IF_BEGIN ("SAC_ND_A_SHAPE (%s, SAC_i)"
+                          " != SAC_ND_A_SHAPE (%s, SAC_i)",
+                          from_NT, from2_NT);
+                {
+                    indout ("SAC_all = 0;\n");
+                    ECC_ERROR2 (from_NT, from2_NT, "%s",
+                                "do not adhere to same shape constraint");
+                }
+                IF_END ();
+            }
+            FOR_LOOP_END ();
+        }
+
+        indout ("SAC_ND_A_FIELD (%s) = SAC_all;\n", to_NT);
+    }
+    ELSE_END ();
 
     DBUG_RETURN ();
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn void ICMCompileND_PRF_VAL_LT_SHAPE_VxA
+ * @fn void ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT,
+ *                                             char *from2_NT, int from2_sdim)
  *
- *****************************************************************************/
+ ******************************************************************************/
 void
 ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT, char *from2_NT,
                                    int from2_sdim)
@@ -2066,52 +2131,68 @@ ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT, char *from2_NT,
 #include "icm_trace.c"
 #undef ND_PRF_VAL_LT_SHAPE_VxA
 
-    IF_BEGIN ("(SAC_ND_A_DIM(%s) != 1)"
-              "&& (SAC_ND_A_SHAPE(%s,0) != SAC_ND_A_DIM(%s))",
-              from_NT, from_NT, from2_NT)
-        ;
-        indout ("SAC_RuntimeError(\"Arrays do not adhere "
-                "to val less than shape constraint\");\n");
+    IF_BEGIN ("(SAC_ND_A_DIM (%s) != 1) && "
+              "(SAC_ND_A_SHAPE (%s, 0) != SAC_ND_A_DIM (%s))",
+              from_NT, from_NT, from2_NT);
+    {
+        indout ("SAC_ND_A_FIELD (%s) = 0;\n", to_NT);
+        ECC_ERROR2 (from_NT, from2_NT, "%s",
+                    "do not adhere to val less than shape constraint");
+    }
     IF_END ();
 
-    if (KNOWN_DIMENSION (from2_sdim)) {
-        indout ("if (0 ");
-        for (int i = 0; i < DIM_NO_OFFSET (from2_sdim); i++) {
-            out ("|| (SAC_ND_READ(%s,%d) >= SAC_ND_A_SHAPE(%s,%d))", from_NT, i, from2_NT,
-                 i);
+    ELSE_BLOCK_BEGIN ("int SAC_all = 1;");
+    {
+        if (KNOWN_DIMENSION (from2_sdim)) {
+            indout ("if (0");
+            for (int i = 0; i < DIM_NO_OFFSET (from2_sdim); i++) {
+                out (" || (SAC_ND_READ (%s, %d) >= SAC_ND_A_SHAPE (%s, %d))",
+                     from_NT, i, from2_NT, i);
+            }
+            out (")\n");
+
+            BLOCK_NOVAR_BEGIN ();
+            {
+                indout ("SAC_all = 0;\n");
+                ECC_ERROR2 (from_NT, from2_NT, "%s",
+                            "do not adhere to val less than shape constraint");
+            }
+            BLOCK_END ();
+        } else {
+            FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_DIM(%s); SAC_i++",
+                            from2_NT);
+            {
+                IF_BEGIN ("SAC_ND_READ (%s, SAC_i)"
+                          " >= SAC_ND_A_SHAPE (%s, SAC_i)",
+                          from_NT, from2_NT);
+                {
+                    indout ("SAC_all = 0;\n");
+                    ECC_ERROR2 (from_NT, from2_NT, "%s",
+                                "do not adhere to val less than shape constraint");
+                }
+                IF_END ();
+            }
+            FOR_LOOP_END ();
         }
-        out (")");
 
-        BLOCK_NOVAR_BEGIN ()
-            ;
-            out ("SAC_RuntimeError(\"Arrays do not adhere "
-                 "to val less than shape constraint\");\n");
-        BLOCK_END ();
-    } else {
-        FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_DIM(%s); SAC_i++", from2_NT)
-            ;
-            IF_BEGIN ("SAC_ND_READ (%s, SAC_i) >= SAC_ND_A_SHAPE (%s, SAC_i)", from_NT,
-                      from2_NT)
-                ;
-                indout ("SAC_RuntimeError(\"Arrays do not adhere "
-                        "to val less than shape constraint\");\n");
-            IF_END ();
-        FOR_LOOP_END ();
+        indout ("SAC_ND_A_FIELD (%s) = SAC_all;\n", to_NT);
     }
-
-    indout ("SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
+    ELSE_END ();
 
     DBUG_RETURN ();
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn void ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE
+ * @fn void ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT,
+ *                                                    char *from_NT,
+ *                                                    char *from2_NT,
+ *                                                    int from2_sdim)
  *
- *****************************************************************************/
+ ******************************************************************************/
 void
-ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT, char *from2_NT,
-                                          int from2_sdim)
+ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT,
+                                          char *from2_NT, int from2_sdim)
 {
     DBUG_ENTER ();
 
@@ -2120,48 +2201,59 @@ ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT, char *from
 #include "icm_trace.c"
 #undef ND_PRF_PROD_MATCHES_PROD_SHAPE
 
-    BLOCK_BEGIN ("int SAC_p1 = 1; int SAC_p2 = 1;")
-        ;
-        FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_SHAPE(%s,0); SAC_i++", from_NT)
-            ;
-            indout ("SAC_p1 *= SAC_ND_READ(%s,SAC_i);", from_NT);
+    BLOCK_BEGIN ("int SAC_i, SAC_p1 = 1, SAC_p2 = 1;");
+    {
+        FOR_LOOP_BEGIN ("SAC_i = 0; SAC_i < SAC_ND_A_SHAPE (%s, 0); SAC_i++",
+                        from_NT);
+        {
+            indout ("SAC_p1 *= SAC_ND_READ (%s, SAC_i);", from_NT);
+        }
         FOR_LOOP_END ();
 
         if (KNOWN_DIMENSION (from2_sdim)) {
             for (int i = 0; i < DIM_NO_OFFSET (from2_sdim); i++) {
-                indout ("SAC_p2 *= SAC_ND_A_SHAPE(%s,%d);\n", from2_NT, i);
+                indout ("SAC_p2 *= SAC_ND_A_SHAPE (%s, %d);\n", from2_NT, i);
             }
         } else {
-            FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_DIM(%s); SAC_i++", from2_NT)
-                ;
-                indout ("SAC_p2 *= SAC_ND_A_SHAPE(%s,SAC_i);", from2_NT);
+            FOR_LOOP_BEGIN ("SAC_i = 0; SAC_i < SAC_ND_A_DIM (%s); SAC_i++",
+                            from2_NT);
+            {
+                indout ("SAC_p2 *= SAC_ND_A_SHAPE (%s, SAC_i);\n", from2_NT);
+            }
             FOR_LOOP_END ();
         }
 
-        IF_BEGIN ("SAC_p1 != SAC_p2")
-            ;
-            indout ("SAC_RuntimeError(\"Arrays do not adhere "
-                    "to prod matches prod shape constraint\");\n");
+        IF_BEGIN ("SAC_p1 == SAC_p2");
+        {
+            indout ("SAC_ND_A_FIELD (%s) = 1;\n", to_NT);
+        }
         IF_END ();
+        ELSE_BEGIN ();
+        {
+            indout ("SAC_ND_A_FIELD (%s) = 0;\n", to_NT);
+            ECC_ERROR2 (from_NT, from2_NT, "%s",
+                        "do not adhere to prod matches prod shape constraint");
+        }
+        ELSE_END ();
+    }
     BLOCK_END ();
-
-    indout ("SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
 
     DBUG_RETURN ();
 }
 
+#undef ECC_ERROR1
+#undef ECC_ERROR2
+
 /******************************************************************************
  *
- * Function:
- *   void ICMCompileND_PRF_COND( char *cond_NT, char *then_NT, char *else_NT)
+ * @fn void ICMCompileND_PRF_COND (char *to_NT, char *cond_NT,
+ *                                 char *then_NT, char *else_NT)
  *
- * Description:
- *   implements the compilation of the following ICM:
+ * @brief Implements the compilation of the following ICM:
  *
- *   ND_PRF_COND( cond_NT, then_NT, else_NT)
+ *   ND_PRF_COND (cond_NT, then_NT, else_NT)
  *
  ******************************************************************************/
-
 void
 ICMCompileND_PRF_COND (char *to_NT, char *cond_NT, char *then_NT, char *else_NT)
 {
@@ -2172,13 +2264,15 @@ ICMCompileND_PRF_COND (char *to_NT, char *cond_NT, char *then_NT, char *else_NT)
 #include "icm_trace.c"
 #undef ND_PRF_COND
 
-    IF_BEGIN ("NT_NAME( %s)", cond_NT)
-        ;
-        indout ("NT_NAME( %s) = NT_NAME( %s);\n", to_NT, then_NT);
+    IF_BEGIN ("NT_NAME (%s)", cond_NT);
+    {
+        indout ("NT_NAME (%s) = NT_NAME (%s);\n", to_NT, then_NT);
+    }
     IF_END ();
-    ELSE_BEGIN ()
-        ;
-        indout ("NT_NAME( %s) = NT_NAME( %s);\n", to_NT, else_NT);
+    ELSE_BEGIN ();
+    {
+        indout ("NT_NAME (%s) = NT_NAME (%s);\n", to_NT, else_NT);
+    }
     ELSE_END ();
 
     DBUG_RETURN ();

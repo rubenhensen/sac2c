@@ -21,11 +21,13 @@
 #include "fun-attrs.h"
 
 SAC_C_EXTERN void (*SAC_MessageExtensionCallback) (void);
-SAC_C_EXTERN void SAC_RuntimeError (const char *format, ...) FUN_ATTR_NORETURN;
-SAC_C_EXTERN void SAC_RuntimeError_Mult (int cnt, ...) FUN_ATTR_NORETURN;
-SAC_C_EXTERN void SAC_RuntimeErrorLine (int line, const char *format, ...) FUN_ATTR_NORETURN;
+
 SAC_C_EXTERN void SAC_RuntimeWarning (const char *format, ...);
-SAC_C_EXTERN void SAC_RuntimeWarningMaster (const char *format, ...);
+SAC_C_EXTERN void SAC_RuntimeWarningLoc (const char *filename, int line, int col, const char *format, ...);
+SAC_C_EXTERN void SAC_RuntimeError (const char *format, ...) FUN_ATTR_NORETURN;
+SAC_C_EXTERN void SAC_RuntimeErrorLoc (const char *filename, int line, int col, const char *format, ...) FUN_ATTR_NORETURN;
+SAC_C_EXTERN void SAC_RuntimeError_Mult (int cnt, ...) FUN_ATTR_NORETURN;
+
 SAC_C_EXTERN const char *SAC_PrintShape (SAC_array_descriptor_t desc);
 SAC_C_EXTERN void SAC_Print (const char *format, ...);
 

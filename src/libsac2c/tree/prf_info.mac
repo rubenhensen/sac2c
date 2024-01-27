@@ -912,6 +912,20 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
        COMPprfTypeError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
        TEn, NULL, NULL),
 
+  /**
+   * This primitive function behaves similarly to F_type_error, however it
+   * handles the specific case where one or more of these guard errors are
+   * followed by an F_guard. Because of this, instead of aborting the program
+   * with an error message, we instead print that message and return false.
+   * This allows multiple guard error messages to be printed, before the
+   * F_guard sees that false was returned by one or more F_guard_errors, and
+   * aborts the program.
+   * Not indended to be used externally.
+   */
+  PRF (guard_error, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_id, NULL,
+       COMPprfGuardError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
+       TEone, NULL, NULL),
+
   PRF (dispatch_error, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_dispatch_error, NULL,
        COMPprfDispatchError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
        TEval, NULL, NULL),
@@ -936,17 +950,13 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
    */
 
   /**
-   * x1', .., xn' = guard (n, x1, .., xn, pred1, .., predm);
-   * Guards expects n values and m boolean predicates. If all predicates are
-   * true then guard behaves as the identify function on arguments xi, otherwise
-   * an error will be raised. These guards serve as a barrier for optimisation
-   * and code rewrites around conformity checks and type pattern checks.
-   * Not indended to be used externally.
-   *
-   * @todo: Include the context:
-   * x1', .., xn' = guard (x1, .., xn, pred1, .., predm, "context string");
-   * @todo: Include argument types:
    * x1', .., xn' = guard (x1, .., xn, typ1, .., typn, pred1, .., predm);
+   * Guards expects n values with corresponding types, and m boolean predicates.
+   * If all predicates are true then guard behaves as the identify function on
+   * arguments xi, otherwise an error will be raised. These guards serve as a
+   * barrier for optimisation and code rewrites around conformity checks and
+   * type pattern checks.
+   * Not indended to be used externally.
    */
   PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_guard, NULL, COMPprfGuard,
        SCSprf_guard, NULL, NULL, SAAdim_guard, SAAshp_guard, NULL, 0, NULL,

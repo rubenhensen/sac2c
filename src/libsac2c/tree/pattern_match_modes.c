@@ -197,7 +197,7 @@ PMMskipPrf (intptr_t param, node *expr)
             rhs = LET_EXPR (let);
             if ((NODE_TYPE (rhs) == N_prf) && (prfInspectFun (PRF_PRF (rhs)))) {
                 switch (PRF_PRF(rhs)) {
-                    case F_guard:           // x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+                    case F_guard:           // x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
                     case F_same_shape_AxA:  // x', y', p = same_shape (x, y)
                     case F_non_neg_val_S:   // x', p = non_neg (x)
                     case F_non_neg_val_V:   // x', p = non_neg (x)

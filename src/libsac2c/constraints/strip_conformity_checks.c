@@ -333,7 +333,7 @@ SCCprf (node *arg_node, info *arg_info)
 
     /**
      * Prfs with a variable number of identities.
-     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
      */
     case F_guard:
         if (!global.runtimecheck.conformity && global.insertconformitychecks) {

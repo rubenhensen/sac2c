@@ -672,11 +672,24 @@ IDCcode (node *arg_node, info *arg_info)
 node *
 IDCid (node *arg_node, info *arg_info)
 {
+#ifndef DBUG_OFF
+    node *old_avis = NULL;
+#endif
+
     DBUG_ENTER ();
+
+    DBUG_EXECUTE (old_avis = ID_AVIS (arg_node));
 
     while (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
     }
+
+    DBUG_EXECUTE ({
+        if (old_avis != ID_AVIS (arg_node)) {
+            DBUG_PRINT ("Substituted id %s with %s",
+                        AVIS_NAME (old_avis), ID_NAME (arg_node));
+        }
+    });
 
     DBUG_RETURN (arg_node);
 }

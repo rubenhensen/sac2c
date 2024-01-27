@@ -215,8 +215,8 @@ SAAdim_guard (node *arg_node, info *arg_info)
         exprs = EXPRS_NEXT (exprs);
     }
 
-    DBUG_ASSERT (EXPRS_NEXT (exprs) != NULL,
-                 "guard predicate does not have a corresponding return value");
+    DBUG_ASSERT (IDS_AVIS (ids) == lhsavis,
+                 "guard argument %s does not exist", AVIS_NAME (lhsavis));
 
     // We are dealing with one of the guarded arguments
     dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (EXPRS_EXPR (exprs))));
