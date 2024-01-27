@@ -53,24 +53,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-
-/******************************************************************************
- *
- * @fn bool IsTypePatternError(node *prf)
- *
- * @brief Whether the given primitive function is a guard function, used by
- * type patterns. This is the case if the primitive function is a type_error,
- * and its argument (a bottom type) is marked as being a guard.
- *
- ******************************************************************************/
-static bool
-IsTypePatternError(node *prf)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN (PRF_PRF (prf) == F_type_error &&
-                 TYPE_ISGUARD (PRF_ARG1 (prf)));
-}
-
 /******************************************************************************
  *
  * @fn node *TPSdoPrintTypePatternStatistics (node *arg_node)
@@ -131,7 +113,7 @@ TPSprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (IsTypePatternError (arg_node)) {
+    if (PRF_PRF (arg_node) == F_guard_error) {
         INFO_ALLGONE (arg_info) = FALSE;
 
         /**

@@ -448,13 +448,13 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
  *
  * @fn ntype *NTCCTprf_guard (te_info *info, ntype *args)
  *
- * @brief x1', .., xn' = guard (x1, .., xn, p1, .., pm)
- * Where xi are anything and pi are boolean scalars.
- * - If all boolean predicates pi are true, then guard behaves as the identity
+ * @brief x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
+ * Where xi are anything, ti are types, and pj are boolean scalars.
+ * - If all boolean predicates pj are true, then guard behaves as the identity
  *   function, and the result is x1, .., xn.
- * - If all boolean predicates are false, we raise an error.
- * - If not all predicates are true, but at least one predicate is true or
- *   unknown, then all true predicates are removed from the guard.
+ * - If any boolean predicate is false, we raise an error.
+ * - If no predicates are false, but some predicates are unknown, then all true
+ *   predicates are removed from the guard.
  *
  ******************************************************************************/
 ntype *
@@ -471,14 +471,13 @@ NTCCTprf_guard (te_info *info, ntype *args)
     DBUG_ASSERT (num_rets > 0,
                  "expected at least one return value for guard, got %lu",
                  num_rets);
-
     num_args = TYgetProductSize (args);
-    DBUG_ASSERT (num_args >= num_rets + 1,
+    DBUG_ASSERT (num_args >= num_rets * 2 + 1,
                  "guard requires at least %lu arguments, got %lu",
-                 num_rets + 1, num_args);
+                 num_rets * 2 + 1, num_args);
 
-    // Skip xi, and check each predicate pi
-    for (i = num_rets; i < num_args; i++) {
+    // Skip xi and ti, and check each predicate pj
+    for (i = num_rets * 2; i < num_args; i++) {
         member = TYgetProductMember (args, i);
         TEassureBoolS ("guard predicate", member);
 
@@ -507,14 +506,15 @@ NTCCTprf_guard (te_info *info, ntype *args)
     } else {
         res = TYmakeEmptyProductType (num_rets);
         for (i = 0; i < num_rets; i++) {
-            member = TYgetProductMember (args, i);
-
             if (all_true) {
                 // We statically know all predicates are true
-                member = TYcopyType (member);
+                member = TYgetProductMember (args, i);
             } else {
-                // The predicates could be true, but we are not sure
-                member = TYeliminateAKV (member);
+                /**
+                 * The predicates could be true, but we are not sure.
+                 * Use the type given by argument ti instead.
+                 */
+                member = TYgetProductMember (args, i + num_rets);
             }
 
             TYsetProductMember (res, i, TYcopyType (member));

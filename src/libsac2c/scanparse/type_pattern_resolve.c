@@ -379,9 +379,14 @@ MakeInfo (void)
 static info *
 FreeInfo (info *info)
 {
+    resolution_info *ri;
+
     DBUG_ENTER ();
 
-    INFO_RESOLUTION (info) = MEMfree (INFO_RESOLUTION (info));
+    ri = INFO_RESOLUTION (info);
+    RI_ENV (ri) = LUTremoveLut (RI_ENV (ri));
+    INFO_RESOLUTION (info) = MEMfree (ri);
+
     info = MEMfree (info);
 
     DBUG_RETURN (info);
@@ -703,23 +708,22 @@ MakeFeatureGuard (char *id, char *pred, constraint_info *ci)
 
     // Generate a bottom type with a descriptive error message
     if (CI_ISDIMCHECK (ci)) {
-        CI_ERROR (ci) = SBUFprint (CI_ERROR (ci), ".\n");
+        // Nothing to do
     } else if (CI_ISDEFINED (ci)) {
         CI_ERROR (ci) = SBUFprintf (CI_ERROR (ci),
-                                    " does not match argument %s.\n",
+                                    " does not match argument %s",
                                     id);
     } else {
         CI_ERROR (ci) = SBUFprintf (CI_ERROR (ci),
-                                    " does not match feature `%s' in %s.\n",
+                                    " does not match feature `%s' in %s",
                                     id, CI_ID (ci));
     }
 
     error = SBUF2strAndFree (&CI_ERROR (ci));
     type = TBmakeType (TYmakeBottomType (STRcpy (error)));
-    TYPE_ISGUARD (type) = TRUE;
 
     // Generate an expression: pred = constraint() ? pred : _|_
-    res = TCmakePrf1 (F_type_error, type);
+    res = TCmakePrf1 (F_guard_error, type);
     res = TBmakeFuncond (constraint, TBmakeSpid (NULL, STRcpy (pred)), res);
     res = TBmakeLet (TBmakeSpids (STRcpy (pred), NULL), res);
     res = TBmakeAssign (res, NULL);

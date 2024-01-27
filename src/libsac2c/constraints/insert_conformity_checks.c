@@ -1,10 +1,9 @@
-#include "ctinfo.h"
 #include "DupTree.h"
 #include "free.h"
 #include "globals.h"
 #include "insert_domain_constraints.h"
+#include "LookUpTable.h"
 #include "memory.h"
-#include "new_typecheck.h"
 #include "new_types.h"
 #include "shape.h"
 #include "traverse.h"
@@ -22,29 +21,48 @@ typedef node *(*iccfun_p) (node *, node *);
  *
  * @struct INFO
  *
- * @param INFO_POSTASSIGNS
- * @param INFO_VARDECS
- * @param INFO_LHS
- * @param INFO_WLGUARDIDS
- * @param INFO_GENERATOR
- * @param INFO_WITHOPS
- * @param INFO_CEXPRS
+ * @param INFO_PREASSIGNS The pre-guard functions that must be inserted.
+ * With-loops might be nested, so we might get multiple guards.
+ * @param INFO_POSTASSIGNS The post-guard functions that must be inserted.
+ * With-loops might be nested, so we might get multiple guards.
+ * @param INFO_VARDECS N_vardec chain of the current block.
+ * @param INFO_LHS LHS identifiers of the current let.
+ * @param INFO_WLIDS N_exprs chain of identifiers in the with-loop that have
+ * at least one conformity check, and should be guarded by a pre-gaurd. This
+ * chain directly becomes (part of) the actual arguments chain of the generated
+ * guard function, and thus we populate this chain with copies of the
+ * encountered identifiers!
+ * @param INFO_WLIDSUBST A lookup-table that holds the mapping from the original
+ * with-loop identifier AVISes, to the guarded AVISes returned by the guard
+ * function. All occurences of these original variables should be updated to
+ * their guarded variants, but within this with-loop only.
+ * @param INFO_WLPREDS N_exprs chain of identifiers for the predicates that
+ * were generated for the current with-loop.
+ * @param INFO_GENERATOR The current with-loop generator.
+ * @param INFO_WITHOPS The current with-loop ops.
+ * @param INFO_CEXPRS The current with-loop cexprs.
  *
  ******************************************************************************/
 struct INFO {
+    node *preassigns;
     node *postassigns;
     node *vardecs;
     node *lhs;
-    node *wlguardids;
+    node *wlids;
+    lut_t *wlidsubst;
+    node *wlpreds;
     node *generator;
     node *withops;
     node *cexprs;
 };
 
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LHS(n) ((n)->lhs)
-#define INFO_WLGUARDIDS(n) ((n)->wlguardids)
+#define INFO_WLIDS(n) ((n)->wlids)
+#define INFO_WLIDSUBST(n) ((n)->wlidsubst)
+#define INFO_WLPREDS(n) ((n)->wlpreds)
 #define INFO_GENERATOR(n) ((n)->generator)
 #define INFO_WITHOPS(n) ((n)->withops)
 #define INFO_CEXPRS(n) ((n)->cexprs)
@@ -58,10 +76,13 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
+    INFO_PREASSIGNS (result) = NULL;
     INFO_POSTASSIGNS (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_LHS (result) = NULL;
-    INFO_WLGUARDIDS (result) = NULL;
+    INFO_WLIDS (result) = NULL;
+    INFO_WLIDSUBST (result) = LUTgenerateLut ();
+    INFO_WLPREDS (result) = NULL;
     INFO_GENERATOR (result) = NULL;
     INFO_WITHOPS (result) = NULL;
     INFO_CEXPRS (result) = NULL;
@@ -74,6 +95,8 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ();
 
+    INFO_WLIDSUBST (info) = LUTremoveLut (INFO_WLIDSUBST (info));
+
     info = MEMfree (info);
 
     DBUG_RETURN (info);
@@ -81,95 +104,191 @@ FreeInfo (info *info)
 
 /******************************************************************************
  *
- * @fn node *ICCdoInsertConformityChecks (node *arg_node)
+ * @fn node *MakeGuard (node *lhs, node *args, node *types, node *preds,
+ *                      const char *msg)
+ *
+ * @brief Creates a new guard primitive function and assignment from the given
+ * lhs, and the given arguments (the guarded arguments, their types, and the
+ * predicates that must hold).
+ *
+ * @note SSA assigns of the lhs are updated accordingly.
  *
  ******************************************************************************/
-node *
-ICCdoInsertConformityChecks (node *arg_node)
+static node *
+MakeGuard (node *lhs, node *args, node *types, node *preds, const char *msg)
 {
-    info *info;
+    node *prf, *assign;
 
     DBUG_ENTER ();
 
-    info = MakeInfo ();
+    // Append types and predicates to actual arguments
+    args = TCappendExprs (args, TCappendExprs (types, preds));
 
-    TRAVpush (TR_icc);
-    arg_node = TRAVdo (arg_node, info);
-    TRAVpop ();
+    // Create guard
+    prf = TBmakePrf (F_guard, args);
+    PRF_NUMVARIABLERETS (prf) = TCcountIds (lhs);
+    PRF_CONTEXTSTRING (prf) = STRcpy (msg);
+    assign = TBmakeAssign (TBmakeLet (lhs, prf), NULL);
 
-    info = FreeInfo (info);
+    // Update SSA assigns
+    while (lhs != NULL) {
+        AVIS_SSAASSIGN (IDS_AVIS (lhs)) = assign;
+        lhs = IDS_NEXT (lhs);
+    }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (assign);
 }
 
 /******************************************************************************
  *
- * @fn node *EmitGuards (node *lhs, node *preds,
- *                       node **assigns, node **vardecs)
+ * @fn node *EmitPreGuard (node **prf_args, node **vardecs, node *preds,
+ *                         lut_t *substitutions, const char *msg)
  *
- * @brief Given an N_ids chain and an N_id chain of guards, this function
- * appends an guard assignment to assigns for each N_ids node using the cids.
- * The lhs and argument is consumed.
+ * @brief Creates a new pre-guard assignment, given input arguments to a
+ * primitive function, and a chain of predicates that must hold. These
+ * arguments, as well as the vardecs chain, are updated accordingly.
  *
- * @param lhs N_ids to use as template.
- * @param preds N_id chain of guards.
- * @param assigns Assign to use as SSA_ASSIGN for new avis nodes.
- * @param vardecs Resulting vardecs.
+ * @example Given a primitive function
+ *   y1, .., ym = _prf_ (x1, .., xn);
+ * We generate
+ *   icc1, .., iccn = _guard_ (x1, .., xn, type1, .., typem, pred1, .., predo);
+ *   y1, .., ym = _prf_ (icc1, .., iccn);
  *
- * @return The new N_ids chain.
+ * @note The prf_args might contain multiple identifiers with the same AVIS.
+ * If an identifier is encountered with an AVIS that was already seen
+ * previously, that second identifier not added to the guard's arguments.
+ *
+ * @return The generated guard assignment.
  *
  ******************************************************************************/
 static node *
-EmitGuards (node *lhs, node *preds, node **assigns, node **vardecs)
+EmitPreGuard (node **prf_args /* inout */, node **vardecs /* inout */,
+              node *preds, lut_t *substitutions, const char *msg)
 {
-    node *avis, *ids, *prf;
-    node *args = NULL, *res = NULL;
-    size_t num_rets;
+    node *avis;
+    node *orig_args, *args, *prev_arg;
+    node *lhs = NULL, *typ, *typs = NULL;
+    node *assign;
 
     DBUG_ENTER ();
 
-    num_rets = TCcountIds (lhs);
+    DBUG_PRINT ("Emitting pre-guard");
 
-    DBUG_ASSERT (num_rets > 0, "guard has no return values");
-    DBUG_ASSERT (preds != NULL, "guard has no predicates");
+    orig_args = args = *prf_args;
+    *prf_args = NULL;
+    prev_arg = NULL;
 
-    // The N arguments that are returned
-    ids = lhs;
-    while (ids != NULL)
-    {
-        // Create new avis for the guarded value
+    while (args != NULL) {
         avis = TBmakeAvis (TRAVtmpVar (),
-                           TYcopyType (AVIS_TYPE (IDS_AVIS (ids))));
-        AVIS_SSAASSIGN (avis) = AVIS_SSAASSIGN (IDS_AVIS (ids));
+                           TYcopyType (ID_NTYPE (EXPRS_EXPR (args))));
 
-        // Prepend avis to new identifiers
-        res = TBmakeIds (avis, res);
+        /**
+         * Because we need to be able to update all occurrences of guarded
+         * variables in with-loops, prf_args might contain multiple identifiers
+         * with the same AVIS. If we encounter such a case, we can remove that
+         * identifiers from the guard's actual arguments at this point.
+         */
+        if (LUTsearchInLutP (substitutions, ID_AVIS (EXPRS_EXPR (args))) != NULL) {
+            DBUG_PRINT ("Substitution for %s already exists, "
+                        "removing it from the guard arguments",
+                        ID_NAME (EXPRS_EXPR (args)));
 
-        // Prepend avis to the vardecs
+            /**
+             * Remove this argument from the guard's actual arguments. Because
+             * we populate the prf_args with copies of the original arguments,
+             * we are required to free these arguments at this point.
+             */
+            args = FREEdoFreeNode (args);
+            if (prev_arg == NULL) {
+                orig_args = args;
+            } else {
+                EXPRS_NEXT (prev_arg) = args;
+            }
+
+            continue;
+        }
+
+        DBUG_PRINT ("Setting substitution %s -> %s",
+                    ID_NAME (EXPRS_EXPR (args)), AVIS_NAME (avis));
+        substitutions = LUTinsertIntoLutP (substitutions,
+                                           ID_AVIS (EXPRS_EXPR (args)),
+                                           avis);
+
+        // Add avis to declarations
         *vardecs = TBmakeVardec (avis, *vardecs);
 
+        // Update arguments
+        *prf_args = TCappendExprs (*prf_args, TBmakeExprs (TBmakeId (avis), NULL));
+
+        // Convert avis to required nodes
+        lhs = TCappendIds (lhs, TBmakeIds (avis, NULL));
+        typ = TBmakeType (TYcopyType (AVIS_TYPE (avis)));
+        typs = TCappendExprs (typs, TBmakeExprs (typ, NULL));
+
+        prev_arg = args;
+        args = EXPRS_NEXT (args);
+    }
+
+    assign = MakeGuard (lhs, orig_args, typs, preds, msg);
+
+    DBUG_RETURN (assign);
+}
+
+/******************************************************************************
+ *
+ * @fn node *EmitPostGuard (node **prf_lhs, node **vardecs, node *preds,
+ *                          const char *msg)
+ *
+ * @brief Creates a new post-guard assignment, given a resulting lhs from a
+ * primitive function, and a chain of predicates that must hold. This lhs, as
+ * well as the vardecs chain, are updated accordingly.
+ *
+ * @example Given a primitive function
+ *   y1, .., ym = _prf_ (x1, .., xn);
+ * We generate
+ *   icc1, .., iccm = _prf_ (x1, .., xn);
+ *   y1, .., yn = _guard_ (icc1, .., iccm, type1, .., typem, pred1, .., predo);
+ *
+ * @return The generated guard assignment.
+ *
+ ******************************************************************************/
+static node *
+EmitPostGuard (node **prf_lhs /* inout */, node **vardecs /* inout */,
+               node *preds, const char *msg)
+{
+    node *avis;
+    node *orig_lhs, *lhs;
+    node *args = NULL, *typ, *typs = NULL;
+    node *assign;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Emitting post-guard");
+
+    orig_lhs = lhs = *prf_lhs;
+    *prf_lhs = NULL;
+
+    while (lhs != NULL) {
+        avis = TBmakeAvis (TRAVtmpVar (),
+                           TYcopyType (AVIS_TYPE (IDS_AVIS (lhs))));
+
+        // Add avis to declarations
+        *vardecs = TBmakeVardec (avis, *vardecs);
+
+        // Update lhs
+        *prf_lhs = TCappendIds (*prf_lhs, TBmakeIds (avis, NULL));
+
+        // Convert avis to required nodes
         args = TCappendExprs (args, TBmakeExprs (TBmakeId (avis), NULL));
+        typ = TBmakeType (TYcopyType (AVIS_TYPE (avis)));
+        typs = TCappendExprs (typs, TBmakeExprs (typ, NULL));
 
-        ids = IDS_NEXT (ids);
+        lhs = IDS_NEXT (lhs);
     }
 
-    // Append predicates to guard arguments
-    args = TCappendExprs (args, preds);
+    assign = MakeGuard (orig_lhs, args, typs, preds, msg);
 
-    // Create guard assignment
-    prf = TBmakePrf (F_guard, args);
-    PRF_NUMVARIABLERETS (prf) = num_rets;
-    DBUG_PRINT ("guard created with %lu return values", num_rets);
-    *assigns = TBmakeAssign (TBmakeLet (lhs, prf), *assigns);
-
-    // Swap SSAASSIGNS
-    ids = lhs;
-    while (ids != NULL) {
-        AVIS_SSAASSIGN (IDS_AVIS (ids)) = *assigns;
-        ids = IDS_NEXT (ids);
-    }
-
-    DBUG_RETURN (res);
+    DBUG_RETURN (assign);
 }
 
 /******************************************************************************
@@ -210,7 +329,7 @@ ArgEncodingToTypeConstraint (prf fun, unsigned int argno, ntype *scalartype)
         break;
 
     default:
-        DBUG_UNREACHABLE ("unknown arg encoding found");
+        DBUG_UNREACHABLE ("Unknown arg encoding found");
         break;
     }
 
@@ -239,14 +358,13 @@ EmitConstraint (node *ids, node *constraint)
 
 #ifndef DBUG_OFF
     if (NODE_TYPE (constraint) == N_prf) {
-        DBUG_PRINT ("...emitting %s", PRF_NAME (PRF_PRF (constraint)));
+        DBUG_PRINT ("Emitting %s", PRF_NAME (PRF_PRF (constraint)));
     } else {
-        DBUG_PRINT ("...emitting fun constraint");
+        DBUG_PRINT ("Emitting fun constraint");
     }
 #endif
 
     avis = IDCaddFunConstraint (constraint);
-
     if (avis != NULL) {
         ids = TBmakeExprs (TBmakeId (avis), ids);
     }
@@ -257,15 +375,14 @@ EmitConstraint (node *ids, node *constraint)
 static node *
 EmitTypeConstraint (node *ids, node *arg, ntype *constraint)
 {
-    node *cavis;
+    node *avis;
 
     DBUG_ENTER ();
 
     if (NODE_TYPE (arg) == N_id) {
-        cavis = IDCaddTypeConstraint (constraint, ID_AVIS (arg));
-
-        if (cavis != NULL) {
-            ids = TBmakeExprs (TBmakeId (cavis), ids);
+        avis = IDCaddTypeConstraint (constraint, ID_AVIS (arg));
+        if (avis != NULL) {
+            ids = TBmakeExprs (TBmakeId (avis), ids);
         }
     }
 
@@ -382,6 +499,29 @@ static iccfun_p iccfuns[] = {
 
 /******************************************************************************
  *
+ * @fn node *ICCdoInsertConformityChecks (node *arg_node)
+ *
+ ******************************************************************************/
+node *
+ICCdoInsertConformityChecks (node *arg_node)
+{
+    info *info;
+
+    DBUG_ENTER ();
+
+    info = MakeInfo ();
+
+    TRAVpush (TR_icc);
+    arg_node = TRAVdo (arg_node, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * @fn node *ICCfundef (node *arg_node, info *arg_info)
  *
  * @brief Performs a traversal of the fundef chain and inserts INFO_VARDECS into
@@ -396,7 +536,7 @@ ICCfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("traversing %s", FUNDEF_NAME (arg_node));
+        DBUG_PRINT ("Traversing %s", FUNDEF_NAME (arg_node));
 
         arg_node = IDCinitialize (arg_node, FALSE);
 
@@ -420,33 +560,69 @@ ICCfundef (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
+ * @fn node *ICCblock (node *arg_node, info *arg_info)
+ *
+ * @brief Stacks the INFO_LHS chain.
+ *
+ ******************************************************************************/
+node *
+ICCblock (node *arg_node, info *arg_info)
+{
+    node *lhs;
+
+    DBUG_ENTER ();
+
+    lhs = INFO_LHS (arg_info);
+    INFO_LHS (arg_info) = NULL;
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
+    INFO_LHS (arg_info) = lhs;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * @fn node *ICCassign (node *arg_node, info *arg_info)
  *
- * @brief Inserts INFO_POSTASSIGN after the current assign but does not traverse
- * the inserted assigns.
+ * @brief Inserts guards around the current assign, but does not traverse the
+ * inserted assigns.
  *
  ******************************************************************************/
 node *
 ICCassign (node *arg_node, info *arg_info)
 {
-    node *postassigns;
+    node *preassigns, *postassigns;
 
     DBUG_ENTER ();
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
+    INFO_WLIDSUBST (arg_info) = LUTremoveContentLut (INFO_WLIDSUBST (arg_info));
+
     /**
-     * We have to stack the postassigns here, as we do not want to emit domain
-     * checks on the domain checks we have just created!
+     * We have to store the pre- and post-assign here, as we do not want to
+     * emit domain checks on the domain checks we have just created!
      */
+    preassigns = INFO_PREASSIGNS (arg_info);
     postassigns = INFO_POSTASSIGNS (arg_info);
+    INFO_PREASSIGNS (arg_info) = NULL;
     INFO_POSTASSIGNS (arg_info) = NULL;
 
+    // Traverse next assign before adding pre- and post-assigns
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
+    // Append post-assigns after this assign
     if (postassigns != NULL) {
-        ASSIGN_NEXT (arg_node) = TCappendAssign (postassigns,
-                                                 ASSIGN_NEXT (arg_node));
+        DBUG_PRINT ("Inserting post-assign");
+        postassigns = TCappendAssign (postassigns, ASSIGN_NEXT (arg_node));
+        ASSIGN_NEXT (arg_node) = postassigns;
+    }
+
+    // Prepend pre-assigns before this assign
+    if (preassigns != NULL) {
+        DBUG_PRINT ("Inserting pre-assign");
+        preassigns = TCappendAssign (preassigns, arg_node);
+        arg_node = preassigns;
     }
 
     DBUG_RETURN (arg_node);
@@ -466,9 +642,7 @@ ICClet (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
-
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
     LET_IDS (arg_node) = INFO_LHS (arg_info);
 
     DBUG_RETURN (arg_node);
@@ -484,29 +658,31 @@ ICClet (node *arg_node, info *arg_info)
 node *
 ICCprf (node *arg_node, info *arg_info)
 {
-    unsigned int arg_cnt;
-    node *args, *cids = NULL;
+    node *args, *expr, *cids = NULL;
     ntype *scalar_type, *constraint_type;
+    unsigned int arg_cnt;
+    node *guard;
 
     DBUG_ENTER ();
 
     args = PRF_ARGS (arg_node);
     arg_cnt = 0;
 
-    DBUG_PRINT ("Traversing prf %s...", PRF_NAME (PRF_PRF (arg_node)));
+    DBUG_PRINT ("Traversing prf %s", PRF_NAME (PRF_PRF (arg_node)));
 
     while (args != NULL) {
+        expr = EXPRS_EXPR (args);
+
         // We only act on N_id arguments with proper array types (non-bottoms)
-        if (NODE_TYPE (EXPRS_EXPR (args)) == N_id
-            && TYisArray (ID_NTYPE (EXPRS_EXPR (args)))) {
-            scalar_type = TYgetScalar (ID_NTYPE (EXPRS_EXPR (args)));
+        if (NODE_TYPE (expr) == N_id && TYisArray (ID_NTYPE (expr))) {
+            scalar_type = TYgetScalar (ID_NTYPE (expr));
             constraint_type = ArgEncodingToTypeConstraint (PRF_PRF (arg_node),
                                                            arg_cnt,
                                                            scalar_type);
 
             if (constraint_type != NULL) {
-                DBUG_PRINT (" ...emitting type constraint");
-                cids = EmitTypeConstraint (cids, EXPRS_EXPR (args), constraint_type);
+                DBUG_PRINT ("Emitting type constraint");
+                cids = EmitTypeConstraint (cids, expr, constraint_type);
                 constraint_type = TYfreeType (constraint_type);
             }
         }
@@ -522,41 +698,54 @@ ICCprf (node *arg_node, info *arg_info)
 
     // If we have collected any constraints, we emit a guard
     if (cids != NULL) {
-        INFO_LHS (arg_info) = EmitGuards (INFO_LHS (arg_info),
-                                          cids,
-                                          &INFO_POSTASSIGNS (arg_info),
-                                          &INFO_VARDECS (arg_info));
-    }
+        char *msg = STRcatn (3, "Primitive function ",
+                                global.prf_name[PRF_PRF (arg_node)],
+                                " guard failed");
 
-    DBUG_PRINT ("Done prf %s...", PRF_NAME (PRF_PRF (arg_node)));
+        guard = EmitPreGuard (&PRF_ARGS (arg_node),
+                              &INFO_VARDECS (arg_info),
+                              DUPdoDupTree (cids),
+                              INFO_WLIDSUBST (arg_info),
+                              msg);
+        ASSIGN_NEXT (guard) = INFO_PREASSIGNS (arg_info);
+        INFO_PREASSIGNS (arg_info) = guard;
+
+        guard = EmitPostGuard (&INFO_LHS (arg_info),
+                               &INFO_VARDECS (arg_info),
+                               cids,
+                               msg);
+        ASSIGN_NEXT (guard) = INFO_POSTASSIGNS (arg_info);
+        INFO_POSTASSIGNS (arg_info) = guard;
+    }
 
     DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
  *
- * @fn node *ICCblock (node *arg_node, info *arg_info)
+ * @fn node *ANONreplaceWLId (node *arg_node, info *arg_info)
  *
- * @brief Stacks the INFO_POSTASSIGNS and INFO_LHS chains.
+ * @brief Check the identifiers occurring in the current with-loop, and
+ * replace them by their substitution if there exist one in the LUT.
  *
  ******************************************************************************/
-node *
-ICCblock (node *arg_node, info *arg_info)
+static node *
+ANONreplaceWLId (node *arg_node, info *arg_info)
 {
-    node *postassigns, *lhs;
+    void **lut_pointer;
+    node *substitution;
 
     DBUG_ENTER ();
 
-    postassigns = INFO_POSTASSIGNS (arg_info);
+    lut_pointer = LUTsearchInLutP (INFO_WLIDSUBST (arg_info),
+                                   ID_AVIS (arg_node));
 
-    INFO_POSTASSIGNS (arg_info) = NULL;
-    lhs = INFO_LHS (arg_info);
-    INFO_LHS (arg_info) = NULL;
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    INFO_POSTASSIGNS (arg_info) = postassigns;
-    INFO_LHS (arg_info) = lhs;
+    if (lut_pointer != NULL) {
+        substitution = (node *)(*lut_pointer);
+        DBUG_PRINT ("Substituting with-loop id %s with %s",
+                    ID_NAME (arg_node), AVIS_NAME (substitution));
+        ID_AVIS (arg_node) = substitution;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -571,12 +760,18 @@ ICCblock (node *arg_node, info *arg_info)
 node *
 ICCwith (node *arg_node, info *arg_info)
 {
-    node *guardids;
+    node *wlids, *wlpreds;
+    node *guard;
 
     DBUG_ENTER ();
 
-    guardids = INFO_WLGUARDIDS (arg_info);
-    INFO_WLGUARDIDS (arg_info) = NULL;
+    DBUG_PRINT ("Traversing with-loop");
+
+    // With-loops might be nested, so store previous values
+    wlids = INFO_WLIDS (arg_info);
+    wlpreds = INFO_WLPREDS (arg_info);
+    INFO_WLIDS (arg_info) = NULL;
+    INFO_WLPREDS (arg_info) = NULL;
 
     /**
      * Generate constraints for parts/generators/cexprs, including those
@@ -598,15 +793,48 @@ ICCwith (node *arg_node, info *arg_info)
         INFO_WITHOPS (arg_info) = NULL;
     }
 
-    if (INFO_WLGUARDIDS (arg_info) != NULL) {
-        INFO_LHS (arg_info) = EmitGuards (INFO_LHS (arg_info),
-                                          INFO_WLGUARDIDS (arg_info),
-                                          &INFO_POSTASSIGNS (arg_info),
-                                          &INFO_VARDECS (arg_info));
-        INFO_WLGUARDIDS (arg_info) = NULL;
+    // Insert guards
+    if (INFO_WLPREDS (arg_info) != NULL) {
+        DBUG_ASSERT (INFO_WLIDS (arg_info) != NULL,
+                     "With-loop predicates have been generated, "
+                     "but no corresponding identifiers are given");
+
+        guard = EmitPreGuard (&INFO_WLIDS (arg_info),
+                              &INFO_VARDECS (arg_info),
+                              DUPdoDupTree (INFO_WLPREDS (arg_info)),
+                              INFO_WLIDSUBST (arg_info),
+                              "With-loop guard failed");
+        ASSIGN_NEXT (guard) = INFO_PREASSIGNS (arg_info);
+        INFO_PREASSIGNS (arg_info) = guard;
+
+        DBUG_PRINT ("Updating with-loop identifiers");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_LUT",
+                          LUTprintLut (stderr, INFO_WLIDSUBST (arg_info)));
+
+        /**
+         * The guard function returns new values that we should use in the
+         * with-loop instead. Check all identifiers occurring in the with-loop,
+         * and replace them by their substitutions given by the LUT, if any.
+         * This approach is required instead of simply setting AVIS_SUBST, as
+         * this can also update occurences of these variables occurring before
+         * the guard function.
+         */
+        TRAVpushAnonymous ((anontrav_t[]){{N_id, &ANONreplaceWLId},
+                                          {(nodetype)0, NULL}},
+                           &TRAVsons);
+        arg_node = TRAVcont (arg_node, arg_info);
+        TRAVpop ();
+
+        guard = EmitPostGuard (&INFO_LHS (arg_info),
+                               &INFO_VARDECS (arg_info),
+                               INFO_WLPREDS (arg_info),
+                               "With-loop guard failed");
+        ASSIGN_NEXT (guard) = INFO_POSTASSIGNS (arg_info);
+        INFO_POSTASSIGNS (arg_info) = guard;
     }
 
-    INFO_WLGUARDIDS (arg_info) = guardids;
+    INFO_WLIDS (arg_info) = wlids;
+    INFO_WLPREDS (arg_info) = wlpreds;
 
     DBUG_RETURN (arg_node);
 }
@@ -624,6 +852,7 @@ node *
 ICCgenerator (node *arg_node, info *arg_info)
 {
     ntype *constraint_type;
+    node *bound1, *bound2, *width, *step;
     node *prf;
 
     DBUG_ENTER ();
@@ -631,53 +860,53 @@ ICCgenerator (node *arg_node, info *arg_info)
     // Ensure all are int[.]
     constraint_type = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
 
-    INFO_WLGUARDIDS (arg_info) = EmitTypeConstraint (INFO_WLGUARDIDS (arg_info),
-                                                     GENERATOR_BOUND1 (arg_node),
-                                                     constraint_type);
+    bound1 = GENERATOR_BOUND1 (arg_node);
+    bound2 = GENERATOR_BOUND2 (arg_node);
+    width = GENERATOR_WIDTH (arg_node);
+    step = GENERATOR_STEP (arg_node);
 
-    INFO_WLGUARDIDS (arg_info) = EmitTypeConstraint (INFO_WLGUARDIDS (arg_info),
-                                                     GENERATOR_BOUND2 (arg_node),
-                                                     constraint_type);
+    INFO_WLPREDS (arg_info) =
+        EmitTypeConstraint (INFO_WLPREDS (arg_info), bound1, constraint_type);
+    INFO_WLPREDS (arg_info) =
+        EmitTypeConstraint (INFO_WLPREDS (arg_info), bound2, constraint_type);
 
-    if (GENERATOR_WIDTH (arg_node) != NULL) {
-        INFO_WLGUARDIDS (arg_info) =
-            EmitTypeConstraint (INFO_WLGUARDIDS (arg_info),
-                                GENERATOR_WIDTH (arg_node),
-                                constraint_type);
+    if (width != NULL) {
+        INFO_WLPREDS (arg_info) =
+            EmitTypeConstraint (INFO_WLPREDS (arg_info), width, constraint_type);
     }
 
-    if (GENERATOR_STEP (arg_node) != NULL) {
-        INFO_WLGUARDIDS (arg_info) =
-            EmitTypeConstraint (INFO_WLGUARDIDS (arg_info),
-                                GENERATOR_STEP (arg_node),
-                                constraint_type);
+    if (step != NULL) {
+        INFO_WLPREDS (arg_info) =
+            EmitTypeConstraint (INFO_WLPREDS (arg_info), step, constraint_type);
     }
 
     constraint_type = TYfreeType (constraint_type);
 
     // Ensure bounds are non negative
-    prf = TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (GENERATOR_BOUND1 (arg_node)));
-    INFO_WLGUARDIDS (arg_info) = EmitConstraint (INFO_WLGUARDIDS (arg_info), prf);
+    prf = TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (bound1));
+    INFO_WLPREDS (arg_info) = EmitConstraint (INFO_WLPREDS (arg_info), prf);
+    INFO_WLIDS (arg_info) = TBmakeExprs (DUPdoDupNode (bound1), INFO_WLIDS (arg_info));
 
-    prf = TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (GENERATOR_BOUND2 (arg_node)));
-    INFO_WLGUARDIDS (arg_info) = EmitConstraint (INFO_WLGUARDIDS (arg_info), prf);
+    prf = TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (bound2));
+    INFO_WLPREDS (arg_info) = EmitConstraint (INFO_WLPREDS (arg_info), prf);
+    INFO_WLIDS (arg_info) = TBmakeExprs (DUPdoDupNode (bound2), INFO_WLIDS (arg_info));
 
-    if (GENERATOR_WIDTH (arg_node) != NULL) {
-        prf = TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (GENERATOR_WIDTH (arg_node)));
-        INFO_WLGUARDIDS (arg_info) = EmitConstraint (INFO_WLGUARDIDS (arg_info), prf);
+    if (width != NULL) {
+        prf = TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (width));
+        INFO_WLPREDS (arg_info) = EmitConstraint (INFO_WLPREDS (arg_info), prf);
+        INFO_WLIDS (arg_info) = TBmakeExprs (DUPdoDupNode (width), INFO_WLIDS (arg_info));
     }
 
-    if (GENERATOR_STEP (arg_node) != NULL) {
-        prf = TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (GENERATOR_STEP (arg_node)));
-        INFO_WLGUARDIDS (arg_info) = EmitConstraint (INFO_WLGUARDIDS (arg_info), prf);
+    if (step != NULL) {
+        prf = TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (step));
+        INFO_WLPREDS (arg_info) = EmitConstraint (INFO_WLPREDS (arg_info), prf);
+        INFO_WLIDS (arg_info) = TBmakeExprs (DUPdoDupNode (step), INFO_WLIDS (arg_info));
     }
 
     // Now generate generate/withop constraints
-    if (INFO_WITHOPS (arg_info) != NULL) {
-        INFO_GENERATOR (arg_info) = arg_node;
-        INFO_WITHOPS (arg_info) = TRAVdo (INFO_WITHOPS (arg_info), arg_info);
-        INFO_GENERATOR (arg_info) = NULL;
-    }
+    INFO_GENERATOR (arg_info) = arg_node;
+    INFO_WITHOPS (arg_info) = TRAVopt (INFO_WITHOPS (arg_info), arg_info);
+    INFO_GENERATOR (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -701,9 +930,8 @@ ICCcode (node *arg_node, info *arg_info)
     if (INFO_WITHOPS (arg_info) != NULL) {
         INFO_CEXPRS (arg_info) = CODE_CEXPRS (arg_node);
         INFO_WITHOPS (arg_info) = TRAVdo (INFO_WITHOPS (arg_info), arg_info);
-
         DBUG_ASSERT (INFO_CEXPRS (arg_info) == NULL,
-                     "not all cexprs handled by withops!");
+                     "Not all cexprs handled by withops");
     }
 
     DBUG_RETURN (arg_node);
@@ -721,35 +949,34 @@ node *
 ICCgenarray (node *arg_node, info *arg_info)
 {
     ntype *constraint_type;
+    node *shape, *def, *bound1, *bound2;
     node *prf;
 
     DBUG_ENTER ();
 
+    shape = GENARRAY_SHAPE (arg_node);
+    def = GENARRAY_DEFAULT (arg_node);
+
     if (INFO_GENERATOR (arg_info) != NULL) {
+        bound1 = GENERATOR_BOUND1 (INFO_GENERATOR (arg_info));
+        bound2 = GENERATOR_BOUND2 (INFO_GENERATOR (arg_info));
+
         // Emit generator-dependent constraints
-        prf = TCmakePrf2 (F_same_shape_AxA,
-                          DUPdoDupTree (GENERATOR_BOUND1 (INFO_GENERATOR (arg_info))),
-                          DUPdoDupTree (GENARRAY_SHAPE (arg_node)));
-        INFO_WLGUARDIDS (arg_info) = EmitConstraint (INFO_WLGUARDIDS (arg_info), prf);
+        prf = TCmakePrf2 (F_same_shape_AxA, DUPdoDupTree (bound1), DUPdoDupTree (shape));
+        INFO_WLPREDS (arg_info) = EmitConstraint (INFO_WLPREDS (arg_info), prf);
 
-        prf = TCmakePrf2 (F_val_le_val_VxV,
-                          DUPdoDupTree (GENERATOR_BOUND1 (INFO_GENERATOR (arg_info))),
-                          DUPdoDupTree (GENARRAY_SHAPE (arg_node)));
-        INFO_WLGUARDIDS (arg_info) = EmitConstraint (INFO_WLGUARDIDS (arg_info), prf);
+        prf = TCmakePrf2 (F_val_le_val_VxV, DUPdoDupTree (bound1), DUPdoDupTree (shape));
+        INFO_WLPREDS (arg_info) = EmitConstraint (INFO_WLPREDS (arg_info), prf);
 
-        prf = TCmakePrf2 (F_same_shape_AxA,
-                          DUPdoDupTree (GENERATOR_BOUND2 (INFO_GENERATOR (arg_info))),
-                          DUPdoDupTree (GENARRAY_SHAPE (arg_node)));
-        INFO_WLGUARDIDS (arg_info) = EmitConstraint (INFO_WLGUARDIDS (arg_info), prf);
+        prf = TCmakePrf2 (F_same_shape_AxA, DUPdoDupTree (bound2), DUPdoDupTree (shape));
+        INFO_WLPREDS (arg_info) = EmitConstraint (INFO_WLPREDS (arg_info), prf);
 
-        prf = TCmakePrf2 (F_val_le_val_VxV,
-                          DUPdoDupTree (GENERATOR_BOUND2 (INFO_GENERATOR (arg_info))),
-                          DUPdoDupTree (GENARRAY_SHAPE (arg_node)));
-        INFO_WLGUARDIDS (arg_info) = EmitConstraint (INFO_WLGUARDIDS (arg_info), prf);
+        prf = TCmakePrf2 (F_val_le_val_VxV, DUPdoDupTree (bound2), DUPdoDupTree (shape));
+        INFO_WLPREDS (arg_info) = EmitConstraint (INFO_WLPREDS (arg_info), prf);
     } else if (INFO_CEXPRS (arg_info) != NULL) {
         // Emit cexpr constraints iff we have a default value
-        if (GENARRAY_DEFAULT (arg_node) != NULL) {
-            DBUG_PRINT ("...emitting F_same_shape_AxA CEXPR-constraint");
+        if (def != NULL) {
+            DBUG_PRINT ("Emitting F_same_shape_AxA CEXPR-constraint");
 
             /**
              * We simply ignore the returned avis, as we do not propagate the
@@ -757,21 +984,22 @@ ICCgenarray (node *arg_node, info *arg_info)
              */
             prf = TCmakePrf2 (F_same_shape_AxA,
                               DUPdoDupTree (EXPRS_EXPR (INFO_CEXPRS (arg_info))),
-                              DUPdoDupTree (GENARRAY_DEFAULT (arg_node)));
+                              DUPdoDupTree (def));
             IDCaddFunConstraint (prf);
+            INFO_WLIDS (arg_info) = TBmakeExprs (DUPdoDupNode (def), INFO_WLIDS (arg_info));
         }
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
     } else {
         // Emit withop-local constraints
         constraint_type = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
-        INFO_WLGUARDIDS (arg_info) = EmitTypeConstraint (INFO_WLGUARDIDS (arg_info),
-                                                         GENARRAY_SHAPE (arg_node),
-                                                         constraint_type);
+        INFO_WLPREDS (arg_info) =
+            EmitTypeConstraint (INFO_WLPREDS (arg_info), shape, constraint_type);
         constraint_type = TYfreeType (constraint_type);
 
-        prf = TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (GENARRAY_SHAPE (arg_node)));
-        INFO_WLGUARDIDS (arg_info) = EmitConstraint (INFO_WLGUARDIDS (arg_info), prf);
+        prf = TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (shape));
+        INFO_WLPREDS (arg_info) = EmitConstraint (INFO_WLPREDS (arg_info), prf);
+        INFO_WLIDS (arg_info) = TBmakeExprs (DUPdoDupNode (shape), INFO_WLIDS (arg_info));
     }
 
     GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);

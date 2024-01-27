@@ -41,10 +41,10 @@ extern int print_comment; /* bool */
 
 #define ASSURE_EXPR(cond_stmt, text_stmt)                                                \
     do {                                                                                 \
-        out ("SAC_ASSURE_TYPE_LINE ((");                                                 \
+        out ("SAC_ASSURE_TYPE_LINE (\"%s\", %zu, %zu, (",                                \
+             global.filename, global.linenum, global.colnum);                            \
         cond_stmt;                                                                       \
-        /* FIXME Why global.linenum -- does it make sense?  */                           \
-        out ("), %zu, \"", global.linenum);                                               \
+        out ("), \"");                                                                   \
         text_stmt;                                                                       \
         out ("\")");                                                                     \
     } while (0)
@@ -109,6 +109,12 @@ extern int print_comment; /* bool */
     do {                                                                                 \
         indout ("else {\n");                                                             \
         global.indent++;                                                                 \
+    } while (0)
+
+#define ELSE_BLOCK_BEGIN(...)                                                            \
+    do {                                                                                 \
+        ELSE_BEGIN ();                                                                   \
+        indout (__VA_ARGS__); /* block variables.  */                                    \
     } while (0)
 
 #define ELSE_END()                                                                       \

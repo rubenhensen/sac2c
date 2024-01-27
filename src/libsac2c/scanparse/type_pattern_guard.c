@@ -28,6 +28,7 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "type_utils.h"
 
 #define DBUG_PREFIX "GTP"
 #include "debug.h"
@@ -83,11 +84,9 @@ MakeConditionGuards (char *pred, node *conditions)
 
     while (conditions != NULL) {
         bottom = TBmakeType (TYmakeBottomType (STRcpy ("condition failed")));
-        TYPE_ISGUARD (bottom) = TRUE;
-
         guard = TBmakeFuncond (EXPRS_EXPR (conditions),
                                TBmakeSpid (NULL, STRcpy (pred)),
-                               TCmakePrf1 (F_type_error, bottom));
+                               TCmakePrf1 (F_guard_error, bottom));
         guard = TBmakeLet (TBmakeSpids (STRcpy (pred), NULL), guard);
         res = TCappendAssign (res, TBmakeAssign (guard, NULL));
 
@@ -333,15 +332,17 @@ ConvertRets (node *rets, node **spids, node **exprs)
 
 /******************************************************************************
  *
- * @fn node *MakeGuardLet (node *ids, node *exprs, char *pred)
+ * @fn node *MakeGuardLet (node *ids, node *exprs, node* types, char *pred,
+ *                         const char *context)
  *
  * @brief Creates a guard assignment:
- *   x1', ..., xn' = guard (x1, .., xn, pred)
+ *   x1', ..., xn' = guard (x1, .., xn, t1, .., tn, pred)
  * That guards the given identifiers, based on the given predicate.
  *
  ******************************************************************************/
 static node *
-MakeGuardLet (node *ids, node *exprs, char *pred)
+MakeGuardLet (node *ids, node *exprs, node* types, char *pred,
+              const char *context)
 {
     node *spid, *prf, *res;
     size_t num_rets;
@@ -350,16 +351,19 @@ MakeGuardLet (node *ids, node *exprs, char *pred)
 
     num_rets = TCcountExprs (exprs);
 
-    // Add predicate
+    // Append types to arguments
+    exprs = TCappendExprs (exprs, types);
+    // Append predicate to arguments
     spid = TBmakeSpid (NULL, STRcpy (pred));
     exprs = TCappendExprs (exprs, TBmakeExprs (spid, NULL));
 
-    // Set number of return values
+    // Create guard primitive
     prf = TBmakePrf (F_guard, exprs);
+
     PRF_NUMVARIABLERETS (prf) = num_rets;
+    PRF_CONTEXTSTRING (prf) = STRcpy (context);
     DBUG_PRINT ("guard created with %lu return values", num_rets);
 
-    // Create let-expression
     res = TBmakeLet (ids, prf);
 
     DBUG_RETURN (res);
@@ -381,6 +385,7 @@ GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
     node *pre_lhs = NULL, *pre_args = NULL;
     node *post_lhs = NULL, *post_args = NULL;
     node *ap, *let, *body;
+    char context[256];
     char *pred;
 
     DBUG_ENTER ();
@@ -395,9 +400,13 @@ GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
 
     if (post != NULL) {
         // x, y, z = guard (x, y, z, pred)
+        sprintf (context, "Type pattern post-condition of %s failed",
+                 FUNDEF_NAME (fundef));
         let = MakeGuardLet (DUPdoDupTree (post_lhs),
                             DUPdoDupTree (post_args),
-                            pred);
+                            TUmakeTypeExprsFromRets (FUNDEF_RETS (fundef)),
+                            pred,
+                            context);
         body = TBmakeAssign (let, body);
 
         // pred = foo_post (a, b, x, y, z)
@@ -408,9 +417,13 @@ GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
 
     if (pre != NULL) {
         // x, y, z = guard (x, y, z, pred)
+        sprintf (context, "Type pattern pre-condition of %s failed",
+                 FUNDEF_NAME (fundef));
         let = MakeGuardLet (DUPdoDupTree (post_lhs),
                             DUPdoDupTree (post_args),
-                            pred);
+                            TUmakeTypeExprsFromRets (FUNDEF_RETS (fundef)),
+                            pred,
+                            context);
         body = TBmakeAssign (let, body);
     }
 
@@ -421,7 +434,13 @@ GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
 
     if (pre != NULL) {
         // a, b = guard (a, b, pred)
-        let = MakeGuardLet (pre_lhs, DUPdoDupTree (pre_args), pred);
+        sprintf (context, "Type pattern pre-condition of %s failed",
+                 FUNDEF_NAME (fundef));
+        let = MakeGuardLet (pre_lhs,
+                            DUPdoDupTree (pre_args),
+                            TUmakeTypeExprsFromArgs (FUNDEF_ARGS (fundef)),
+                            pred,
+                            context);
         body = TBmakeAssign (let, body);
 
         // pre_pred = foo_pre (a, b)

@@ -1278,7 +1278,7 @@ SelModarray (node *arg_node, info *arg_info)
     pat3 = PMprf (2, PMAgetNode (&modar), PMAisPrf (F_modarray_AxVxA), 3, PMvar (0, 0),
                   PMvar (1, PMAgetNode (&iv2), 0), PMvar (1, PMAgetNode (&val), 0));
 
-    /* x' = guard (x, p0, .., pm); */
+    /* x' = guard (x, t, p0, .., pm); */
     pat4 = PMprf (2, PMAisPrf (F_guard), PMAgetNode (&Mprime), 1, PMskip (0));
 
     /* Chase iv' in _modarray(X, iv', val) back to iv */

@@ -443,7 +443,7 @@ RESOprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     /**
-     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
      */
     case F_guard:
         INFO_DELETE (arg_info) = TRUE;
@@ -541,7 +541,7 @@ RESOlet (node *arg_node, info *arg_info)
 
         /**
          * Detect assignments of the form
-         *   x1', .., xn' = guard (x1, .., xn, p1, .., pn)
+         *   x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pn)
          * and delete lhs where rhs is a globobj,
          * as it is an identity assignment.
          */

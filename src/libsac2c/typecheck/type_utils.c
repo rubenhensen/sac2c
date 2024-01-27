@@ -264,31 +264,51 @@ TUmakeProductTypeFromRets (node *rets)
     DBUG_RETURN (type);
 }
 
-/** <!--********************************************************************-->
+/******************************************************************************
  *
- * @fn node *TUmakeTypeExprsFromRets( node *rets)
+ * @fn node *TUmakeTypeExprsFromArgs (node *args)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief Creates an N_exprs chain where each element is an N_type node with
+ * the same type as the corresponding element in the given N_arg chain.
  *
  ******************************************************************************/
-
-node *
-TUmakeTypeExprsFromRets (node *rets)
+node *TUmakeTypeExprsFromArgs (node *args)
 {
-    node *exprs;
+    node *res = NULL;
 
     DBUG_ENTER ();
 
-    if (rets == NULL) {
-        exprs = NULL;
-    } else {
-        exprs = TUmakeTypeExprsFromRets (RET_NEXT (rets));
-        exprs = TBmakeExprs (TBmakeType (TYcopyType (RET_TYPE (rets))), exprs);
+    if (args != NULL) {
+        // Create types bottom-up to avoid needing a TCappendExprs
+        res = TUmakeTypeExprsFromArgs (ARG_NEXT (args));
+        res = TBmakeExprs (TBmakeType (TYcopyType (ARG_NTYPE (args))), res);
     }
 
-    DBUG_RETURN (exprs);
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @fn node *TUmakeTypeExprsFromRets (node *args)
+ *
+ * @brief Creates an N_exprs chain where each element is an N_type node with
+ * the same type as the corresponding element in the given N_ret chain.
+ *
+ ******************************************************************************/
+node *
+TUmakeTypeExprsFromRets (node *rets)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    if (rets != NULL) {
+        // Create types bottom-up to avoid needing a TCappendExprs
+        res = TUmakeTypeExprsFromRets (RET_NEXT (rets));
+        res = TBmakeExprs (TBmakeType (TYcopyType (RET_TYPE (rets))), res);
+    }
+
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -1201,7 +1221,7 @@ TUtypeSignature2String (node *fundef)
  * @fn char *TUwrapperTypeSignature2String( node *fundef)
  *
  *   @brief creates a multi-line string for wrapper functions; one line
- *          per existing instance. To do so a local helper function 
+ *          per existing instance. To do so a local helper function
  *          createFunSigString is needed that is mapped onto all instances.
  *   @param
  *   @return
@@ -1218,9 +1238,9 @@ createFunSigString( node *fundef, info *arg_info)
     tmp = TUtypeSignature2String (fundef);
     *buf = SBUFprintf (*buf, "\\n***   %s :: %s", CTIitemName (fundef), tmp);
     tmp = MEMfree (tmp);
- 
+
     arg_info = (info *)buf;
-    
+
     return fundef;
 }
 
@@ -1232,7 +1252,7 @@ TUwrapperTypeSignature2String (node *fundef)
     char *tmp;
 
     DBUG_ENTER ();
-    
+
     DBUG_ASSERT (FUNDEF_WRAPPERTYPE (fundef) != NULL,
                  "TUwrapperTypeSignature2String called on function"
                  " without wrapper type!");
@@ -1846,7 +1866,7 @@ ntype* TUint2akv (int val)
  *         <  -2: AKD with result == -2 - DIM
  *         == -1: AUSGZ
  *         == -2: AUD
- *         
+ *
  *
  * @param: type: ntype
  *
@@ -1856,7 +1876,7 @@ ntype* TUint2akv (int val)
 int TUgetFullDimEncoding (ntype *type)
 {
     int res;
-    
+
     DBUG_ENTER ();
 
     if (TYisAUDGZ (type)) {

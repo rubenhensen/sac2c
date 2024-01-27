@@ -396,8 +396,8 @@ RERAprf (node *arg_node, info *arg_info)
      * results. These two prfs terminate execution and in reality don't have a
      * result anyway.
      */
-    case F_dispatch_error:
     case F_type_error:
+    case F_dispatch_error:
         INFO_LHS (arg_info) = FREEdoFreeTree (lhs);
         break;
 
@@ -422,7 +422,7 @@ RERAprf (node *arg_node, info *arg_info)
         break;
 
     /**
-     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
      */
     case F_guard:
         args = PRF_ARGS (arg_node);

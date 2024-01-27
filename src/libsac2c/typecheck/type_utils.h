@@ -34,6 +34,7 @@ extern ntype *TUrebuildWrapperTypeAlpha (ntype *);
  * N_arg related:
  */
 extern ntype *TUmakeProductTypeFromArgs (node *args);
+extern node *TUmakeTypeExprsFromArgs (node *args);
 extern node *TUargtypes2unknownAUD (node *args);
 extern ntype *TUactualArgs2Ntype (node *actual);
 

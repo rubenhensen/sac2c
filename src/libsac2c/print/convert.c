@@ -134,6 +134,51 @@ CVdouble2String (double val)
 
 /******************************************************************************
  *
+ * @fn char *CVshape2String (int dim, int *shp)
+ *
+ * @brief Converts a dimensionality and shape to a shape string.
+ *
+ ******************************************************************************/
+char *
+CVshape2String (int dim, int *shp)
+{
+    int pos, space, written;
+    char buf[255], *buffer;
+    char *res;
+
+    DBUG_ENTER ();
+
+    buf[0] = '[';
+    buffer = &buf[1];
+    space = 254;
+
+    for (pos = 0; pos < dim; pos++) {
+        if (pos < dim - 1) {
+            written = snprintf (buffer, space - 5, " %d,", shp[pos]);
+        } else {
+            written = snprintf (buffer, space - 5, " %d", shp[pos]);
+        }
+
+        if (written > space - 6) {
+            buffer += (space - 6);
+            sprintf (buffer, "...");
+            buffer += 3;
+            break;
+        } else {
+            buffer += written;
+            space -= written;
+        }
+    }
+
+    snprintf (buffer, 2, "]");
+    res = (char *)malloc (strlen (buf) + 1);
+    strcpy (res, buf);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
  * @fn char *CVtype2String (ntype *type, int flag, bool all)
  *
  * @brief convertes the infomation in a type into a string.

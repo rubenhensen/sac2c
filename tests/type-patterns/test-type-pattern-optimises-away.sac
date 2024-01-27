@@ -1,9 +1,9 @@
-// Sometimes the compiler is able to infer the return value, without
-// investigating some of the arguments. In the following example this results
-// in the compiler statically finding out that the return type of foo is int[3],
-// throwing away the checks we inserted, even with the inclusion of guards.
-// To fix this, we ensure that guards also hide the dimensionality and shape
-// of their returned values.
+// Sometimes the compiler is able to infer the return value, without checking
+// some of the arguments. In the following example this results in the compiler
+// statically finding out that the return type of foo is int[3], throwing away
+// the checks we inserted, even with the inclusion of guards. To fix this, we
+// add the argument/return types of the guarded values as additional arguments
+// to guard functions.
 //
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check tc -bopt

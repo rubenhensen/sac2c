@@ -24,20 +24,20 @@
 
 #define SAC_ASSURE_TYPE(cond, message)                                                   \
     if (!(cond)) {                                                                       \
-        SAC_RuntimeError message;                                                        \
+        SAC_RuntimeWarning (message);                                                    \
     }
 /* yes, in C '0;' is indeed a legal statement 8-)) */
 
-#define SAC_ASSURE_TYPE_LINE(cond, line, message)                                        \
+#define SAC_ASSURE_TYPE_LINE(filename, line, col, cond, message)                         \
     if (!(cond)) {                                                                       \
-        SAC_RuntimeErrorLine (line, message);                                            \
+        SAC_RuntimeWarningLoc (filename, line, col, message);                            \
     }
 
 #else /* SAC_DO_CHECK_TYPE */
 
 #define SAC_ASSURE_TYPE(cond, message) /* nothing */
 
-#define SAC_ASSURE_TYPE_LINE(cond, line, message) /* nothing */
+#define SAC_ASSURE_TYPE_LINE(filename, line, col, cond, message) /* nothing */
 
 #endif /* SAC_DO_CHECK_TYPE */
 

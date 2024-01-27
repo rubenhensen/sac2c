@@ -46,11 +46,12 @@
           SAC_ND_ALLOC_BEGIN ((SACp_emal_2726__isaa_1643__OI_object,                     \
                                (SCL, (NHD, (NUQ, (INT, (GLO, (NON, ))))))),              \
                               1, 0, int)                                                 \
-            SAC_ASSURE_TYPE_LINE ((SAC_ND_A_DIM (                                        \
+            SAC_ASSURE_TYPE_LINE ("SAC_MUTC_WORLD_OBJECT", 9, 0,                         \
+                                  (SAC_ND_A_DIM (                                        \
                                      (SACp_emal_2726__isaa_1643__OI_object,              \
                                       (SCL, (NHD, (NUQ, (INT, (GLO, (NON, ))))))))       \
                                    == 0),                                                \
-                                  9, "Assignment with incompatible types found!");       \
+                                  "Assignment with incompatible types found");           \
         SAC_NOOP ()                                                                      \
         SAC_ND_ALLOC_END ((SACp_emal_2726__isaa_1643__OI_object,                         \
                            (SCL, (NHD, (NUQ, (INT, (GLO, (NON, ))))))),                  \
@@ -68,11 +69,12 @@
                                                 (NHD, (NUQ, (INT, (GLO, (TAG, ))))))),   \
                                               int))                                      \
         SAC_NOOP ()                                                                      \
-        SAC_ASSURE_TYPE_LINE ((SAC_ND_A_DIM (                                            \
+        SAC_ASSURE_TYPE_LINE ("SAC_MUTC_WORLD_OBJECT", 9, 0,                             \
+                              (SAC_ND_A_DIM (                                            \
                                  (SACp_OI_object,                                        \
                                   (SCL, (NHD, (NUQ, (INT, (GLO, (TPO, ))))))))           \
                                == 0),                                                    \
-                              9, "Assignment with incompatible types found!");           \
+                              "Assignment with incompatible types found");               \
         SAC_NOOP ()                                                                      \
         SAC_NOOP ()                                                                      \
         SAC_NOOP ()                                                                      \

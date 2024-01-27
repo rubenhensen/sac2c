@@ -3235,7 +3235,7 @@ SCSprf_reshape (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_guard (node *arg_node, info *arg_info)
  *
- * @brief x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+ * @brief x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
  * If all boolean predicates pi are true, then guard behaves as the identity
  * function, and the result is x1, .., xn.
  *
@@ -3249,28 +3249,31 @@ SCSprf_guard (node *arg_node, info *arg_info)
 {
     bool changed;
     size_t num_args, num_rets;
-    node *last_arg, *preds, *res;
+    node *last_typ, *last_arg, *preds, *res;
 
     DBUG_ENTER ();
 
     num_rets = PRF_NUMVARIABLERETS (arg_node);
     DBUG_ASSERT (num_rets > 0, "guard has no return values");
     num_args = TCcountExprs (PRF_ARGS (arg_node));
-    DBUG_ASSERT (num_args >= num_rets + 1,
+    DBUG_ASSERT (num_args >= num_rets * 2 + 1,
                  "guard requires at least %lu arguments, got %lu",
-                 num_rets + 1, num_args);
+                 num_rets * 2 + 1, num_args);
 
-    // Skip x1, .., xn
+    // Skip x1, .., xn, t1, .., tn
     last_arg = TCgetNthExprs (num_rets - 1, PRF_ARGS (arg_node));
-    preds = EXPRS_NEXT (last_arg);
+    last_typ = TCgetNthExprs (num_rets * 2 - 1, PRF_ARGS (arg_node));
+    preds = EXPRS_NEXT (last_typ);
 
     // Strip all predicates that we statically know are true
     changed = StripTrues (&preds);
-    EXPRS_NEXT (last_arg) = preds;
+    EXPRS_NEXT (last_typ) = preds;
 
     if (changed) {
         if (preds == NULL) {
             DBUG_PRINT ("No predicates remain, replacing guard with identity");
+            // Remove N_exprs chain of types t1, .., tn
+            EXPRS_NEXT (last_arg) = FREEdoFreeTree (EXPRS_NEXT (last_arg));
             // Duplicate N_exprs chain x1, .., xn
             res = DUPdoDupTree (PRF_ARGS (arg_node));
         } else {
@@ -3279,7 +3282,7 @@ SCSprf_guard (node *arg_node, info *arg_info)
             res = DUPdoDupTree (arg_node);
         }
     } else {
-        DBUG_PRINT ("All guard predicates remain");
+        DBUG_PRINT ("All guard predicates remain, guard remains unchanged");
         res = NULL;
     }
 

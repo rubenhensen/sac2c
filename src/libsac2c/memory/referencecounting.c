@@ -545,6 +545,7 @@ RCIprf (node *arg_node, info *arg_info)
      * - a must be counted like a funap use of a
      */
     case F_type_error:
+    case F_guard_error:
     case F_dispatch_error:
     case F_type_conv:
         INFO_MODE (arg_info) = rc_apuse;
@@ -606,9 +607,10 @@ RCIprf (node *arg_node, info *arg_info)
         break;
 
     /**
-     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
+     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
      * - Traverse xi as app since they are aliased into xi'
-     * - Traverse pi as prf
+     * - Types ti must not be traversed as they are N_type nodes
+     * - Traverse pj as prf
      */
     case F_guard:
         lhs = ASSIGN_LHS (INFO_ASSIGN (arg_info));
@@ -622,12 +624,16 @@ RCIprf (node *arg_node, info *arg_info)
             args = EXPRS_NEXT (args);
         }
 
-        // Traverse remaining pi as prf
+        // Skip ti as they are N_type nodes
+        args = TCgetNthExprs (PRF_NUMVARIABLERETS (arg_node), args);
+
+        // Traverse remaining pj as prf
         INFO_MODE (arg_info) = rc_prfuse;
         while (args != NULL) {
             EXPRS_EXPR (args) = TRAVdo (EXPRS_EXPR (args), arg_info);
             args = EXPRS_NEXT (args);
         }
+
         break;
 
     /**

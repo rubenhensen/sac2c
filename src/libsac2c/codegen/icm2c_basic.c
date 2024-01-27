@@ -55,11 +55,13 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
               void *shp2, int shp2_size, void (*shp2_size_fun) (void *),
               void (*shp2_read_fun) (void *, char *, int))
 {
-#define ASSURE_TYPE_HEADER() indout ("SAC_ASSURE_TYPE_LINE ((")
-#define ASSURE_TYPE_FOOTER()                                                             \
-    out ("), %zu, \"Assignment with incompatible types found!\""                          \
-         ");\n",                                                                         \
-         global.linenum)
+#define ASSURE_TYPE_HEADER()                                                   \
+    indout ("SAC_ASSURE_TYPE_LINE (\"%s\", %zu, %zu, (",                       \
+            global.filename, global.linenum, global.colnum)
+
+#define ASSURE_TYPE_FOOTER()                                                   \
+    out ("), \"Assignment with incompatible types found\");\n")
+
     int i;
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
@@ -563,7 +565,7 @@ ReadScalar_Check (void *scl, char *idx_str, int idx)
 
             ASSURE_EXPR (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", (char *)scl),
                          ASSURE_TEXT ("Scalar expected but array "
-                                      "with (dim > 0) found!"));
+                                      "with (dim > 0) found"));
             out (" , \n");
             indout ("  ");
             ReadId (scl, idx_str, idx);
