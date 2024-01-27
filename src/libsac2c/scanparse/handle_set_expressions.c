@@ -370,10 +370,27 @@ IsCopyBody (node *expr, node *idxs)
 
 /**
  * traverse inner set-wls and infer INFO_HSE_FULLPART.
+ *
  * FULLPART is true, iff one of the following pattern matches:
- * Pattern 1: ( . <= ? rel ub)  (no step no width!)
- * Pattern 2: ( F_mul_SxV ( 0, ?) <= ? rel ub) 
- * Pattern 3: ( [0,...,0] <= ? rel ub) 
+ * Pattern 1: ( . <= ? < ub)  (no step no width!)
+ * Pattern 2: ( F_mul_SxV ( 0, ?) <= ? < ub) 
+ * Pattern 3: ( [0,...,0] <= ? < ub) 
+ *
+ * In case the relational operator for the upper bound is <=, we modify
+ * the upper bound into _add_VxA_(1, ub) and adjust the operator 
+ * accordingly before checking for the full partition. This ensures
+ * as well that the final partition will be translated correctly into 
+ * a WL (see issue 2370). We have to exclude dot-symbols from this
+ * transformation as that would produce illegal code. In case we 
+ * meet a dot as upper bound, we only check for potential completeness
+ * if the rel is <= !
+ * While this also is being done in HWLD, the problem is that HWLD
+ * does work on WLs only and its main purpose is to replace the 
+ * dots; the standardisation of generator relations is "just a
+ * by-product". In principle, we could move the entire standardisation
+ * here, or even consider making it a stand-alone phase but that
+ * seems like an overkill. Therefore, we only perform the adjustment
+ * on the partitions of TCs here.
  *
  * @param arg_node current node of the AST
  * @param arg_info info node
@@ -423,6 +440,20 @@ HSEgenerator (node *arg_node, info *arg_info)
     }
     
     pat = PMfree (pat);
+
+    if (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_dot) {
+        if (GENERATOR_OP2 (arg_node) == F_wl_lt) {
+            INFO_HSE_FULLPART (arg_info) = FALSE;
+        }
+    } else {
+        if (GENERATOR_OP2 (arg_node) == F_wl_le) {
+            GENERATOR_OP2 (arg_node) = F_wl_lt;
+            GENERATOR_BOUND2 (arg_node)
+                = TCmakePrf2 (F_add_SxV,
+                              TBmakeNum (1),
+                              GENERATOR_BOUND2 (arg_node));
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }

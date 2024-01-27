@@ -22,6 +22,58 @@
 /**
  * @file set_expression_range_inference.c
  *
+ * This phase implements a range inference for set expressions (Tensor
+ * Comprehensions). A latex version of what this traversal does exists
+ * in sacdoc/bnf/desugaring.tex 
+ * Here an ASCII version: We look for TCs with partitions that lack 
+ * lower or upper bounds in their partitions. We have 3 cases:
+ *
+ * case 1: both bounds are missing:
+ *    Here, we substitute     vec -> expr
+ *    by         vec -> expr | _mul_SxV_( 0, fshp) <= idxs < fshp
+ *    where
+ *       idxs    is the same as vec but any .-symbols have been stripped out
+ *       shps    is an expression derived from    vec -> expr
+ *       fshp    GenShp (idxs, shps)    if for all components sufficient 
+ *                                      info is present
+ *               .                      if insufficient info is present and
+ *                                      it is NOT the last partition
+ *     In case the shape info is insufficent in the last partition, we abort!
+ *
+ * case 2: only the upper bound is missing:
+ *    Here, we substitute     vec -> expr  |   lb  <=  idxs
+ *    by         vec -> expr | lb <= idxs < fshp
+ *
+ *    For computing fshp, we use the same approach as above, but we make
+ *    sure that we adjust the length of fshape to that of lb.
+ *
+ * case 3: only the lower bound is missing:
+ *    This is the easiest case, we simply add a lower bound of
+ *    _mul_SxV_( 0, ub)
+ *
+ * Finally, we filter out a case where the upper bound of the last parttition 
+ * turns out to be a dot-symbol. That case is non-admissible. See issue 2370.
+ *  
+ * Implementation:
+ * ---------------
+ *  At this stage, we live in an un-typed, un-flattened
+ * world, where Identifiers are SPids and applications are SPaps.
+ * The AST of a TC looks like this:
+ *
+ * N_setwl \
+ *         |--> VEC 
+ *         |--> ASSIGNS  (NULL at this stage)
+ *         |--> EXPR
+ *         |--> GENERATOR (can be NULL here!)
+ *         \--> NEXT
+ *
+ * The key challenge of this traversal is the derivable of "shps" from above.
+ * For doing so, we use a table of identifiers provided by the module SEUT.
+ * It maintains which shape information as found through selections has 
+ * been encountered so far. It also provides functionality for creating the
+ * actual bounds (GenShp from above).
+ *
+ * The actual manipulation of the N_genarray node happens in SERIgenerator.
  */
 
 
@@ -189,7 +241,7 @@ SERIwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("looking at Set-Expression in line %zu:", global.linenum);
+    DBUG_PRINT ("looking at with-loop in line %zu:", global.linenum);
 
     arg_info = MakeInfo (arg_info);
 
@@ -324,6 +376,12 @@ SERIgenerator (node *arg_node, info *arg_info)
     } else {
         DBUG_PRINT ("Traversing user specified upper bound");
         GENERATOR_BOUND2 (arg_node) = TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);
+        if (INFO_SERI_ISLASTPART (arg_info)
+            && (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_dot)) {
+            CTIerror (NODE_LOCATION (arg_node),
+                      "Dot-notation is not supported for upper bounds in the"
+                      " last partition of a set expression.");
+        }
     }
 
     if (INFO_SERI_LBMISSING (arg_info)) {
