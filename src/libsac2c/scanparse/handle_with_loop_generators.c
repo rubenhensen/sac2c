@@ -48,8 +48,12 @@
  *   a) It does not matter where the original with-loop resides, i.e., it can be in any
  *      expression position! As a consequence, this traversal can be run prior to flatten!
  *      All we need to make sure is to place the freshly created tmp variables, more
- * precisely their definitions, correcly. We need to ensure that the With-Loop is in their
- * scope.
+ *      precisely their definitions, correcly. We need to ensure that the With-Loop is in
+ *      their scope and we need to make sure that we do not lift them out of the scope
+ *      of any variables that they potentially reference. At the time being (2024), we
+ *      are only aware of one potentially critical situation, namely when lifting from
+ *      CEXPRS inside a CODE. In that case, we need to make sure that the lifted code
+ *      gets inserted at the end of the CBLOCK. Cf. issue 2371 for details :-)
  *
  *   b) This transformation can also be applied if we are dealing with Multi-Operator
  *      With-Loops! In that case, we simply map the transformation as outlined above to
@@ -375,6 +379,61 @@ HWLGlet (node *arg_node, info *arg_info)
     if (INFO_FOLD (arg_info) != NULL) {
         LET_IDS (arg_node) = RenameLhs (LET_IDS (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *HWLGcode(node *arg_node, info *arg_info)
+ *
+ * @brief Here, we can have a situation where INFO_HWLG_LASTASSIGN points
+ *        to the WRONG assignment (see issue 2371). When traversing the block
+ *        all is fine, but when traversing CODE_CEXPRS, INFO_HWLG_LASTASSIGN
+ *        is pointing to the assignment BEFORE the WL. This constitutes a 
+ *        potential problem as it lifts an inner MP-WL contained in
+ *        CODE_CEXPRS out of the scope of the outer WL.
+ *        To make matters worse, we have to make sure that any such MP-WL
+ *        ends up at the end of the code block in CODE_CBLOCK.
+ *        We achieve this by setting INFO_HWLG_LASTASSIGN to NULL and appending
+ *        it manually to the CODE_CBLOCK.
+ *
+ * @param arg_node N_with to be potentially transformed
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+HWLGcode (node *arg_node, info *arg_info)
+{
+    node *mem_lastassign;
+    node *expr_assign;
+
+    DBUG_ENTER ();
+
+    mem_lastassign = INFO_HWLG_LASTASSIGN (arg_info);
+
+    INFO_HWLG_LASTASSIGN (arg_info) = NULL;
+    CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
+
+    expr_assign = INFO_HWLG_LASTASSIGN (arg_info);
+    INFO_HWLG_LASTASSIGN (arg_info) = mem_lastassign;
+
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+
+    if (expr_assign != NULL) {
+        if (CODE_CBLOCK (arg_node) == NULL) {
+            CODE_CBLOCK (arg_node) = TBmakeBlock (expr_assign, NULL);
+        } else {
+            BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
+                = TCappendAssign ( BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)),
+                                   expr_assign);
+        }
+    }
+
+    // we do not traverse the next code block as we have a one-to-one relation
+    // between parts and codes and we take one pair at a time.
 
     DBUG_RETURN (arg_node);
 }

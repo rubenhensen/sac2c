@@ -1242,6 +1242,7 @@
 		  <node name="Let" />
 		  <node name="Assign" />
 		  <node name="With" />
+		  <node name="Code" />
 		  <node name="Genarray" />
 		  <node name="Modarray" />
 		  <node name="SPFold" />
