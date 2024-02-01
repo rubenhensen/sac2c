@@ -1,6 +1,6 @@
 // SAC_TEST|include common.mk
-// SAC_TEST|SAC2C_FLAGS += -douar -noprelude
-// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bpc
+// SAC_TEST|SAC2C_FLAGS += -noprelude -bpc
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
 // SAC_TEST|all: <file-name>
 // SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) $<`; <nlslash>

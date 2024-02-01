@@ -141,6 +141,26 @@ RCIdoReferenceCounting (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+static void
+IncNum (nlut_t *env, node *avis, int count)
+{
+    DBUG_ENTER ();
+
+    /**
+     * If unused argument removal (UAR) marked this avis as not in use, it
+     * should be skipped. In the optimisation phase applications of functions
+     * have been edited such that a temporary dummy value is passed for this
+     * value. In the precompile phase this dummy value will be removed, and the
+     * corresponding argument will be removed from the function definition.
+     * Therefore no reference counting should be applied.
+     */
+    if (!AVIS_ISDUMMY (avis)) {
+        NLUTincNum (env, avis, count);
+    }
+
+    DBUG_RETURN ();
+}
+
 static node *
 AdjustRC (node *avis, int count, node *arg_node)
 {
@@ -148,7 +168,7 @@ AdjustRC (node *avis, int count, node *arg_node)
 
     DBUG_ENTER ();
 
-    if (count != 0) {
+    if (!AVIS_ISDUMMY (avis) && count != 0) {
         if (count > 0) {
             prf = TCmakePrf2 (F_inc_rc, TBmakeId (avis), TBmakeNum (count));
         } else {
@@ -253,9 +273,9 @@ RCIfundef (node *arg_node, info *arg_info)
                 argexprs = AP_ARGS (LET_EXPR (extlet));
 
                 while (args != NULL) {
-                    NLUTincNum (INFO_ENV (arg_info),
-                                ID_AVIS (EXPRS_EXPR (argexprs)),
-                                NLUTgetNum (INFO_ENV (info), ARG_AVIS (args)));
+                    IncNum (INFO_ENV (arg_info),
+                            ID_AVIS (EXPRS_EXPR (argexprs)),
+                            NLUTgetNum (INFO_ENV (info), ARG_AVIS (args)));
 
                     args = ARG_NEXT (args);
                     argexprs = EXPRS_NEXT (argexprs);
@@ -266,18 +286,8 @@ RCIfundef (node *arg_node, info *arg_info)
 
                 arg = FUNDEF_ARGS (arg_node);
                 while (arg != NULL) {
-                    /**
-                     * If unused argument removal (UAR) marked this argument as
-                     * not in use, it should be skipped. In the optimisation
-                     * phase applications of this function have been edited such
-                     * that a temporary dummy value is passed for this argument.
-                     * In the precompile phase this dummy argument will be
-                     * removed, and the argument will be removed from the
-                     * function definition. Therefore no reference counting
-                     * should be applied.
-                     */
                     if (ARG_ISUSEDINBODY (arg)) {
-                        NLUTincNum (INFO_ENV (info), ARG_AVIS (arg), -1);
+                        IncNum (INFO_ENV (info), ARG_AVIS (arg), -1);
                     }
 
                     arg = ARG_NEXT (arg);
@@ -385,7 +395,7 @@ RCIid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    NLUTincNum (INFO_ENV (arg_info), ID_AVIS (arg_node), 1);
+    IncNum (INFO_ENV (arg_info), ID_AVIS (arg_node), 1);
 
     if (INFO_MODE (arg_info) == rc_prfuse) {
         INFO_POSTASSIGN (arg_info) =
@@ -805,7 +815,7 @@ RCIwith (node *arg_node, info *arg_info)
     while (avis != NULL) {
         // Add one to the environment and create a dec_rc
         if (!CUisShmemTypeNew (AVIS_TYPE (avis))) {
-            NLUTincNum (INFO_ENV (arg_info), avis, 1);
+            IncNum (INFO_ENV (arg_info), avis, 1);
             INFO_POSTASSIGN (arg_info) = AdjustRC (avis, -1,
                                                    INFO_POSTASSIGN (arg_info));
         }
@@ -868,7 +878,7 @@ RCIwith2 (node *arg_node, info *arg_info)
     avis = DFMgetMaskEntryAvisSet (INFO_WITHMASK (arg_info));
     while (avis != NULL) {
         // Add one to the environment and create a dec_rc
-        NLUTincNum (INFO_ENV (arg_info), avis, 1);
+        IncNum (INFO_ENV (arg_info), avis, 1);
         INFO_POSTASSIGN (arg_info) = AdjustRC (avis, -1,
                                                INFO_POSTASSIGN (arg_info));
 
@@ -917,7 +927,7 @@ RCIwith3 (node *arg_node, info *arg_info)
     avis = DFMgetMaskEntryAvisSet (INFO_WITHMASK (arg_info));
     while (avis != NULL) {
         // Add one to the environment and create a dec_rc
-        NLUTincNum (INFO_ENV (arg_info), avis, 1);
+        IncNum (INFO_ENV (arg_info), avis, 1);
         INFO_POSTASSIGN (arg_info) =
             AdjustRC (avis, -1, INFO_POSTASSIGN (arg_info));
 
@@ -1204,8 +1214,8 @@ RCIfuncond (node *arg_node, info *arg_info)
     NLUTsetNum (INFO_ENV (arg_info), IDS_AVIS (lhs), 0);
     NLUTsetNum (INFO_ENV2 (arg_info), IDS_AVIS (lhs), 0);
 
-    NLUTincNum (INFO_ENV (arg_info), ID_AVIS (FUNCOND_THEN (arg_node)), n);
-    NLUTincNum (INFO_ENV2 (arg_info), ID_AVIS (FUNCOND_ELSE (arg_node)), n);
+    IncNum (INFO_ENV (arg_info), ID_AVIS (FUNCOND_THEN (arg_node)), n);
+    IncNum (INFO_ENV2 (arg_info), ID_AVIS (FUNCOND_ELSE (arg_node)), n);
 
     INFO_MUSTCOUNT (arg_info) = FALSE;
 

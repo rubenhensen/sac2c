@@ -1,0 +1,23 @@
+// In issue 2373 we found that reference counting was sometimes still being
+// applied to dummy avises, which are later removed, causing references to
+// deleted nodes. Reference counting should always ignore dummy avises, such
+// as once occurring in with-loops, which was previously missing.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noprelude
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 0
+
+noinline
+int foo (int a, int b)
+{
+    return a;
+}
+
+int main ()
+{
+    res = { [i] -> foo (i, i) | [i] < [10] };
+    return _sel_VxA_ ([0], res);
+}
