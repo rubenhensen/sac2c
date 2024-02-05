@@ -285,7 +285,7 @@ TPCmakeDimCalc (char *v, node *pattern, char *tdim)
 
         while (vdots != NULL) {
             spid = TBmakeSpid (NULL, STRcpy (SPIDS_NAME (vdots)));
-            sum = TCmakePrf2 (F_sub_SxS, sum, spid);
+            sum = TCmakePrf2 (F_add_SxS, sum, spid);
             vdots = FREEdoFreeNode (vdots);
         }
 
