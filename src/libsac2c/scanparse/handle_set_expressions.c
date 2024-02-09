@@ -24,6 +24,102 @@
 /**
  * @file handle_set_expressions.c
  *
+ *
+ * This phase is finally transforming all tensor comprehension
+ * (aka set expressions) into proper WLs. It assumes that
+ *  1) all dot-expressions have been replaced (HSED phase), and
+ *  2) that all multi operator TCs have been identified and all
+ *     SETWL_EXPR expressions have been standardised into an N_exprs
+ *     chain of N_spid nodes potentially preceded by an N_assign
+ *     chain in SETWL_ASSIGNS (MOSE phase).
+ *
+ * This phase then translates a TC of the form:
+ *
+ *  {  idxs1 -> let
+ *                 v1_1, ..., v1_m = expr1;
+ *              in (v1_1, ..., v1_m)
+ *     | lb1 <= idxs1 < ub1;
+ *   ...
+ *     idxsn -> let
+ *                 vn_1, ..., vn_m = exprn;
+ *              in (vn_1, ..., vn_m)
+ *     | lbn <= idxsn < ubn; }
+ *
+ *
+ *   into:
+ *
+ *
+ *   vn_1, ..., vn_n = SUBST(i, 0, SUBST(iv, 0*ubn, exprn));
+ *
+ *  with {
+ *    (lb1 <= idxs1 < ub1) {
+ *            v1_1, ..., v1_m = expr1;
+ *        } : (v1_1, ..., v1_m);
+ *  ...
+ *    (lbn <= idxsn < ubn) {
+ *            vn_1, ..., vn_m = exprn;
+ *        } : (vn_1, ..., vn_m);
+ *  } : (genarray (ub, with { } : genarray (shape(vn_1), zero (vn_1))),
+ *       ...,
+ *       genarray (ub, with { } : genarray (shape(vn_n), zero (vn_n))));
+ *
+ * where i and iv stand as representatives for scalar or vector indices
+ * within idxsn.
+ *
+ * We "optimise" 2 special cases:
+ * 
+ * 1) if we have a last partition which
+ *    a) is full (ie ranges from 0*ubn to ubn without steps / width), and
+ *    b) has an exprn that does not refer to idxsn or any of its components
+ *    THEN we omit the last partition as the default of the generator will do.
+ * 2) if we have a last partition which
+ *    a) is full (ie ranges from 0*ubn to ubn without steps / width), and
+ *    b) has an exprn that is identical to a[idxsn],
+ *    THEN we create a withop of the form:
+ *       modarray(a)
+ *    Note here, that this cannot happen for multi-operator TCs as we cannot 
+ *    have multiple expressions within the expression part of the TC!
+ *
+ *
+ *
+ * Implementation:
+ * ---------------
+ *   Most of the implementation is rather straight forward. We traverse 
+ *   through the AST mainly looking for N_setwl nodes. However, since we
+ *   have to lift expressions out of TCs but are so early that we are 
+ *   neither SSA nor flattened, this requires some special attention.
+ *   In essence, we achieve this by INFO_HSE_LASTASSIGN. We carefully
+ *   try to make sure this always points the N_assign node whose 
+ *   ASSIGN_STMT we are currently traversing. When we come back
+ *   to the N_assign, we replace it by whatever INFO_HSE_LASTASSIGN
+ *   points to. As we traverse bottom-up through N_assign chains
+ *   this approach actually works.
+ *   There are a few exceptions, where we have to make sure things
+ *   are lifted into the correct places. 
+ *   1) within TCs, we have SETWL_ASSIGN and SETWL_EXPR. Anything 
+ *      we lift from SETWL_EXPR actually needs to go to the end of 
+ *      the N_assign chain in SETWL_ASSIGN. Therefore, we set
+ *      INFO_HSE_LASTASSIGN to NULL before traversing SETWL_EXPR
+ *      and append INFO_HSE_LASTASSIGN to SETWL_ASSIGN thereafter.
+ *  2) we have exactly the same situation when dealing with N_code
+ *     blocks.
+ *  3) we also have a rather special situation when traversing N_genera
+ *     nodes. As we are going to lift the upper bound of the last
+ *     partition out of the current TC, we need to make sure that 
+ *     all TCs within the upper bound that require a lifting by
+ *     themselves are being place BEFORE those of the main TC.
+ *     An example where this matters is:
+ *         a,b = { [.,i,...] -> { [...,j] -> foo(i,j)
+ *                                | [j] < {[i] -> 5 |[i] <[1] } }
+ *                 | [i] < [10] };
+ *    To achieve this, we use a similar trick as in cases 1) and 2):
+ *    we set INFO_HSE_LASTASSIGN to NULL prior to traversing an
+ *    generator and if something is being lifted during that 
+ *    traversal, we store it in pot_generator_lifts (local var 
+ *    in HSEsetwl) and perform the actual injection of the lifted
+ *    assignments at the very end.
+ *
+ * F
  */
 
 /* INFO structure */
@@ -34,6 +130,7 @@ struct INFO {
     bool fullpart;
     node *vec;
     node *copy_from;
+    node *assigns;
     node *part;
     node *code;
     node *withop;
@@ -47,6 +144,7 @@ struct INFO {
 #define INFO_HSE_GENREF(n) ((n)->genref)
 #define INFO_HSE_VEC(n) ((n)->vec)
 #define INFO_HSE_COPY_FROM(n) ((n)->copy_from)
+#define INFO_HSE_LASTASSIGN(n) ((n)->assigns)
 #define INFO_HSE_PART(n) ((n)->part)
 #define INFO_HSE_CODE(n) ((n)->code)
 #define INFO_HSE_WITHOP(n) ((n)->withop)
@@ -72,6 +170,7 @@ MakeInfo (info * previous)
     INFO_HSE_GENREF (result) = FALSE;
     INFO_HSE_VEC (result) = NULL;
     INFO_HSE_COPY_FROM (result) = NULL;
+    INFO_HSE_LASTASSIGN (result) = NULL;
     INFO_HSE_PART (result) = NULL;
     INFO_HSE_CODE (result) = NULL;
     INFO_HSE_WITHOP (result) = NULL;
@@ -120,26 +219,6 @@ BuildDefault (node *expr)
                        STRcpy ("zero"),
                        DUPdoDupTree (expr));
     DBUG_RETURN (SEUTbuildSimpleWl (shape, def));
-}
-
-static node*
-ExtracIdsFromAssigns (node *assign)
-{
-    node *res = NULL;
-    DBUG_ENTER ();
-
-    if (assign != NULL) {
-        if (STRprefix ("_", SPIDS_NAME (ASSIGN_LHS (assign)))) {
-            res = ExtracIdsFromAssigns (ASSIGN_NEXT (assign));
-        } else {
-            res = TBmakeExprs (
-                    TBmakeSpid ( NULL, STRcpy (SPIDS_NAME (ASSIGN_LHS (assign)))),
-                    ExtracIdsFromAssigns (ASSIGN_NEXT (assign)));
-              
-        }
-    }
-
-    DBUG_RETURN (res);
 }
 
 
@@ -343,29 +422,144 @@ CheckCopy (node *idxs, node *idx_expr, node *array_expr)
  * If found, and "idxs" are not free in <arr-expr>, <arr-expr>
  * is returned; otherwise, NULL is returned.
  *
- * @param expr the body term to be analysed
+ * @param assigns the body assignments
+ * @param exprs the body term(s) to be analysed
  * @param idxs the index vector (spid, or exprs(spid))
  * @return <arr-expr> or NULL
  */
 static node *
-IsCopyBody (node *expr, node *idxs)
+IsCopyBody (node *assigns, node *exprs, node *idxs)
 {
     node *result = NULL;
+    node *expr;
+    char *var;
     DBUG_ENTER ();
 
-    if ((NODE_TYPE (expr) == N_spap)
-        && STReq (SPID_NAME (SPAP_ID (expr)), "sel")) {
-        result = CheckCopy (idxs,
-                            EXPRS_EXPR1 (SPAP_ARGS (expr)),
-                            EXPRS_EXPR2 (SPAP_ARGS (expr)));
-    } else if ((NODE_TYPE (expr) == N_prf)
-               && (PRF_PRF (expr) == F_sel_VxA)) {
-        result = CheckCopy (idxs,
-                            EXPRS_EXPR1 (PRF_ARGS (expr)),
-                            EXPRS_EXPR2 (PRF_ARGS (expr)));
+    if ((exprs != NULL) && (TCcountExprs (exprs) == 1)) {
+        expr = EXPRS_EXPR (exprs);
+        DBUG_ASSERT (NODE_TYPE (expr) == N_spid,
+                     "non identifier in SETWL_EXPR found!");
+        var = SPID_NAME (expr);
+        if ((ASSIGN_NEXT (assigns) == NULL) 
+            && (NODE_TYPE (ASSIGN_STMT( assigns)) == N_let)
+            && STReq (var, SPIDS_NAME (ASSIGN_LHS( assigns)))) {
+            expr = ASSIGN_RHS( assigns);
+            if ((NODE_TYPE (expr) == N_spap)
+                && STReq (SPID_NAME (SPAP_ID (expr)), "sel")) {
+                result = CheckCopy (idxs,
+                                    EXPRS_EXPR1 (SPAP_ARGS (expr)),
+                                    EXPRS_EXPR2 (SPAP_ARGS (expr)));
+            } else if ((NODE_TYPE (expr) == N_prf)
+                       && (PRF_PRF (expr) == F_sel_VxA)) {
+                result = CheckCopy (idxs,
+                                    EXPRS_EXPR1 (PRF_ARGS (expr)),
+                                    EXPRS_EXPR2 (PRF_ARGS (expr)));
+            }
+        }
     }
 
     DBUG_RETURN (result);
+}
+
+
+
+static node *
+BuildWithop (node *setwl, node *expr, info *arg_info)
+{
+    node *def, *shape;
+    node *res;
+
+    DBUG_ENTER ();
+
+    if (INFO_HSE_FULLPART (arg_info) && !INFO_HSE_GENREF (arg_info)) {
+        def = DUPdoDupTree (expr);
+    } else {
+        shape = TCmakePrf1( F_shape_A, DUPdoDupTree (expr));
+        def = TCmakeSpap1 (NSgetNamespace (global.preludename),
+                           STRcpy ("zero"),
+                           DUPdoDupTree (expr));
+        def = SEUTbuildSimpleWl (shape, def);
+    }
+    res = TBmakeGenarray
+              (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (setwl))),
+               def);
+
+    DBUG_RETURN (res);
+}
+
+static node *
+BuildWithops (node *setwl, node *expr, info *arg_info)
+{
+    node * res = NULL;
+    node * rest = NULL;
+
+    DBUG_ENTER ();
+
+    if (expr != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (expr) == N_exprs),
+                     "MOSE should have converted all SETWL_EXPR into N_exprs!");
+        rest = BuildWithops (setwl, EXPRS_NEXT (expr), arg_info);
+        res = BuildWithop (setwl, EXPRS_EXPR (expr), arg_info);
+        L_WITHOP_NEXT (res, rest);
+    }
+    
+    DBUG_RETURN (res);
+}
+
+
+
+
+node *
+HSEassign (node *arg_node, info *arg_info)
+{
+    node * old_assign;
+    DBUG_ENTER ();
+
+    old_assign = INFO_HSE_LASTASSIGN (arg_info);
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    INFO_HSE_LASTASSIGN (arg_info) = arg_node;
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+    arg_node = INFO_HSE_LASTASSIGN (arg_info);
+
+    INFO_HSE_LASTASSIGN (arg_info) = old_assign;
+    
+    DBUG_RETURN (arg_node);
+}
+
+node *
+HSEcode (node *arg_node, info *arg_info)
+{
+    node *mem_lastassign;
+    node *expr_assign;
+
+    DBUG_ENTER ();
+
+    mem_lastassign = INFO_HSE_LASTASSIGN (arg_info);
+
+    INFO_HSE_LASTASSIGN (arg_info) = NULL;
+    CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
+
+    expr_assign = INFO_HSE_LASTASSIGN (arg_info);
+    INFO_HSE_LASTASSIGN (arg_info) = mem_lastassign;
+
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+
+    if (expr_assign != NULL) {
+        if (CODE_CBLOCK (arg_node) == NULL) {
+            CODE_CBLOCK (arg_node) = TBmakeBlock (expr_assign, NULL);
+        } else {
+            BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
+                = TCappendAssign ( BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)),
+                                   expr_assign);
+        }
+    }
+
+    // we do not traverse the next code block as we have a one-to-one relation
+    // between parts and codes and we take one pair at a time.
+
+    DBUG_RETURN (arg_node);
 }
 
 /**
@@ -471,7 +665,8 @@ HSEgenerator (node *arg_node, info *arg_info)
  * 
  * where expr' = [expr]_{iv}^{0}
  *
- * For details see the HSE description in sacdoc/bnf/desugaring.tex.
+ * For details see the HSE description in sacdoc/bnf/desugaring.tex
+ * and the generic description at the top of this file.
  *
  * @param arg_node current node of the ast
  * @param arg_info info node
@@ -480,7 +675,8 @@ HSEgenerator (node *arg_node, info *arg_info)
 node *
 HSEsetwl (node *arg_node, info *arg_info)
 {
-    node *code, *part, *subst, *let_vars;
+    node *code, *part, *subst, *mem_lastassign;
+    node *pot_generator_lifts;
     info *oldinfo = NULL;
     DBUG_ENTER ();
 
@@ -488,36 +684,71 @@ HSEsetwl (node *arg_node, info *arg_info)
         DBUG_PRINT ("looking at Set-Expression in line %zu:", global.linenum);
         oldinfo = arg_info;
         arg_info = MakeInfo (oldinfo);
+        INFO_HSE_LASTASSIGN (arg_info) = INFO_HSE_LASTASSIGN (oldinfo);
     } else {
         DBUG_PRINT ("next partition of Set-Expression in line %zu:", global.linenum);
         INFO_HSE_OUTSIDE (arg_info) = TRUE;
     }
 
+    /**************************************************************************
+     * set INFO_HSE_LASTPART and INFO_HSE_VEC:
+     */
     INFO_HSE_LASTPART (arg_info) = (SETWL_NEXT (arg_node) == NULL);
     INFO_HSE_VEC (arg_info) = SETWL_VEC (arg_node);
 
-    /* traverse the generator (may contain setwls!) 
+    /**************************************************************************
+     * traverse the generator (may contain setwls!) 
      * This traversal infers INFO_HSE_FULLPART which is only valid
      * in case INFO_HSE_LASTPART is TRUE!
      */
     DBUG_PRINT ("traversing generator");
+
+    mem_lastassign = INFO_HSE_LASTASSIGN (arg_info);
+    INFO_HSE_LASTASSIGN (arg_info) = NULL;
+
     SETWL_GENERATOR (arg_node) = TRAVdo (SETWL_GENERATOR (arg_node), arg_info);
     DBUG_PRINT ("generator is %s",
                 (INFO_HSE_FULLPART (arg_info) ?
                  "full if this is the last partition." :
                  "not full."));
 
-    /* traverse the expression (may contain setwls!)
+    pot_generator_lifts = INFO_HSE_LASTASSIGN (arg_info);
+    INFO_HSE_LASTASSIGN (arg_info) = mem_lastassign;
+
+    /**************************************************************************
+     * traverse the expression (may contain setwls!)
      * This traversal also infers INFO_HSE_GENREF and INFO_HSE_COPY_FROM
      * in case INFO_HSE_LASTPART is TRUE!
      */
     DBUG_PRINT ("traversing expression");
-    SETWL_EXPR (arg_node) = TRAVdo (SETWL_EXPR (arg_node), arg_info);
+
+    mem_lastassign = INFO_HSE_LASTASSIGN (arg_info);
+    INFO_HSE_LASTASSIGN (arg_info) = NULL;
+
+    SETWL_EXPR (arg_node) = TRAVopt (SETWL_EXPR (arg_node), arg_info);
+    SETWL_ASSIGNS (arg_node) = TRAVopt (SETWL_ASSIGNS (arg_node), arg_info);
+
+    if (INFO_HSE_LASTASSIGN (arg_info) != NULL) {
+        SETWL_ASSIGNS (arg_node) = INFO_HSE_LASTASSIGN (arg_info);
+    }
+    INFO_HSE_LASTASSIGN (arg_info) = mem_lastassign;
+
+
+    /**************************************************************************
+     * set INFO_HSE_GENREF, INFO_HSE_COPY_FROM, and INFO_HSE_LASTPART:
+     */
     INFO_HSE_GENREF (arg_info) = SEUTcontainsIdxs (SETWL_EXPR (arg_node),
                                                    SETWL_VEC (arg_node));
+    if (SETWL_ASSIGNS (arg_node) != NULL) {
+        INFO_HSE_GENREF (arg_info) = INFO_HSE_GENREF (arg_info)
+                                     || SEUTcontainsIdxs (SETWL_ASSIGNS (arg_node),
+                                                          SETWL_VEC (arg_node));
+    }
+
     DBUG_PRINT( "generator variable %s in expression!",
                 (INFO_HSE_GENREF (arg_info)? "found" : "not found"));
-    INFO_HSE_COPY_FROM (arg_info) = IsCopyBody (SETWL_EXPR (arg_node),
+    INFO_HSE_COPY_FROM (arg_info) = IsCopyBody (SETWL_ASSIGNS (arg_node),
+                                                SETWL_EXPR (arg_node),
                                                 SETWL_VEC (arg_node));
     if ((INFO_HSE_COPY_FROM (arg_info) != NULL)
         && !IsShapeOf (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node)),
@@ -527,7 +758,10 @@ HSEsetwl (node *arg_node, info *arg_info)
     DBUG_PRINT( "expression is %sa copy partition!",
                 (INFO_HSE_COPY_FROM (arg_info) == NULL ?  "NOT " : ""));
     
-    /* We build the WLs bottom up! */
+
+    /**************************************************************************
+     * Finally, we build the WLs. We do so bottom up!
+     */
     if (SETWL_NEXT (arg_node) != NULL) {
         INFO_HSE_OUTSIDE (arg_info) = FALSE;
         SETWL_NEXT (arg_node) = TRAVdo (SETWL_NEXT (arg_node), arg_info);
@@ -547,8 +781,7 @@ HSEsetwl (node *arg_node, info *arg_info)
         code = TBmakeCode (((SETWL_ASSIGNS (arg_node) == NULL) ?
                             MAKE_EMPTY_BLOCK () :
                             TBmakeBlock (DUPdoDupTree (SETWL_ASSIGNS (arg_node)), NULL)),
-                           TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
-                                        NULL));
+                           DUPdoDupTree (SETWL_EXPR (arg_node)));
         CODE_USED (code)++;
         CODE_NEXT (code) = INFO_HSE_CODE (arg_info);
         INFO_HSE_CODE (arg_info) = code;
@@ -574,70 +807,40 @@ HSEsetwl (node *arg_node, info *arg_info)
              */
             INFO_HSE_WITHOP (arg_info)
               = TBmakeModarray (DUPdoDupTree (INFO_HSE_COPY_FROM (arg_info)));
-        } else if (INFO_HSE_FULLPART (arg_info) && !INFO_HSE_GENREF (arg_info)) {
-            /*
-             * As there is no reference to the generator and the partition is full,
-             * we use the expression as default.
-             * If the partition is NOT full, we have to generate a default default
-             * (see next case :-)
-             */
-            INFO_HSE_WITHOP (arg_info)
-              = TBmakeGenarray (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
-                                DUPdoDupTree (SETWL_EXPR (arg_node)) );
         } else {
-            if (SETWL_ASSIGNS (arg_node) != NULL) {
-                /*
-                 * super special case! We know, that we had a ... in the original.
-                 * Unfortunately, our zero'ing approach used in all other cases
-                 * does not work here because we do not have a proper "let" with
-                 * SETWL_ASSIGNS. As a consequence, all variables defined there
-                 * are relatvely free in SETWL_EXPR (arg_node). Consequently,
-                 * we cannot lift them out! Neither for the shape nor for the
-                 * default!
-                 * However, as we have ..., we do know that the cell shape is scalar!
-                 * So all we really need is the base type, ie. a suitable argument to 
-                 * the function zero.
-                 * One might think that choosing SPAP_ARG2 (SETWL_EXPR (arg_node))
-                 * would work, as this avoids referring to all variables defined
-                 * in SETWL_ASSIGNS that stand for dot symbols in SETWL_VEC.
-                 * Unfortunately, the original non-dot symbols can still appear.
-                 * Since they are defined in SETWL_ASSIGNS as well, we need
-                 * to identify these and then replace there occurrances in
-                 * PRF_ARG2 (SETWL_EXPR (arg_node)) by zeros.
-                 */
-                let_vars = ExtracIdsFromAssigns (SETWL_ASSIGNS (arg_node));
-                INFO_HSE_WITHOP (arg_info)
-                   = TBmakeGenarray
-                       (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
-                       TCmakeSpap1 (NSgetNamespace (global.preludename),
-                                    STRcpy ("zero"),
-                                    SEUTsubstituteIdxs (
-                                      DUPdoDupTree (
-                                        SPAP_ARG2 (SETWL_EXPR (arg_node))),
-                                      let_vars,
-                                      TBmakeNum (0))));
-                let_vars = (let_vars != NULL ? FREEdoFreeTree (let_vars) : NULL);
-            } else {
+            if (SETWL_EXPR (arg_node) != NULL) {
                 if (NODE_TYPE (SETWL_VEC (arg_node)) == N_spid) {
                     subst = TCmakePrf2 (F_mul_SxV,
                                         TBmakeNum (0),
                                         DUPdoDupTree (
-                                          GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))));
+                                            GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))));
                 } else {
                     subst = TBmakeNum (0);
                 }
-                INFO_HSE_WITHOP (arg_info)
-                    = TBmakeGenarray
-                        (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
-                         BuildDefault (SEUTsubstituteIdxs (DUPdoDupTree (SETWL_EXPR (arg_node)),
-                                                           SETWL_VEC (arg_node),
-                                                           subst)));
+
+                INFO_HSE_LASTASSIGN (arg_info)
+                    = TCappendAssign (SEUTsubstituteIdxs (DUPdoDupTree (SETWL_ASSIGNS (arg_node)),
+                                                          SETWL_VEC (arg_node),
+                                                          subst),
+                                      INFO_HSE_LASTASSIGN (arg_info));
+                DBUG_PRINT ("Injecting default expression assignment:");
+                DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, INFO_HSE_LASTASSIGN (arg_info)));
                 subst = FREEdoFreeTree (subst);
             }
+
+            INFO_HSE_WITHOP (arg_info)
+                = BuildWithops (arg_node, SETWL_EXPR (arg_node), arg_info);
+
         }
         DBUG_PRINT ("withop inserted:");
-        DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_HSE_WITHOP (arg_info)));
+        DBUG_EXECUTE ( if (INFO_HSE_WITHOP (arg_info) != NULL) {
+                           PRTdoPrintFile (stderr, INFO_HSE_WITHOP (arg_info));
+                       } else {
+                           DBUG_PRINT ("void");
+                       });
     }
+    INFO_HSE_LASTASSIGN (arg_info)
+        = TCappendAssign (pot_generator_lifts, INFO_HSE_LASTASSIGN (arg_info));
 
     arg_node = FREEdoFreeTree (arg_node);
 
@@ -645,6 +848,7 @@ HSEsetwl (node *arg_node, info *arg_info)
         arg_node = TBmakeWith (INFO_HSE_PART( arg_info), 
                                INFO_HSE_CODE( arg_info),
                                INFO_HSE_WITHOP( arg_info));
+        INFO_HSE_LASTASSIGN (oldinfo) = INFO_HSE_LASTASSIGN (arg_info);
         arg_info = FreeInfo( arg_info);
     }
 

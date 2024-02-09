@@ -37,17 +37,27 @@
  *   1) Single Dot:
  *
  *   { ...;
- *     [ i, ., j, ., .] -> expr | lb <= [i,j] < ub;
+ *     [ i, ., j, ., .] -> let
+ *                            v1, ..., vn = expr;
+ *                         in (v1, ..., vn)
+ *     | lb <= [i,j] < ub;
  *     ...; }
  *
  *   is translated into:
  *
+ *   v1, ..., vn = SUBST(i,0, SUBST(j,0,expr));
+ *
  *   { ...;
- *     [ i, t1, j, t2, t3] -> expr[[t1, t2, t3]] 
- *         | [lb[[0]], 0, lb[[1]], 0, 0] <= [i,t1,j,t2,t3]
- *           < [ub[[0]], shape (SUBST(i,0, SUBST(j,0,expr)))[0],
- *              ub[[1]], shape (SUBST(i,0, SUBST(j,0,expr)))[1],
- *                       shape (SUBST(i,0, SUBST(j,0,expr)))[2]];
+ *     [ i, t1, j, t2, t3] -> let
+ *                               v1, ..., vn = expr;
+ *                               v1' = v1[[t1, t2, t3]];
+ *                               ...
+ *                               vn' = vn[[t1, t2, t3]];
+ *                            in (v1, ..., vn)
+ *     | [lb[[0]], 0, lb[[1]], 0, 0] <= [i,t1,j,t2,t3]
+ *           < [ub[[0]], shape (v1)[0],
+ *              ub[[1]], min (shape (v1), ..., shape (vn))[1],
+ *                       min (shape (v1), ..., shape (vn))[2]];
  *     ...; }
  *
  *   Note here, that the expression SUBST(i,0, SUBST(j,0,expr))
@@ -62,28 +72,54 @@
  *   2) Triple Dots (can occur max once! per index description):
  *   
  *   { ...;
- *     [ i, ..., j] -> expr | lb <= [i,j] < ub;
+ *     [ i, ..., j] -> let
+ *                        v1, ..., vn = expr;
+ *                     in (v1, ..., vn)expr
+ *     | lb <= [i,j] < ub;
  *     ...; }
  *
  *   is translated into:
  *
+ *   v1, ..., vn = SUBST(i,0, SUBST(j,0,expr));
+ *
  *   { ...;
- *     tv -> { i = tv[0];
+ *     tv -> let
+ *             i = tv[0];
  *             iv = drop (1, drop (-1, tv));
  *             j = tv[shape(tv)-1];
- *           } : expr[[]++iv++[]]           // <- empties here for s-dots
- *         | [lb[[0]]]
- *            ++ genarray ([dim (SUBST(i,0, SUBST(j,0,expr))) - 0], 0)  // <- subtraction here for s-dots
- *            ++ [lb[[1]]]
- *           <= [i,t1,j,t2,t3]
- *           <  [ub[[0]]]
- *               ++ drop (0, drop (-0, shape (SUBST(i,0, SUBST(j,0,expr))))) // <- drops here for the s-dots
- *               ++ [ub[[1]]];
+ *             v1, ..., vn = expr;
+ *                               v1' = v1[[]++iv++[]];     // <- empties here for s-dots
+ *                               ...
+ *                               vn' = vn[[]++iv++[]];     // <- empties here for s-dots
+ *           in (v1, ..., vn)
+ *     | [lb[[0]]]
+ *       ++ genarray ([dim (vn) - 0], 0)  // <- subtraction here for s-dots
+ *       ++ [lb[[1]]]
+ *       <= [i,t1,j,t2,t3] <
+ *       [ub[[0]]]
+ *       ++ drop (0, drop (-0, min (shape (v1), ..., shape (vn)))) // <- drops here for the s-dots
+ *       ++ [ub[[1]]];
  *     ...; }
  *
  *   Again, we have the potential out-of-bounds problem with
  *   SUBST(i,0, SUBST(j,0,expr)) as explained above!
  *
+ *   While these transformations are conceptually true, the situation got a
+ *   little bit more complicated when we started deadling with variadic LHSs.
+ *   To do so, we have standardised the SETWL_EXPR into a combination of 
+ *   SETWL_ASSIGNS and SETWL_EXPR, where the latter is now always an N_exprs
+ *   chain. This is established through the MOSE phase!
+ *   As a consequence, we need to lift SUBST(i,0, SUBST(j,0,expr)) and co
+ *   out of the set expression into the surrounding assignment chain. We do
+ *   this through INFO_HSED_LASTASSIGN which we keep pointing to the 
+ *   N_assign node prior to which we need to insert it. This is identical
+ *   to the mechanism used in HSE. Unfortunately, we cannot lift this 
+ *   functionality into a separate traversal, as we want to avoid creating
+ *   these potentially erroneous expressions whenever possible. Therefore,
+ *   we only inject on demand. Notice further, that this process can happen
+ *   twice for a single set-expression! Once for resolving dots (here) 
+ *   and another time when construct the with-loops (HSE).
+ *   
  * implementation:
  *    needs to be described here ....
  */
@@ -106,6 +142,7 @@ struct INFO {
     bool hd;
     node *didxs;
     node *zexpr;
+    node *lassign;
     size_t lm;
     size_t ln;
     size_t rm;
@@ -118,6 +155,7 @@ struct INFO {
 #define INFO_HSED_HAS_DOTS(n) ((n)->hd)
 #define INFO_HSED_DIDXS(n) ((n)->didxs)
 #define INFO_HSED_ZEXPR(n) ((n)->zexpr)
+#define INFO_HSED_LASTASSIGN(n) ((n)->lassign)
 #define INFO_HSED_LM(n) ((n)->lm)
 #define INFO_HSED_LN(n) ((n)->ln)
 #define INFO_HSED_RM(n) ((n)->rm)
@@ -142,6 +180,7 @@ MakeInfo (info *old)
     INFO_HSED_HAS_DOTS (result) = FALSE;
     INFO_HSED_DIDXS (result) = NULL;
     INFO_HSED_ZEXPR (result) = NULL;
+    INFO_HSED_LASTASSIGN (result) = NULL;
     INFO_HSED_LM (result) = 0;
     INFO_HSED_LN (result) = 0;
     INFO_HSED_RM (result) = 0;
@@ -669,15 +708,69 @@ MergeIn (node *didxs, node *e_vals, node *s_vals, node *t_val)
 node *
 HSEDdoEliminateSetExpressionDots (node *arg_node)
 {
+    info *arg_info;
     DBUG_ENTER ();
 
     TRAVpush (TR_hsed);
 
-    arg_node = TRAVdo (arg_node, NULL);
+    arg_info = MakeInfo (NULL);
+    arg_node = TRAVdo (arg_node, arg_info);
+    arg_info = FreeInfo (arg_info);
 
     TRAVpop ();
 
     CTIabortOnError ();
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+HSEDassign (node *arg_node, info *arg_info)
+{
+    node * old_assign;
+    DBUG_ENTER ();
+
+    old_assign = INFO_HSED_LASTASSIGN (arg_info);
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    INFO_HSED_LASTASSIGN (arg_info) = arg_node;
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+    arg_node = INFO_HSED_LASTASSIGN (arg_info);
+
+    INFO_HSED_LASTASSIGN (arg_info) = old_assign;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+HSEDcode (node *arg_node, info *arg_info)
+{
+    node *mem_lastassign;
+    node *expr_assign;
+
+    DBUG_ENTER ();
+
+    mem_lastassign = INFO_HSED_LASTASSIGN (arg_info);
+
+    INFO_HSED_LASTASSIGN (arg_info) = NULL;
+    CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
+
+    expr_assign = INFO_HSED_LASTASSIGN (arg_info);
+    INFO_HSED_LASTASSIGN (arg_info) = mem_lastassign;
+
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+
+    if (expr_assign != NULL) {
+        if (CODE_CBLOCK (arg_node) == NULL) {
+            CODE_CBLOCK (arg_node) = TBmakeBlock (expr_assign, NULL);
+        } else {
+            CODE_CBLOCK_ASSIGNS (arg_node)
+                = TCappendAssign (CODE_CBLOCK_ASSIGNS (arg_node), expr_assign);
+        }
+    }
+
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -695,13 +788,15 @@ HSEDdoEliminateSetExpressionDots (node *arg_node)
 node *
 HSEDwith (node *arg_node, info *arg_info)
 {
+    bool old_dots;
     DBUG_ENTER ();
 
-    arg_info = MakeInfo (arg_info); //stack arg_info!
+    old_dots = INFO_HSED_HAS_DOTS (arg_info);
+    INFO_HSED_HAS_DOTS (arg_info) = FALSE;
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    arg_info = FreeInfo (arg_info); //pop arg_info!
+    INFO_HSED_HAS_DOTS (arg_info) = old_dots;
 
     DBUG_RETURN (arg_node);
 }
@@ -715,13 +810,20 @@ HSEDwith (node *arg_node, info *arg_info)
 node *
 HSEDgenerator (node *arg_node, info *arg_info)
 {
+    node *exprs;
     node *sdot_vals,*tdot_vals;
     node *nval, *shape_z;
     DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    if (INFO_HSED_HAS_DOTS (arg_info)) {
+    /* 
+     * The generator only needs adjustment if we do have dot symbols
+     * and the generated array is NOT void. The latter can be deduced 
+     * from INFO_HSED_ZEXPR being NULL!
+     */
+    if (INFO_HSED_HAS_DOTS (arg_info)
+        && (INFO_HSED_ZEXPR (arg_info) != NULL)) {
         DBUG_PRINT ("adjusting lower bound...");
         GENERATOR_BOUND1 (arg_node) = Scalarize (GENERATOR_BOUND1 (arg_node),
                                                  INFO_HSED_LM (arg_info)
@@ -729,7 +831,7 @@ HSEDgenerator (node *arg_node, info *arg_info)
         sdot_vals = CreateConstChain (INFO_HSED_LN (arg_info)
                                       +INFO_HSED_RN (arg_info), 0);
         tdot_vals = SEUTbuildSimpleWl (
-                      CreateTdotShape (INFO_HSED_ZEXPR (arg_info),
+                      CreateTdotShape (EXPRS_EXPR (INFO_HSED_ZEXPR (arg_info)),
                                        INFO_HSED_LN (arg_info)
                                        +INFO_HSED_RN (arg_info)),
                       TBmakeNum (0));
@@ -750,8 +852,16 @@ HSEDgenerator (node *arg_node, info *arg_info)
         GENERATOR_BOUND2 (arg_node) = Scalarize (GENERATOR_BOUND2 (arg_node),
                                                  INFO_HSED_LM (arg_info)
                                                  +INFO_HSED_RM (arg_info));
-        shape_z = TCmakePrf1 (F_shape_A,
-                              INFO_HSED_ZEXPR (arg_info));
+        exprs = INFO_HSED_ZEXPR (arg_info);
+        shape_z = TCmakePrf1 (F_shape_A, DUPdoDupTree (EXPRS_EXPR (exprs)));
+        exprs = EXPRS_NEXT (exprs);
+        while (exprs != NULL) {
+            shape_z = TCmakePrf2 (F_min_VxV,
+                                  shape_z,
+                                  TCmakePrf1 (F_shape_A,
+                                              DUPdoDupTree (EXPRS_EXPR (exprs))));
+            exprs = EXPRS_NEXT (exprs);
+        }
         sdot_vals = CreateSelChain (INFO_HSED_LN (arg_info),
                                     INFO_HSED_RN (arg_info),
                                     shape_z, 0);
@@ -781,12 +891,12 @@ HSEDgenerator (node *arg_node, info *arg_info)
             sdot_vals = CreateConstChain (INFO_HSED_LN (arg_info)
                                           +INFO_HSED_RN (arg_info), 1);
             tdot_vals = SEUTbuildSimpleWl (
-                          CreateTdotShape (INFO_HSED_ZEXPR (arg_info),
+                          CreateTdotShape (EXPRS_EXPR (INFO_HSED_ZEXPR (arg_info)),
                                            INFO_HSED_LN (arg_info)
                                            +INFO_HSED_RN (arg_info)),
                           TBmakeNum (1));
             nval = MergeIn (INFO_HSED_DIDXS (arg_info),
-                            GENERATOR_STEP (arg_node),
+                            ARRAY_AELEMS (GENERATOR_STEP (arg_node)),
                             sdot_vals, 
                             (INFO_HSED_K (arg_info) == 0 ? NULL : tdot_vals));
             sdot_vals = (sdot_vals != NULL ? FREEdoFreeTree (sdot_vals) : NULL);
@@ -805,12 +915,12 @@ HSEDgenerator (node *arg_node, info *arg_info)
             sdot_vals = CreateConstChain (INFO_HSED_LN (arg_info)
                                           +INFO_HSED_RN (arg_info), 1);
             tdot_vals = SEUTbuildSimpleWl (
-                          CreateTdotShape (INFO_HSED_ZEXPR (arg_info),
+                          CreateTdotShape (EXPRS_EXPR (INFO_HSED_ZEXPR (arg_info)),
                                            INFO_HSED_LN (arg_info)
                                            +INFO_HSED_RN (arg_info)),
                           TBmakeNum (1));
             nval = MergeIn (INFO_HSED_DIDXS (arg_info),
-                            GENERATOR_WIDTH (arg_node),
+                            ARRAY_AELEMS (GENERATOR_WIDTH (arg_node)),
                             sdot_vals, 
                             (INFO_HSED_K (arg_info) == 0 ? NULL : tdot_vals));
             sdot_vals = (sdot_vals != NULL ? FREEdoFreeTree (sdot_vals) : NULL);
@@ -820,6 +930,7 @@ HSEDgenerator (node *arg_node, info *arg_info)
             DBUG_PRINT ("new width value is:");
             DBUG_EXECUTE (PRTdoPrintFile (stderr, nval));
         }
+        INFO_HSED_ZEXPR (arg_info) = FREEdoFreeTree (INFO_HSED_ZEXPR (arg_info));
     }
     
     DBUG_RETURN (arg_node);
@@ -836,6 +947,9 @@ HSEDsetwl (node *arg_node, info *arg_info)
 {
     node *sdot_exprs, *sdot_idxs, *tdot_idx;
     node *idxs, *nidxs;
+    node *spid;
+    char *tmp;
+    node *exprs;
     node *exprl, *exprr, *tvar;
     node *assigns;
     bool match;
@@ -843,10 +957,13 @@ HSEDsetwl (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     arg_info = MakeInfo (arg_info); //stack arg_info!
+    INFO_HSED_LASTASSIGN (arg_info)
+        = INFO_HSED_LASTASSIGN (INFO_HSED_NEXT (arg_info));
 
     DBUG_PRINT ("looking at Set-Expression in line %zu:", global.linenum);
     /* Bottom up traversal! */
     SETWL_NEXT (arg_node) = TRAVopt (SETWL_NEXT (arg_node), arg_info);
+    SETWL_ASSIGNS (arg_node) = TRAVopt (SETWL_ASSIGNS (arg_node), arg_info);
     SETWL_EXPR (arg_node) = TRAVopt (SETWL_EXPR (arg_node), arg_info);
 
     /*
@@ -858,12 +975,23 @@ HSEDsetwl (node *arg_node, info *arg_info)
      * set ZEXPR iff HAS_DOTS
      */
     if (INFO_HSED_HAS_DOTS (arg_info)) {
-        INFO_HSED_ZEXPR (arg_info) =
-          SEUTsubstituteIdxs (DUPdoDupTree (SETWL_EXPR (arg_node)),
-                              SETWL_VEC (arg_node),
-                              TBmakeNum (0));
+        if ((SETWL_EXPR (arg_node) == NULL) && 
+            (INFO_HSED_K (arg_info) == 0)) {
+            CTIerror (LINE_TO_LOC (global.linenum),
+                      "Single dot in the index vector of tensor comprehensions can not be used in "
+                      "combination with void expressions.");
+        }
+        INFO_HSED_ZEXPR (arg_info) = DUPdoDupTree (SETWL_EXPR (arg_node));
         DBUG_PRINT ("zexpr generated:");
         DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_HSED_ZEXPR (arg_info)));
+
+        INFO_HSED_LASTASSIGN (arg_info)
+            = TCappendAssign (SEUTsubstituteIdxs (DUPdoDupTree (SETWL_ASSIGNS (arg_node)),
+                                                  SETWL_VEC (arg_node),
+                                                  TBmakeNum (0)),
+                              INFO_HSED_LASTASSIGN (arg_info));
+        DBUG_PRINT ("zexpr assignments for lifting:");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, INFO_HSED_LASTASSIGN (arg_info)));
     }
 
     DBUG_PRINT ("processing generator...");
@@ -871,62 +999,83 @@ HSEDsetwl (node *arg_node, info *arg_info)
 
     if (INFO_HSED_HAS_DOTS (arg_info)) {
         DBUG_PRINT( "adjusting expr ... ");
-        sdot_exprs = CreateDotVarChain ( INFO_HSED_LN (arg_info)
-                                         + INFO_HSED_RN (arg_info));
-        tdot_idx = (INFO_HSED_K (arg_info) == 1 ?
-                    MakeTmpId ("tmpv")
-                    : NULL);
-        sdot_idxs = Exprs2expr (sdot_exprs,
-                                INFO_HSED_K (arg_info),
-                                INFO_HSED_LN (arg_info),
-                                tdot_idx);
-        DBUG_PRINT ("selection index is:");
-        DBUG_EXECUTE (PRTdoPrintFile (stderr, sdot_idxs));
-        SETWL_EXPR (arg_node) =TCmakeSpap2 (NSgetNamespace (global.preludename),
-                                            STRcpy ("sel"),
-                                            sdot_idxs,
-                                            SETWL_EXPR (arg_node));
-        /*
-         * Finally, we adjust SETWL_VEC!
-         */
-        DBUG_PRINT_TAG ("HSED_STRIP", "stripping didxs:");
-        DBUG_EXECUTE_TAG ("HSED_STRIP", PRTdoPrintFile (stderr, SETWL_VEC (arg_node)));
-        idxs = StripDots (SETWL_VEC (arg_node));
-        DBUG_PRINT_TAG ("HSED_STRIP", "into idxs:");
-        DBUG_EXECUTE_TAG ("HSED_STRIP", PRTdoPrintFile (stderr, idxs));
-
-        nidxs = MergeIn (SETWL_VEC (arg_node), idxs, sdot_exprs, tdot_idx);
-        DBUG_PRINT ("nidxs of setWL is:");
-        DBUG_EXECUTE (PRTdoPrintFile (stderr, nidxs));
-
-        if (INFO_HSED_K (arg_info) == 1) {
-            pat = PMprf (1, PMAisPrf (F_cat_VxV),
-                         2, PMarray (0,
-                                     1, PMskip (1, PMAgetNode (&exprl),0)),
-                            PMprf (1, PMAisPrf (F_cat_VxV),
-                                   2, PMany( 1, PMAgetNode( &tvar),0 ),
-                                      PMarray (0,
-                                               1, PMskip (1, PMAgetNode (&exprr)))));
-            match = PMmatchExact (pat, nidxs);
-            pat = PMfree (pat);
-            DBUG_ASSERT (match, "built nidxs does not match the expacted pattern");
-            SETWL_VEC (arg_node) = FREEdoFreeTree (SETWL_VEC (arg_node));
-            SETWL_VEC (arg_node) = MakeTmpId ("tmp");
-            assigns = MakeTdotAssigns (exprl, tvar, exprr, SETWL_VEC (arg_node), 0);
-            SETWL_ASSIGNS (arg_node) = assigns;
-            DBUG_PRINT ("Assignments inserted:");
-            DBUG_EXECUTE (PRTdoPrintFile (stderr, assigns));
-            nidxs = FREEdoFreeTree (nidxs);
+        if (TCcountExprs (SETWL_EXPR (arg_node)) == 0) {
+            DBUG_PRINT( "triple-dot + void; no adjustment needed ... ");
         } else {
-            SETWL_VEC (arg_node) = FREEdoFreeTree (SETWL_VEC (arg_node));
-            SETWL_VEC (arg_node) = ARRAY_AELEMS (nidxs);
-            ARRAY_AELEMS (nidxs) = NULL;
-            nidxs = FREEdoFreeNode (nidxs);
+            sdot_exprs = CreateDotVarChain ( INFO_HSED_LN (arg_info)
+                                             + INFO_HSED_RN (arg_info));
+            tdot_idx = (INFO_HSED_K (arg_info) == 1 ?
+                        MakeTmpId ("tmpv")
+                        : NULL);
+            sdot_idxs = Exprs2expr (sdot_exprs,
+                                    INFO_HSED_K (arg_info),
+                                    INFO_HSED_LN (arg_info),
+                                    tdot_idx);
+            DBUG_PRINT ("selection index is:");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, sdot_idxs));
+
+            exprs = SETWL_EXPR (arg_node);
+            do {
+                tmp = TRAVtmpVarName ("dotsel");
+                spid = EXPRS_EXPR (exprs);
+                SETWL_ASSIGNS (arg_node)
+                    = TCappendAssign
+                          (SETWL_ASSIGNS (arg_node),
+                           TBmakeAssign
+                               (TBmakeLet (TBmakeSpids (tmp, NULL),
+                                           TCmakeSpap2 (NSgetNamespace (global.preludename),
+                                                        STRcpy ("sel"),
+                                                        DUPdoDupTree (sdot_idxs),
+                                                        spid)),
+                                NULL));
+                EXPRS_EXPR (exprs) = TBmakeSpid (NULL, STRcpy (tmp));
+                exprs = EXPRS_NEXT (exprs);
+            } while (exprs != NULL);
+
+            /*
+             * Finally, we adjust SETWL_VEC!
+             */
+            DBUG_PRINT_TAG ("HSED_STRIP", "stripping didxs:");
+            DBUG_EXECUTE_TAG ("HSED_STRIP", PRTdoPrintFile (stderr, SETWL_VEC (arg_node)));
+            idxs = StripDots (SETWL_VEC (arg_node));
+            DBUG_PRINT_TAG ("HSED_STRIP", "into idxs:");
+            DBUG_EXECUTE_TAG ("HSED_STRIP", PRTdoPrintFile (stderr, idxs));
+
+            nidxs = MergeIn (SETWL_VEC (arg_node), idxs, sdot_exprs, tdot_idx);
+            DBUG_PRINT ("nidxs of setWL is:");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, nidxs));
+
+            if (INFO_HSED_K (arg_info) == 1) {
+                pat = PMprf (1, PMAisPrf (F_cat_VxV),
+                             2, PMarray (0,
+                                         1, PMskip (1, PMAgetNode (&exprl),0)),
+                                PMprf (1, PMAisPrf (F_cat_VxV),
+                                       2, PMany( 1, PMAgetNode( &tvar),0 ),
+                                          PMarray (0,
+                                                   1, PMskip (1, PMAgetNode (&exprr)))));
+                match = PMmatchExact (pat, nidxs);
+                pat = PMfree (pat);
+                DBUG_ASSERT (match, "built nidxs does not match the expacted pattern");
+                SETWL_VEC (arg_node) = FREEdoFreeTree (SETWL_VEC (arg_node));
+                SETWL_VEC (arg_node) = MakeTmpId ("tmp");
+                assigns = MakeTdotAssigns (exprl, tvar, exprr, SETWL_VEC (arg_node), 0);
+                SETWL_ASSIGNS (arg_node) = TCappendAssign (assigns, SETWL_ASSIGNS (arg_node));
+                DBUG_PRINT ("Assignments inserted:");
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, assigns));
+                nidxs = FREEdoFreeTree (nidxs);
+            } else {
+                SETWL_VEC (arg_node) = FREEdoFreeTree (SETWL_VEC (arg_node));
+                SETWL_VEC (arg_node) = ARRAY_AELEMS (nidxs);
+                ARRAY_AELEMS (nidxs) = NULL;
+                nidxs = FREEdoFreeNode (nidxs);
+            }
+            idxs = FREEdoFreeTree (idxs);
+            //NB: sdot_idxs is absorbed by the selection! no freeing here!
+            //NB: tdot_idx is absorbed by the Exprs2expr! no freeing here!
         }
-        idxs = FREEdoFreeTree (idxs);
-        //NB: sdot_idxs is absorbed by the selection! no freeing here!
-        //NB: tdot_idx is absorbed by the Exprs2expr! no freeing here!
     }
+    INFO_HSED_LASTASSIGN (INFO_HSED_NEXT (arg_info))
+        = INFO_HSED_LASTASSIGN (arg_info);
     arg_info = FreeInfo (arg_info); //pop arg_info!
 
     DBUG_RETURN (arg_node);

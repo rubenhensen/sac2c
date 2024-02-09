@@ -4123,7 +4123,24 @@ PRTsetwl (node *arg_node, info *arg_info)
         fprintf (global.outfile, " -> ");
     }
 
-    TRAVdo (SETWL_EXPR (arg_node), arg_info);
+    if (SETWL_ASSIGNS (arg_node) != NULL) {
+        fprintf (global.outfile, "let\n");
+        global.indent++;
+        TRAVdo (SETWL_ASSIGNS (arg_node), arg_info);
+        global.indent--;
+        INDENT;
+        fprintf (global.outfile, "in ");
+    }
+
+    if (SETWL_EXPR (arg_node) == NULL) {
+        fprintf (global.outfile, "void ");
+    } else if (NODE_TYPE (SETWL_EXPR (arg_node)) == N_exprs) {
+        fprintf (global.outfile, "(");
+        TRAVdo (SETWL_EXPR (arg_node), arg_info);
+        fprintf (global.outfile, ") ");
+    } else {
+        TRAVdo (SETWL_EXPR (arg_node), arg_info);
+    }
 
     if (SETWL_GENERATOR (arg_node) != NULL) {
         fprintf (global.outfile, "| ");

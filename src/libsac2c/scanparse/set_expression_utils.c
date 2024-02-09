@@ -643,6 +643,21 @@ ATravRBZspid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+static node *
+ATravRBZlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /*
+     * Make sure we do not replace locally bound variables!
+     */
+    if (!TCspidsContains (LET_IDS (arg_node), SPID_NAME (INFO_RBZ_SPID (arg_info)))) {
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 static bool
 SpidInIdxs (node *spid, node *idxs)
 {
@@ -673,6 +688,7 @@ ATravRBZsetwl (node *arg_node, info *arg_info)
      * Make sure we do not replace locally bound variables!
      */
     if (!SpidInIdxs (INFO_RBZ_SPID (arg_info), SETWL_VEC (arg_node))) {
+        SETWL_ASSIGNS (arg_node) = TRAVdo (SETWL_ASSIGNS (arg_node), arg_info);
         SETWL_EXPR (arg_node) = TRAVdo (SETWL_EXPR (arg_node), arg_info);
     }
     SETWL_GENERATOR (arg_node) = TRAVopt (SETWL_GENERATOR (arg_node), arg_info);
@@ -684,8 +700,9 @@ ATravRBZsetwl (node *arg_node, info *arg_info)
 static node *
 SubstituteSpid (node *expr, node *spid, node *subst)
 {
-    anontrav_t rbz_trav[3] = {{N_spid, &ATravRBZspid},
+    anontrav_t rbz_trav[4] = {{N_spid, &ATravRBZspid},
                               {N_setwl, &ATravRBZsetwl},
+                              {N_let, &ATravRBZlet},
                               {(nodetype)0, NULL}};
     info arg_info = {{FALSE,NULL,NULL},{spid,subst,FALSE}};
 
@@ -744,8 +761,9 @@ ATravRBZspid2 (node *arg_node, info *arg_info)
 static bool
 FindSpid (node *expr, node *spid)
 {
-    anontrav_t rbz_trav[3] = {{N_spid, &ATravRBZspid2},
+    anontrav_t rbz_trav[4] = {{N_spid, &ATravRBZspid2},
                               {N_setwl, &ATravRBZsetwl},
+                              {N_let, &ATravRBZlet},
                               {(nodetype)0, NULL}};
     info arg_info = {{FALSE,NULL,NULL},{spid,NULL,FALSE}};
 

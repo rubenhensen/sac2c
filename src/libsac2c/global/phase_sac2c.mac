@@ -44,6 +44,9 @@ SUBPHASE (iotc, "Introducing user-tracing calls", IUTCdoIntroduceUserTraceCalls,
 SUBPHASE (seri, "Inferring Ranges for Set Expressions", SERIdoInferRanges, ALWAYS,
           pre)
 
+SUBPHASE (mose, "Identifying Multi-Return Set Notations", MOSEdoMultiOperatorSetExpressions, ALWAYS,
+          pre)
+
 SUBPHASE (hsed, "Handling dots in Set Notation", HSEDdoEliminateSetExpressionDots, ALWAYS,
           pre)
 

@@ -1,0 +1,22 @@
+// test step and width treament for mo-tcs
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -noprelude
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 9
+
+#include "mini-stdlib.sac"
+
+noinline
+int[3],int[2] foo( int a, int b)
+{   return ([a,a,a],[b,b]); }
+
+int main()
+{
+   a,b = { [.,i,...] -> foo(i,i) | [i] < [10] step [3] width [2]};
+
+   // should return 9!
+   return a[0,2] + b[1,9];
+}

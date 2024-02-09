@@ -1,0 +1,17 @@
+// test whether HSE actually identifies the potential for a modarray WL
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -b2:hse -printfun main
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(CALL_SAC2C) $< | $(GREP_COMMAND_OUTPUT) "modarray( a)" 1
+
+#include "mini-stdlib.sac"
+
+int main()
+{
+    a = { iv -> 0 | iv <[5];
+          iv -> a[iv] };
+    return 0;
+}

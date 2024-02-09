@@ -870,6 +870,7 @@ DUPsetwl (node *arg_node, info *arg_info)
 
     SETWL_FLAGSTRUCTURE (new_node) = SETWL_FLAGSTRUCTURE (arg_node);
 
+    SETWL_ASSIGNS (new_node) = DUPTRAV (SETWL_ASSIGNS (arg_node));
     SETWL_GENERATOR (new_node) = DUPTRAV (SETWL_GENERATOR (arg_node));
     SETWL_NEXT (new_node) = DUPTRAV (SETWL_NEXT (arg_node));
 
