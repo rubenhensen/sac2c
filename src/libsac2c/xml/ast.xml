@@ -1312,9 +1312,17 @@
 		  <node name="Generator" />
 		</travuser>
 	      </traversal>
+              <traversal id="MOSE" name="Multi-Operator Set Expressions" default="sons" include="multi_operator_set_expressions.h">
+                <travuser>
+                  <node name="Let" />
+                  <node name="SetWL" />
+                </travuser>
+              </traversal>
 	      <traversal id="HSED" name="Handle Set Expression Dots" default="sons" include="handle_set_expression_dots.h">
 		<travuser>
+		  <node name="Assign" />
 		  <node name="With" />
+		  <node name="Code" />
 		  <node name="SetWL" />
 		  <node name="Generator" />
 		</travuser>
@@ -1323,6 +1331,8 @@
 		<travuser>
 		  <node name="Generator" />
 		  <node name="SetWL" />
+		  <node name="Assign" />
+		  <node name="Code" />
 		</travuser>
 	      </traversal>
 	      <traversal id="CSGD" name="Check and Simplify Generic Definitions" default="sons" include="check_and_simplify_generic_definitions.h">
@@ -8614,7 +8624,7 @@
             <target mandatory="no">
               <node name="Assign" />
               <phases>
-                <range from="pre_hsed" to="pre_hse" />
+                <range from="pre_mose" to="pre_hse" />
               </phases>
             </target>
           </targets>
@@ -8624,7 +8634,11 @@
             <target mandatory="yes">
               <set name="Expr" />
               <phases>
-                <all />
+                 <range from="scp" to="pre_mose" />
+              </phases>
+              <node name="Exprs" />
+              <phases>
+                <range from="pre_mose" to="pre_hse" />
               </phases>
             </target>
           </targets>

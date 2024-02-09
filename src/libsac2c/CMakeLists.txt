@@ -427,6 +427,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/rtspec/runtime_function_id.c
 ${CMAKE_CURRENT_SOURCE_DIR}/rtspec/runtime_specialization.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/filter_fundef_conditions.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_with_loop_dots.c
+${CMAKE_CURRENT_SOURCE_DIR}/scanparse/multi_operator_set_expressions.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_selection_dots.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_set_expression_dots.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/set_expression_utils.c
