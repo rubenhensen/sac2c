@@ -2231,8 +2231,15 @@ ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT,
         ELSE_BEGIN ();
         {
             indout ("SAC_ND_A_FIELD (%s) = 0;\n", to_NT);
-            ECC_ERROR2 (from_NT, from2_NT, "%s",
-                        "do not adhere to prod matches prod shape constraint");
+            if (KNOWN_DIMENSION (from2_sdim)) {
+                ECC_ERROR1 (from_NT, "%s",
+                            "does not adhere to prod matches "
+                            "prod shape constraint");
+            } else {
+                ECC_ERROR2 (from_NT, from2_NT, "%s",
+                            "do not adhere to prod matches "
+                            "prod shape constraint");
+            }
         }
         ELSE_END ();
     }
