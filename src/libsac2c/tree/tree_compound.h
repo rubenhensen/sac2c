@@ -450,8 +450,6 @@ extern node *TCcreateExprsFromArgs (node *args);
         OBJDEF_AVIS (n) = (rhs);                                                         \
     }
 
-extern node *TCsearchDecl (const char *name, node *decl_node);
-
 /*--------------------------------------------------------------------------*/
 
 /***

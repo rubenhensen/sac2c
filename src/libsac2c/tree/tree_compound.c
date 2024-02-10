@@ -876,45 +876,6 @@ TCcreateIdsFromRets (node *rets, node **vardecs)
  ***  N_vardec :  *and*  N_arg :
  ***/
 
-/*
- *
- *  functionname  : SearchDecl
- *  arguments     : 1) character string
- *                  2) N_vardec - or N_arg - chain
- *                  R) true or false
- *  description   : returns ptr to N_vardec - or N_arg - node  if variable or
- *                  argument with same name as in 1) has been found, else NULL
- *
- */
-
-node *
-TCsearchDecl (const char *name, node *decl_node)
-{
-    node *found = NULL;
-
-    DBUG_ENTER ();
-
-    while (NULL != decl_node) {
-        if (N_vardec == NODE_TYPE (decl_node)) {
-            if (!STReq (name, VARDEC_NAME (decl_node))) {
-                found = decl_node;
-                decl_node = NULL;
-            } else {
-                decl_node = VARDEC_NEXT (decl_node);
-            }
-        } else {
-            if (!STReq (name, ARG_NAME (decl_node))) {
-                found = decl_node;
-                decl_node = NULL;
-            } else {
-                decl_node = ARG_NEXT (decl_node);
-            }
-        }
-    }
-
-    DBUG_RETURN (found);
-}
-
 /*--------------------------------------------------------------------------*/
 
 /***
