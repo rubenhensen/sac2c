@@ -19,6 +19,7 @@
 #include "while2do.h"
 #include "handle_condexpr.h"
 #include "namespaces.h"
+#include "new_types.h"
 
 #include "flatten.h"
 
@@ -50,6 +51,7 @@
  *              Every FltnAssign replaces node[2] with arg_node if
  *              ASSIGN_NEXT(arg_node) equals NULL.
  *
+ * VARDECS:     The vardecs of the block being flattened.
  */
 
 /**
@@ -60,6 +62,7 @@ struct INFO {
     node *lastassign;
     node *lastwlblock;
     node *finalassign;
+    node *vardecs;
 };
 
 /**
@@ -68,6 +71,7 @@ struct INFO {
 #define INFO_FLAT_CONTEXT(n) (n->context)
 #define INFO_FLAT_LASTASSIGN(n) (n->lastassign)
 #define INFO_FLAT_FINALASSIGN(n) (n->finalassign)
+#define INFO_FLAT_VARDECS(n) (n->vardecs)
 
 /**
  * INFO functions
@@ -84,6 +88,7 @@ MakeInfo (void)
     INFO_FLAT_CONTEXT (result) = 0;
     INFO_FLAT_LASTASSIGN (result) = NULL;
     INFO_FLAT_FINALASSIGN (result) = NULL;
+    INFO_FLAT_VARDECS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -112,30 +117,34 @@ FreeInfo (info *info)
  * description:
  *   - gets an expression <expr> to be abstracted out as argument
  *   - creates an assignment of the form:
- *        __flat_<n> = <expr>;
+ *        _flat_<n> = <expr>;
  *     end prepands it to LASTASSIGN from arg_info
- *   - returns a freshly created N_id node holding  __flat_<n>
+ *   - returns a freshly created N_id node holding  _flat_<n>
  *
  ******************************************************************************/
 
 static node *
 Abstract (node *arg_node, info *arg_info)
 {
-    char *tmp;
-    node *res, *ids;
+    node *res, *ids, *avis, *vardec;
 
     DBUG_ENTER ();
 
-    tmp = TRAVtmpVar ();
-    ids = TBmakeSpids (STRcpy (tmp), NULL);
+    avis = TBmakeAvis (TRAVtmpVar (), TYmakeAUD (TYmakeSimpleType (T_unknown)));
+    vardec = TBmakeVardec (avis, INFO_FLAT_VARDECS (arg_info));
+    INFO_FLAT_VARDECS (arg_info) = vardec;
+
+    ids = TBmakeIds (avis, NULL);
 
     INFO_FLAT_LASTASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (ids, arg_node), INFO_FLAT_LASTASSIGN (arg_info));
+      = TBmakeAssign (TBmakeLet (ids, arg_node),
+                      INFO_FLAT_LASTASSIGN (arg_info));
 
-    DBUG_PRINT ("node %p inserted before %p", (void *)INFO_FLAT_LASTASSIGN (arg_info),
-                (void *)ASSIGN_NEXT (INFO_FLAT_LASTASSIGN (arg_info)));
+    DBUG_PRINT ("node %p inserted before %p",
+                     (void *)INFO_FLAT_LASTASSIGN (arg_info),
+                     (void *)ASSIGN_NEXT (INFO_FLAT_LASTASSIGN (arg_info)));
 
-    res = TBmakeSpid (NULL, tmp);
+    res = TBmakeId (avis);
 
     DBUG_RETURN (res);
 }
@@ -222,9 +231,16 @@ FLATfundef (node *arg_node, info *arg_info)
      */
     if ((FUNDEF_BODY (arg_node) != NULL) && !FUNDEF_WASIMPORTED (arg_node)
         && FUNDEF_ISLOCAL (arg_node)) {
+
+        /* FIXME why do we have to collect the vardecs here via a sneaky
+         * compound macro instead of directly at N_block? */
+        INFO_FLAT_VARDECS (arg_info) = FUNDEF_VARDECS (arg_node);
+
         DBUG_PRINT ("flattening function %s:", FUNDEF_NAME (arg_node));
         FUNDEF_ARGS (arg_node) = TRAVopt(FUNDEF_ARGS (arg_node), arg_info);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        FUNDEF_VARDECS (arg_node) = INFO_FLAT_VARDECS (arg_info);
     }
 
     /*
@@ -254,7 +270,7 @@ FLATblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     } else {
         INFO_FLAT_FINALASSIGN (arg_info) = NULL; /* fixes bug 919!! */
     }
@@ -500,43 +516,70 @@ FLATexprs (node *arg_node, info *arg_info)
     switch (INFO_FLAT_CONTEXT (arg_info)) {
     case CT_ap:
         abstract
-          = ((NODE_TYPE (expr) == N_numbyte) || (NODE_TYPE (expr) == N_numshort)
-             || (NODE_TYPE (expr) == N_numint) || (NODE_TYPE (expr) == N_numlong)
-             || (NODE_TYPE (expr) == N_numlonglong) || (NODE_TYPE (expr) == N_numubyte)
-             || (NODE_TYPE (expr) == N_numushort) || (NODE_TYPE (expr) == N_numuint)
-             || (NODE_TYPE (expr) == N_numulong) || (NODE_TYPE (expr) == N_numulonglong)
-             || (NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
-             || (NODE_TYPE (expr) == N_floatvec) || (NODE_TYPE (expr) == N_double)
-             || (NODE_TYPE (expr) == N_bool) || (NODE_TYPE (expr) == N_char)
-             || (NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
-             || (NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
-             || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast)
+          = ((NODE_TYPE (expr) == N_numbyte)
+             || (NODE_TYPE (expr) == N_numshort)
+             || (NODE_TYPE (expr) == N_numint)
+             || (NODE_TYPE (expr) == N_numlong)
+             || (NODE_TYPE (expr) == N_numlonglong)
+             || (NODE_TYPE (expr) == N_numubyte)
+             || (NODE_TYPE (expr) == N_numushort)
+             || (NODE_TYPE (expr) == N_numuint)
+             || (NODE_TYPE (expr) == N_numulong)
+             || (NODE_TYPE (expr) == N_numulonglong)
+             || (NODE_TYPE (expr) == N_num)
+             || (NODE_TYPE (expr) == N_float)
+             || (NODE_TYPE (expr) == N_floatvec)
+             || (NODE_TYPE (expr) == N_double)
+             || (NODE_TYPE (expr) == N_bool)
+             || (NODE_TYPE (expr) == N_char)
+             || (NODE_TYPE (expr) == N_str)
+             || (NODE_TYPE (expr) == N_array)
+             || (NODE_TYPE (expr) == N_spap)
+             || (NODE_TYPE (expr) == N_prf)
+             || (NODE_TYPE (expr) == N_with)
+             || (NODE_TYPE (expr) == N_cast)
              || (NODE_TYPE (expr) == N_nested_init));
         break;
     case CT_array:
     case CT_return:
         abstract
-          = ((NODE_TYPE (expr) == N_numbyte) || (NODE_TYPE (expr) == N_numshort)
-             || (NODE_TYPE (expr) == N_numint) || (NODE_TYPE (expr) == N_numlong)
-             || (NODE_TYPE (expr) == N_numlonglong) || (NODE_TYPE (expr) == N_numubyte)
-             || (NODE_TYPE (expr) == N_numushort) || (NODE_TYPE (expr) == N_numuint)
-             || (NODE_TYPE (expr) == N_numulong) || (NODE_TYPE (expr) == N_numulonglong)
-             || (NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
-             || (NODE_TYPE (expr) == N_floatvec) || (NODE_TYPE (expr) == N_double)
-             || (NODE_TYPE (expr) == N_bool) || (NODE_TYPE (expr) == N_char)
-             || (NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
-             || (NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
-             || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
+          = ((NODE_TYPE (expr) == N_numbyte)
+             || (NODE_TYPE (expr) == N_numshort)
+             || (NODE_TYPE (expr) == N_numint)
+             || (NODE_TYPE (expr) == N_numlong)
+             || (NODE_TYPE (expr) == N_numlonglong)
+             || (NODE_TYPE (expr) == N_numubyte)
+             || (NODE_TYPE (expr) == N_numushort)
+             || (NODE_TYPE (expr) == N_numuint)
+             || (NODE_TYPE (expr) == N_numulong)
+             || (NODE_TYPE (expr) == N_numulonglong)
+             || (NODE_TYPE (expr) == N_num)
+             || (NODE_TYPE (expr) == N_float)
+             || (NODE_TYPE (expr) == N_floatvec)
+             || (NODE_TYPE (expr) == N_double)
+             || (NODE_TYPE (expr) == N_bool)
+             || (NODE_TYPE (expr) == N_char)
+             || (NODE_TYPE (expr) == N_str)
+             || (NODE_TYPE (expr) == N_array)
+             || (NODE_TYPE (expr) == N_spap)
+             || (NODE_TYPE (expr) == N_prf)
+             || (NODE_TYPE (expr) == N_with)
+             || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_normal:
-        abstract = ((NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
+        abstract = ((NODE_TYPE (expr) == N_spap)
+                    || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_with)
+                    || (NODE_TYPE (expr) == N_cast));
         break;
 #ifdef FIXME
     case CT_array:
-        abstract = ((NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
-                    || (NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
+        abstract = ((NODE_TYPE (expr) == N_str)
+                    || (NODE_TYPE (expr) == N_array)
+                    || (NODE_TYPE (expr) == N_spap)
+                    || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_with)
+                    || (NODE_TYPE (expr) == N_cast));
         break;
 #endif // FIXME
     default:
@@ -560,13 +603,14 @@ FLATexprs (node *arg_node, info *arg_info)
                 (abstract ? "yes" : "no"), NODE_TEXT (expr));
 
     /*
-     * if this is to be abstracted, we abstract and potentially annotate constant
-     * arrays in the freshly generated N_id node.
+     * if this is to be abstracted, we abstract and potentially annotate
+     * constant arrays in the freshly generated N_id node.
      */
     if (abstract) {
         /*
          *  if there are type casts we need to abstract them too.
-         *  if we leave them, empty arrays will be left uncasted and thus untyped.
+         *  if we leave them, empty arrays will be left uncasted and thus
+         *  untyped.
          */
         EXPRS_EXPR (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
@@ -672,7 +716,7 @@ FLATdo (node *arg_node, info *arg_info)
                  "return-node differs from arg_node while flattening an expr!");
     if (final_assign == NULL) {
         DBUG_ASSERT (DO_ASSIGNS (arg_node) == NULL,
-                     "INFO_FLAT_FINALASSIGN is NULL although do-body is non-empty");
+                "INFO_FLAT_FINALASSIGN is NULL although do-body is non-empty");
         /*
          * loop-body is empty so far!
          */
@@ -740,7 +784,7 @@ FLATgenarray (node *arg_node, info *arg_info)
         GENARRAY_SHAPE (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
         DBUG_ASSERT (expr == expr2,
-                     "return-node differs from arg_node while flattening an expr!");
+                "return-node differs from arg_node while flattening an expr!");
     }
 
     expr = GENARRAY_DEFAULT (arg_node);
@@ -749,7 +793,7 @@ FLATgenarray (node *arg_node, info *arg_info)
         GENARRAY_DEFAULT (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
         DBUG_ASSERT (expr == expr2,
-                     "return-node differs from arg_node while flattening an expr!");
+                "return-node differs from arg_node while flattening an expr!");
     }
 
     GENARRAY_NEXT (arg_node) = TRAVopt(GENARRAY_NEXT (arg_node), arg_info);
@@ -785,7 +829,7 @@ FLATmodarray (node *arg_node, info *arg_info)
         expr2 = TRAVdo (expr, arg_info);
     }
     DBUG_ASSERT (expr == expr2,
-                 "return-node differs from arg_node while flattening an expr!");
+                "return-node differs from arg_node while flattening an expr!");
 
     MODARRAY_NEXT (arg_node) = TRAVopt(MODARRAY_NEXT (arg_node), arg_info);
 
@@ -819,7 +863,7 @@ FLATspfold (node *arg_node, info *arg_info)
         expr2 = TRAVdo (expr, arg_info);
 
         DBUG_ASSERT (expr == expr2,
-                     "return-node differs from arg_node while flattening an expr!");
+                "return-node differs from arg_node while flattening an expr!");
     }
 
     expr = SPFOLD_GUARD (arg_node);
@@ -828,7 +872,7 @@ FLATspfold (node *arg_node, info *arg_info)
         expr2 = TRAVdo (expr, arg_info);
 
         DBUG_ASSERT (expr == expr2,
-                     "return-node differs from arg_node while flattening an expr!");
+                "return-node differs from arg_node while flattening an expr!");
     }
 
     if (SPFOLD_ARGS (arg_node) != NULL) {
@@ -972,8 +1016,8 @@ FLATgenerator (node *arg_node, info *arg_info)
             break;
         default:
             /*
-             * the following assignment is used only for convincing the C compiler
-             * that act_son will be initialized in any case!
+             * the following assignment is used only for convincing the
+             * C compiler that act_son will be initialized in any case!
              */
             act_son = NULL;
         }
@@ -989,7 +1033,7 @@ FLATgenerator (node *arg_node, info *arg_info)
             }
 
             DBUG_ASSERT (act_son_expr == act_son_expr2,
-                         "return-node differs from arg_node while flattening an expr!");
+                 "return-node differs from arg_node while flattening an expr!");
         }
     }
 
@@ -1012,7 +1056,8 @@ FLATgenerator (node *arg_node, info *arg_info)
 node *
 FLATcode (node *arg_node, info *arg_info)
 {
-    node *exprs, *exprs2, *mem_last_assign, *flatten_assignments, *final_assign;
+    node *exprs, *exprs2, *mem_last_assign, *flatten_assignments,
+         *final_assign;
     contextflag old_ctxt;
 
     DBUG_ENTER ();
@@ -1043,11 +1088,11 @@ FLATcode (node *arg_node, info *arg_info)
         exprs2 = TRAVdo (exprs, arg_info);
 
         DBUG_ASSERT (exprs == exprs2,
-                     "return-node differs from arg_node while flattening WL-exprs!");
+               "return-node differs from arg_node while flattening WL-exprs!");
         /*
          * Here, INFO_FLAT_LASTASSIGN( arg_info) either points to the freshly
-         * generated flatten-assignments or is NULL (if nothing had to be abstracted
-         * out)!!
+         * generated flatten-assignments or is NULL
+         * (if nothing had to be abstracted out)!!
          */
         flatten_assignments = INFO_FLAT_LASTASSIGN (arg_info);
         INFO_FLAT_LASTASSIGN (arg_info) = mem_last_assign;

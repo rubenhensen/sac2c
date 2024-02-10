@@ -25,6 +25,8 @@
  *   ...OBJDEFS  holds the pointer to the objdefs chain of the actual module !
  *   ...VARDECS  holds the pointer to the vardec chain of the actual fundef !
  *   ...ARGS     holds the pointer to the argument chain of the actual fundef !
+ *   ...VARDEC_LUT Lookup table corresponding to VARDECS
+ *   ...ARG_LUT Lookup table corresponding to ARGS
  *
  *****************************************************************************/
 
@@ -34,6 +36,7 @@
 #include "new_types.h"
 #include "str.h"
 #include "memory.h"
+#include "LookUpTable.h"
 #include "traverse.h"
 #include "globals.h"
 #include "free.h"
@@ -54,6 +57,8 @@ struct INFO {
     node *vardecs;
     node *args;
     node *objdefs;
+    lut_t *vardec_lut;
+    lut_t *arg_lut;
     node *module;
 };
 
@@ -64,6 +69,8 @@ struct INFO {
 #define INFO_ARGS(n) ((n)->args)
 #define INFO_OBJDEFS(n) ((n)->objdefs)
 #define INFO_MODULE(n) ((n)->module)
+#define INFO_VARDEC_LUT(n) ((n)->vardec_lut)
+#define INFO_ARG_LUT(n) ((n)->arg_lut)
 
 /*
  * INFO functions
@@ -80,6 +87,8 @@ MakeInfo (void)
     INFO_VARDECS (result) = NULL;
     INFO_ARGS (result) = NULL;
     INFO_OBJDEFS (result) = NULL;
+    INFO_VARDEC_LUT (result) = LUTgenerateLut ();
+    INFO_ARG_LUT (result) = LUTgenerateLut ();
 
     DBUG_RETURN (result);
 }
@@ -89,6 +98,9 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ();
 
+    LUTremoveLut (INFO_VARDEC_LUT (info));
+    LUTremoveLut (INFO_ARG_LUT (info));
+
     info = MEMfree (info);
 
     DBUG_RETURN (info);
@@ -97,43 +109,69 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *  node * SearchForNameInVardecs( char *name, node *vardecs)
+ *  lut_t * InitVardecLUT (node *vardecs)
  *
  * description:
- *   looks up the name in the vardecs given. Returns the address of the vardec
- *   if found, NULL otherwise.
+ *   Allocates and fills a look up table containing [vardec_name, vardec].
  *
  ******************************************************************************/
-static node *
-SearchForNameInVardecs (char *name, node *vardecs)
+static void
+InitVardecLUT (node *vardecs, lut_t **lut /* inout */)
 {
     DBUG_ENTER ();
 
-    while ((vardecs != NULL) && (!STReq (VARDEC_NAME (vardecs), name))) {
+    while (vardecs != NULL) {
+        *lut = LUTinsertIntoLutS (*lut, VARDEC_NAME (vardecs), vardecs);
         vardecs = VARDEC_NEXT (vardecs);
     }
-    DBUG_RETURN (vardecs);
+
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
  *
  * function:
- *  node * SearchForNameInArgs( char *name, node *args)
+ *  lut_t * InitArgLUT (node *args)
  *
  * description:
- *   looks up the name in the args given. Returns the address of the arg
- *   if found, NULL otherwise.
+ *   Allocates and fills a look up table containing [arg_name, arg].
  *
  ******************************************************************************/
-static node *
-SearchForNameInArgs (char *name, node *args)
+static void
+InitArgLUT (node *args, lut_t **lut /* inout */)
 {
     DBUG_ENTER ();
 
-    while ((args != NULL) && (!STReq (ARG_NAME (args), name))) {
+    while (args != NULL) {
+        *lut = LUTinsertIntoLutS (*lut, ARG_NAME (args), args);
         args = ARG_NEXT (args);
     }
-    DBUG_RETURN (args);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node * SearchForName (char *name, lut_t *lut)
+ *
+ * description:
+ *   looks up the name in the LUT given. Returns the address of the
+ *   corresponding node if found, NULL otherwise.
+ *
+ ******************************************************************************/
+static node *
+SearchForName (char *name, lut_t *lut)
+{
+    void **res_ptr;
+    node *res;
+
+    DBUG_ENTER ();
+
+    res_ptr = LUTsearchInLutS (lut, name);
+    res = (res_ptr == NULL) ? NULL : *res_ptr;
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -151,9 +189,10 @@ SearchForNameInObjs (const namespace_t *ns, const char *name, node *objs)
 {
     DBUG_ENTER ();
 
-    while (
-      (objs != NULL)
-      && ((!NSequals (OBJDEF_NS (objs), ns)) || (!STReq (OBJDEF_NAME (objs), name)))) {
+    while ((objs != NULL) &&
+           ((!NSequals (OBJDEF_NS (objs), ns)) ||
+                    (!STReq (OBJDEF_NAME (objs), name))))
+    {
         objs = OBJDEF_NEXT (objs);
     }
 
@@ -197,10 +236,18 @@ INSVDfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_VARDECS (arg_info) = FUNDEF_VARDECS (arg_node);
-        INFO_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
+        InitVardecLUT (INFO_VARDECS (arg_info), &INFO_VARDEC_LUT (arg_info));
 
+        INFO_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
+        InitArgLUT (INFO_ARGS (arg_info), &INFO_ARG_LUT (arg_info));
+
+        /* Will fill in missing vardecs */
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_VARDECS (arg_node) = INFO_VARDECS (arg_info);
+
+        INFO_VARDEC_LUT (arg_info) =
+                LUTremoveContentLut (INFO_VARDEC_LUT (arg_info));
+        INFO_ARG_LUT (arg_info) = LUTremoveContentLut (INFO_ARG_LUT (arg_info));
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt(FUNDEF_NEXT (arg_node), arg_info);
@@ -294,10 +341,12 @@ INSVDspid (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (SPID_NS (arg_node) == NULL) {
-        vardec = SearchForNameInVardecs (SPID_NAME (arg_node), INFO_VARDECS (arg_info));
+        vardec = SearchForName (SPID_NAME (arg_node),
+                                INFO_VARDEC_LUT (arg_info));
 
         if (vardec == NULL) {
-            vardec = SearchForNameInArgs (SPID_NAME (arg_node), INFO_ARGS (arg_info));
+            vardec = SearchForName (SPID_NAME (arg_node),
+                                    INFO_ARG_LUT (arg_info));
         }
 
         if (vardec == NULL) {
@@ -306,8 +355,10 @@ INSVDspid (node *arg_node, info *arg_info)
              * maybe its a global object!
              */
 
-            vardec = SearchForNameInObjs (MODULE_NAMESPACE (INFO_MODULE (arg_info)),
-                                          SPID_NAME (arg_node), INFO_OBJDEFS (arg_info));
+            const namespace_t *ns = MODULE_NAMESPACE (INFO_MODULE (arg_info));
+            vardec = SearchForNameInObjs (ns,
+                                          SPID_NAME (arg_node),
+                                          INFO_OBJDEFS (arg_info));
 
             if (vardec == NULL) {
                 CTIerror (LINE_TO_LOC (global.linenum),
@@ -378,11 +429,13 @@ node *
 INSVDspids (node *arg_node, info *arg_info)
 {
     node *vardec, *avis, *new_ids;
+    lut_t *vardec_lut;
+
     DBUG_ENTER ();
 
-    vardec = SearchForNameInVardecs (SPIDS_NAME (arg_node), INFO_VARDECS (arg_info));
+    vardec = SearchForName (SPIDS_NAME (arg_node), INFO_VARDEC_LUT (arg_info));
     if (vardec == NULL) {
-        vardec = SearchForNameInArgs (SPIDS_NAME (arg_node), INFO_ARGS (arg_info));
+        vardec = SearchForName (SPIDS_NAME (arg_node), INFO_ARG_LUT (arg_info));
     }
 
     if (vardec == NULL) {
@@ -395,11 +448,15 @@ INSVDspids (node *arg_node, info *arg_info)
                            TYmakeAUD (TYmakeSimpleType (T_unknown)));
 
         vardec = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+        vardec_lut = LUTinsertIntoLutS (INFO_VARDEC_LUT (arg_info),
+                                        SPIDS_NAME (arg_node),
+                                        vardec);
+        INFO_VARDEC_LUT (arg_info) = vardec_lut;
 
         INFO_VARDECS (arg_info) = vardec;
 
-        DBUG_PRINT ("inserting new vardec (" F_PTR ") for id %s.", (void *)vardec,
-                    SPIDS_NAME (arg_node));
+        DBUG_PRINT ("inserting new vardec (" F_PTR ") for id %s.",
+                        (void *)vardec, SPIDS_NAME (arg_node));
     }
 
     if (SPIDS_NEXT (arg_node) != NULL) {
