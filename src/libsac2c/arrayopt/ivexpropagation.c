@@ -2369,6 +2369,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     node *lhsid;
     node *lhsavis;
     node *rhs;
+    node *exprs;
     node *rhsavis;
     node *withid;
     node *minv;
@@ -2463,7 +2464,8 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     case F_guard:
         // Propagate extrema of xi to xi'
         while (lhsid != NULL) {
-            rhsavis = ID_AVIS (EXPRS_EXPR (rhs));
+            exprs = PRF_ARGS (rhs);
+            rhsavis = ID_AVIS (EXPRS_EXPR (exprs));
             lhsavis = IDS_AVIS (lhsid);
 
             if (AVIS_MIN (rhsavis) != NULL) {
@@ -2483,7 +2485,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
                 }
             }
 
-            rhs = EXPRS_NEXT (rhs);
+            exprs = EXPRS_NEXT (exprs);
             lhsid = IDS_NEXT (lhsid);
         }
         break;
