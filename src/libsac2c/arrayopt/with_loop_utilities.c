@@ -279,6 +279,7 @@ WLUTfindArrayForBound (node *bound)
         // Note that we can't use ASSIGN_RHS (ID_SSAASSIGN (bound)
         // because ID_SSAASSIGN doesn't exist for fun args and index variables.
         // Additionally, B would match A instead of [5] for A = [5]; B = A;
+        res = NULL;
         pat = PMarray (1, PMAgetNode (&res), 0);
         PMmatchFlat (pat, bound);
         pat = PMfree (pat);
