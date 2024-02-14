@@ -45,6 +45,7 @@ extern constant *COmakeConstant (simpletype type, shape *shp, void *elems);
 extern constant *COmakeConstantFromShape (shape *shp);
 extern constant *COmakeConstantFromInt (int val);
 extern constant *COmakeConstantFromFloat (float val);
+extern constant *COmakeConstantFromBool (bool val);
 extern constant *COmakeConstantFromDynamicArguments (simpletype type, int dim, ...);
 extern constant *COmakeConstantFromArray (simpletype type, int dim, int *shp,
                                           void *elems);
@@ -117,7 +118,6 @@ extern bool COisEmptyVect (constant *a);
 
 extern constant *COreshape (constant *idx, constant *a, constant *);
 extern constant *COsel (constant *idx, constant *a, constant *);
-extern constant *COall (constant *a, constant *, constant *);
 extern constant *COidxSel (constant *idx, constant *a, constant *);
 extern constant *COoverSel (constant *idx, constant *a, constant *);
 extern constant *COtake (constant *idx, constant *a, constant *);
@@ -162,6 +162,7 @@ extern constant *COmax (constant *a, constant *b, constant *);
 /* bool ops */
 extern constant *COand (constant *a, constant *b, constant *);
 extern constant *COor (constant *a, constant *b, constant *);
+extern constant *COall (constant *a, constant *, constant *);
 
 /* compare ops */
 extern constant *COeq (constant *a, constant *b, constant *);

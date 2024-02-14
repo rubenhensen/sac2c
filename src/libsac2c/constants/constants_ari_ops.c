@@ -444,6 +444,40 @@ COor (constant *a, constant *b, constant *tmp1)
 /******************************************************************************
  *
  * function:
+ *    constant *COall( constant *a, constant *, constant *)
+ *
+ * description:
+ *    all_V expects a vector of boolean values and returns true if all elements
+ *    in the given vector are true.
+ *
+ ******************************************************************************/
+
+constant *
+COall (constant *a, constant *tmp1, constant *tmp2)
+{
+    constant *res;
+    bool all = TRUE;
+    bool *elems;
+    size_t i;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (CONSTANT_DIM (a) == 1, "COall applied to array of rank %d",
+                                        CONSTANT_DIM (a));
+    elems = (bool *)CONSTANT_ELEMS (a);
+    for (i = 0; all && i < CONSTANT_VLEN (a); i++) {
+        all = elems[i];
+    }
+
+    res = COmakeConstantFromBool (all);
+
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COall", a, res));
+
+    DBUG_RETURN (res);
+}
+/******************************************************************************
+ *
+ * function:
  *    constant *COle( constant *a, constant *b)
  *
  * description:
