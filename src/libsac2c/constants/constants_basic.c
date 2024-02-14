@@ -425,6 +425,25 @@ COmakeConstantFromFloat (float val)
     DBUG_RETURN (res);
 }
 
+constant *
+COmakeConstantFromBool (bool val)
+{
+    constant *res;
+    bool *boolelems;
+
+    DBUG_ENTER ();
+
+    res = (constant *)MEMmalloc (sizeof (constant));
+    CONSTANT_TYPE (res) = T_bool;
+    CONSTANT_SHAPE (res) = SHmakeShape (0);
+    boolelems = (bool *)MEMmalloc (sizeof (bool));
+    boolelems[0] = val;
+    CONSTANT_ELEMS (res) = boolelems;
+    CONSTANT_VLEN (res) = 1;
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn constant *COmakeConstantFromShape( shape *shp)
