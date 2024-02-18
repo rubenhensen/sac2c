@@ -13,6 +13,37 @@
 #include "free.h"
 
 /*
+ * DCI: dead code inference
+ *
+ * This traversal is setting AVIS_ISDEAD for all variables of a given
+ * function body. 
+ *
+ * Implementation:
+ *    a) core mechanism:
+ *    First all AVIS_ISDEAD values are set to TRUE. This happens in DCIarg and
+ *    in DCIvardec. For non-lac functions, we mark all arguments as FALSE!
+ *    (sbs 2024: not sure how this interacts with UAR....)
+ *    Then, we make a bottom-up traversal (ensured by DCIassign). Starting
+ *    from DCIreturn, we traverse only identifiers that are needed, marking
+ *    AVIS_ISDEAD as FALSE in DCIid.
+ *    When traversing a LHS (DCIids), we signal to DCIlet through 
+ *    INFO_ONEIDSNEEDED that at least one result is needed. Then, and only
+ *    then, we traverse the RHS which can mark further variables as alive!
+ *    There are two exceptions: F_accu enforceis the liveness of its arguments.
+ *    Likewise, F_guard enforces the liveness of its arguments, if and only if
+ *    its LHS is void! The latter is needed as mem:racc makes _guard_
+ *    void but we still need to keep the guards!
+ *    b) fixpoint iteration:
+ *    On top of the core mechanism, we perform a fixpoint iteration to
+ *    minimise the number of arguments / return values in loops and
+ *    conditionals. Here, we only mark arguments as alive (AVIS_ISDEAD == FALSE)
+ *    when there is demand coming from the uses within the LaCfun body.
+ */
+
+
+
+
+/*
  * INFO structure
  */
 /* TODO: completely remove TS_fundef and simplify the code,
@@ -457,7 +488,9 @@ DCIlet (node *arg_node, info *arg_info)
      * accu() must never become dead code
      */
     if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-        && (PRF_PRF (LET_EXPR (arg_node)) == F_accu)) {
+        && ((PRF_PRF (LET_EXPR (arg_node)) == F_accu)
+            || ( (PRF_PRF (LET_EXPR (arg_node)) == F_guard)
+                  && (TCcountIds (LET_IDS (arg_node)) == 0) ))) {
         INFO_ONEIDSNEEDED (arg_info) = TRUE;
     }
 

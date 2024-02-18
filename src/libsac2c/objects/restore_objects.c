@@ -432,43 +432,6 @@ RESOap (node *arg_node, info *arg_info)
 }
 
 node *
-RESOprf (node *arg_node, info *arg_info)
-{
-    node *lhs, *args, *decl;
-
-    DBUG_ENTER ();
-
-    lhs = INFO_LHS (arg_info);
-    args = PRF_ARGS (arg_node);
-
-    switch (PRF_PRF (arg_node)) {
-    /**
-     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
-     */
-    case F_guard:
-        INFO_DELETE (arg_info) = TRUE;
-        while (lhs != NULL) {
-            decl = ID_DECL (EXPRS_EXPR (args));
-            if (NODE_TYPE (decl) != N_arg || !ARG_ISARTIFICIAL (decl)) {
-                EXPRS_EXPR (args) = TRAVdo (EXPRS_EXPR (args), arg_info);
-                INFO_DELETE (arg_info) = FALSE;
-            }
-
-            lhs = IDS_NEXT (lhs);
-            args = EXPRS_NEXT (args);
-        }
-
-        break;
-
-    default:
-        arg_node = TRAVsons (arg_node, arg_info);
-        break;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
 RESOlet (node *arg_node, info *arg_info)
 {
     node *lhs, *rhs, *expr;
@@ -536,27 +499,6 @@ RESOlet (node *arg_node, info *arg_info)
                 EXPRS_NEXT (args) = expr;
             } else {
                 PRF_ARGS (rhs) = expr;
-            }
-            break;
-
-        /**
-         * Detect assignments of the form
-         *   x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pn)
-         * and delete lhs where rhs is a globobj,
-         * as it is an identity assignment.
-         */
-        case F_guard:
-            INFO_DELETE (arg_info) = TRUE;
-            while (lhs != NULL) {
-                expr = EXPRS_EXPR (args);
-                if (NODE_TYPE (expr) == N_globobj) {
-                    AVIS_SUBST (IDS_AVIS (lhs)) = GLOBOBJ_OBJDEF (expr);
-                } else {
-                    INFO_DELETE (arg_info) = FALSE;
-                }
-
-                lhs = IDS_NEXT (lhs);
-                args = EXPRS_NEXT (args);
             }
             break;
 

@@ -577,6 +577,15 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                 TYmakeOverloadedFunType (TUcreateFuntypeIgnoreArtificials (arg_node),
                                          FUNDEF_WRAPPERTYPE (wrapper));
         }
+        /*
+         * establish link from instance to wrapper which is needed to enable the
+         * specialisation of _impl functions that result from -check c of type
+         * pattern functions.
+         */
+        FUNDEF_WRAPPERFUNDEF (arg_node) = wrapper;
+
+    } else {
+        FUNDEF_RETS (arg_node) = TUrettypes2alphaMax (FUNDEF_RETS (arg_node));
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);

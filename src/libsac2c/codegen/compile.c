@@ -8903,29 +8903,31 @@ COMPprfMask_VxVxV (node *arg_node, info *arg_info)
  *
  * @fn node *COMPprfGuard (node *arg_node, info *arg_info)
  *
- * @brief markmemvals has already modified guards such that the returned
- * arguments are named the same as the inputs, e.g.
- *   x1, .., xn = (x1, .., xn, t1, .., tn, p1, .., pm)
- * Therefore an assignment is no longer necessary, so all we need to do is to
- * check whether all predicates pi hold, and give an error otherwise.
+ * @brief mem:racc has already modified guards such that all guarded arguments
+ * have been pulled out and replaced by copy instructions. All type arguments
+ * are gone as well. So instead of the original
+ *   x1, .., xn = _guard_ (x1, .., xn, t1, .., tn, p1, .., pm)
+ * we now find a void prf with boolean arguments only:
+ *                _guard_ (p1, .., pm)
+ * Here, we generate an ICM ND_PRF_GUARD for each predicate.
  *
  ******************************************************************************/
 static node *
 COMPprfGuard (node *arg_node, info *arg_info)
 {
     char *context;
-    size_t num_rets;
     node *preds, *guard;
     node *ret_node = NULL;
 
     DBUG_ENTER ();
 
     context = PRF_CONTEXTSTRING (arg_node);
-    num_rets = PRF_NUMVARIABLERETS (arg_node);
-    DBUG_ASSERT (num_rets > 0, "guard has no return values");
+    DBUG_ASSERT (PRF_NUMVARIABLERETS (arg_node) == 0,
+                 "All guarded arguments of _guard_ should have been stripped "
+                 "away bu mem:racc. Found %zu return values!", 
+                 PRF_NUMVARIABLERETS (arg_node));
 
-    // Skip x1, .., xn, t1, .., tn (i.e. num_rets * 2)
-    preds = TCgetNthExprs (num_rets * 2, PRF_ARGS (arg_node));
+    preds = PRF_ARGS (arg_node);
 
     while (preds != NULL) {
         guard = TCmakeAssignIcm5 ("ND_PRF_GUARD",

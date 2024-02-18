@@ -17,6 +17,7 @@
  *   - val_le_val_SxS
  *   - val_lt_val_SxS
  *   - prod_matches_prod_shape_VxA
+ *   - guard
  * However, as the LHS-alias might have a more precise type, we introduce
  * aliasing assignments to trigger a conversion of the data representation
  * in the backend.
@@ -312,6 +313,10 @@ EMRACClet (node *arg_node, info *arg_info)
 node *
 EMRACCprf (node *arg_node, info *arg_info)
 {
+    node *exprs;
+    node *nargs;
+    size_t i,n;
+
     DBUG_ENTER ();
 
     PRF_ARGS (arg_node) = TRAVopt(PRF_ARGS (arg_node), arg_info);
@@ -351,6 +356,28 @@ EMRACCprf (node *arg_node, info *arg_info)
          */
         arg_info
           = Substitute (&LET_IDS (INFO_LET (arg_info)), PRF_ARG1 (arg_node), arg_info);
+        break;
+
+    case F_guard:
+        /*
+         * v1,...,vn = _guard_(a1,...,an,t1,...,tn,p1,...,pm); R
+         * => constraint(p1,...,pm); R[vi\ai]
+         */
+        n = PRF_NUMVARIABLERETS (arg_node);
+        exprs = PRF_ARGS (arg_node);
+        for (i=0; i<n; i++) {
+            arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
+                                   EXPRS_EXPR (exprs), arg_info);
+            exprs = EXPRS_NEXT (exprs);
+        }
+        if (n >= 1) {
+            exprs = TCgetNthExprs (n-1, exprs);
+            nargs = EXPRS_NEXT (exprs);
+            EXPRS_NEXT (exprs) = NULL;
+            PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));
+            PRF_ARGS (arg_node) = nargs;
+            PRF_NUMVARIABLERETS (arg_node) = 0;
+        }
         break;
 
     default:; /* do nothing */

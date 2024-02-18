@@ -428,7 +428,8 @@ GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
     }
 
     // x, y, z = foo_impl (a, b)
-    ap = TBmakeAp (impl, DUPdoDupTree (pre_args));
+    ap = TBmakeSpap (TBmakeSpid (NULL, STRcpy (FUNDEF_NAME (impl))),
+                     DUPdoDupTree (pre_args));
     let = TBmakeLet (post_lhs, ap);
     body = TBmakeAssign (let, body);
 
@@ -452,6 +453,7 @@ GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
     FUNDEF_ASSIGNS (fundef) = FREEoptFreeTree (FUNDEF_ASSIGNS (fundef));
     FUNDEF_ASSIGNS (fundef) = body;
     FUNDEF_ISINLINE (fundef) = TRUE;
+    FUNDEF_CHECKIMPLFUNDEF (fundef) = impl;
 
     DBUG_PRINT ("modified function %s", FUNDEF_NAME (fundef));
 
