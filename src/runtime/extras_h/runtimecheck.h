@@ -24,7 +24,7 @@
 
 #define SAC_ASSURE_TYPE(cond, message)                                                   \
     if (!(cond)) {                                                                       \
-        SAC_RuntimeWarning (message);                                                    \
+        SAC_RuntimeWarning message;                                                      \
     }
 /* yes, in C '0;' is indeed a legal statement 8-)) */
 

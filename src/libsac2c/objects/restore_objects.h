@@ -5,7 +5,6 @@
 
 extern node *RESOid (node *arg_node, info *arg_info);
 extern node *RESOap (node *arg_node, info *arg_info);
-extern node *RESOprf (node *arg_node, info *arg_info);
 extern node *RESOlet (node *arg_node, info *arg_info);
 extern node *RESOassign (node *arg_node, info *arg_info);
 extern node *RESOblock (node *arg_node, info *arg_info);

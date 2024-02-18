@@ -3733,7 +3733,6 @@
     <traversal id="RESO" name="Restore Global Objects" default="sons" include="restore_objects.h">
       <travuser>
         <node name="Ap" />
-        <node name="Prf" />
         <node name="Id" />
         <node name="Assign" />
         <node name="Let" />
@@ -5714,6 +5713,38 @@
                 <node name="Ap" />
                 <phases>
                   <range from="ptc_l2f" to="ussa_f2l" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="WrapperFundef" default="NULL" inconstructor="no">
+          <description>
+            Points to the fundef of the corresponding wrapper function.
+          </description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Fundef" />
+                <phases>
+                  <range from="ptc_cwf" to="tc_swr" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="CheckImplFundef" default="NULL" inconstructor="no">
+          <description>
+            Is only set if Type Pattern are present and check c is enabled. It
+            points to the _impl - function to enable specialisations of the _impl 
+            function.
+          </description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Fundef" />
+                <phases>
+                  <range from="pre_rtpf" to="final" />
                 </phases>
               </target>
             </targets>
