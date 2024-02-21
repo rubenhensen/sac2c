@@ -197,7 +197,9 @@ EATfundef (node *arg_node, info *arg_info)
         otype = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
         DBUG_ASSERT (otype != NULL, "FUNDEF_RET_TYPE not found!");
         ftype = TYfixAndEliminateAlpha (otype);
+        TYfreeType (otype);
         FUNDEF_RETS (arg_node) = TUreplaceRetTypes (FUNDEF_RETS (arg_node), ftype);
+        DBUG_PRINT ("Done replacing ret types\n");
 
         /* process the real function type as well */
         if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
@@ -205,6 +207,8 @@ EATfundef (node *arg_node, info *arg_info)
             FUNDEF_WRAPPERTYPE (arg_node) = TYfreeType (FUNDEF_WRAPPERTYPE (arg_node));
             FUNDEF_WRAPPERTYPE (arg_node) = funtype;
         }
+
+        DBUG_PRINT ("Done processing fundef type\n");
 
         if (TYcountNoMinAlpha (ftype) > 0) {
 
@@ -322,7 +326,7 @@ EATap (node *arg_node, info *arg_info)
 node *
 EATavis (node *arg_node, info *arg_info)
 {
-    ntype *type, *scalar;
+    ntype *type, *scalar, *new_type;
 #ifndef DBUG_OFF
     char *tmp_str = NULL, *tmp_str2 = NULL;
 #endif
@@ -336,7 +340,9 @@ EATavis (node *arg_node, info *arg_info)
         DBUG_EXECUTE (tmp_str = TYtype2String (type, FALSE, 0));
         DBUG_PRINT ("replacing argument/vardec %s\'s type %s by ...",
                     AVIS_NAME (arg_node), tmp_str);
-        type = TYfixAndEliminateAlpha (type);
+        new_type = TYfixAndEliminateAlpha (type);
+        TYfreeType (type);
+        type = new_type;
         /**
          * we try to avoid AKD(0) types and replace them by AKS([]) types
          * I'm not 100% sure whether this is the right thing to do here.
@@ -402,14 +408,13 @@ EATarray (node *arg_node, info *arg_info)
     /*
      * construct the new elemtype
      */
-    if (INFO_LHS (arg_info) != NULL) {
-        nested = TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_LHS (arg_info))));
-    } else {
-        nested = NTCnewTypeCheck_Expr (arg_node);
-    }
+    nested = (INFO_LHS (arg_info) != NULL) ?
+                    TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_LHS (arg_info)))) :
+                    NTCnewTypeCheck_Expr (arg_node);
 
     if (TYisBottom (nested)) {
-        elemtype = nested;
+        ARRAY_ELEMTYPE (arg_node) = TYfreeType (ARRAY_ELEMTYPE (arg_node));
+        ARRAY_ELEMTYPE (arg_node) = nested;
     } else {
         outer = TYmakeAKS (TYcopyType (TYgetScalar (nested)),
                            SHcopyShape (ARRAY_FRAMESHAPE (arg_node)));
@@ -438,10 +443,10 @@ EATarray (node *arg_node, info *arg_info)
             }
         }
 #endif
+        ARRAY_ELEMTYPE (arg_node) = TYfreeType (ARRAY_ELEMTYPE (arg_node));
+        ARRAY_ELEMTYPE (arg_node) = elemtype;
     }
 
-    ARRAY_ELEMTYPE (arg_node) = TYfreeType (ARRAY_ELEMTYPE (arg_node));
-    ARRAY_ELEMTYPE (arg_node) = elemtype;
 
     DBUG_RETURN (arg_node);
 }
@@ -568,6 +573,8 @@ EATwithid (node *arg_node, info *arg_info)
                 INFO_WLIDS (arg_info) = WITHID_IDS (arg_node);
             }
         }
+
+        vec_type = TYfreeType (vec_type);
     } else {
         if (WITHID_IDS (arg_node) == NULL) {
             if (global.ssaiv) {

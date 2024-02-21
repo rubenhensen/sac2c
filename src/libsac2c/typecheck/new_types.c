@@ -184,76 +184,76 @@ struct NTYPE {
  * First, we define some basic ntype-access-macros:
  */
 
-#define NTYPE_CON(n) (n->mtypeconstr)
-#define NTYPE_ARITY(n) (n->arity)
-#define NTYPE_SONS(n) (n->sons)
-#define NTYPE_SON(n, i) (n->sons[i])
-#define NTYPE_MUTC_SCOPE(n) (n->mutcscope)
-#define NTYPE_MUTC_USAGE(n) (n->mutcusage)
-#define NTYPE_UNIQUE(n) (n->unique)
-#define NTYPE_DISTRIBUTED(n) (n->distributed)
+#define NTYPE_CON(n) ((n)->mtypeconstr)
+#define NTYPE_ARITY(n) ((n)->arity)
+#define NTYPE_SONS(n) ((n)->sons)
+#define NTYPE_SON(n, i) ((n)->sons[i])
+#define NTYPE_MUTC_SCOPE(n) ((n)->mutcscope)
+#define NTYPE_MUTC_USAGE(n) ((n)->mutcusage)
+#define NTYPE_UNIQUE(n) ((n)->unique)
+#define NTYPE_DISTRIBUTED(n) ((n)->distributed)
 /*
  * Macros for accessing the attributes...
  */
-#define SIMPLE_TYPE(n) (n->mtypeattr.a_simple.simple)
-#define SIMPLE_HIDDEN_UDT(n) (n->mtypeattr.a_simple.udt)
-#define SYMBOL_NS(n) (n->mtypeattr.a_symbol.mod)
-#define SYMBOL_NAME(n) (n->mtypeattr.a_symbol.name)
-#define USER_TYPE(n) (n->mtypeattr.a_user)
-#define AKV_CONST(n) (n->mtypeattr.a_akv)
-#define AKS_SHP(n) (n->mtypeattr.a_aks)
-#define AKD_SHP(n) (n->mtypeattr.a_akd.shp)
-#define AKD_DOTS(n) (n->mtypeattr.a_akd.dots)
+#define SIMPLE_TYPE(n) ((n)->mtypeattr.a_simple.simple)
+#define SIMPLE_HIDDEN_UDT(n) ((n)->mtypeattr.a_simple.udt)
+#define SYMBOL_NS(n) ((n)->mtypeattr.a_symbol.mod)
+#define SYMBOL_NAME(n) ((n)->mtypeattr.a_symbol.name)
+#define USER_TYPE(n) ((n)->mtypeattr.a_user)
+#define AKV_CONST(n) ((n)->mtypeattr.a_akv)
+#define AKS_SHP(n) ((n)->mtypeattr.a_aks)
+#define AKD_SHP(n) ((n)->mtypeattr.a_akd.shp)
+#define AKD_DOTS(n) ((n)->mtypeattr.a_akd.dots)
 
-#define IBASE_BASE(n) (n->mtypeattr.a_ibase)
-#define IDIM_DIM(n) (n->mtypeattr.a_idim)
-#define ISHAPE_SHAPE(n) (n->mtypeattr.a_ishape)
-#define IRES_NUMFUNS(n) (n->mtypeattr.a_ires.num_funs)
-#define IRES_FUNDEFS(n) (n->mtypeattr.a_ires.fundefs)
-#define IRES_FUNDEF(n, i) (n->mtypeattr.a_ires.fundefs[i])
-#define IRES_POSS(n) (n->mtypeattr.a_ires.poss)
-#define IRES_POS(n, i) (n->mtypeattr.a_ires.poss[i])
+#define IBASE_BASE(n) ((n)->mtypeattr.a_ibase)
+#define IDIM_DIM(n) ((n)->mtypeattr.a_idim)
+#define ISHAPE_SHAPE(n) ((n)->mtypeattr.a_ishape)
+#define IRES_NUMFUNS(n) ((n)->mtypeattr.a_ires.num_funs)
+#define IRES_FUNDEFS(n) ((n)->mtypeattr.a_ires.fundefs)
+#define IRES_FUNDEF(n, i) ((n)->mtypeattr.a_ires.fundefs[i])
+#define IRES_POSS(n) ((n)->mtypeattr.a_ires.poss)
+#define IRES_POS(n, i) ((n)->mtypeattr.a_ires.poss[i])
 
-#define ALPHA_SSI(n) (n->mtypeattr.a_alpha)
+#define ALPHA_SSI(n) ((n)->mtypeattr.a_alpha)
 
-#define BOTTOM_MSG(n) (n->mtypeattr.a_bottom)
+#define BOTTOM_MSG(n) ((n)->mtypeattr.a_bottom)
 
-#define POLY_NAME(n) (n->mtypeattr.a_poly)
+#define POLY_NAME(n) ((n)->mtypeattr.a_poly)
 
-#define POLYUSER_OUTER(n) (n->mtypeattr.a_polyuser.outer)
-#define POLYUSER_INNER(n) (n->mtypeattr.a_polyuser.inner)
-#define POLYUSER_SHAPE(n) (n->mtypeattr.a_polyuser.shape)
-#define POLYUSER_DENEST(n) (n->mtypeattr.a_polyuser.denest)
-#define POLYUSER_RENEST(n) (n->mtypeattr.a_polyuser.renest)
+#define POLYUSER_OUTER(n) ((n)->mtypeattr.a_polyuser.outer)
+#define POLYUSER_INNER(n) ((n)->mtypeattr.a_polyuser.inner)
+#define POLYUSER_SHAPE(n) ((n)->mtypeattr.a_polyuser.shape)
+#define POLYUSER_DENEST(n) ((n)->mtypeattr.a_polyuser.denest)
+#define POLYUSER_RENEST(n) ((n)->mtypeattr.a_polyuser.renest)
 
 /*
  * Macros for accessing the sons...
  */
-#define AKV_BASE(n) (n->sons[0])
-#define AKS_BASE(n) (n->sons[0])
-#define AKD_BASE(n) (n->sons[0])
-#define AUDGZ_BASE(n) (n->sons[0])
-#define AUD_BASE(n) (n->sons[0])
-#define UNION_MEMBER(n, i) (n->sons[i])
-#define PROD_MEMBER(n, i) (n->sons[i])
+#define AKV_BASE(n) ((n)->sons[0])
+#define AKS_BASE(n) ((n)->sons[0])
+#define AKD_BASE(n) ((n)->sons[0])
+#define AUDGZ_BASE(n) ((n)->sons[0])
+#define AUD_BASE(n) ((n)->sons[0])
+#define UNION_MEMBER(n, i) ((n)->sons[i])
+#define PROD_MEMBER(n, i) ((n)->sons[i])
 
-#define FUN_POLY(n) (n->sons[0])
-#define FUN_UPOLY(n) (n->sons[1])
-#define FUN_IBASE(n, i) (n->sons[i + 2])
+#define FUN_POLY(n) ((n)->sons[0])
+#define FUN_UPOLY(n) ((n)->sons[1])
+#define FUN_IBASE(n, i) ((n)->sons[i + 2])
 
-#define IBASE_GEN(n) (n->sons[0])
-#define IBASE_SCAL(n) (n->sons[1])
-#define IBASE_IARR(n) (n->sons[2])
+#define IBASE_GEN(n) ((n)->sons[0])
+#define IBASE_SCAL(n) ((n)->sons[1])
+#define IBASE_IARR(n) ((n)->sons[2])
 
-#define IARR_GEN(n) (n->sons[0])
-#define IARR_IDIM(n, i) (n->sons[i + 1])
+#define IARR_GEN(n) ((n)->sons[0])
+#define IARR_IDIM(n, i) ((n)->sons[i + 1])
 
-#define IDIM_GEN(n) (n->sons[0])
-#define IDIM_ISHAPE(n, i) (n->sons[i + 1])
+#define IDIM_GEN(n) ((n)->sons[0])
+#define IDIM_ISHAPE(n, i) ((n)->sons[i + 1])
 
-#define ISHAPE_GEN(n) (n->sons[0])
+#define ISHAPE_GEN(n) ((n)->sons[0])
 
-#define IRES_TYPE(n) (n->sons[0])
+#define IRES_TYPE(n) ((n)->sons[0])
 
 /*
  * For dbug-output purposes we keep an array of strings for the individual
