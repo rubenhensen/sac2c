@@ -552,8 +552,10 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
 
     if (FUNDEF_CHECKIMPLFUNDEF (fundef) != NULL) {
         impl_fun = FUNDEF_CHECKIMPLFUNDEF (fundef);
-        impl_wrapper = FUNDEF_WRAPPERFUNDEF (impl_fun);
-        impl_wrapper = DoSpecialize (impl_wrapper, impl_fun, args, rets);
+        if (FUNDEF_WRAPPERFUNDEF (impl_fun) != NULL) {
+            impl_wrapper = FUNDEF_WRAPPERFUNDEF (impl_fun);
+            impl_wrapper = DoSpecialize (impl_wrapper, impl_fun, args, rets);
+        }
     }
     /*
      * in case of a function loaded from a module, the body may be missing, so
