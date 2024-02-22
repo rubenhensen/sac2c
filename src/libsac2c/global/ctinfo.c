@@ -694,7 +694,7 @@ CTIerrorInternal (const char *format, ...)
 void
 CTIabortOnBottom (char *err_msg)
 {
-    fprintf (cti_stderr, "%s", err_msg);
+    fprintf (cti_stderr, "%s\n", err_msg);
     AbortCompilation ();
 }
 

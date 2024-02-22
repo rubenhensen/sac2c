@@ -253,7 +253,6 @@ PMMisInGuards (prf prfun)
 
     switch (prfun)
     {
-    case F_guard:
     case F_type_constraint:
     case F_non_neg_val_S:
     case F_non_neg_val_V:

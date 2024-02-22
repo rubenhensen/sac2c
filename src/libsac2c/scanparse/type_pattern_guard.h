@@ -20,7 +20,7 @@
  ******************************************************************************/
 
 // Helper methods for generating type pattern functions
-extern char *GTPmakeValidFundefName (char *guard_str, char *name);
+extern char *GTPmakeValidFundefName (const char *guard_str, char *name);
 
 // Methods for generating type pattern functions
 extern node *GTPmakePreCheck (node *fundef, char *pred, node *assigns, node *checks);
