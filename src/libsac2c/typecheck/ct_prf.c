@@ -362,6 +362,41 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
 
 /******************************************************************************
  *
+ * @fn ntype *NTCCTprf_type_fix (te_info *info, ntype *elems)
+ *
+ * @brief The returned type is always fixed to the given type, as opposed to
+ * F_type_conv, which allows for a conversion in the TY_gt case.
+ *
+ ******************************************************************************/
+ntype *
+NTCCTprf_type_fix (te_info *info, ntype *args)
+{
+    ntype *type, *arg, *res;
+    ct_res cmp;
+    char *err_msg;
+
+    DBUG_ENTER ();
+
+    type = TYgetProductMember (args, 0);
+    arg = TYgetProductMember (args, 1);
+    cmp = TYcmpTypes (type, arg);
+
+    if (cmp == TY_eq || cmp == TY_lt || cmp == TY_gt) {
+        res = TYcopyType (type);
+    } else {
+        TEhandleError (TEgetLine (info), TEgetFile (info),
+                       "Inferred type %s should match declared type %s",
+                       TYtype2String (arg, FALSE, 0),
+                       TYtype2String (type, FALSE, 0));
+        err_msg = TEfetchErrors ();
+        res = TYmakeBottomType (err_msg);
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
  * function:
  *    ntype *NTCCTprf_nest( te_info *info, ntype *elems)
  *

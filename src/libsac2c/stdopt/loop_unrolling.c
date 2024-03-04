@@ -1582,7 +1582,8 @@ GetLoopIdentifiers (node *targetvar, node *predicate, struct prf_expr_queue *sta
                     /* FIXME: this is a hack, we should do something about
                        type conversions presented in the form of primitive
                        functions.  */
-                    if (PRF_PRF (new_pred) == F_type_conv) {
+                    if (PRF_PRF (new_pred) == F_type_conv
+                        || PRF_PRF (arg_node) == F_type_fix) {
                         if (TYeqTypes (TYPE_TYPE (ID_AVIS (var)),
                                        ID_NTYPE (PRF_ARG2 (new_pred)))
                             && TYeqTypes (ID_NTYPE (PRF_ARG2 (new_pred)),

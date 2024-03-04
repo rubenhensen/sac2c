@@ -175,15 +175,22 @@ ETCfundef (node *arg_node, info *arg_info)
 node *
 ETCprf (node *arg_node, info *arg_info)
 {
+    node *res;
+
     DBUG_ENTER ();
 
     DBUG_PRINT ("Found N_prf");
     switch (PRF_PRF (arg_node)) {
+    /**
+     * Types can always become more specific at a later optimisation cycle, so
+     * whereas we can eliminate F_type_conv we never eliminate F_type_fix.
+     */
     case F_type_conv:
         DBUG_PRINT ("Found F_type_conv");
-        if (TYleTypes (ID_NTYPE (PRF_ARG2 (arg_node)), TYPE_TYPE (PRF_ARG1 (arg_node)))) {
+        if (TYleTypes (ID_NTYPE (PRF_ARG2 (arg_node)),
+                       TYPE_TYPE (PRF_ARG1 (arg_node)))) {
             DBUG_PRINT ("Eliminated F_type_conv");
-            node *res = PRF_ARG2 (arg_node);
+            res = PRF_ARG2 (arg_node);
             PRF_ARG2 (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = res;
@@ -197,7 +204,7 @@ ETCprf (node *arg_node, info *arg_info)
         if (CompareDTypes (ID_AVIS (PRF_ARG3 (arg_node)), PRF_ARG1 (arg_node),
                            PRF_ARG2 (arg_node))) {
             DBUG_PRINT ("Eliminated F_saabind");
-            node *res = PRF_ARG3 (arg_node);
+            res = PRF_ARG3 (arg_node);
             PRF_ARG3 (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = res;

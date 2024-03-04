@@ -980,7 +980,7 @@ EMIAprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_CONTEXT (arg_info) = IA_prf;
-    if (PRF_PRF (arg_node) == F_type_conv) {
+    if (PRF_PRF (arg_node) == F_type_conv || PRF_PRF (arg_node) == F_type_fix) {
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
     }
 

@@ -153,6 +153,29 @@ TPCmakeDimError (node *pattern, char *v, char *fundef, int fdim,
 
 /******************************************************************************
  *
+ * @fn char *TPCmakeNonNegativeError (char *v, char *id, char *fundef,
+ *                                    bool is_argument)
+ *
+ * @brief Creates a human-reabable error for a type pattern's dimensionality.
+ *
+ ******************************************************************************/
+char *
+TPCmakeNonNegativeError (char *v, char *id, char *fundef, bool is_argument)
+{
+    char *error;
+
+    DBUG_ENTER ();
+
+    v = is_argument ? v : "return value";
+    error = STRcatn (6, "Type pattern error in application of ", fundef,
+                        ": could not assign a non-negative value to `",
+                        id, "' in type pattern of argument ", v);
+
+    DBUG_RETURN (error);
+}
+
+/******************************************************************************
+ *
  * @fn node *TPCmakePrimitive (node *pattern, prf built_in, char *user_defined,
  *                             node *expr)
  *
@@ -222,6 +245,28 @@ TPCmakeNumCheck (int num, node *expr)
     DBUG_ENTER ();
 
     res = TCmakePrf2 (F_eq_SxS, TBmakeNum (num), expr);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @fn node *TPCmakeNonNegativeCheck (char *id)
+ *
+ * @brief Creates an expression to check whether the given identifier is
+ * non-negative.
+ *
+ * @returns An expression "expr >= 0"
+ *
+ ******************************************************************************/
+node *
+TPCmakeNonNegativeCheck (char *id)
+{
+    node *res;
+
+    DBUG_ENTER ();
+
+    res = TCmakePrf2 (F_ge_SxS, TBmakeSpid (NULL, STRcpy (id)), TBmakeNum (0));
 
     DBUG_RETURN (res);
 }

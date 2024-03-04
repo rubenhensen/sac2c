@@ -558,6 +558,7 @@ RCIprf (node *arg_node, info *arg_info)
     case F_guard_error:
     case F_dispatch_error:
     case F_type_conv:
+    case F_type_fix:
         INFO_MODE (arg_info) = rc_apuse;
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         break;

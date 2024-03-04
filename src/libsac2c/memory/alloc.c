@@ -2038,6 +2038,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_syncout:
     case F_UAR_dummy_type:
     case F_type_conv:
+    case F_type_fix:
     case F_type_error:
     case F_dispatch_error:
     case F_unshare:
