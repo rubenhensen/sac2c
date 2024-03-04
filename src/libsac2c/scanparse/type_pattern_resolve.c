@@ -396,7 +396,7 @@ FreeInfo (info *info)
  *
  * @fn node *AddSpidToEnv (char *v, char *id, char *error, node *constraint,
  *                         node *dependencies, resolution_info *ri,
- *                         bool is_scalar)
+ *                         bool is_scalar, bool is_constant)
  *
  * @brief Given an argument 'v' with a type pattern, and a feature 'id' of that
  * type pattern. This method adds the dependencies and constraint for this
@@ -406,7 +406,8 @@ FreeInfo (info *info)
  ******************************************************************************/
 static void
 AddSpidToEnv (char *v, char *id, char *error, node *constraint,
-              node *dependencies, resolution_info *ri, bool is_scalar)
+              node *dependencies, resolution_info *ri,
+              bool is_scalar, bool is_constant)
 {
     constraint_info *ci;
 
@@ -436,7 +437,7 @@ AddSpidToEnv (char *v, char *id, char *error, node *constraint,
     CI_DEPENDENCIES (ci) = dependencies;
     CI_ISARGUMENT (ci) = RI_ISARGUMENT (ri);
     CI_ISDEFINED (ci) = TCspidsContains (RI_DEFINED (ri), id);
-    CI_ISCONSTANT (ci) = STReq (v, id);
+    CI_ISCONSTANT (ci) = is_constant;
     CI_ISSCALAR (ci) = is_scalar;
     CI_ISDIMCHECK (ci) = FALSE;
     CI_ISELIDED (ci) = FALSE;
@@ -502,7 +503,7 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
              node **vdim, node **dependencies, resolution_info *ri)
 {
     node *expr;
-    char *error;
+    char *error, *dim_error;
 
     DBUG_ENTER ();
 
@@ -526,7 +527,8 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
         expr = TPCmakeShapeSel (v, pattern, expr);
         expr = TPCmakeNumCheck (NUM_VAL (feature), expr);
         AddSpidToEnv (v, v, error, expr,
-                      DUPdoDupTree (*dependencies), ri, TRUE);
+                      DUPdoDupTree (*dependencies), ri,
+                      TRUE, TRUE);
         fdim += 1;
     }
     // Case 2
@@ -546,7 +548,8 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
         expr = TPCmakeDimSum (v, fdim, *vdim);
         expr = TPCmakeShapeSel (v, pattern, expr);
         AddSpidToEnv (v, SPID_NAME (feature), error, expr,
-                      DUPdoDupTree (*dependencies), ri, TRUE);
+                      DUPdoDupTree (*dependencies), ri,
+                      TRUE, FALSE);
         fdim += 1;
     }
     // Case 6
@@ -554,7 +557,8 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
         expr = TPCmakeDimSum (v, fdim, *vdim);
         expr = TPCmakeTakeDrop (v, pattern, SPID_TDIM (feature), expr);
         AddSpidToEnv (v, SPID_NAME (feature), error, expr,
-                      DUPdoDupTree (*dependencies), ri, FALSE);
+                      DUPdoDupTree (*dependencies), ri,
+                      FALSE, FALSE);
         fdim += NUM_VAL (SPID_TDIM (feature));
     }
     // Case 7
@@ -565,14 +569,25 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
         id_deps = TCappendSpids (id_deps, DUPdoDupTree (*dependencies));
 
         expr = TPCmakeDimCalc (v, pattern, id);
-        AddSpidToEnv (v, id, error, expr, id_deps, ri, TRUE);
+        AddSpidToEnv (v, id, error, expr,
+                      id_deps, ri,
+                      TRUE, FALSE);
 
         TPCtryAddSpid (dependencies, id);
+
+        // Check that the dimensionality is non-negative
+        dim_error = TPCmakeNonNegativeError (v, id, FUNDEF_NAME (RI_FUNDEF (ri)),
+                                             RI_ISARGUMENT (ri));
+        expr = TPCmakeNonNegativeCheck (id);
+        AddSpidToEnv (v, id, dim_error, expr,
+                      id_deps, ri,
+                      TRUE, TRUE);
 
         expr = TPCmakeDimSum (v, fdim, *vdim);
         expr = TPCmakeTakeDrop (v, pattern, SPID_TDIM (feature), expr);
         AddSpidToEnv (v, SPID_NAME (feature), error, expr,
-                      DUPdoDupTree (*dependencies), ri, FALSE);
+                      DUPdoDupTree (*dependencies), ri,
+                      FALSE, FALSE);
 
         *vdim = TCappendSpids (*vdim, TBmakeSpids (STRcpy (id), NULL));
     }
@@ -707,7 +722,7 @@ MakeFeatureGuard (char *id, char *pred, constraint_info *ci)
     }
 
     // Generate a bottom type with a descriptive error message
-    if (CI_ISDIMCHECK (ci)) {
+    if (CI_ISDIMCHECK (ci) || CI_ISCONSTANT (ci)) {
         // Nothing to do
     } else if (CI_ISDEFINED (ci)) {
         CI_ERROR (ci) = SBUFprintf (CI_ERROR (ci),
@@ -925,7 +940,8 @@ Resolve (resolution_info *ri)
     }
 
     if (RI_EXIST (ri) != NULL) {
-        CTIerror (EMPTY_LOC, "%s has remaining dependencies: %s",
+        CTIerror (EMPTY_LOC, "%s has ambiguous variable-rank features that "
+                             "could not be uniquely determined: %s",
                              FUNDEF_NAME (RI_FUNDEF (ri)),
                              CVspids2String (RI_EXIST (ri)));
         RI_EXIST (ri) = FREEdoFreeTree (RI_EXIST (ri));

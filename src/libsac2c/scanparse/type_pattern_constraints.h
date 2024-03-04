@@ -27,11 +27,13 @@ extern bool TPCremoveSpid (node **spids, char *name);
 // Methods for generating error messages
 extern char *TPCmakeFeatureError (node *pattern, char *v, char *fundef, bool is_argument);
 extern char *TPCmakeDimError (node *pattern, char *v, char *fundef, int fdim, bool is_argument);
+extern char *TPCmakeNonNegativeError (char *v, char *id, char *fundef, bool is_argument);
 
 // Methods for generating constraint expressions
 extern node *TPCmakePrimitive (node *pattern, prf built_in, char *user_defined, node *arg);
 extern node *TPCmakeDimSum (char *v, int fdim, node *vdim);
 extern node *TPCmakeNumCheck (int num, node *expr);
+extern node *TPCmakeNonNegativeCheck (char *id);
 extern node *TPCmakeShapeSel (char *v, node *pattern, node *dim);
 extern node *TPCmakeDimCalc (char *v, node *pattern, char *spid);
 extern node *TPCmakeTakeDrop (char *v, node *pattern, node *nid, node *dim);

@@ -784,7 +784,7 @@ ASDprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (PRF_PRF (arg_node) == F_type_conv) {
+    if (PRF_PRF (arg_node) == F_type_conv || PRF_PRF (arg_node) == F_type_fix) {
 
         arg = PRF_ARG2 (arg_node);
         tg = TYPE_TYPE (PRF_ARG1 (arg_node));

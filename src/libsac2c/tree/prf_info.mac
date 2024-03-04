@@ -908,6 +908,10 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
        COMPprfTypeConv, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
        TEone, NULL, NULL),
 
+  PRF (type_fix, (PA_x, PA_x, PA_x), 2, XXX, NTCCTprf_type_fix, NULL,
+       COMPprfTypeConv, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
+       TEone, NULL, NULL),
+
   PRF (type_error, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_id, NULL,
        COMPprfTypeError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
        TEn, NULL, NULL),

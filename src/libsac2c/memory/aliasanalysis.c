@@ -648,6 +648,7 @@ EMAAprf (node *arg_node, info *arg_info)
         break;
 
     case F_type_conv:
+    case F_type_fix:
         MarkAllIdsAliasing (lhs, INFO_MASK (arg_info));
         MarkIdAliasing (PRF_ARG2 (arg_node), INFO_MASK (arg_info));
         break;
