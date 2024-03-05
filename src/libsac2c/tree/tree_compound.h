@@ -1654,4 +1654,13 @@ extern size_t TCcountRanges (node *range);
 extern bool TCisScalar (node *arg_node);
 extern bool TCisSignedType (ntype *typ);
 
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_structelem :
+ ***/
+
+extern size_t TCcountStructElems (node *elems);
+extern node *TCgetNthStructElem (size_t n, node *elems);
+
 #endif /* _SAC_TREE_COMPOUND_H_ */

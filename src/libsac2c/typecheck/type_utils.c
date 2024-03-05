@@ -26,9 +26,9 @@
  * @fn ntype *TUcreateFuntype( node *fundef)
  * @fn ntype *TUcreateFuntypeIgnoreArtificials( node *fundef)
  *
- *   @brief creates a function type from the given arg/return types.
- *   @param
- *   @return
+ * @brief creates a function type from the given arg/return types.
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -90,9 +90,9 @@ TUcreateFuntypeIgnoreArtificials (node *fundef)
  *
  * @fn ntype *TUrebuildWrapperTypeAlphaFix( ntype *)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -136,9 +136,9 @@ TUrebuildWrapperTypeAlphaFix (ntype *type)
  *
  * @fn ntype *TUrebuildWrapperTypeAlpha( ntype *)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -186,9 +186,9 @@ TUrebuildWrapperTypeAlpha (ntype *type)
  *
  * @fn node *TUcreateTmpVardecsFromRets( node *rets)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -212,9 +212,9 @@ TUcreateTmpVardecsFromRets (node *rets)
  *
  * @fn ntype *TUmakeProductTypeFromArgs( node *args)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -240,9 +240,9 @@ TUmakeProductTypeFromArgs (node *args)
  *
  * @fn ntype *TUmakeProductTypeFromRets( node *rets)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -315,9 +315,9 @@ TUmakeTypeExprsFromRets (node *rets)
  *
  * @fn node *TUreplaceRetTypes( node *rets, ntype* prodt)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -347,9 +347,9 @@ TUreplaceRetTypes (node *rets, ntype *prodt)
  *
  * @fn node  *TUrettypes2unknownAUD( node *rets);
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -373,9 +373,9 @@ TUrettypes2unknownAUD (node *rets)
  *
  * @fn node  *TUargtypes2unknownAUD( node *args);
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -408,9 +408,9 @@ TUargtypes2unknownAUD (node *args)
  *
  * @fn ntype  *TUtype2alphaMax( ntype *type);
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -454,9 +454,9 @@ TUtype2alphaMax (ntype *type)
  *
  * @fn ntype  *TUtype2alphaAUDMax( ntype *type);
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -494,9 +494,9 @@ TUtype2alphaAUDMax (ntype *type)
  *
  * @fn node  *TUrettypes2alphaMax( node *rets);
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -524,9 +524,9 @@ TUrettypes2alphaAUDMax (node *rets)
  *
  * @fn node  *TUrettypes2alphaMax( node *rets);
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -554,9 +554,9 @@ TUrettypes2alphaMax (node *rets)
  *
  * @fn node  *TUrettypes2alpha( node *rets);
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -581,9 +581,9 @@ TUrettypes2alpha (node *rets)
  *
  * @fn node  *TUrettypes2alphaFix( node *rets);
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -625,9 +625,9 @@ TUrettypes2alphaFix (node *rets)
  *
  * @fn node  *TUalphaRettypes2bottom( node *rets, const char *msg);
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -653,9 +653,9 @@ TUalphaRettypes2bottom (node *rets, const char *msg)
  *
  * @fn bool TUdimKnown( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -670,9 +670,9 @@ TUdimKnown (ntype *ty)
  *
  * @fn bool TUshapeKnown( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -687,9 +687,9 @@ TUshapeKnown (ntype *ty)
  *
  * @fn bool TUisBoolScalar( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -708,9 +708,9 @@ TUisBoolScalar (ntype *ty)
  *
  * @fn bool TUisIntScalar( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -729,9 +729,9 @@ TUisIntScalar (ntype *ty)
  *
  * @fn bool TUisIntVect( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -750,9 +750,9 @@ TUisIntVect (ntype *ty)
  *
  * @fn bool TUisEmptyVect( ntype *ty)
  *
- *   @brief Predicate for empty (integer) vector.
- *   @param an ntype
- *   @return boolean true if argument is empty integer vector.
+ * @brief Predicate for empty (integer) vector.
+ * @param an ntype
+ * @return boolean true if argument is empty integer vector.
  *
  ******************************************************************************/
 
@@ -771,9 +771,9 @@ TUisEmptyVect (ntype *ty)
  *
  * @fn bool TUisUnsigned( ntype *ty)
  *
- *   @brief Predicate for array of unsigned integer (int/long/etc ) type.
- *   @param an ntype
- *   @return boolean true if it is an untyped integer type
+ * @brief Predicate for array of unsigned integer (int/long/etc ) type.
+ * @param an ntype
+ * @return boolean true if it is an untyped integer type
  *
  ******************************************************************************/
 
@@ -798,9 +798,9 @@ TUisUnsigned (ntype *ty)
  *
  * @fn bool TUisUniqueUserType( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -827,9 +827,9 @@ TUisUniqueUserType (ntype *ty)
  *
  * @fn bool TUisHidden( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -855,9 +855,9 @@ TUisHidden (ntype *ty)
  *
  * @fn bool TUisHidden( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -879,9 +879,9 @@ TUisNested (ntype *ty)
  *
  * @fn bool TUisArrayOfUser( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -899,11 +899,11 @@ TUisArrayOfUser (ntype *type)
 
 /** <!--********************************************************************-->
  *
- * @fn bool TUisArrayOfUser( ntype *ty)
+ * @fn bool TUisArrayOfSimple( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -921,11 +921,33 @@ TUisArrayOfSimple (ntype *type)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool TUisArrayOfHidden (ntype *ty)
+ *
+ * @brief
+ * @param
+ * @return
+ *
+ ******************************************************************************/
+bool
+TUisArrayOfHidden (ntype *type)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    res = TUisArrayOfSimple (type)
+        && (TYgetSimpleType (TYgetScalar (type)) == T_hidden);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TUcontainsUser( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -955,9 +977,9 @@ TUcontainsUser (ntype *type)
  *
  * @fn bool TUisBoxed( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -1148,9 +1170,9 @@ TUeqElementSize (ntype *a, ntype *b)
  *
  * @fn ntype *TUcomputeImplementationType( ntype *ty)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -1173,9 +1195,9 @@ TUcomputeImplementationType (ntype *ty)
  *
  * @fn char *TUtypeSignature2String( node *fundef)
  *
- *   @brief
- *   @param
- *   @return
+ * @brief
+ * @param
+ * @return
  *
  ******************************************************************************/
 
@@ -1223,8 +1245,8 @@ TUtypeSignature2String (node *fundef)
  *   @brief creates a multi-line string for wrapper functions; one line
  *          per existing instance. To do so a local helper function
  *          createFunSigString is needed that is mapped onto all instances.
- *   @param
- *   @return
+ * @param
+ * @return
  *
  ******************************************************************************/
 static node *

@@ -10,6 +10,7 @@
 #include "shape.h"
 #include "user_types.h"
 #include "globals.h"
+#include "tree_basic.h"
 
 /*
  * This module "user_type" implements a repository for user defined types.
@@ -507,6 +508,23 @@ UTisExternal (usertype udt)
     DBUG_RETURN (ENTRY_EXTERNAL (udt_rep[udt]));
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn bool UTisStruct( usertype udt)
+ *
+ * @brief checks whether the passed udt is an external type
+ *
+ * @param udt
+ *
+ * @return
+ ******************************************************************************/
+bool
+UTisStruct (usertype udt)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (TYPEDEF_STRUCTDEF (ENTRY_TDEF (udt_rep[udt])) != NULL);
+}
+
 /******************************************************************************
  *
  * function:
@@ -527,26 +545,27 @@ UTprintRepository (FILE *outfile)
 
     DBUG_ENTER ();
 
-    fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %10s | %-7s | %-7s | %-7s | %-14s \n", "udt:", "module:",
-             "name:", "defining type:", "base type:", "alias udt:", "nested:", "extern:", "line", "def node:");
+    fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %10s | %-7s | %-7s | %-7s | %-7s | %-14s \n", "udt:", "module:",
+             "name:", "defining type:", "base type:", "alias udt:", "nested:", "extern:", "struct:", "line", "def node:");
     for (i = 0; i < udt_no; i++) {
         alias = UTgetAlias (i);
         if (alias == UT_NOT_DEFINED) {
-            fprintf (outfile, " %4d " UTPRINT_FORMAT " %-10s | %-7s | %-7s | %-7zu | %-14p \n", i,
+            fprintf (outfile, " %4d " UTPRINT_FORMAT " %-10s | %-7s | %-7s | %-7s | %-7zu | %-14p \n", i,
                      NSgetName (UTgetNamespace (i)), UTgetName (i),
                      TYtype2String (UTgetTypedef (i), TRUE, 0),
                      TYtype2String (UTgetBaseType (i), TRUE, 0), 
                      "---", (UTisNested (i)?"yes":""),
-                     (UTisExternal (i)?"yes":""), UTgetLine (i),
+                     (UTisExternal (i)?"yes":""),
+                     (UTisStruct (i)?"yes":""), UTgetLine (i),
                      (void *)UTgetTdef (i));
         } else {
-            fprintf (outfile, " %4d " UTPRINT_FORMAT " %-10d | %-7s | %-7s | %-7zu | %-14p \n", i,
+            fprintf (outfile, " %4d " UTPRINT_FORMAT " %-10d | %-7s | %-7s | %-7s | %-7zu | %-14p \n", i,
                      NSgetName (UTgetNamespace (i)), UTgetName (i),
                      TYtype2String (UTgetTypedef (i), TRUE, 0),
                      TYtype2String (UTgetBaseType (i), TRUE, 0), 
                      UTgetAlias (i), (UTisNested (i)?"yes":""),
-                     (UTisExternal (i)?"yes":""), UTgetLine (i),
-                     (void *)UTgetTdef (i));
+                     (UTisExternal (i)?"yes":""), (UTisStruct (i)?"yes":""), 
+                     UTgetLine (i), (void *)UTgetTdef (i));
         }
     }
 

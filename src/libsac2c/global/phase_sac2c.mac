@@ -115,8 +115,20 @@ SUBPHASE (flt, "Flattening nested expressions", FLATdoFlatten, ALWAYS, sim)
 
 SUBPHASE (udt, "Processing user defined types", RSTdoResolveSymbolTypes, ALWAYS, sim)
 
+#if 0
+// TODO: we should move this phase into a branch nested-arrays where it can 
+//       be picked up when someone works on real nesting support!
+// For the time being (2024) we cannot run this phase since
+// the nested flag is also being used for structs 
+// and the functions generated here get in the way when compiling
+// struct modules. The problem stems from the change in
+// the hidden type. As the hidden type now is not just hidden
+// but can carry the pointer to the "inner" definition whenever
+// the type is nested (as in the nested case AND in structs!)
+// we have to reconsider the enclose/disclose business!
 SUBPHASE (gntc, "Generating nested type conversion functions",
           GNTCdoGenerateNestedTypeConversions, ALWAYS, sim)
+#endif
 
 SUBPHASE (ggtc, "Generating generic type conversion functions",
           GGTCdoGenerateGenericTypeConversions, ALWAYS, sim)
@@ -220,27 +232,6 @@ SUBPHASE (cua, "Checking uniqueness annotations", CUAdoCheckUniquenessAnnotation
 
 SUBPHASE (cuq, "Checking uniqueness", CUdoCheckUniqueness, ALWAYS, popt)
 
-#ifdef CG_STRUCT_TRY
-
-SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
-          popt)
-
-SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optimize.dodfr,
-          popt)
-
-SUBPHASE (des, "Resolving structs", DESdoDeStruct, ALWAYS, popt)
-
-SUBPHASE (ewt, "Extending dispatch information", EWTdoExtendWrapperTypes, ALWAYS, popt)
-
-SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, popt)
-
-SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, popt)
-
-SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
-          SSATdoTransformAllowGOs, ALWAYS, popt)
-
-#else /*  CG_STRUCT_TRY */
-
 SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, popt)
 
 SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, popt)
@@ -251,11 +242,11 @@ SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
 SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
           popt)
 
-SUBPHASE (des, "Removing all structs", DESdoDeStruct, ALWAYS, popt)
-
-#endif /*  CG_STRUCT_TRY */
+SUBPHASE (accu, "Introducing explicit accumulators", EAdoExplicitAccumulate, ALWAYS, popt)
 
 SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, popt)
+
+SUBPHASE (dss, "Removing all structs", DSSdoDissolveStructs, ALWAYS, popt)
 
 SUBPHASE (cse, "Applying common subexpression elimination",
           CSEdoCommonSubexpressionElimination, global.optimize.docse, popt)
@@ -277,8 +268,6 @@ ENDPHASE (popt)
 /******************************************************************************/
 
 PHASE (ewl, "Enhancing with-loops", !global.on_demand_lib)
-
-SUBPHASE (accu, "Introducing explicit accumulators", EAdoExplicitAccumulate, ALWAYS, ewl)
 
 SUBPHASE (adp, "Adding default partitions", WLDPdoWlDefaultPartition, ALWAYS, ewl)
 

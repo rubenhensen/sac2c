@@ -1,0 +1,25 @@
+// We make sure that we can select into an array of records.
+// To do this, we use _sel_VxA_, which is rewriten to two separate 
+// applications of _sel_VxA_ in DES.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check tc
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 3
+
+struct record {int v1; int v2;};
+
+struct record select_second(struct record[2] a){
+    e = _sel_VxA_([1],a);
+    return e;
+}
+
+int main() {
+    b = [record{1,2}, record{3,4}];
+
+    e = select_second(b);
+
+    return e.v1;
+}

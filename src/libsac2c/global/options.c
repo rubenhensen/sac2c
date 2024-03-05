@@ -908,8 +908,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("E");
 
-    ARGS_FLAG ("enable_structs", global.enable_structs = TRUE);
-
     ARGS_FLAG ("enforceIEEE", global.enforce_ieee = TRUE);
 
     ARGS_FLAG ("enforceFloat", global.enforce_float = TRUE);

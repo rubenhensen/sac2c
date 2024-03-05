@@ -20,7 +20,9 @@
  */
 extern node *PRTdoPrint (node *syntax_tree);
 extern node *PRTdoPrintNode (node *node);
+extern node *PRTdoPrintHeader (node *fundef);
 
+extern node *PRTdoPrintHeaderFile (FILE *fd, node *fundef);
 extern node *PRTdoPrintNodeFile (FILE *fd, node *arg_node);
 extern node *PRTdoPrintFile (FILE *fd, node *arg_node);
 

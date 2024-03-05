@@ -213,6 +213,9 @@ CVtype2String (ntype *type, int flag, bool all)
                 }
             }
             strcat (tmp_string, UTgetName (udt));
+        } else if (TUisArrayOfHidden (type)) {
+            udt = TYgetHiddenUserType (TYgetScalar (type));
+            strcat (tmp_string, UTgetName (udt));
         } else {
             if (flag == 2) {
                 strcat (tmp_string, rename_type[TYgetSimpleType (TYgetScalar (type))]);

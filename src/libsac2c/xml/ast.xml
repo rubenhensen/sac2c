@@ -1583,6 +1583,7 @@
 		  <node name="Objdef" />
 		  <node name="Type" />
 		  <node name="Cast" />
+		  <node name="Structelem" />
 		</travuser>
 	      </traversal>
 	      <traversal id="OI" name="Object Initializer" default="sons" include="object_init.h">
@@ -2403,6 +2404,7 @@
         <node name="Array" />
         <node name="Ret" />
         <node name="Objdef" />
+        <node name="Structelem" />
         <node name="Type" />
       </travuser>
     </traversal>
@@ -3977,27 +3979,38 @@
       </travuser>
     </traversal>
     <traversal id="HS" name="Hide Structs" default="sons"
-      include="hidestructs.h">
+      include="hide_structs.h">
       <travuser>
         <node name="Module" />
         <node name="Structdef" />
         <node name="Structelem" />
       </travuser>
     </traversal>
-    <traversal id="DES" name="Remove Structs" default="sons"
-      include="destruct.h">
+    <traversal id="DSS" name="Dissolve Structs" default="sons"
+      include="dissolve_structs.h">
       <travuser>
         <node name="Module" />
-        <node name="Typedef" />
-        <node name="Structdef" />
+        <node name="Avis" />
         <node name="Fundef" />
         <node name="Arg" />
         <node name="Ret" />
+        <node name="Return" />
+        <node name="Block" />
         <node name="Assign" />
         <node name="Exprs" />
+        <node name="Array" />
         <node name="Let" />
         <node name="Ids" />
+        <node name="Id" />
         <node name="Vardec" />
+        <node name="Ap" />
+        <node name="Prf" />
+        <node name="Type" />
+        <node name="With" />
+        <node name="Modarray" />
+        <node name="Genarray" />
+        <node name="Fold" />
+        <node name="Code" />
       </travuser>
     </traversal>
     <traversal id="CTZG" name="Comparison to Zero for Guards" default="sons"
@@ -4222,19 +4235,6 @@
             </target>
           </targets>
         </son>
-        <!-- TODO: Remove the default. -->
-        <son name="Structs" default="NULL">
-          <description>structs defined within the module</description>
-          <targets>
-            <target mandatory="no">
-              <node name="Structdef" />
-              <phases>
-                <!-- TODO: This is not actually true... -->
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
         <son name="Types">
           <description>types defined within the module</description>
           <targets>
@@ -4426,19 +4426,6 @@
             <targets>
               <target mandatory="yes">
                 <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <!-- Reference to the copy-constructor. -->
-        <attribute name="CopyConstructor" default="NULL" inconstructor="no">
-          <type name="Link">
-            <targets>
-              <target mandatory="no">
-                <node name="Fundef" />
                 <phases>
                   <all />
                 </phases>
@@ -5051,6 +5038,20 @@
             </target>
           </targets>
         </son>
+        <son name="Structdef" default="NULL">
+          <description>
+            A struct definition. Set if this type definition is
+            created as a result of defining a struct.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Structdef" />
+               <phases>
+                 <all/>
+               </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Next">
           <targets>
             <target mandatory="no">
@@ -5199,18 +5200,6 @@
                 <any />
                 <phases>
                   <range from="mod_imp" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Structdef" default="NULL" inconstructor="no">
-          <type name="ExtLink">
-            <targets>
-              <target mandatory="yes">
-                <node name="Structdef" />
-                <phases>
-                  <all />
                 </phases>
               </target>
             </targets>
@@ -6022,27 +6011,14 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Structgetter" default="NULL" inconstructor="no">
-          <description>If this function is a getter for a struct element, this attribute points to
-            that element.</description>
-          <type name="ExtLink">
+        <attribute name="Structpos" default="0" inconstructor="no">
+          <description>
+            If this function is a getter or setter for a struct element,
+            this attribute provides the position of the structelem it refers to.
+          </description>
+          <type name="Integer">
             <targets>
               <target mandatory="no">
-                <node name="Structelem" />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Structsetter" default="NULL" inconstructor="no">
-          <description>If this function is a setter for a struct element, this attribute points to
-            that element.</description>
-          <type name="ExtLink">
-            <targets>
-              <target mandatory="no">
-                <node name="Structelem" />
                 <phases>
                   <all />
                 </phases>
@@ -6277,6 +6253,14 @@
         <flag name="IsObjInitFun">
           <description>This function is a global object initialiser function derived from the objdef
             expression.</description>
+        </flag>
+        <flag name="IsStructgetter">
+          <description>This function is function introduced by hide_structs to implement
+          selections of struct elements.</description>
+        </flag>
+        <flag name="IsStructsetter">
+          <description>This function is function introduced by hide_structs to implement
+          struct element modifications.</description>
         </flag>
         <flag name="IsThreadFun">
           <description>This function is a mutc thread function.</description>
@@ -6749,21 +6733,6 @@
             <targets>
               <target mandatory="no">
                 <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Typedef" default="NULL" inconstructor="no">
-          <!-- TODO: Perhaps making these normal Node types would clean them up
-               automatically during the `destruct' phase instead of having to
-               check every typedef explicitly. -->
-          <type name="Link">
-            <targets>
-              <target mandatory="yes">
-                <node name="Typedef" />
                 <phases>
                   <all />
                 </phases>
@@ -9996,6 +9965,13 @@
             by LRO.
           </description>
         </flag>
+        <flag name="IsMarkedElement" default="FALSE" >
+          <description>
+            This flag is set when, during the DSS phase, a struct
+            type argument is expanded and the AVIS belongs to a
+            specific element.
+          </description>
+        </flag>
       </flags>
       <checks>
         <check name="CHKavisReflection" />
@@ -11438,7 +11414,7 @@
             <target mandatory="no">
               <node name="Id" />
               <phases>
-                <range from="ptc_cwf" to="ewl_accu" />
+                <range from="ptc_cwf" to="popt_accu" />
               </phases>
             </target>
           </targets>

@@ -5,7 +5,7 @@
 //
 // SAC_TEST|include common.mk
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>$(SAC2C) $< && (echo "error code expected"; exit 1) || (test $$? -eq 41)
+// SAC_TEST|<tab>$(SAC2C) $< && (echo "error code expected"; exit 1) || (test $$? -eq 40)
 
 int main ()
 {

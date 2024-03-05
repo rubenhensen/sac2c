@@ -6,7 +6,7 @@
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>$(CALL_SAC2C) -bewl:accu $< 2>&1 | $(GREP_COMMAND_OUTPUT) "_accu_( iv, _flat_[0-9]*, _flat_[0-9]*)" 1
+// SAC_TEST|<tab>$(CALL_SAC2C) -bpopt:accu $< 2>&1 | $(GREP_COMMAND_OUTPUT) "_accu_( iv, _flat_[0-9]*, _flat_[0-9]*)" 1
 // SAC_TEST|<tab>$(CALL_SAC2C) -bpc:mmv $< 2>&1   | $(GREP_COMMAND_OUTPUT) "_accu_( iv, _emal_[0-9]*__flat_[0-9]*, _emal_[0-9]*__flat_[0-9]*)" 1
 
 #include "../mini-stdlib.sac"

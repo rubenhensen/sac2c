@@ -15,6 +15,129 @@
 
 #include "ct_prf.h"
 
+
+/*******************************************************************************
+ *
+ * We are currently in the process of changing the prfs on arrays to fully
+ * support nesting. This is needed for the records but will benefit other 
+ * scenarios as well. We believe that the implementation is complete, but it
+ * may turn out that we overlooked one or the other case and it
+ * may also turn out that this creates problems in other contexts such as
+ * user-defined types. For that reason, we keep the old versions by means of
+ * a cpp flag named FULL_NESTING.
+ * If FULL_NESTING is defined, the new (extended) semantics is
+ * supported, in case it is not defined, we revert to the old one.
+ * Ultimately, I hope we can brush this flag away completely, but
+ * for the time being, I think id does not really hurt to keep both
+ * versions.
+ */
+#define FULL_NESTING
+
+/* 
+ * The key change here is that we do no longer restrict primitive operations
+ * such as _dim_ and _shape_ to built-in types.
+ * Instead, we consider nesting as being guided by the element type whatever 
+ * that type is. So one could say that 
+ * 'Types should always imply conceptual nesting!'
+ * Concretely, this means:
+ *
+ * EXAMPLE 1: (simple arrays)
+ *
+ * a = [1,2,3];   a:: int[3]
+ * b = [a,a];     b:: int[2,3]
+ *
+ * _dim_A_(a) == 1
+ * _shape_A_(a) == [3]
+ *
+ * _dim_A_(b) == 2
+ * _shape_A_(b) == [2,3]
+ *
+ * -----------------------------------------------------------------------------
+ *
+ * EXAMPLE 2: (homogeneous nesting)
+ *
+ * typedef int[3] vec;
+ *
+ * a = (vec)[1,2,3];   a::vec
+ * b = [a,a];          b:: vec[2]
+ *
+ * _dim_A_(a) == 0
+ * _shape_A_(a) == []
+ *
+ * _dim_A_(b) == 1
+ * _shape_A_(b) == [2]
+ *
+ * However, we may (!) apply our currently (June 2021) hard-wired action of
+ *    eudt (eliminate user defined types)
+ * which will transform this code into that presented in EXMAPLE 1!
+ * Note here, that dim( vec a) now can be defined in terms of _dim_A_ !
+ * and that eudt now needs to change applications of _dim_A_ and co!
+ *
+ * Consequently, after eudt, we have:
+ *
+ * _sub_SxS_ (_dim_A_(a), 1) == 0
+ * _drop_SxV_ (-1, _shape_A_(a)) == []
+ * ...
+ *
+ * -----------------------------------------------------------------------------
+ *
+ * EXAMPLE 3: (records)
+ *
+ * struct myvec {
+ *          int[3] vec;
+ *          bool   bval;
+ *        };
+ *
+ * a = myvec ([1,2,3], true);   a::myvec
+ * b = [a,a];                   b:: myvec[2]
+ *
+ * _dim_A_(a) == 0
+ * _shape_A_(a) == []
+ *
+ * _dim_A_(b) == 1
+ * _shape_A_(b) == [2]
+ *
+ * Again, our current support for structs will resolve these by flattening in
+ *    des (de-structurising)
+ * Here, we resolve the above code into:
+ *
+ * a_vec = [1,2,3];           a_vec::int[3]
+ * a_bval = true;             a_bval::bool
+ *
+ * b_vec = [a_vec, a_vec];    b_vec::int[2,3]
+ * b_bval = [a_bval, a_bval]; b_bval::bool[2]
+ *
+ * Similarly, applications of _dim_A_ and co are being re-written into
+ *
+ * _sub_SxS_ (_dim_A_(a_vec), 1) == 0
+ * _drop_SxV_ (-1, _shape_A_(a_vec)) == []
+ * ...
+ * -----------------------------------------------------------------------------
+ *
+ * EXAMPLE 4: (potentially non-homogeneously nested)
+ *
+ * external typedef yourvec;     or
+ * typedef int[.] yourvec;
+ *
+ * a = createYourVec();         a:: yourvec
+ * b = [a,a];                   b:: yourvec[2]
+ *
+ * _dim_A_(a) == 0
+ * _shape_A_(a) == []
+ *
+ * _dim_A_(b) == 1
+ * _shape_A_(b) == [2]
+ *
+ * This form of nesting is not yet (2024) implemented in the backend, however,
+ * the type checker will support it without change due to the
+ * "new" understanding of nested data types in general.
+ */
+
+
+
+
+
+
 static constant *
 ApplyCF (te_info *info, ntype *args)
 {
@@ -1287,7 +1410,9 @@ NTCCTprf_dim_A (te_info *info, ntype *args)
 {
     ntype *array;
     ntype *res;
+#ifndef FULL_NESTING
     char *err_msg;
+#endif
 
     DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
@@ -1295,6 +1420,14 @@ NTCCTprf_dim_A (te_info *info, ntype *args)
 
     array = TYgetProductMember (args, 0);
 
+#ifndef FULL_NESTING
+    /*
+     * Previously, dim, shape and friends were restricted to simpletypes
+     * this is now changing. For the rationale behind it, see the description
+     * in top of file.
+     * We leave this commented out here until the refactoring is complete
+     * and tested! (June 2021)
+     */
     if (!(TYisUser (TYgetScalar (array))
           && UTisNested (TYgetUserType (TYgetScalar (array))))) {
         TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
@@ -1303,6 +1436,7 @@ NTCCTprf_dim_A (te_info *info, ntype *args)
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
+#endif
 
         if (TYisAKV (array) || TYisAKS (array) || TYisAKD (array)) {
             res = TYmakeAKV (TYmakeSimpleType (T_int),
@@ -1310,7 +1444,9 @@ NTCCTprf_dim_A (te_info *info, ntype *args)
         } else {
             res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
         }
+#ifndef FULL_NESTING
     }
+#endif
 
     DBUG_RETURN (TYmakeProductType (1, res));
 }
@@ -1549,7 +1685,16 @@ NTCCTprf_reshape_VxA (te_info *info, ntype *args)
     array = TYgetProductMember (args, 1);
 
     TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), new_shp);
+#ifndef FULL_NESTING
+    /*
+     * Previously, dim, shape and friends were restricted to simpletypes
+     * this is now changing. For the rationale behind it, see the description
+     * in top of file.
+     * We leave this commented out here until the refactoring is complete
+     * and tested! (June 2021)
+     */
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
+#endif
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);

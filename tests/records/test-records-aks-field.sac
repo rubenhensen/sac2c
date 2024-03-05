@@ -1,0 +1,37 @@
+// Records are allowed to have known sized arrays, we want to make
+// sure that such records can be constructed. Additionally, we check
+// that the result of _dim_A_ works as expected.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check tc
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 1
+
+struct AKSfield {int[3,2] aks;};
+
+struct AKSfield construct_record(){
+    arr = [[0,1],[2,3],[4,5]];
+    return AKSfield{arr};
+}
+
+int dim_of_auzd(struct AKSfield[*] arr){
+    return _dim_A_(arr);
+}
+
+int main() {
+    a = construct_record();
+
+    // arr is of type 'struct AKSfield[2]',
+    // but is replaced in DES by an array of type
+    // 'int[2,3,2]'.
+    arr = [a,a];
+
+    // We expect _dim_A_ of arr to be 1. If we would naively apply
+    // it to the array of type 'int[2,3,2]' as generated in DES
+    // the result would be 3.
+    dim = dim_of_auzd(arr);
+
+    return dim;
+}

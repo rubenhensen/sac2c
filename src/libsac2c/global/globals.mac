@@ -292,10 +292,6 @@ GLOBAL (backend_t, backend, BE_c99, xfree_dummy, )
  */
 GLOBAL (bool, dynamic_shapes, FALSE, xfree_dummy, )
 
-/*
- * Struct support options
- */
-GLOBAL (bool, enable_structs, FALSE, xfree_dummy, )
 
 /* -- Runtime Specialization -- */
 
