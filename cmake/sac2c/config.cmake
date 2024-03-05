@@ -584,6 +584,8 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   CHECK_CC_FLAG ("-Wextra" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wstrict-prototypes" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-unused-parameter" GCC_FLAGS)
+  # All kinds of false positives on the phm
+  CHECK_CC_FLAG ("-Wno-array-bounds" GCC_FLAGS)
   # in several places (e.g. everywhere), we have defined and assigned variables
   # whose value are not used. This is likely due to how some function/macro calls
   # work, which return some value/pointer. Removing these is inconvenient to say the
