@@ -1330,6 +1330,8 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_RET_inout(retvar_NT, var_NT) SAC_ND_RET_out (retvar_NT, var_NT)
 
+#define SAC_ND_RET_out_nodesc(retvar_NT, var_NT) SAC_ND_RET_out (retvar_NT, var_NT)
+
 /*
  * SAC_ND_PARAM_in implementations (referenced by sac_std_gen.h)
  */

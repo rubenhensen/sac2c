@@ -407,6 +407,7 @@ ATPtypedef (node *arg_node, info *arg_info)
                      "N_typedef with neither NTYPE nor TYPEPATTERN found");
     }
 
+    TYPEDEF_STRUCTDEF (arg_node) = TRAVopt (TYPEDEF_STRUCTDEF (arg_node), arg_info);
     TYPEDEF_NEXT (arg_node) = TRAVopt (TYPEDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);

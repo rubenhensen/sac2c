@@ -1,0 +1,34 @@
+// We make sure that we can select into an array of records that have
+// aks fields.
+// To do this, we use _sel_VxA_ on the array of records.
+// However, _sel_VxA_ can only return scalar values. In the case of 
+// an array field, we need to use an implementation of sel from the prelude
+// to the corresponding subarray.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -ecc -check tc
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 1
+
+struct record {int[2,3] v;};
+
+
+struct record select_first(struct record[2] a){
+
+    // This is converted into an application of sel from the prelude 
+    first = _sel_VxA_([0],a);
+
+    return first;
+}
+
+int main() {
+    m1 = [[1,2,3],[4,5,6]];
+    m2 = [[7,8,9],[10,11,12]];
+    b = [record{m1}, record{m2}];
+
+    first = select_first(b); // equal to m1
+    res = _sel_VxA_([0,0],first.v);
+    return res;
+}

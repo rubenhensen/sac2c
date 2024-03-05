@@ -21,6 +21,7 @@ extern node *RCavis (node *arg_node, info *arg_info);
 extern node *RCarray (node *arg_node, info *arg_info);
 extern node *RCret (node *arg_node, info *arg_info);
 extern node *RCobjdef (node *arg_node, info *arg_info);
+extern node *RCstructelem (node *arg_node, info *arg_info);
 extern node *RCtype (node *arg_node, info *arg_info);
 
 #endif /* SAC_RMCASTS_H_ */

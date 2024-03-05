@@ -436,7 +436,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_set_expressions.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_with_loop_generators.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_with_loop_operators.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_zero_generator_with_loops.c
-${CMAKE_CURRENT_SOURCE_DIR}/scanparse/hidestructs.c
+${CMAKE_CURRENT_SOURCE_DIR}/scanparse/hide_structs.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/introduce_user_tracing_calls.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/lex.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/parser.c
@@ -565,7 +565,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_basic.c
 ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_fun.c
 ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_prf.c
 ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_with.c
-${CMAKE_CURRENT_SOURCE_DIR}/typecheck/destruct.c
+${CMAKE_CURRENT_SOURCE_DIR}/typecheck/dissolve_structs.c
 ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/dispatchfuncalls.c
 ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/elim_alpha_types.c
 ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/elim_bottom_types.c

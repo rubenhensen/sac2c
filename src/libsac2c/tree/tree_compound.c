@@ -3627,4 +3627,66 @@ TCisSignedType (ntype *typ)
     DBUG_RETURN (res);
 }
 
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_structelem :
+ ***/
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCcountStructElems( node *elems)
+ *
+ * @brief Computes the length of the given N_structelem chain.
+ *
+ * @param elems - N_structelem chain
+ *
+ * @return chain length
+ ******************************************************************************/
+size_t
+TCcountStructElems (node *elems)
+{
+    size_t count;
+
+    DBUG_ENTER ();
+
+    count = 0;
+    while (elems != NULL) {
+        DBUG_ASSERT (NODE_TYPE (elems) == N_structelem,
+                     "non N_structelem node found!");
+        count++;
+        elems = STRUCTELEM_NEXT (elems);
+    }
+
+    DBUG_RETURN (count);
+}
+
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCgetNthStructElem( size_t n, node *elems)
+ *
+ * @brief Given an N_structelem chain, return the Nth N_structelem node
+ *        in the chain, where n = 0 refers to the given element.
+ *        Aborts if n >= chain length.
+ *
+ * @param n     - number indicating which structelem to return.
+ * @param elems - N_structelem chain
+ *
+ * @return N_structelem if n < chain length
+ *         Aborts if n >= chain length
+ ******************************************************************************/
+node *
+TCgetNthStructElem (size_t n, node *elems)
+{
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (n < TCcountStructElems (elems),
+                 "Expected at least %zu elements but only found %zu.",
+                 n + 1, TCcountStructElems (elems));
+    for (size_t i = 0; i < n; i++) {
+        elems = STRUCTELEM_NEXT (elems);
+    }
+    DBUG_RETURN (elems);
+}
+
+
 #undef DBUG_PREFIX

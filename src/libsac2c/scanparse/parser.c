@@ -25,7 +25,7 @@
 #include "stringset.h"
 #include "namespaces.h"
 #include "check_mem.h"
-#include "hidestructs.h"
+#include "hide_structs.h"
 #include "resource.h"
 #include "print.h"
 #include "modulemanager.h"
@@ -50,7 +50,7 @@ loc_annotated (struct location loc, node *n)
 }
 
 static node *
-SetClassType (node *module, node *type, node *pragmas)
+SetClassType (node *module, node *type, bool extern_p, node *pragmas)
 {
     node *tdef;
 
@@ -63,6 +63,7 @@ SetClassType (node *module, node *type, node *pragmas)
     TYPEDEF_TYPEPATTERN (tdef) = type;
 
     NODE_LOCATION (tdef) = NODE_LOCATION (module);
+    TYPEDEF_ISEXTERNAL (tdef) = extern_p;
     TYPEDEF_ISUNIQUE (tdef) = TRUE;
     TYPEDEF_PRAGMA (tdef) = pragmas;
     MODULE_TYPES (module) = tdef;
@@ -674,7 +675,7 @@ cache_module (struct parser *parser, const char *modname)
     if (!MODMmoduleExists (modname)) {
         struct location loc = token_location (parser_get_token (parser));
         parser_unget (parser);
-        error_loc (loc, "cannot load module `%s'!", modname);
+        error_loc (loc, "cannot find library for module `%s'!", modname);
         return;
     }
     module = MODMloadModule (modname);
@@ -995,11 +996,12 @@ is_type (struct parser *parser)
         } else
             parser_unget (parser);
 
+
         ret = false;
         if (saw_dcolon
             && !(parser->in_module && !strcmp (parser->current_module, tval))) {
-            struct used_module *mod;
-            struct known_symbol *symb;
+            struct used_module *mod=NULL;
+            struct known_symbol *symb=NULL;
 
             HASH_FIND_STR (parser->used_modules, tval, mod);
             if (!mod) {
@@ -1093,7 +1095,7 @@ handle_type (struct parser *parser)
             /* FIXME: we can have some more checking when we
                know how exactly do we want to handle structs.  */
             tok = parser_get_token (parser);
-            type = TYmakeSymbType (STRcat (STRUCT_TYPE, token_as_string (tok)), NULL);
+            type = TYmakeSymbType (STRcat (STRUCT_TYPE_PREFIX, token_as_string (tok)), NULL);
         } else
             type = make_simple_type (token_value (tok));
     } else {
@@ -1173,7 +1175,8 @@ parser_get_namespace_token (struct parser *parser, const char *modname, struct t
         return FALSE;
     }
 
-    parser->lex->trie_user = mod->user_ops;
+    if (mod != NULL)
+        parser->lex->trie_user = mod->user_ops;
 
     if (parser->unget_idx != 0)
         parser_unlex_token_buffer (parser);
@@ -1319,6 +1322,44 @@ is_function_call (struct parser *parser)
         bool ret = false;
         parser_get_token (parser);
         ret = token_is_operator (parser_get_token (parser), tv_lparen);
+        parser_unget2 (parser);
+        identifier_free (id);
+
+        return ret;
+    }
+
+    unreachable ("identifier field id must not be NULL");
+}
+
+bool
+is_struct (struct parser *parser)
+{
+    struct identifier *id;
+
+    parser_get_token (parser);
+    parser_unget (parser);
+
+
+    id = is_ext_id (parser);
+    if (id == NULL)
+        return false;
+
+    if (id->xnamespace !=  NULL) {
+        bool ret = false;
+        parser_get_token (parser);
+        parser_get_token (parser);
+        parser_get_token (parser);
+        ret = token_is_operator (parser_get_token (parser), tv_lbrace);
+        parser_unget3 (parser);
+        parser_unget (parser);
+        identifier_free (id);
+
+        return ret;
+
+    } else if (id->id != NULL) {
+        bool ret = false;
+        parser_get_token (parser);
+        ret = token_is_operator (parser_get_token (parser), tv_lbrace);
         parser_unget2 (parser);
         identifier_free (id);
 
@@ -1492,6 +1533,40 @@ handle_funcall_args (struct parser *parser)
         return error_mark_node;
 }
 
+/* Handle arguments and parens of struct instance:
+      '{' arg ? (',' arg )* '}'
+*/
+node *
+handle_struct_args (struct parser *parser)
+{
+    struct token *tok;
+    node *args;
+
+    if (parser_expect_tval (parser, tv_lbrace)) {
+
+        parser_get_token (parser);
+        tok = parser_get_token (parser);
+        if (token_is_operator (tok, tv_rbrace))
+            return NULL;
+        else
+            parser_unget (parser);
+
+        args = handle_expr_list (parser);
+        if (args == error_mark_node)
+            return error_mark_node;
+
+        if (parser_expect_tval (parser, tv_rbrace)) {
+            parser_get_token (parser);
+            return args;
+        } else {
+            parser_unget (parser);
+            free_tree (args);
+            return error_mark_node;
+        }
+    } else
+        return error_mark_node;
+}
+
 node *
 handle_function_call (struct parser *parser)
 {
@@ -1546,9 +1621,106 @@ handle_function_call (struct parser *parser)
 
     return loc_annotated (loc, TBmakeSpap (ret, args));
 }
+node *
+handle_field_ass_list (struct parser *parser, node *ret)
+{
+    struct token *tok;
+    struct location loc;
+
+    tok = parser_get_token (parser);
+    loc = token_location (tok);
+
+    if (token_value (tok) == tv_rbrace) {
+        return ret;
+    } else if (token_value (tok) == tv_dot) {
+        node *field, *expr;
+
+        field = handle_id (parser);
+        if( error_mark_node == field)
+            return field;
+
+        SPID_NAME (field) = STRcat (STRUCT_SETTER_PREFIX, SPID_NAME(field));
+
+        tok = parser_get_token (parser);
+        loc = token_location (tok);
+        if (token_value (tok) != tv_assign) {
+            error_loc (loc, "`=' expected");
+            return error_mark_node;
+        }
+
+        expr = handle_expr (parser);
+        if( error_mark_node == expr) {
+            return expr;
+        }
+
+        ret = TBmakeSpap (
+                      field,
+                      expr_constructor (expr,
+                          expr_constructor (ret, NULL)));
+        NODE_LOCATION (ret) = loc;
+        NODE_LOCATION (SPAP_ID (ret)) = loc;
+
+        tok = parser_get_token (parser);
+        loc = token_location (tok);
+        if ((token_value (tok) != tv_comma)
+            && (token_value (tok) != tv_rbrace)) {
+            error_loc (loc, "`,' or `}' expected");
+            return error_mark_node;
+        }
+        if (token_value (tok) == tv_rbrace) {
+            parser_unget (parser);
+        }
+
+    } else {
+        error_loc (loc, "field assignment or `}' expected");
+        return error_mark_node;
+    }
+    return handle_field_ass_list (parser, ret);
+}
+
+node *
+handle_struct (struct parser *parser)
+{
+    struct token *tok;
+    node *ret = error_mark_node;
+    node *args = error_mark_node;
+    struct location loc;
+
+    tok = parser_get_token (parser);
+    loc = token_location (tok);
+    parser_unget (parser);
+
+    if (!is_struct (parser)) {
+        error_loc (loc, "struct definition expected");
+        return error_mark_node;
+    }
+
+    ret = handle_ext_id (parser);
+    SPID_NAME (ret) = STRcat (STRUCT_CON_PREFIX, SPID_NAME (ret));
+    ret = loc_annotated (loc, TBmakeSpap (ret, NULL));
+
+    parser_get_token (parser);        // guaranteed `{' as is_struct was true!
+    tok = parser_get_token (parser);
+    loc = token_location (tok);
+    parser_unget (parser);
+
+    if (token_value (tok) == tv_dot) {
+        ret = handle_field_ass_list (parser, ret);
+    } else {
+        parser_unget (parser);       // putting `{' back
+        args = handle_struct_args (parser);
+        if (error_mark_node == args) {
+            free_tree (ret);
+            return error_mark_node;
+        }
+        SPAP_ARGS (ret) = args;
+    }
+
+    return ret;
+}
 
 static inline node *
-handle_id_or_function_call (struct parser *parser)
+handle_id_or_struct_or_function_call (struct parser *parser)
 {
     struct identifier *id;
     struct location loc;
@@ -1557,7 +1729,9 @@ handle_id_or_function_call (struct parser *parser)
     loc = token_location (parser_get_token (parser));
     parser_unget (parser);
 
-    if (is_function_call (parser))
+    if (is_struct (parser))
+        res = handle_struct (parser);
+    else if (is_function_call (parser))
         res = handle_function_call (parser);
     else if (NULL != (id = is_ext_id (parser)) && !id->is_operation) {
         if (id->xnamespace && !is_known (parser, id->xnamespace, id->id))
@@ -1811,11 +1985,11 @@ handle_primary_expr (struct parser *parser)
     else if (tclass == tok_char) {
         res = TBmakeChar (token_as_string (tok)[0]);
     }
-    /* ::= id | function-call
-       Identifier or a function call.  */
+    /* ::= id | struct | function-call
+       Identifier or a struct or a function call.  */
     else if (tclass == tok_id || tclass == tok_user_op) {
         parser_unget (parser);
-        res = handle_id_or_function_call (parser);
+        res = handle_id_or_struct_or_function_call (parser);
     } else if (tclass == tok_keyword) {
         /* ::= ( 'spawn' | 'rspawn' ) string function-call
            A function-call prefexid with SPAWN and placement.  */
@@ -1891,7 +2065,7 @@ handle_primary_expr (struct parser *parser)
            keyword; e.g. modarray, genarray, etc. pargmas */
         else if (token_is_reserved (tok)) {
             parser_unget (parser);
-            res = handle_id_or_function_call (parser);
+            res = handle_id_or_struct_or_function_call (parser);
         } else
             parser_unget (parser);
     } else if (tclass == tok_operator) {
@@ -2095,7 +2269,7 @@ handle_postfix_expr (struct parser *parser)
                 char *struct_id = strdup (token_as_string (tok));
                 node *id_node;
 
-                struct_id = STRcat (STRUCT_GET, struct_id);
+                struct_id = STRcat (STRUCT_GETTER_PREFIX, struct_id);
                 id_node = TBmakeSpid (NULL, struct_id);
                 res = TBmakeSpap (id_node, expr_constructor (res, NULL));
 
@@ -2376,7 +2550,7 @@ get_binary_op (struct pre_post_expr *e)
                             when parsing, so it should stay.  */
                          true);
 
-    EXPRS_EXPR (e->parent_exprs) = DUPdoDupTree (EXPRS_EXPR (SPAP_ARGS (t)));
+    EXPRS_EXPR (e->parent_exprs) = DUPdoDupTree (SPAP_ARG1 (t));
 
     free_tree (t);
     return id;
@@ -3534,6 +3708,69 @@ handle_expr (struct parser *parser)
 }
 
 /*
+   recursively desugar <lhs> = <rhs>;
+
+   a) <lhs> == sel (<iv>, <ass-lhs>)
+         =>    <ass-lhs> = modarray (<ass-lhs>, <iv>, <rhs>)
+   b) <lhs> == STRUCT_GETTER_PREFIX<field> (<ass-lhs>)
+         =>    <ass-lhs> = STRUCT_SETTER_PREFIX<field> (<rhs>, <ass-lhs>)
+   c) <lhs> == <id>
+         =>    return <lhs> = <rhs>
+ */
+node *
+desugar_assign_lhs (node *lhs, node *rhs)
+{
+    node *ass_lhs, *iv;
+    node *ids;
+    char *field;
+
+    while (NODE_TYPE (lhs) == N_spap) {
+        if (!strcmp (SPID_NAME (SPAP_ID (lhs)), "sel")) {
+            ass_lhs = DUPdoDupTree (SPAP_ARG2 (lhs));
+            iv = DUPdoDupTree (SPAP_ARG1 (lhs));
+            lhs = FREEdoFreeTree (lhs);
+            lhs = DUPdoDupTree (ass_lhs);
+            rhs = TBmakeSpap (
+                      TBmakeSpid (NULL, strdup ("modarray")),
+                      expr_constructor (ass_lhs,
+                          expr_constructor (iv,
+                              expr_constructor (rhs, NULL))));
+            NODE_LOCATION (rhs) = NODE_LOCATION (lhs);
+            NODE_LOCATION (SPAP_ID (rhs)) = NODE_LOCATION (lhs);
+        } else if (STRprefix (STRUCT_GETTER_PREFIX, SPID_NAME (SPAP_ID (lhs)))) {
+            ass_lhs = DUPdoDupTree (SPAP_ARG1 (lhs));
+
+            field = STRsubStr (SPID_NAME (SPAP_ID (lhs)),
+                               strlen (STRUCT_GETTER_PREFIX),
+                               strlen (SPID_NAME (SPAP_ID (lhs))) - strlen (STRUCT_GETTER_PREFIX));
+            lhs = FREEdoFreeTree (lhs);
+            lhs = DUPdoDupTree (ass_lhs);
+            rhs = TBmakeSpap (
+                      TBmakeSpid (NULL, STRcat (STRUCT_SETTER_PREFIX, field)),
+                      expr_constructor (rhs,
+                          expr_constructor (ass_lhs, NULL)));
+            NODE_LOCATION (rhs) = NODE_LOCATION (lhs);
+            NODE_LOCATION (SPAP_ID (rhs)) = NODE_LOCATION (lhs);
+       } else {
+           error_loc (NODE_LOCATION (lhs), "illegal ssignment left-hand-side found;"
+                                           " application of `%s' not permitted here",
+                                           SPID_NAME (SPAP_ID (lhs)));
+           goto out;
+       }
+    }
+    if (NODE_TYPE (lhs) == N_spid) {
+        ids = id_constructor (lhs, NULL);
+        return loc_annotated (NODE_LOCATION (ids), TBmakeLet (ids, rhs));
+    } else {
+        error_loc (NODE_LOCATION (lhs), "illegal assignment left-hand-side found;"
+                                        " expected an variable here");
+    }
+
+out:
+    return error_mark_node;
+}
+
+/*
    assign-op:: '=' | '+=' | '-=' | '*=' | '/=' | '%='
    assign::
       ( '++' | '--' ) id
@@ -3604,100 +3841,89 @@ handle_assign (struct parser *parser)
         break;
 
     case N_spap:
-        /* Special case converting `sel = expr' into modarray.  */
-        if (!strcmp (SPID_NAME (SPAP_ID (lhs)), "sel")
-            && NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (lhs)))) == N_spid) {
-            struct token *tok = parser_get_token (parser);
-            char *op = NULL;
-
-            if (token_class (tok) != tok_operator)
-                goto out;
-
-            switch (token_value (tok)) {
-            case tv_plus_eq:
-                op = strdup ("+");
-                break;
-            case tv_minus_eq:
-                op = strdup ("-");
-                break;
-            case tv_mult_eq:
-                op = strdup ("*");
-                break;
-            case tv_div_eq:
-                op = strdup ("/");
-                break;
-            case tv_mod_eq:
-                op = strdup ("%");
-                break;
-            case tv_and_eq:
-                op = strdup ("&");
-                break;
-            case tv_or_eq:
-                op = strdup ("|");
-                break;
-            case tv_shl_eq:
-                op = strdup ("<<");
-                break;
-            case tv_shr_eq:
-                op = strdup (">>");
-                break;
-            case tv_assign:
-                break;
-            default:
-                error_loc (token_location (tok), "assignment operator expected");
-                goto out;
-            }
-
-            ret = handle_expr (parser);
+        /* This is either just an application of a void function OR
+           an assignment-lhs expression. We identify the assignment-lhs
+           case by checking whether lhs is either of the form 
+           ++ (<ass-lhs>)  or   -- (<ass-lhs>)  or that <lhs> is 
+           followed by an assign_op (+=, ..., =) */
+        if ((!strcmp (SPAP_NAME (lhs), "++")
+              || !strcmp (SPAP_NAME (lhs), "--"))
+             && SPID_NS (SPAP_ID (lhs)) == NULL && TCcountExprs (SPAP_ARGS (lhs)) == 1) {
+            /* we conceptually turn     ++ (<ass-lhs>)
+               into     <ass-lhs> =  ++ (<ass-lhs>)       before desugaring <ass-lhs> */
+            NODE_LOCATION (lhs) = loc;
+            ret = desugar_assign_lhs (DUPdoDupTree (SPAP_ARG1 (lhs)), lhs);
             if (ret == NULL || ret == error_mark_node)
                 goto out;
-            else {
-                node *cpy = NULL;
+            else 
+                return ret;
+        } else {
+            char *op = NULL;
+            bool is_suitable_op = true;
+            struct token *tok = parser_get_token (parser);
 
-                if (op != NULL)
-                    cpy = DUPdoDupTree (lhs);
-
-                /* FIXME we do not check that the namespace of id is NULL.  */
-                node *id = DUPdoDupTree (EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (lhs))));
-                node *ids = TBmakeSpids (strdup (SPID_NAME (id)), NULL);
-                node *args = DUPdoDupTree (EXPRS_EXPR (SPAP_ARGS (lhs)));
-
-                /* If we had a situation A[expr] += expr1, we transform it into
-                   modarray (A, expr, + (A[expr], expr1))  */
-                if (op != NULL) {
-                    ret
-                      = TBmakeSpap (TBmakeSpid (NULL, op),
-                                    expr_constructor (ret, expr_constructor (cpy, NULL)));
-                    NODE_LOCATION (ret) = loc;
+            if (token_class (tok) == tok_operator) {
+                switch (token_value (tok)) {
+                case tv_plus_eq:
+                    op = strdup ("+");
+                    break;
+                case tv_minus_eq:
+                    op = strdup ("-");
+                    break;
+                case tv_mult_eq:
+                    op = strdup ("*");
+                    break;
+                case tv_div_eq:
+                    op = strdup ("/");
+                    break;
+                case tv_mod_eq:
+                    op = strdup ("%");
+                    break;
+                case tv_and_eq:
+                    op = strdup ("&");
+                    break;
+                case tv_or_eq:
+                    op = strdup ("|");
+                    break;
+                case tv_shl_eq:
+                    op = strdup ("<<");
+                    break;
+                case tv_shr_eq:
+                    op = strdup (">>");
+                    break;
+                case tv_assign:
+                    break;
+                default:
+                    parser_unget (parser);
+                    is_suitable_op = false;
                 }
-
-                node *ap = TBmakeSpap (
-                  TBmakeSpid (NULL, strdup ("modarray")),
-                  expr_constructor (id, expr_constructor (args,
-                                                          expr_constructor (ret, NULL))));
-                NODE_LOCATION (ap) = loc;
-                free_node (lhs);
-                return loc_annotated (loc, TBmakeLet (ids, ap));
+                if (is_suitable_op) {
+                    ret = handle_expr (parser);
+                    if (ret == NULL || ret == error_mark_node)
+                        goto out;
+                    else {
+                        /* If we had a situation <lhs> += <ret>, we conceptually transform it
+                           into <lhs>  = + (<lhs>, <ret>) before desugaring <lhs>  */
+                        NODE_LOCATION (lhs) = loc;
+                        if (op != NULL) {
+                            ret = TBmakeSpap (TBmakeSpid (NULL, op),
+                                              expr_constructor (lhs,
+                                                  expr_constructor (ret, NULL)));
+                            NODE_LOCATION (ret) = loc;
+                            ret = desugar_assign_lhs (DUPdoDupTree (lhs), ret);
+                        } else {
+                            ret = desugar_assign_lhs (lhs, ret);
+                        }
+                        if (ret == NULL || ret == error_mark_node)
+                            goto out;
+                        else
+                            return ret;
+                    }
+                }
+            } else {
+                parser_unget (parser);
             }
         }
-        /* convert   ++ (id)  or -- (id) into  id = ++/-- (id)
-           this is a special case for ++ and -- operations as they
-           are allowed to act as expressions.  */
-        else if ((!strcmp (SPID_NAME (SPAP_ID (lhs)), "++")
-                  || !strcmp (SPID_NAME (SPAP_ID (lhs)), "--"))
-                 && SPID_NS (SPAP_ID (lhs)) == NULL && TCcountExprs (SPAP_ARGS (lhs)) == 1
-                 && NODE_TYPE (EXPRS_EXPR (SPAP_ARGS (lhs))) == N_spid) {
-            node *id = EXPRS_EXPR (SPAP_ARGS (lhs));
-            if (SPID_NS (id) != NULL) {
-                error ("%s applied to a namsepaced variable", SPID_NAME (SPAP_ID (lhs)));
-                return error_mark_node;
-            }
-
-            return loc_annotated (loc,
-                                  TBmakeLet (id_constructor (DUPdoDupTree (id), NULL),
-                                             lhs));
-        }
-
         /* ... fallthrough ...  */
     case N_with:
         return loc_annotated (loc, TBmakeLet (NULL, lhs));
@@ -3710,6 +3936,7 @@ handle_assign (struct parser *parser)
         return loc_annotated (loc, TBmakeLet (NULL, lhs));
     }
 
+    /* We only arrive here, when we have the Spids in <lhs> */
     tok = parser_get_token (parser);
 /* XXX The rules that original SaC uses to parse op-equal stuff are
    strange.  You cannot have a variable with a namespace inside the
@@ -6010,14 +6237,6 @@ handle_definitions (struct parser *parser)
             parse_error = true;                                                          \
     } while (0)
 
-#define STRUCTDEF_ADD(ret, exp)                                                          \
-    do {                                                                                 \
-        if (exp != error_mark_node && exp != NULL) {                                     \
-            STRUCTDEF_NEXT (exp) = MODULE_STRUCTS (ret);                                 \
-            MODULE_STRUCTS (ret) = exp;                                                  \
-        } else                                                                           \
-            parse_error = true;                                                          \
-    } while (0)
 
 #define OBJDEF_ADD(ret, exp)                                                             \
     do {                                                                                 \
@@ -6095,8 +6314,19 @@ handle_definitions (struct parser *parser)
             }
 
             if (f == structure) {
-                exp = handle_struct_def (parser);
-                STRUCTDEF_ADD (ret, exp);
+                node *sd = handle_struct_def (parser);
+                if (sd != error_mark_node && sd != NULL) {
+                    char *tdname = STRcat (STRUCT_TYPE_PREFIX, STRUCTDEF_NAME (sd));
+                    ntype *type = TYmakeAKS (TYmakeHiddenSimpleType (UT_NOT_DEFINED),
+                                             SHmakeShape (0));
+                    exp = TBmakeTypedef (tdname, NULL, strdup (global.default_component_name),
+                                         type, NULL, NULL);
+                    TYPEDEF_STRUCTDEF (exp) = sd;
+                    TYPEDEF_ISNESTED (exp) = TRUE;
+                    TYPEDEF_ADD (ret, exp);
+                } else {
+                    parse_error = true;
+                }
             } else {
                 exp = handle_function (parser, &ftype);
                 ADD_FUNCTION (ret, exp, ftype);
@@ -6354,6 +6584,7 @@ parse (struct parser *parser)
         } else
             free (name);
     } else if (token_is_keyword (tok, CLASS)) {
+        bool extern_p = false;
         node *defs = error_mark_node;
         node *classtype = error_mark_node;
         node *pragmas = NULL;
@@ -6411,9 +6642,10 @@ parse (struct parser *parser)
             classtype = handle_type (parser);
         else if (token_is_keyword (tok, EXTERN)) {
             tok = parser_get_token (parser);
-            if (token_is_keyword (tok, CLASSTYPE))
+            if (token_is_keyword (tok, CLASSTYPE)) {
                 classtype = TBmakeTypepattern (TYmakeHiddenSimpleType (UT_NOT_DEFINED), NULL);
-            else {
+                extern_p = TRUE;
+            } else {
                 parser_unget (parser);
                 classtype_parse_error = true;
             }
@@ -6445,7 +6677,7 @@ parse (struct parser *parser)
             MODULE_NAMESPACE (defs) = NSgetNamespace (name);
             MODULE_FILETYPE (defs) = FT_classimp;
             MODULE_DEPRECATED (defs) = deprecated;
-            defs = SetClassType (defs, classtype, pragmas);
+            defs = SetClassType (defs, classtype, extern_p, pragmas);
             global.syntax_tree = defs;
         } else
             free (name);

@@ -221,6 +221,31 @@ RCobjdef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *RCstructelem( node *arg_node, info *arg_info )
+ *
+ ******************************************************************************/
+
+node *
+RCstructelem (node *arg_node, info *arg_info)
+{
+    ntype *type, *new_type;
+
+    DBUG_ENTER ();
+
+    type = STRUCTELEM_TYPE (arg_node);
+    if (TUisArrayOfUser (type)) {
+        new_type = TYeliminateUser (type);
+        type = TYfreeType (type);
+        STRUCTELEM_TYPE (arg_node) = new_type;
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *RCtype( node *arg_node, info *arg_info )
  *
  ******************************************************************************/

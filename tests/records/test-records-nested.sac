@@ -1,0 +1,24 @@
+// This test makes sure that we can compile a program that uses
+// nested records. 
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check tc
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 8
+
+struct Inner {int v;};
+struct Outer {struct Inner inner;};
+
+struct Outer change_inner(struct Outer a){
+    a.inner.v = 8;
+    return a;
+}
+
+int main() {
+    a = Inner{3};
+    b = Outer{a};
+    b = change_inner(b);
+    return b.inner.v;
+}

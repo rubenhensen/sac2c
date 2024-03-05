@@ -247,52 +247,118 @@ TEST_F (LUTTest, InsertAndUpdateS)
 
 TEST_F (LUTTest, SearchP)
 {
-    void *key = (void*)'a';
-    void *v1 = (void*)'b';
-    void *v2 = (void*)'c';
-    void *v3 = (void*)'d';
+    char *str = const_cast<char*>("abcdefgh");
+    void *akey = &str[0];
+    void *bkey = &str[1];
+    void *v1 = &str[2];
+    void *v2 = &str[3];
+    void *v3 = &str[4];
+    void *v4 = &str[5];
+    void *v5 = &str[6];
+    void *v6 = &str[7];
     void *ret;
     void **res;
 
-    res = LUTsearchInLutP (lut_1, key);
+    res = LUTsearchInLutP (lut_1, akey);
     ASSERT_FALSE (res);
 
-    lut_1 = LUTinsertIntoLutP (lut_1, key, v1);
-    lut_1 = LUTinsertIntoLutP (lut_1, key, v2);
-    lut_1 = LUTinsertIntoLutP (lut_1, key, v3);
+    res = LUTsearchInLutP (lut_1, bkey);
+    ASSERT_FALSE (res);
+
+    lut_1 = LUTinsertIntoLutP (lut_1, akey, v1);
+    lut_1 = LUTinsertIntoLutP (lut_1, akey, v2);
+    lut_1 = LUTinsertIntoLutP (lut_1, akey, v3);
+    lut_1 = LUTinsertIntoLutP (lut_1, bkey, v4);
+    lut_1 = LUTinsertIntoLutP (lut_1, bkey, v5);
+    lut_1 = LUTinsertIntoLutP (lut_1, bkey, v6);
     ASSERT_FALSE (LUTisEmptyLut (lut_1));
 
-    res = LUTsearchInLutP (lut_1, key);
+    res = LUTsearchInLutP (lut_1, akey);
     ASSERT_TRUE (res);
     ASSERT_EQ (*res, v1);
 
-    ret = LUTsearchInLutPp (lut_1, key);
+    ret = LUTsearchInLutPp (lut_1, akey);
     ASSERT_TRUE (ret);
     ASSERT_EQ (ret, v1);
+
+    res = LUTsearchInLutNextP ();
+    ASSERT_TRUE (res);
+    ASSERT_EQ (*res, v2);
+    ASSERT_NE (*res, v3);
+
+    res = LUTsearchInLutNextP ();
+    ASSERT_TRUE (res);
+    ASSERT_NE (*res, v2);
+    ASSERT_EQ (*res, v3);
+
+    res = LUTsearchInLutP (lut_1, bkey);
+    ASSERT_TRUE (res);
+    ASSERT_EQ (*res, v4);
+
+    res = LUTsearchInLutNextP ();
+    ASSERT_TRUE (res);
+    ASSERT_NE (*res, v4);
+    ASSERT_EQ (*res, v5);
+
+    res = LUTsearchInLutNextP ();
+    ASSERT_TRUE (res);
+    ASSERT_NE (*res, v5);
+    ASSERT_EQ (*res, v6);
 }
 
 TEST_F (LUTTest, SearchS)
 {
-    char *key = const_cast<char*>("a");
-    void *v1 = (void*)'b';
-    void *v2 = (void*)'c';
-    void *v3 = (void*)'d';
+    char *akey = const_cast<char*>("a");
+    char *bkey = const_cast<char*>("b");
+    void *v1 = const_cast<char*>("c");
+    void *v2 = const_cast<char*>("d");
+    void *v3 = const_cast<char*>("e");
+    void *v4 = const_cast<char*>("f");
+    void *v5 = const_cast<char*>("g");
+    void *v6 = const_cast<char*>("h");
     void *ret;
     void **res;
 
-    res = LUTsearchInLutS (lut_1, key);
+    res = LUTsearchInLutS (lut_1, akey);
     ASSERT_FALSE (res);
 
-    lut_1 = LUTinsertIntoLutS (lut_1, key, v1);
-    lut_1 = LUTinsertIntoLutS (lut_1, key, v2);
-    lut_1 = LUTinsertIntoLutS (lut_1, key, v3);
+    lut_1 = LUTinsertIntoLutS (lut_1, akey, v1);
+    lut_1 = LUTinsertIntoLutS (lut_1, akey, v2);
+    lut_1 = LUTinsertIntoLutS (lut_1, akey, v3);
+    lut_1 = LUTinsertIntoLutS (lut_1, bkey, v4);
+    lut_1 = LUTinsertIntoLutS (lut_1, bkey, v5);
+    lut_1 = LUTinsertIntoLutS (lut_1, bkey, v6);
     ASSERT_FALSE (LUTisEmptyLut (lut_1));
 
-    res = LUTsearchInLutS (lut_1, key);
+    res = LUTsearchInLutS (lut_1, akey);
     ASSERT_TRUE (res);
     ASSERT_EQ (*res, v1);
 
-    ret = LUTsearchInLutSs (lut_1, key);
+    ret = LUTsearchInLutSs (lut_1, akey);
     ASSERT_TRUE (ret);
     ASSERT_EQ (ret, v1);
+
+    res = LUTsearchInLutNextS ();
+    ASSERT_TRUE (res);
+    ASSERT_EQ (*res, v2);
+    ASSERT_NE (*res, v3);
+
+    res = LUTsearchInLutNextS ();
+    ASSERT_TRUE (res);
+    ASSERT_NE (*res, v2);
+    ASSERT_EQ (*res, v3);
+
+    res = LUTsearchInLutS (lut_1, bkey);
+    ASSERT_TRUE (res);
+    ASSERT_EQ (*res, v4);
+
+    res = LUTsearchInLutNextS ();
+    ASSERT_TRUE (res);
+    ASSERT_NE (*res, v4);
+    ASSERT_EQ (*res, v5);
+
+    res = LUTsearchInLutNextS ();
+    ASSERT_TRUE (res);
+    ASSERT_NE (*res, v5);
+    ASSERT_EQ (*res, v6);
 }

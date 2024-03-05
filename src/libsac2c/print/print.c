@@ -15,6 +15,7 @@
 #include "debug.h"
 
 #include "traverse.h"
+#include "traverse_inject.h"
 #include "ctinfo.h"
 #include "free.h"
 #include "convert.h"
@@ -1301,12 +1302,6 @@ PRTmodule (node *arg_node, info *arg_info)
             PrintModuleHeaders (MODULE_HEADERS (arg_node));
         }
 
-        if (NULL != MODULE_STRUCTS (arg_node)) {
-            fprintf (global.outfile, "\n/* Structure Declarations */\n");
-            /* print structdefs */
-            TRAVdo (MODULE_STRUCTS (arg_node), arg_info);
-        }
-
         if (NULL != MODULE_TYPEFAMILIES (arg_node)) {
             fprintf (global.outfile, "\n/* Type Families */\n");
             /* print typefamilies */
@@ -1453,16 +1448,6 @@ PRTmodule (node *arg_node, info *arg_info)
 
             /* print typefamilies */
             TRAVdo (MODULE_TYPEFAMILIES (arg_node), arg_info);
-        }
-
-        if (allow_non_fun && (MODULE_STRUCTS (arg_node) != NULL)) {
-            fprintf (global.outfile, "\n\n"
-                                     "/*\n"
-                                     " *  struct definitions\n"
-                                     " */\n\n");
-
-            /* print structdefs */
-            TRAVdo (MODULE_STRUCTS (arg_node), arg_info);
         }
 
         if (allow_non_fun && (MODULE_TYPES (arg_node) != NULL)) {
@@ -1689,6 +1674,9 @@ PRTtypedef (node *arg_node, info *arg_info)
 
     if (TYPEDEF_ICM (arg_node) == NULL) {
         if (TYPEDEF_NTYPE (arg_node) != NULL) {
+            TYPEDEF_STRUCTDEF (arg_node) = TRAVopt (TYPEDEF_STRUCTDEF (arg_node),
+                                                arg_info);
+
             ishidden = TUisHidden (TYPEDEF_NTYPE (arg_node));
             if (ishidden) {
                 fprintf (global.outfile, "external ");
@@ -6053,7 +6041,9 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
     } else {
         fprintf (global.outfile,
                  "\n/*-----------------------------------------------*/\n");
+        DBUG_EXECUTE_TAG ("PRINT_LINE", TRAVaddPreFun (TR_prt, PRTtravPre));
         TRAVdo (syntax_tree, arg_info);
+        DBUG_EXECUTE_TAG ("PRINT_LINE", TRAVremovePreFun (TR_prt, PRTtravPre));
         fprintf (global.outfile,
                  "\n/*-----------------------------------------------*/\n");
     }
@@ -6138,6 +6128,63 @@ PRTdoPrint (node *syntax_tree)
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PRTdoPrintHeader( node *arg_node)
+ *
+ * description:
+ *   Prints the given subtree including function headers.
+ *
+ ******************************************************************************/
+
+node *
+PRTdoPrintHeader (node *syntax_tree)
+{
+    info *arg_info;
+
+    DBUG_ENTER ();
+
+    arg_info = MakeInfo ();
+    INFO_PROTOTYPE (arg_info) = TRUE;
+
+    if (global.outfile == NULL) {
+        global.outfile = stdout;
+        syntax_tree = PrintTRAVdo (syntax_tree, arg_info);
+        global.outfile = NULL;
+    } else {
+        syntax_tree = PrintTRAVdo (syntax_tree, arg_info);
+    }
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PRTdoPrintHeaderFile(FILE *fd, node *arg_node)
+ *
+ *
+ * description:
+ *   Prints the given node to fd, typically stderr
+ *
+ ******************************************************************************/
+
+node *
+PRTdoPrintHeaderFile (FILE *fd, node *arg_node)
+{
+    FILE *original_outfile;
+
+    DBUG_ENTER ();
+    original_outfile = global.outfile;
+    global.outfile = fd;
+    PRTdoPrintHeader (arg_node);
+    global.outfile = original_outfile;
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************

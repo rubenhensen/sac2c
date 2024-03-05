@@ -160,7 +160,10 @@
 #define HASH_KEY_CONV "%lu"
 #define HASH_KEY_CONVT "%4lu"
 
-typedef int lut_size_t;
+#define LUT_SIZE_T int
+#define LUT_SIZE_CONV "%d"
+
+typedef LUT_SIZE_T lut_size_t;
 typedef HASH_KEY_T hash_key_t;
 
 /*
@@ -399,7 +402,7 @@ ComputeHashStat (lut_t *lut, char *note, hash_key_t min_key, hash_key_t max_key)
  ******************************************************************************/
 
 static void **
-SearchInLUT_ (lut_size_t size, lut_size_t i, void **entry, void *old_item,
+SearchInLUT_ (lut_size_t size, lut_size_t *i, void ***entry, void *old_item,
               hash_key_t hash_key, is_equal_fun_t is_equal_fun, char *old_format,
               char *new_format)
 {
@@ -408,15 +411,15 @@ SearchInLUT_ (lut_size_t size, lut_size_t i, void **entry, void *old_item,
     DBUG_ENTER ();
 
     /* search in the collision table for 'old_item' */
-    for (; i < size; i++) {
-        if (is_equal_fun (entry[0], old_item)) {
-            new_item_p = entry + 1;
+    for (; (*i) < size; (*i)++) {
+        if (is_equal_fun ((*entry)[0], old_item)) {
+            new_item_p = (*entry) + 1;
             break;
         }
-        entry += 2;
-        if ((i + 1) % (LUT_SIZE) == 0) {
+        (*entry) += 2;
+        if (((*i) + 1) % (LUT_SIZE) == 0) {
             /* last table entry is reached -> enter next table of the chain */
-            entry = (void **)*entry;
+            (*entry) = (void **)*(*entry);
         }
     }
 
@@ -426,7 +429,8 @@ SearchInLUT_ (lut_size_t size, lut_size_t i, void **entry, void *old_item,
           fprintf (stderr, old_format, old_item); fprintf (stderr, "\n"));
     } else {
         DBUG_EXECUTE (
-          fprintf (stderr, "  data (hash key " HASH_KEY_CONV ") found: [ ", hash_key);
+          fprintf (stderr, "  data (hash key " HASH_KEY_CONV ", pos " LUT_SIZE_CONV 
+                           " ) found: [ ", hash_key, (*i));
           fprintf (stderr, old_format, old_item); fprintf (stderr, " -> ");
           fprintf (stderr, new_format, *new_item_p); fprintf (stderr, " ]\n"));
     }
@@ -452,15 +456,19 @@ SearchInLUT (lut_t *lut, void *old_item, hash_key_t hash_key, is_equal_fun_t is_
              char *old_format, char *new_format)
 {
     void **new_item_p = NULL;
+    void **entry = NULL;
+    lut_size_t i = 0;
 
     DBUG_ENTER ();
+
+    entry = lut[hash_key].first;
 
     DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (lut != NULL) {
         if (old_item != NULL) {
             new_item_p
-              = SearchInLUT_ (lut[hash_key].size, 0, lut[hash_key].first, old_item,
+              = SearchInLUT_ (lut[hash_key].size, &i, &entry, old_item,
                               hash_key, is_equal_fun, old_format, new_format);
 
             DBUG_PRINT ("< finished");
@@ -522,7 +530,7 @@ SearchInLUT_state (lut_t *lut, void *old_item, hash_key_t hash_key,
                 store_entry = store_lut[hash_key].first;
 
                 new_item_p
-                  = SearchInLUT_ (store_size, store_i, store_entry, store_old_item,
+                  = SearchInLUT_ (store_size, &store_i, &store_entry, store_old_item,
                                   hash_key, is_equal_fun, old_format, new_format);
 
                 DBUG_PRINT ("< finished");
@@ -548,7 +556,7 @@ SearchInLUT_state (lut_t *lut, void *old_item, hash_key_t hash_key,
                 store_i++;
 
                 new_item_p
-                  = SearchInLUT_ (store_size, store_i, store_entry, store_old_item,
+                  = SearchInLUT_ (store_size, &store_i, &store_entry, store_old_item,
                                   store_hash_key, is_equal_fun, old_format, new_format);
 
                 DBUG_PRINT ("< finished");

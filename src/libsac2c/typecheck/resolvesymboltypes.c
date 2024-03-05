@@ -217,6 +217,8 @@ RSTtypedef (node *arg_node, info *arg_info)
      */
     TYPEDEF_NTYPE (arg_node) = RSTntype (TYPEDEF_NTYPE (arg_node), arg_info);
 
+    TYPEDEF_STRUCTDEF (arg_node) = TRAVopt (TYPEDEF_STRUCTDEF (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -333,6 +335,17 @@ RSTtype (node *arg_node, info *arg_info)
     TYPE_TYPE (arg_node) = RSTntype (TYPE_TYPE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
+}
+
+node *
+RSTstructelem (node *arg_node, info *arg_info){
+    DBUG_ENTER ();
+
+    STRUCTELEM_TYPE (arg_node) = RSTntype (STRUCTELEM_TYPE (arg_node), arg_info);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN(arg_node);
 }
 
 node *

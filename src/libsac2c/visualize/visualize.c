@@ -301,7 +301,6 @@ VISUALmodule (node *arg_node, info *arg_info)
     // traver son nodes
     TRAVopt (MODULE_INTERFACE (arg_node), arg_info);
     TRAVopt (MODULE_TYPEFAMILIES (arg_node), arg_info);
-    TRAVopt (MODULE_STRUCTS (arg_node), arg_info);
     TRAVopt (MODULE_TYPES (arg_node), arg_info);
     TRAVopt (MODULE_OBJS (arg_node), arg_info);
     TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
@@ -323,12 +322,6 @@ VISUALmodule (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Typefamilies];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            MODULE_TYPEFAMILIES (arg_node)));
-    }
-
-    if (NULL != MODULE_STRUCTS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s -> %s [label=Structs];\n", node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           MODULE_STRUCTS (arg_node)));
     }
 
     if (NULL != MODULE_TYPES (arg_node)) {

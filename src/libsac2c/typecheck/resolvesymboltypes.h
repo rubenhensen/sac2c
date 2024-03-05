@@ -22,6 +22,7 @@ extern node *RSTavis (node *arg_node, info *arg_info);
 extern node *RSTarray (node *arg_node, info *arg_info);
 extern node *RSTcast (node *arg_node, info *arg_info);
 extern node *RSTtype (node *arg_node, info *arg_info);
+extern node *RSTstructelem (node *arg_node, info *arg_info);
 
 extern node *RSTdoResolveSymbolTypes (node *syntax_tree);
 #endif
