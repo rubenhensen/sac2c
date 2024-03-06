@@ -503,7 +503,7 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
              node **vdim, node **dependencies, resolution_info *ri)
 {
     node *expr;
-    char *error, *dim_error;
+    char *error;
 
     DBUG_ENTER ();
 
@@ -516,16 +516,16 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
                     DBUG_PRINT ("feature %s", tmp);
                     tmp = MEMfree (tmp); });
 
-    // Generate an error message for the bottom type
-    error = TPCmakeFeatureError (feature, v,
-                                 FUNDEF_NAME (RI_FUNDEF (ri)),
-                                 RI_ISARGUMENT (ri));
-
     // Case 1
     if (NODE_TYPE (feature) == N_num) {
         expr = TPCmakeDimSum (v, fdim, *vdim);
         expr = TPCmakeShapeSel (v, pattern, expr);
         expr = TPCmakeNumCheck (NUM_VAL (feature), expr);
+
+        error = TPCmakeNumFeatureError (feature, v, v,
+                                        FUNDEF_NAME (RI_FUNDEF (ri)),
+                                        RI_ISARGUMENT (ri));
+
         AddSpidToEnv (v, v, error, expr,
                       DUPdoDupTree (*dependencies), ri,
                       TRUE, TRUE);
@@ -547,6 +547,11 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
     else if (SPID_TDIM (feature) == NULL) {
         expr = TPCmakeDimSum (v, fdim, *vdim);
         expr = TPCmakeShapeSel (v, pattern, expr);
+
+        error = TPCmakeFeatureError (feature, v, SPID_NAME (feature),
+                                     FUNDEF_NAME (RI_FUNDEF (ri)),
+                                     RI_ISARGUMENT (ri));
+
         AddSpidToEnv (v, SPID_NAME (feature), error, expr,
                       DUPdoDupTree (*dependencies), ri,
                       TRUE, FALSE);
@@ -556,6 +561,11 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
     else if (NODE_TYPE (SPID_TDIM (feature)) == N_num) {
         expr = TPCmakeDimSum (v, fdim, *vdim);
         expr = TPCmakeTakeDrop (v, pattern, SPID_TDIM (feature), expr);
+
+        error = TPCmakeFeatureError (feature, v, SPID_NAME (feature),
+                                     FUNDEF_NAME (RI_FUNDEF (ri)),
+                                     RI_ISARGUMENT (ri));
+
         AddSpidToEnv (v, SPID_NAME (feature), error, expr,
                       DUPdoDupTree (*dependencies), ri,
                       FALSE, FALSE);
@@ -567,8 +577,12 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
         node *id_deps = DUPdoDupTree (TYPEPATTERN_VDIM (pattern));
         TPCremoveSpid (&id_deps, id);
         id_deps = TCappendSpids (id_deps, DUPdoDupTree (*dependencies));
-
         expr = TPCmakeDimCalc (v, pattern, id);
+
+        error = TPCmakeFeatureError (feature, v, id,
+                                     FUNDEF_NAME (RI_FUNDEF (ri)),
+                                     RI_ISARGUMENT (ri));
+
         AddSpidToEnv (v, id, error, expr,
                       id_deps, ri,
                       TRUE, FALSE);
@@ -576,15 +590,21 @@ ResolveCase (char *v, node *pattern, node *feature, int fdim,
         TPCtryAddSpid (dependencies, id);
 
         // Check that the dimensionality is non-negative
-        dim_error = TPCmakeNonNegativeError (v, id, FUNDEF_NAME (RI_FUNDEF (ri)),
-                                             RI_ISARGUMENT (ri));
+        error = TPCmakeNonNegativeError (feature, v, id,
+                                         FUNDEF_NAME (RI_FUNDEF (ri)),
+                                         RI_ISARGUMENT (ri));
         expr = TPCmakeNonNegativeCheck (id);
-        AddSpidToEnv (v, id, dim_error, expr,
+        AddSpidToEnv (v, id, error, expr,
                       id_deps, ri,
                       TRUE, TRUE);
 
         expr = TPCmakeDimSum (v, fdim, *vdim);
         expr = TPCmakeTakeDrop (v, pattern, SPID_TDIM (feature), expr);
+
+        error = TPCmakeFeatureError (feature, v, SPID_NAME (feature),
+                                     FUNDEF_NAME (RI_FUNDEF (ri)),
+                                     RI_ISARGUMENT (ri));
+
         AddSpidToEnv (v, SPID_NAME (feature), error, expr,
                       DUPdoDupTree (*dependencies), ri,
                       FALSE, FALSE);
@@ -726,11 +746,11 @@ MakeFeatureGuard (char *id, char *pred, constraint_info *ci)
         // Nothing to do
     } else if (CI_ISDEFINED (ci)) {
         CI_ERROR (ci) = SBUFprintf (CI_ERROR (ci),
-                                    " does not match argument %s",
+                                    " is not equal to the value of argument `%s'",
                                     id);
     } else {
         CI_ERROR (ci) = SBUFprintf (CI_ERROR (ci),
-                                    " does not match feature `%s' in %s",
+                                    " is not equal to the defined value of `%s'",
                                     id, CI_ID (ci));
     }
 
