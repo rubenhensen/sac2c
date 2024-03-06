@@ -25,9 +25,10 @@ extern bool TPChasMissing (node *spids, node *defined);
 extern bool TPCremoveSpid (node **spids, char *name);
 
 // Methods for generating error messages
-extern char *TPCmakeFeatureError (node *pattern, char *v, char *fundef, bool is_argument);
+extern char *TPCmakeNumFeatureError (node *feature, char *v, char *id, char *fundef, bool is_argument);
+extern char *TPCmakeFeatureError (node *feature, char *v, char *id, char *fundef, bool is_argument);
+extern char *TPCmakeNonNegativeError (node *feature, char *v, char *id, char *fundef, bool is_argument);
 extern char *TPCmakeDimError (node *pattern, char *v, char *fundef, int fdim, bool is_argument);
-extern char *TPCmakeNonNegativeError (char *v, char *id, char *fundef, bool is_argument);
 
 // Methods for generating constraint expressions
 extern node *TPCmakePrimitive (node *pattern, prf built_in, char *user_defined, node *arg);

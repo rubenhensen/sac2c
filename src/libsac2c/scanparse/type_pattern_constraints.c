@@ -103,23 +103,98 @@ TPCremoveSpid (node **spids, char *name)
 
 /******************************************************************************
  *
- * @fn char *TPCmakeFeatureError (node *pattern, char *v, char *fundef,
- *                                bool is_argument)
+ * @fn char *TPCmakeNumFeatureError (node *feature, char *v, char *id,
+ *                                   char *fundef, bool is_argument)
  *
  * @brief Creates a human-reabable error for type pattern features.
  *
  ******************************************************************************/
 char *
-TPCmakeFeatureError (node *pattern, char *v, char *fundef, bool is_argument)
+TPCmakeNumFeatureError (node *feature, char *v, char *id,
+                        char *fundef, bool is_argument)
+{
+    char num_str[20];
+    char *error;
+
+    DBUG_ENTER ();
+
+    sprintf (num_str, "%d", NUM_VAL (feature));
+
+    if (is_argument) {
+        error = STRcatn (7,
+            "Type pattern error in application of ", fundef,
+            ": `", num_str, "' in argument `", v, "'");
+    } else {
+        error = STRcatn (5,
+            "Type pattern error in definition of ", fundef,
+            ": `", num_str, "' of return value");
+    }
+
+    DBUG_RETURN (error);
+}
+
+/******************************************************************************
+ *
+ * @fn char *TPCmakeFeatureError (node *feature, char *v, char *id,
+ *                                char *fundef, bool is_argument)
+ *
+ * @brief Creates a human-reabable error for type pattern features.
+ *
+ ******************************************************************************/
+char *
+TPCmakeFeatureError (node *feature, char *v, char *id,
+                     char *fundef, bool is_argument)
 {
     char *error;
 
     DBUG_ENTER ();
 
-    v = is_argument ? v : "return value";
-    error = STRcatn (6, "Type pattern error in application of ", fundef,
-                        ": feature `", CVtypePatternShape2String (pattern),
-                        "' in ", v);
+    if (is_argument) {
+        error = STRcatn (9,
+            "Type pattern error in application of ", fundef,
+            ": the found value of `", id, "' in `",
+            CVtypePatternShape2String (feature),
+            "' of argument `", v, "'");
+    } else {
+        error = STRcatn (7,
+            "Type pattern error in definition of ", fundef,
+            ": the found value of `", id, "' in `",
+            CVtypePatternShape2String (feature),
+            "' of return value");
+    }
+
+    DBUG_RETURN (error);
+}
+
+/******************************************************************************
+ *
+ * @fn char *TPCmakeNonNegativeError (node *feature, char *v, char *id,
+ *                                    char *fundef, bool is_argument)
+ *
+ * @brief Creates a human-reabable error for a type pattern's dimensionality.
+ *
+ ******************************************************************************/
+char *
+TPCmakeNonNegativeError (node *feature, char *v, char *id,
+                         char *fundef, bool is_argument)
+{
+    char *error;
+
+    DBUG_ENTER ();
+
+    if (is_argument) {
+        error = STRcatn (9,
+            "Type pattern error in application of ", fundef,
+            ": dimensionality of argument `", v, "' is too small, "
+            "could not assign a non-negative value to `", id,
+            "' in `", CVtypePatternShape2String (feature), "'");
+    } else {
+        error = STRcatn (7,
+            "Type pattern error in definition of ", fundef,
+            ": dimensionality of return value is too small, "
+            "could not assign a non-negative value to `", id,
+            "' in `", CVtypePatternShape2String (feature), "'");
+    }
 
     DBUG_RETURN (error);
 }
@@ -142,34 +217,18 @@ TPCmakeDimError (node *pattern, char *v, char *fundef, int fdim,
     DBUG_ENTER ();
 
     sprintf (num_str, "%d", fdim);
-    v = is_argument ? v : "return value";
-    error = STRcatn (7, "Type pattern error in application of ", fundef,
-                        ": dimensionality of ", v, " expected to be ",
-                        (TYPEPATTERN_HASVDIM (pattern) ? ">= " : ""),
-                        num_str);
 
-    DBUG_RETURN (error);
-}
-
-/******************************************************************************
- *
- * @fn char *TPCmakeNonNegativeError (char *v, char *id, char *fundef,
- *                                    bool is_argument)
- *
- * @brief Creates a human-reabable error for a type pattern's dimensionality.
- *
- ******************************************************************************/
-char *
-TPCmakeNonNegativeError (char *v, char *id, char *fundef, bool is_argument)
-{
-    char *error;
-
-    DBUG_ENTER ();
-
-    v = is_argument ? v : "return value";
-    error = STRcatn (6, "Type pattern error in application of ", fundef,
-                        ": could not assign a non-negative value to `",
-                        id, "' in type pattern of argument ", v);
+    if (is_argument) {
+        error = STRcatn (7,
+            "Type pattern error in application of ", fundef,
+            ": dimensionality of argument `", v, "' expected to be ",
+            (TYPEPATTERN_HASVDIM (pattern) ? ">= " : ""), num_str);
+    } else {
+        error = STRcatn (5,
+            "Type pattern error in definition of ", fundef,
+            ": dimensionality of return value expected to be ",
+            (TYPEPATTERN_HASVDIM (pattern) ? ">= " : ""), num_str);
+    }
 
     DBUG_RETURN (error);
 }
