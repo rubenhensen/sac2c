@@ -30,9 +30,6 @@
 #define SIZE2 5
 #endif
 
-noinline int[*]
-id (int[*] a) { return a; }
-
 inline int[+]
 - (int[+] a, int[+] b)
 {

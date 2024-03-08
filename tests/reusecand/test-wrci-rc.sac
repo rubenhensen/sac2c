@@ -9,12 +9,12 @@
 
 #include "mini-stdlib.sac"
 
-noinline int[*] id (int[*] a) { return a; }
-
 int main ()
 {
   a = with { (. <= [iv] <= .): iv; } : genarray ([500], 2);
+
   b = id (a); // prevent WL fusing
+
   c = with { (. <= [iv] <= .): b[iv] + 2; } : genarray ([500], 20);
 
   return c[300];

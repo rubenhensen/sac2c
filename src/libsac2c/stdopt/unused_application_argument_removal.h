@@ -20,6 +20,8 @@
 extern node *UAARdoUnusedApplicationArgumentRemoval (node *arg_node);
 
 extern node *UAARfundef (node *arg_node, info *arg_info);
+extern node *UAARlet (node *arg_node, info *arg_info);
 extern node *UAARap (node *arg_node, info *arg_info);
+extern node *UAARid (node *arg_node, info *arg_info);
 
 #endif /* _SAC_UNUSED_APPLICATION_ARGUMENT_REMOVAL_H_ */

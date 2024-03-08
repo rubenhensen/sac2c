@@ -1838,6 +1838,10 @@ PRTret (node *arg_node, info *arg_info)
 
     NODE_ERROR (arg_node) = TRAVopt(NODE_ERROR (arg_node), arg_info);
 
+    if (!RET_ISUSEDINBODY (arg_node)) {
+        fprintf (global.outfile, "/* unused */ ");
+    }
+
     if (RET_TYPE (arg_node) != NULL) {
         type_str = TYtype2String (RET_TYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s", type_str);

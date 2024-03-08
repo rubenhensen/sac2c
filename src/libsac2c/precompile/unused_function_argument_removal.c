@@ -84,9 +84,9 @@ UFARfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (UAAcanHaveUnusedArguments (arg_node)) {
-        DBUG_PRINT ("----- removing unused function arguments of %s -----",
+        DBUG_PRINT ("----- Removing unused function arguments of %s -----",
                     FUNDEF_NAME (arg_node));
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -112,7 +112,7 @@ UFARarg (node *arg_node, info *arg_info)
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     if (!ARG_ISUSEDINBODY (arg_node)) {
-        DBUG_PRINT ("removing formal parameter %s from function defition",
+        DBUG_PRINT ("Removing formal parameter %s from function defition",
                     ARG_NAME (arg_node));
         arg_node = FREEdoFreeNode (arg_node);
     }

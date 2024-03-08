@@ -9,10 +9,6 @@
 // SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -documm $< | $(GREP_COMMAND_OUTPUT) 'int_dev' 0
 #include "mini-stdlib.sac"
 
-// to prevent fusing
-noinline
-int[*] id (int[*] a) { return a; }
-
 int main ()
 {
   a = id (with {} : genarray ([100], 42));

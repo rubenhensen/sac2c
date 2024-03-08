@@ -2176,12 +2176,16 @@
         <node name="Fundef" />
         <node name="Arg" />
         <node name="Id" />
+        <node name="Ret" />
+        <node name="Return" />
       </travuser>
     </traversal>
     <traversal id="UAAR" name="Unused Application Argument Removal" default="sons" include="unused_application_argument_removal.h">
       <travuser>
         <node name="Fundef" />
+        <node name="Let" />
         <node name="Ap" />
+        <node name="Id" />
       </travuser>
     </traversal>
     <traversal id="UFAR" name="Unused Function Argument Removal" default="sons" include="unused_function_argument_removal.h" >
@@ -5725,7 +5729,7 @@
         <attribute name="CheckImplFundef" default="NULL" inconstructor="no">
           <description>
             Is only set if Type Pattern are present and check c is enabled. It
-            points to the _impl - function to enable specialisations of the _impl 
+            points to the _impl - function to enable specialisations of the _impl
             function.
           </description>
           <type name="ExtLink">
@@ -12708,8 +12712,44 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="ArgIndex" default="-1" inconstructor="no">
+          <description>
+            Used by unused argument removal (UAR) when this return value is not
+            modified in the body if this function. Namely, this return value is
+            given as an argument to this function and is returned without being
+            changed. This ArgIndex is the index of that argument.
+            This value is used to find the corresponding unmodified argument at
+            call-sites of the corresponding function.
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="opt_cyc_uaa" to="opt_cyc_uaar" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
+        <flag name="IsUsedInBody" default="TRUE">
+          <description>
+            Used by unused argument removal (UAR) to denote that this return
+            value is not modified in the body if this function. Namely, this
+            return value is given by the argument at index ArgIndex and is
+            returned without being changed.
+            This especially occurs in the context of records, where functions
+            operating on records are expanded into their fields. Most functions
+            will not modify all fields and will leave some of them unchanged. By
+            removing these return values calling sites of this function can be
+            further optimised.
+          </description>
+          <phases>
+            <range from="opt_cyc_uaa" to="opt_cyc_uaar" />
+          </phases>
+        </flag>
         <flag name="IsAliasing" default="TRUE" />
         <flag name="IsArtificial">
           <description> Set to true if the given return value was introduced when resolving

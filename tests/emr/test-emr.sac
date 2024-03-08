@@ -8,8 +8,6 @@
 // SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -doemrcf $< | $(GREP_COMMAND_OUTPUT) "ERC (b)" 1
 #include "mini-stdlib.sac"
 
-noinline int[*] id (int[*] a) { return a; }
-
 int main ()
 {
   a = with { (. <= [iv] <= .): iv; } : genarray ([1001], 2);

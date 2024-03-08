@@ -58,8 +58,8 @@ struct INFO {
     node *formal_args;
 };
 
-#define INFO_IDAVIS(n) (n->ids_avis)
-#define INFO_FORMALARGS(n) (n->formal_args)
+#define INFO_IDAVIS(n) ((n)->ids_avis)
+#define INFO_FORMALARGS(n) ((n)->formal_args)
 
 static info *
 MakeInfo (void)
@@ -127,9 +127,9 @@ DDRfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("----- dummy definition removal in %s -----",
+        DBUG_PRINT ("----- Dummy definition removal in %s -----",
                     FUNDEF_NAME (arg_node));
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -175,7 +175,7 @@ DDRvardec (node *arg_node, info *arg_info)
     avis = VARDEC_AVIS (arg_node);
 
     if (AVIS_ISDUMMY (avis)) {
-        DBUG_PRINT ("removing dummy declaration %s", AVIS_NAME (avis));
+        DBUG_PRINT ("Removing dummy declaration %s", AVIS_NAME (avis));
         arg_node = FREEdoFreeNode (arg_node);
     }
 
@@ -203,7 +203,7 @@ DDRassign (node *arg_node, info *arg_info)
     avis = INFO_IDAVIS (arg_info);
 
     if (avis != NULL && AVIS_ISDUMMY (avis)) {
-        DBUG_PRINT ("removing dummy assignment to %s", AVIS_NAME (avis));
+        DBUG_PRINT ("Removing dummy assignment to %s", AVIS_NAME (avis));
         arg_node = FREEdoFreeNode (arg_node);
     }
 
@@ -225,7 +225,7 @@ DDRap (node *arg_node, info *arg_info)
     // Nothing to do if the applied function cannot have unused arguments
     if (UAAcanHaveUnusedArguments (AP_FUNDEF (arg_node))) {
         INFO_FORMALARGS (arg_info) = FUNDEF_ARGS (AP_FUNDEF (arg_node));
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
         INFO_FORMALARGS (arg_info) = NULL;
     }
 
@@ -252,7 +252,7 @@ DDRexprs (node *arg_node, info *arg_info)
         EXPRS_NEXT (arg_node) = TRAVopt (EXPRS_NEXT (arg_node), arg_info);
 
         if (!ARG_ISUSEDINBODY (formal)) {
-            DBUG_PRINT ("removing actual argument %s",
+            DBUG_PRINT ("Removing actual argument %s",
                         ID_NAME (EXPRS_EXPR (arg_node)));
             arg_node = FREEdoFreeNode (arg_node);
         }
