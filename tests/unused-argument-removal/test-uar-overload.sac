@@ -11,13 +11,13 @@
 noinline
 int fst(int x, int y)
 {
-    return x;
+    return _hideValue_SxA_ (0, x);
 }
 
 noinline
 int fst(int u, int v, int w)
 {
-    return u;
+    return _hideValue_SxA_ (0, u);
 }
 
 int main()

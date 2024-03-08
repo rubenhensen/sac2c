@@ -24,5 +24,7 @@ extern node *UAAdoUnusedArgumentAnnotate (node *arg_node);
 extern node *UAAfundef (node *arg_node, info *arg_info);
 extern node *UAAarg (node *arg_node, info *arg_info);
 extern node *UAAid (node *arg_node, info *arg_info);
+extern node *UAAret (node *arg_node, info *arg_info);
+extern node *UAAreturn (node *arg_node, info *arg_info);
 
 #endif /* _SAC_UNUSED_ARGUMENT_ANNOTATE_H_ */

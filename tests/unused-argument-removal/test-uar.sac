@@ -12,7 +12,7 @@
 noinline
 int fst(int x, int y)
 {
-    return x;
+    return _hideValue_SxA_ (0, x);
 }
 
 int main()

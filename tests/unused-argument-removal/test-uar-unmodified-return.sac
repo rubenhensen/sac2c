@@ -1,0 +1,22 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noprelude
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 37
+
+noinline
+int, int, int
+foo (int a, int b, int c, int d)
+{
+    return (a, _add_SxS_ (1, b), d);
+}
+
+int main()
+{
+    b = _hideValue_SxA_ (0, 41);
+    zero = _hideValue_SxA_ (0, 0);
+    invalid = _div_SxS_ (5, zero);
+    x, y, z = foo (3, b, invalid, 37);
+    return z;
+}

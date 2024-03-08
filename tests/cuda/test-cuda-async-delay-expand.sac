@@ -10,8 +10,6 @@
 // SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -docuade $< | grep -A1 'a = _MAIN' | $(GREP_COMMAND_OUTPUT) '_cuad_.*_dev =.*_start_( a)' 1
 #include "mini-stdlib.sac"
 
-noinline int[.] id (int[.] a) { return a; }
-
 int main () {
   a = id(with {} : genarray ([100], 19));
   aa = with { #pragma nocuda (. <= iv <= .): iv[0] + 1; } : genarray ([100], 23);

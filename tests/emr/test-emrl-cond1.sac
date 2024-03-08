@@ -9,9 +9,6 @@
 
 #include "mini-stdlib.sac"
 
-/* prevent WL fusing */
-noinline int[*] id (int[*] a) { return a; }
-
 int main ()
 {
   a = with { (. <= [iv] <= .): iv; } : genarray ([1001], 2);

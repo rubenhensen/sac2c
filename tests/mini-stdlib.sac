@@ -20,6 +20,10 @@ inline bool != (int a, int b) { return _neq_SxS_ (a, b); }
 inline bool != (bool a, bool b) { return _neq_SxS_ (a, b); }
 
 
+// Prevent fusing
+noinline int[*] id (int[*] a) { return _hideValue_SxA_ (0, a); }
+
+
 // Selection functions
 #define SEL_A_(typ, def)                                    \
 inline typ[*] sel(int[.] idx, typ[*] array)                 \
