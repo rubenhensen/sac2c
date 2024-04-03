@@ -32,7 +32,7 @@ stages:
     script:
         - mkdir -p $HOME/.sac2crc
         - mkdir build && cd build
-        - cmake -DBUILD_OPTIONS="-DFUNCTESTS=ON -DDISTMEM=ON" ../cmake/cpack;
+        - cmake -DBUILD_OPTIONS="-DFUNCTESTS=ON -DDISTMEM=ON -DMPIEXEC_EXECUTABLE=/usr/bin/mpiexec -DMPI_C_COMPILER=/usr/bin/mpicc -DGASNet_ROOT_DIR=/usr" ../cmake/cpack;
         - make -j2 2>&1 | tee build.log
         - if [ ${PIPESTATUS[0]} -ne 0 ]; then
             echo "!!! ERROR detected in build !!!";
@@ -116,13 +116,13 @@ build-archlinux:
     <<: *build-template
     before_script:
         - source /etc/profile
-    image: sacbuild/archlinux:1.7.1
+    image: sacbuild/archlinux:1.8.0
 
 test-archlinux:
     <<: *test-template
     before_script:
         - source /etc/profile
-    image: sacbuild/archlinux:1.7.1
+    image: sacbuild/archlinux:1.8.0
     needs:
         - job: build-archlinux
           artifacts: true
@@ -131,7 +131,7 @@ stdlib-archlinux:
     <<: *build-stdlib-template
     before_script:
         - source /etc/profile
-    image: sacbuild/archlinux:1.7.1
+    image: sacbuild/archlinux:1.8.0
     needs:
         - job: test-archlinux
           artifacts: true
@@ -140,18 +140,18 @@ stdlib-archlinux:
 
 build-rockylinux9:
     <<: *build-template
-    image: sacbuild/rockylinux9:1.7.1
+    image: sacbuild/rockylinux9:1.8.0
 
 test-rockylinux9:
     <<: *test-template
-    image: sacbuild/rockylinux9:1.7.1
+    image: sacbuild/rockylinux9:1.8.0
     needs:
         - job: build-rockylinux9
           artifacts: true
 
 stdlib-rockylinux9:
     <<: *build-stdlib-template
-    image: sacbuild/rockylinux9:1.7.1
+    image: sacbuild/rockylinux9:1.8.0
     needs:
         - job: test-rockylinux9
           artifacts: true
@@ -160,18 +160,18 @@ stdlib-rockylinux9:
 
 build-rockylinux8:
     <<: *build-template
-    image: sacbuild/rockylinux8:1.7.1
+    image: sacbuild/rockylinux8:1.8.0
 
 test-rockylinux8:
     <<: *test-template
-    image: sacbuild/rockylinux8:1.7.1
+    image: sacbuild/rockylinux8:1.8.0
     needs:
         - job: build-rockylinux8
           artifacts: true
 
 stdlib-rockylinux8:
     <<: *build-stdlib-template
-    image: sacbuild/rockylinux8:1.7.1
+    image: sacbuild/rockylinux8:1.8.0
     needs:
         - job: test-rockylinux8
           artifacts: true
@@ -180,18 +180,18 @@ stdlib-rockylinux8:
 
 build-ubuntu22:
     <<: *build-template
-    image: sacbuild/ubuntu22:1.7.1
+    image: sacbuild/ubuntu22:1.8.0
 
 test-ubuntu22:
     <<: *test-template
-    image: sacbuild/ubuntu22:1.7.1
+    image: sacbuild/ubuntu22:1.8.0
     needs:
         - job: build-ubuntu22
           artifacts: true
 
 stdlib-ubuntu22:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu22:1.7.1
+    image: sacbuild/ubuntu22:1.8.0
     needs:
         - job: test-ubuntu22
           artifacts: true
@@ -200,18 +200,18 @@ stdlib-ubuntu22:
 
 build-ubuntu20:
     <<: *build-template
-    image: sacbuild/ubuntu20:1.7.1
+    image: sacbuild/ubuntu20:1.8.0
 
 test-ubuntu20:
     <<: *test-template
-    image: sacbuild/ubuntu20:1.7.1
+    image: sacbuild/ubuntu20:1.8.0
     needs:
         - job: build-ubuntu20
           artifacts: true
 
 stdlib-ubuntu20:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu20:1.7.1
+    image: sacbuild/ubuntu20:1.8.0
     needs:
         - job: test-ubuntu20
           artifacts: true
