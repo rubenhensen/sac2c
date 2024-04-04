@@ -401,7 +401,20 @@ memalign (size_t alignment, size_t size)
 
     free (prefixp + 2);
 
+#if defined(__GNUC__) && (__GNUC__ >= 12)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wuse-after-free"
+    /*
+     * XXX(hans) the following line causes a use-after-free warning in GCC,
+     * this is a false positive, likely caused by the static analysis unable to
+     * fully resolve the underlying union type, thus misunderstand what effect
+     * the pointer offsets have.
+     */
+#endif
     return ((void *)(freep + 2));
+#if defined(__GNUC__) && (__GNUC__ >= 12)
+#  pragma GCC diagnostic pop
+#endif
 }
 
 /******************************************************************************

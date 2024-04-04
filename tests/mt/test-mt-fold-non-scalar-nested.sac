@@ -14,7 +14,7 @@
 // SAC_TEST|<tab>cat $(TMP) | $(GREP_COMMAND_OUTPUT) "_dec_rc_" 0
 // SAC_TEST|<tab>$(RM) $(TMP)
 // SAC_TEST|<tab>$(CALL_SAC2C) -trace rm $< -o <file-name-we>
-// SAC_TEST|<tab>./<file-name-we> -mt 4 2>&1 | fgrep "now" | tail -n 1 | $(GREP_COMMAND_OUTPUT) "now: 0" 1
+// SAC_TEST|<tab>./<file-name-we> -mt 4 2>&1 | grep -F "now" | tail -n 1 | $(GREP_COMMAND_OUTPUT) "now: 0" 1
 
 #include "mini-stdlib.sac"
 

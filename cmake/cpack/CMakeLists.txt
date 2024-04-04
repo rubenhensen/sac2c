@@ -9,7 +9,7 @@ INCLUDE (ExternalProject)
 # CMake policy handling
 IF (POLICY CMP0114)
   # ExternalProject_Add() dependency handling
-  CMAKE_POLICY (SET CMP0114 OLD)
+  CMAKE_POLICY (SET CMP0114 NEW)
 ENDIF ()
 
 # XXX We assume that this CMakeLists.txt file is being called from ./cmake/cpack
