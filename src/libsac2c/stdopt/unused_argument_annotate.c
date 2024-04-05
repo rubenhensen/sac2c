@@ -270,8 +270,14 @@ UAAreturn (node *arg_node, info *arg_info)
                         actual_index);
 
             ARG_ISUSEDINBODY (decl) = TRUE;
-            RET_ISUSEDINBODY (formal_rets) = FALSE;
             RET_ARGINDEX (formal_rets) = (int)actual_index;
+
+            DBUG_ASSERT (ARG_ISUNIQUE (decl) == RET_ISUNIQUE (formal_rets),
+                         "Unique argument mismatch");
+            // Unique arguments, such as StdIO, should never be marked as unused
+            if (!ARG_ISUNIQUE (decl)) {
+                RET_ISUSEDINBODY (formal_rets) = FALSE;
+            }
         }
 
         formal_rets = RET_NEXT (formal_rets);

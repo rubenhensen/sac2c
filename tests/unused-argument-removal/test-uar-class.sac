@@ -1,0 +1,52 @@
+// Unique arguments, such as the StdIO terminal, should never be marked as an
+// unmodified return value. See issue 2397.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -DCLASSNAME=Class<file-name-strip>
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|define CLASS_SAC
+// SAC_TEST|  class Class<file-name-strip>;
+// SAC_TEST|
+// SAC_TEST|  classtype int;
+// SAC_TEST|
+// SAC_TEST|  export all;
+// SAC_TEST|
+// SAC_TEST|  Class<file-name-strip> miniCounter ()
+// SAC_TEST|  {
+// SAC_TEST|      return to_Class<file-name-strip> ();
+// SAC_TEST|  }
+// SAC_TEST|
+// SAC_TEST|  void incBy (Class<file-name-strip>& c, int by)
+// SAC_TEST|  {
+// SAC_TEST|      x = from_Class<file-name-strip> (c);
+// SAC_TEST|      c = to_Class<file-name-strip> (x + by);
+// SAC_TEST|  }
+// SAC_TEST|endef
+// SAC_TEST|export CLASS_SAC
+//
+// Generate class
+// SAC_TEST|Class<file-name-strip>.sac:
+// SAC_TEST|<tab>echo "$$CLASS_SAC" > $@
+//
+// Compile class
+// SAC_TEST|Class<file-name-strip>: Class<file-name-strip>.sac
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< 2>&1 | $(GREP_COMMAND_OUTPUT) "arning\|rror" 0
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 5
+
+use CLASSNAME: all;
+
+objdef CLASSNAME theCounter = miniCounter ();
+
+int foo (int x)
+{
+    incBy (theCounter, x);
+    return x;
+}
+
+int main()
+{
+    return foo (5);
+}
