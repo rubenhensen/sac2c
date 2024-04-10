@@ -193,7 +193,6 @@ isPrfGuard (node *arg_node)
         default:
             z = FALSE;
             break;
-        case F_guard:
         case F_noteminval:
         case F_notemaxval:
         case F_noteintersect:
