@@ -588,6 +588,68 @@ generateSelect ( ntype *basestructtype, info *arg_info)
     DBUG_RETURN (fundef);
 }
 
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *generateScalarSelect (ntype *basestructtype, info *arg_info)
+ *
+ * @brief Creates a scalar selection for a struct array.
+ *
+ * @example
+ * _struct_body[*] sel (int idx, _struct_body[*] array)
+ * {
+ *     return sel([idx], array);
+ * }
+ *
+ ******************************************************************************/
+static node *
+generateScalarSelect (ntype *basestructtype, info *arg_info)
+{
+    node *avis_arr, *avis_idx, *args, *ret;
+    node *idx_arg, *arr_arg, *sel_args, *n_return;
+    node *fundef;
+
+    DBUG_ENTER ();
+
+    avis_arr = TBmakeAvis (STRcpy ("array"),
+                           TYmakeAUD (TYcopyType (basestructtype)));
+    avis_idx = TBmakeAvis (STRcpy ("idx"),
+                           TYmakeAKS (TYmakeSimpleType (T_int),
+                                      SHcreateShape (0)));
+    AVIS_DECLTYPE (avis_arr) = TYcopyType (AVIS_TYPE (avis_arr));
+    AVIS_DECLTYPE (avis_idx) = TYcopyType (AVIS_TYPE (avis_idx));
+    args = TBmakeArg (avis_arr, NULL);
+    AVIS_DECL (avis_arr) = args;
+    args = TBmakeArg (avis_idx, args);
+    AVIS_DECL (avis_idx) = args;
+
+    ret = TBmakeRet (TYmakeAUD (TYcopyType (basestructtype)), NULL);
+
+    idx_arg = TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
+                                      SHcreateShape (0)),
+                           SHcreateShape (1, 1),
+                           TBmakeExprs (TBmakeSpid (NULL, STRcpy ("idx")),
+                                        NULL));
+    arr_arg = TBmakeSpid (NULL, STRcpy ("array"));
+    sel_args = TBmakeExprs (idx_arg, TBmakeExprs (arr_arg, NULL));
+    n_return = TBmakeSpap (TBmakeSpid (NULL, STRcpy ("sel")), sel_args);
+    n_return = TBmakeExprs (n_return, NULL);
+    n_return = TBmakeReturn (n_return);
+    n_return = TBmakeAssign (n_return, NULL);
+
+    fundef = TBmakeFundef (STRcpy ("sel"),
+                           NSdupNamespace (INFO_NAMESPACE (arg_info)),
+                           ret,
+                           args,
+                           TBmakeBlock (n_return, NULL),
+                           NULL);
+
+    FUNDEF_ISINLINE (fundef) = TRUE;
+    DBUG_PRINT ("generated implementation of scalar \"sel\"");
+
+    DBUG_RETURN (fundef);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn static node *generateGetter (node *arg_node, info *arg_info,
@@ -1031,6 +1093,12 @@ HSstructdef (node *arg_node, info *arg_info)
                                                new_fun);
 
     new_fun = generateSelect (basestructtype, arg_info);
+    DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
+                FUNDEF_NAME (new_fun));
+    INFO_NEW_FUNS (arg_info) = TCappendFundef (INFO_NEW_FUNS (arg_info),
+                                               new_fun);
+
+    new_fun = generateScalarSelect (basestructtype, arg_info);
     DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
                 FUNDEF_NAME (new_fun));
     INFO_NEW_FUNS (arg_info) = TCappendFundef (INFO_NEW_FUNS (arg_info),
