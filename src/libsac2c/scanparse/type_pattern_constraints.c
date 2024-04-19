@@ -248,11 +248,13 @@ TPCmakeDimError (node *pattern, char *v, char *fundef, int fdim,
 node *
 TPCmakePrimitive (node *pattern, prf built_in, char *user_defined, node *expr)
 {
+    ntype *typ;
     node *res;
 
     DBUG_ENTER ();
 
-    res = TYisSimple (TYPEPATTERN_ELEMENTTYPE (pattern))
+    typ = TYPEPATTERN_ELEMENTTYPE (pattern);
+    res = TYisSimple (typ) || TYisRecord (typ)
             ? TCmakePrf1 (built_in, expr)
             : TCmakeSpap1 (NULL, STRcpy (user_defined), expr);
 

@@ -252,6 +252,7 @@ extern bool TYisUser (ntype *);
 extern bool TYisPoly (ntype *);
 extern bool TYisPolyUser (ntype *);
 extern bool TYisSymb (ntype *);
+extern bool TYisRecord (ntype *);
 extern bool TYisScalar (ntype *);
 
 extern bool TYisBottom (ntype *);
