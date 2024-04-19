@@ -387,6 +387,50 @@ ANSobjdef (node *arg_node, info *arg_info)
 }
 
 node *
+ANSprf (node *arg_node, info *arg_info)
+{
+    size_t i, n;
+    node *act_args;
+
+    DBUG_ENTER ();
+
+    switch (PRF_PRF (arg_node))
+    {
+    /**
+     * Some primitive functions may have types as arguments.
+     * Currently, this only holds for guards at this point in the compiler.
+     *   guard (x1, .., xn, t1, .., tn, p1, .., pm)
+     */
+    case F_guard:
+        n = PRF_NUMVARIABLERETS (arg_node);
+        act_args = PRF_ARGS (arg_node);
+
+        // Traverse the first N arguments normally
+        for (i = 0; i < n; i++) {
+            EXPRS_EXPR (act_args) = TRAVdo (EXPRS_EXPR (act_args), arg_info);
+            act_args = EXPRS_NEXT (act_args);
+        }
+
+        // Traverse the next N type arguments as NTYPE nodes
+        for (i = 0; i < n; i++) {
+            TYPE_TYPE (EXPRS_EXPR (act_args)) =
+                ANSntype (TYPE_TYPE (EXPRS_EXPR (act_args)), arg_info);
+            act_args = EXPRS_NEXT (act_args);
+        }
+
+        // Nothing to do for the M predicates; they are always boolean
+        break;
+
+    default:
+        // Otherwise traverse all arguments normally
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 ANSspap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
