@@ -1493,6 +1493,7 @@
 		  <node name="Objdef" />
 		  <node name="While" />
 		  <node name="Do" />
+		  <node name="Prf" />
 		  <node name="SPAp" />
 		  <node name="SPMop" />
 		  <node name="Avis" />
