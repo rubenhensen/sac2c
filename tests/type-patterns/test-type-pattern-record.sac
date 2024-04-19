@@ -1,0 +1,25 @@
+// For user-defined types we typically assume that the dim and shape functions
+// are overloaded. However in the case of records these are actually translated
+// into simple types at a later stage: for records we should use _dim_A_ and
+// _shape_A_ instead.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noprelude
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 3
+
+struct Foo { int x; };
+
+noinline
+int bar(struct Foo[n] f)
+{
+    return n;
+}
+
+int main()
+{
+    y = [Foo{1}, Foo{2}, Foo{3}];
+    return bar(y);
+}

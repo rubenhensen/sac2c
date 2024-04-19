@@ -2276,25 +2276,23 @@ node *
 DSSprf (node *arg_node, info *arg_info)
 {
     node *sdef;
+
     DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_MODE (arg_info) != mode_in_place,
                  "DSSprf should only be entered in mode_replace"
                  " or mode_repl_count");
 
-    switch(PRF_PRF (arg_node)){
+    switch (PRF_PRF (arg_node)) {
     case F_dispatch_error:
         INFO_IN_PRF_DE (arg_info) = 1;
+
         if (INFO_MODE (arg_info) == mode_repl_count) {
             INFO_MODE (arg_info) = mode_in_place;
 
             INFO_REPLACE_COUNT (arg_info) = 0;
-
             PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-
-            NUM_VAL (EXPRS_EXPR (PRF_ARGS (arg_node))) +=
-                                            INFO_REPLACE_COUNT (arg_info);
-
+            NUM_VAL (PRF_ARG1 (arg_node)) += INFO_REPLACE_COUNT (arg_info);
             INFO_REPLACE_COUNT (arg_info) = 0;
         } else {
             PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
@@ -2302,20 +2300,20 @@ DSSprf (node *arg_node, info *arg_info)
 
         INFO_IN_PRF_DE (arg_info) = 0;
         break;
+    case F_type_fix:
     case F_type_conv:
-        // continue mode_repl_count
+        // Continue mode_repl_count
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         break;
     case F_dim_A:
     case F_shape_A:
-        sdef = GetStructDef (AVIS_TYPE (ID_AVIS (
-                EXPRS_EXPR (PRF_ARGS (arg_node)))));
+        sdef = GetStructDef (ID_NTYPE (PRF_ARG1 (arg_node)));
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
         if (INFO_MODE (arg_info) == mode_repl_count
             && INFO_NUM_REPLS (arg_info) > 0) {
-            // we only want the first element from this function
+            // We only want the first element from this function
             DBUG_PRINT ("set num_repls to 1 for _shape_A_");
             DBUG_ASSERT (INFO_DEF_REPLS (arg_info) == sdef,
                          "Attempt to replicate and replace with two"
@@ -2326,7 +2324,7 @@ DSSprf (node *arg_node, info *arg_info)
         }
 
         if (INFO_MODE (arg_info) == mode_replace && sdef != NULL) {
-            switch (PRF_PRF (arg_node)){
+            switch (PRF_PRF (arg_node)) {
                 case F_dim_A:
                     arg_node = ExpandPrfDim (arg_node, arg_info, sdef);
                     break;
@@ -2339,15 +2337,17 @@ DSSprf (node *arg_node, info *arg_info)
         }
         break;
     case F_sel_VxA:
-        sdef = GetStructDef( AVIS_TYPE (ID_AVIS (
-                EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))));
+        sdef = GetStructDef( ID_NTYPE (PRF_ARG2 (arg_node)));
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+
         if (INFO_MODE (arg_info) == mode_replace && sdef != NULL) {
-            // we might need to replace this _sel_VxA_(idx, element) with
-            // prelude:sel(idx, element)
-            // we do that if the element is not a scalar value, and we would
-            // thus need to select a subarray rather than a scalar value
+            /**
+             * We might need to replace this _sel_VxA_(idx, element) with
+             * prelude::sel(idx, element). We do that if the element is not a
+             * scalar value, and we would thus need to select a subarray rather
+             * than a scalar value.
+             */
             DBUG_PRINT ("expanded sdef sel");
             arg_node = SelHyperplane (arg_node, sdef, arg_info);
 
@@ -2356,17 +2356,17 @@ DSSprf (node *arg_node, info *arg_info)
     case F_accu:
         // continue in mode_in_place
         DBUG_ASSERT (INFO_MODE (arg_info) != mode_replace,
-                     "_accu_ should only be expanded in-place, so mode_replace"
-                     " is unexpected");
+                     "_accu_ should only be expanded in-place,"
+                     " so mode_replace is unexpected");
         INFO_MODE (arg_info) = mode_in_place;
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         break;
     default:
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
-
         DBUG_ASSERT (INFO_NUM_REPLS (arg_info) == 0,
                      "Attempt to expand a record in an unsupported"
-                     " built-in function");
+                     " built-in function: %s",
+                     PRF_NAME (PRF_PRF (arg_node)));
         break;
     }
 

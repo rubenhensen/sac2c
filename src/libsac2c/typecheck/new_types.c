@@ -1056,7 +1056,7 @@ TYmakeEmptyProductType (size_t size)
     ntype *res;
 
     DBUG_ENTER ();
-    
+
     res = MakeNtype (TC_prod, size);
 
     DBUG_RETURN (res);
@@ -3363,6 +3363,14 @@ TYisSymb (ntype *type)
 {
     DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_symbol);
+}
+
+bool
+TYisRecord (ntype *type)
+{
+    DBUG_ENTER ();
+    // Records always have a _struct_ prefix. Is there a better way to differentiate records?
+    DBUG_RETURN (TYisSymb (type) && STReqn (TYgetName (type), "_struct_", 8));
 }
 
 /*
@@ -6647,7 +6655,7 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
     assigns = NULL;
     lhs = NULL;
     ret_type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
-    //loop from ARITY - 1 to 0 
+    //loop from ARITY - 1 to 0
     for (i = NTYPE_ARITY (ret_type); i-- > 0;){
         DBUG_ASSERT (vardecs != NULL, "inconsistant application found");
 
@@ -6834,7 +6842,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
         if (NTYPE_ARITY (type) >= 2) {
             tmp_ass = BuildDimAssign (arg, new_vardecs);
-            /* 
+            /*
              * decrement after check for > 0, safe method for reverse loop ending on 0
              * i : (arity - 2) to 0
              */
@@ -6862,7 +6870,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
         if (NTYPE_ARITY (type) >= 2) {
             tmp_ass = BuildShapeAssign (arg, new_vardecs);
-            /* 
+            /*
              * decrement after check for > 0, safe method for reverse loop ending on 0
              * i : (arity - 2) to 0
              */
@@ -7227,7 +7235,7 @@ SerializeIArrType (FILE *file, ntype *type)
     fprintf (file, "TYdeserializeType( %d, %zu, ", NTYPE_CON (type), NTYPE_ARITY (type));
 
     TYserializeType (file, IARR_GEN (type));
-    
+
     for (cnt = 0; NTYPE_ARITY (type) > 0 && cnt < NTYPE_ARITY (type) - 1; cnt++) {
         fprintf (file, ", ");
 
