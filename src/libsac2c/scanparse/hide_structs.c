@@ -111,7 +111,8 @@
 
 #include "hide_structs.h"
 
-/**
+/******************************************************************************
+ *
  * @struct INFO
  *
  * @param new_fundecs List of N_fundec to be inserted into the module.
@@ -126,7 +127,8 @@
  * structdef. e.g in struct body the position of pos is 0, and the position of
  * mass is 1.
  * @param namespace The namespace of the current module.
- */
+ *
+ ******************************************************************************/
 struct INFO {
     node *new_fundecs;
     node *new_funs;
@@ -227,8 +229,8 @@ static node *
 zeroElem (node *elem)
 {
     ntype *ty, *aty;
-    namespace_t *ns = NULL;
     node *res, *arr, *zero, *shape;
+    namespace_t *ns = NULL;
 
     DBUG_ENTER ();
 
@@ -253,7 +255,7 @@ zeroElem (node *elem)
         // First create the same `zero([e_i])`, removing the shape
         aty = TYmakeAKS (TYcopyType (TYgetScalar (STRUCTELEM_TYPE (elem))),
                          SHcreateShape (0));
-        arr = TBmakeArray (aty , SHcreateShape (1, 0), NULL);
+        arr = TBmakeArray (aty, SHcreateShape (1, 0), NULL);
         zero = TBmakeSpap (TBmakeSpid (ns, STRcpy ("zero")),
                            TBmakeExprs (arr, NULL));
 
@@ -299,10 +301,11 @@ zeroElems (node *elem)
  * argument. Returns an empty struct by calling a chain of `zero` applications
  * for each element.
  *
- * @example with struct body:
- * _struct_body _struct_con_body(){
- *     return _struct_con_body(
- *         with {}: genarray ([3], sacprelude_d::zero ([:double])),
+ * @example
+ * _struct_body _struct_con_body ()
+ * {
+ *     return _struct_con_body (
+ *         with {} : genarray ([3], sacprelude_d::zero ([:double])),
  *         sacprelude_d::zero ([:int])
  *     );
  * }
@@ -311,8 +314,7 @@ zeroElems (node *elem)
 static node *
 generateDefaultCons (ntype *basestructtype, info *arg_info, node *structdef)
 {
-    node *ret, *con_args, *cons_name;
-    node *n_return, *assigns, *fundef;
+    node *ret, *args, *spid, *n_return, *assigns, *fundef;
 
     DBUG_ENTER ();
 
@@ -321,14 +323,13 @@ generateDefaultCons (ntype *basestructtype, info *arg_info, node *structdef)
                                 SHcreateShape (0)),
                                 NULL);
 
-    // apply the zero function to every element
-    con_args = zeroElems (STRUCTDEF_STRUCTELEM (structdef));
+    // Apply the zero function to every element
+    args = zeroElems (STRUCTDEF_STRUCTELEM (structdef));
 
-    // `return _struct_cons_<x>( zero(e_0), ..., zero(e_n))`
-    cons_name = TBmakeSpid (NULL, STRcat (STRUCT_CON_PREFIX,
-                                          STRUCTDEF_NAME (structdef)));
-    n_return = TBmakeReturn (TBmakeExprs (TBmakeSpap (cons_name, con_args),
-                                          NULL));
+    // `return _struct_cons_<x> (zero (e_0), ..., zero (e_n))`
+    spid = TBmakeSpid (NULL, STRcat (STRUCT_CON_PREFIX,
+                                     STRUCTDEF_NAME (structdef)));
+    n_return = TBmakeReturn (TBmakeExprs (TBmakeSpap (spid, args), NULL));
     assigns = TBmakeAssign (n_return, NULL);
 
     fundef = TBmakeFundef (STRcat (STRUCT_CON_PREFIX,
@@ -353,35 +354,35 @@ generateDefaultCons (ntype *basestructtype, info *arg_info, node *structdef)
  * @brief Create an implementation for `zero` by calling the default
  * constructor.
  *
- * @example with struct body:
- * _struct_body zero (_struct_body[*] e){
- *     return _struct_con_body();
+ * @example
+ * _struct_body zero (_struct_body[*] e)
+ * {
+ *     return _struct_con_body ();
  * }
  *
  ******************************************************************************/
 static node *
 generateZero ( ntype *basestructtype, info *arg_info, node* structdef)
 {
-    node *avis_e, *arg, *ret, *cons_name;
-    node *n_return, *assigns, *fundef;
+    node *avis_e, *arg, *ret, *spid, *n_return, *assigns, *fundef;
 
     DBUG_ENTER ();
 
-    // Argument struct <x>[*] e
+    // Argument `struct <x>[*] e`
     avis_e = TBmakeAvis (STRcpy ("e"), TYmakeAUD (TYcopyType (basestructtype)));
     AVIS_DECLTYPE (avis_e) = TYcopyType (AVIS_TYPE (avis_e));
     arg = TBmakeArg (avis_e, NULL);
     AVIS_DECL (avis_e) = arg;
 
-    // Set return type to struct <x>
+    // Set return type to `struct <x>`
     ret = TBmakeRet (TYmakeAKS (TYcopyType (basestructtype),
                                 SHcreateShape (0,0)),
                       NULL);
 
     // `return _struct_con_<x>();`
-    cons_name = TBmakeSpid (NULL, STRcat (STRUCT_CON_PREFIX,
-                                          STRUCTDEF_NAME (structdef)));
-    n_return = TBmakeReturn (TBmakeExprs (TBmakeSpap (cons_name, NULL), NULL));
+    spid = TBmakeSpid (NULL, STRcat (STRUCT_CON_PREFIX,
+                                     STRUCTDEF_NAME (structdef)));
+    n_return = TBmakeReturn (TBmakeExprs (TBmakeSpap (spid, NULL), NULL));
     assigns = TBmakeAssign (n_return, NULL);
 
     fundef = TBmakeFundef (STRcpy ("zero"),
@@ -406,7 +407,7 @@ generateZero ( ntype *basestructtype, info *arg_info, node* structdef)
  *
  ******************************************************************************/
 static node *
-generateSelWith(void)
+generateSelWith (void)
 {
     node *cat_args, *inner_assigns, *withsel;
     node *code, *gen, *part, *zero_arg, *withop;
@@ -456,18 +457,17 @@ generateSelWith(void)
  *
  * @brief Creates the general selection for a struct array.
  *
- * @example with struct body:
- * _struct_body[*] sel (int [.] dix, _struct_body[*] array){
- *     new_shape = _drop_SxV_ (_sel_VxA_( [ 0 ],
- *                             _shape_A_( idx)),
- *                             _shape_A_( array));
+ * @example
+ * _struct_body[*] sel (int[.] dix, _struct_body[*] array)
+ * {
+ *     new_shape = _drop_SxV_ (_sel_VxA_ ([0], _shape_A_ (idx)),
+ *                             _shape_A_ (array));
  *     res = with {
- *         (. <= iv <= .) {
- *             new_idx = _cat_VxV_( idx, iv);
- *         } : _sel_VxA_( new_idx, array);
- *     } : genarray( new_shape, zero( array) );
- *
- *     return( res);
+ *         ( . <= iv <= . ) {
+ *             new_idx = _cat_VxV_ (idx, iv);
+ *         } : _sel_VxA_ (new_idx, array);
+ *     } : genarray (new_shape, zero (array));
+ *     return res;
  * }
  *
  ******************************************************************************/
@@ -551,7 +551,7 @@ generateSelect (ntype *basestructtype, info *arg_info)
  * @example
  * _struct_body[*] sel (int idx, _struct_body[*] array)
  * {
- *     return sel([idx], array);
+ *     return sel ([idx], array);
  * }
  *
  ******************************************************************************/
@@ -610,6 +610,8 @@ generateScalarSelect (ntype *basestructtype, info *arg_info)
  *
  * @brief Create getter for a scalar value of the associated struct.
  * The implementation for this function is given in the phase DSS.
+ *
+ * @example
  * external int _struct_get_mass (_struct_body s);
  *
  ******************************************************************************/
@@ -652,12 +654,13 @@ generateGetter(node *arg_node, info *arg_info, ntype *structtype)
  *
  * @brief Create getter for an array of the associated struct.
  *
- * @example with struct body's mass getter:
- * int[+] _struct_get_mass (_struct_body[+] s){
- *     return (with {
- *         (. <= iv <= .) : _struct_get_mass( sel(iv,s) );
- *     }: genarray( _shape_A_(s), zero([:int]) ));
- *  }
+ * @example
+ * int[+] _struct_get_mass (_struct_body[+] s)
+ * {
+ *     return with {
+ *         ( . <= iv <= . ) : _struct_get_mass (s[iv]);
+ *     }: genarray (_shape_A_ (s), zero ([:int]));
+ * }
  *
  ******************************************************************************/
 static node *
@@ -734,7 +737,7 @@ generateArrayGetter(node *elem, info *arg_info, ntype *structtype)
  * @brief Create setter for a scalar value of the associated struct.
  * The implementation for this function is given in the phase DSS.
  *
- * @example with struct body's mass:
+ * @example
  * external _struct_body _struct_set_mass (int e, _struct_body s);
  *
  ******************************************************************************/
@@ -783,10 +786,11 @@ generateSetter(node *arg_node, info *arg_info, ntype *structtype)
  * @brief Create setter for an array of the associated struct.
  *
  * @example with struct body's mass setter:
- * _struct_body _struct_set_mass (int[+] e, _struct_body[+] s){
- *     return ( with {
- *         (. <= iv <= .) : _struct_set_mass(sel(iv,e), sel(iv,s) );
- *     }: modarray(s));
+ * _struct_body _struct_set_mass (int[+] e, _struct_body[+] s)
+ * {
+ *     return with {
+ *         ( . <= iv <= . ) : _struct_set_mass (e[iv], s[iv]);
+ *     } : modarray (s);
  * }
  *
  ******************************************************************************/
