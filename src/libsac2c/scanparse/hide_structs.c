@@ -997,21 +997,21 @@ HSmodule (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_NAMESPACE (arg_info) = MODULE_NAMESPACE (arg_node);
-
     INFO_NEW_FUNDECS (arg_info) = NULL;
     INFO_NEW_FUNS (arg_info) = NULL;
+
     // We only traverse the type definitions here!
-    MODULE_TYPES (arg_node) = TRAVopt ( MODULE_TYPES (arg_node), arg_info);
+    MODULE_TYPES (arg_node) = TRAVopt (MODULE_TYPES (arg_node), arg_info);
 
     if (INFO_NEW_FUNDECS (arg_info) != NULL) {
-      MODULE_FUNDECS (arg_node) = TCappendFundef ( MODULE_FUNDECS (arg_node),
-                                                   INFO_NEW_FUNDECS (arg_info));
-      INFO_NEW_FUNDECS (arg_info) = NULL;
+        MODULE_FUNDECS (arg_node) = TCappendFundef (MODULE_FUNDECS (arg_node),
+                                                    INFO_NEW_FUNDECS (arg_info));
+        INFO_NEW_FUNDECS (arg_info) = NULL;
     }
 
     if (INFO_NEW_FUNS (arg_info) != NULL) {
-      MODULE_FUNS (arg_node) = TCappendFundef ( MODULE_FUNS (arg_node),
-                                                INFO_NEW_FUNS (arg_info));
+      MODULE_FUNS (arg_node) = TCappendFundef (MODULE_FUNS (arg_node),
+                                               INFO_NEW_FUNS (arg_info));
       INFO_NEW_FUNS (arg_info) = NULL;
     }
 
@@ -1077,32 +1077,32 @@ HSstructdef (node *arg_node, info *arg_info)
                                    arg_info);
     DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
                 FUNDEF_NAME (new_fun));
-    INFO_NEW_FUNDECS (arg_info) = TCappendFundef (INFO_NEW_FUNDECS (arg_info),
-                                                  new_fun);
+    FUNDEF_NEXT (new_fun) = INFO_NEW_FUNDECS (arg_info);
+    INFO_NEW_FUNDECS (arg_info) = new_fun;
 
     new_fun = generateZero (basestructtype, arg_info, arg_node);
     DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
                 FUNDEF_NAME (new_fun));
-    INFO_NEW_FUNS (arg_info) = TCappendFundef (INFO_NEW_FUNS (arg_info),
-                                               new_fun);
+    FUNDEF_NEXT (new_fun) = INFO_NEW_FUNS (arg_info);
+    INFO_NEW_FUNS (arg_info) = new_fun;
 
     new_fun = generateDefaultCons (basestructtype, arg_info, arg_node);
     DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
                 FUNDEF_NAME (new_fun));
-    INFO_NEW_FUNS (arg_info) = TCappendFundef (INFO_NEW_FUNS (arg_info),
-                                               new_fun);
+    FUNDEF_NEXT (new_fun) = INFO_NEW_FUNS (arg_info);
+    INFO_NEW_FUNS (arg_info) = new_fun;
 
     new_fun = generateSelect (basestructtype, arg_info);
     DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
                 FUNDEF_NAME (new_fun));
-    INFO_NEW_FUNS (arg_info) = TCappendFundef (INFO_NEW_FUNS (arg_info),
-                                               new_fun);
+    FUNDEF_NEXT (new_fun) = INFO_NEW_FUNS (arg_info);
+    INFO_NEW_FUNS (arg_info) = new_fun;
 
     new_fun = generateScalarSelect (basestructtype, arg_info);
     DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
                 FUNDEF_NAME (new_fun));
-    INFO_NEW_FUNS (arg_info) = TCappendFundef (INFO_NEW_FUNS (arg_info),
-                                               new_fun);
+    FUNDEF_NEXT (new_fun) = INFO_NEW_FUNS (arg_info);
+    INFO_NEW_FUNS (arg_info) = new_fun;
 
     STRUCTDEF_NEXT (arg_node) = TRAVopt (STRUCTDEF_NEXT (arg_node), arg_info);
 
@@ -1133,73 +1133,60 @@ HSstructelem (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     structdef = INFO_STRUCTDEF (arg_info);
-    DBUG_ASSERT (structdef != NULL, "No structdef for this struct element.");
+    DBUG_ASSERT (structdef != NULL, "No structdef for this struct element");
     structtype = INFO_STRUCTTYPE (arg_info);
-    DBUG_ASSERT (structtype != NULL, "No struct set for this struct element.");
+    DBUG_ASSERT (structtype != NULL, "No struct set for this struct element");
 
-    DBUG_PRINT ( "    processing element \"%s\"", STRUCTELEM_NAME (arg_node));
+    DBUG_PRINT ("    processing element \"%s\"", STRUCTELEM_NAME (arg_node));
 
-
-    if (!TYisAKS(STRUCTELEM_TYPE(arg_node)))
-    {
-      tyname = TYtype2String (STRUCTELEM_TYPE(arg_node), FALSE, 0);
-      CTIerror(
-          NODE_LOCATION (arg_node),
-          "element \"%s\" of \"struct %s\" must have a "
-          "known size but is \"%s\"",
-          STRUCTELEM_NAME (arg_node),
-          STRUCTDEF_NAME (structdef),
-          tyname);
+    if (!TYisAKS (STRUCTELEM_TYPE (arg_node))) {
+      tyname = TYtype2String (STRUCTELEM_TYPE (arg_node), FALSE, 0);
+      CTIerror (NODE_LOCATION (arg_node),
+                "element \"%s\" of \"struct %s\" must have a "
+                "known size but is \"%s\"",
+                STRUCTELEM_NAME (arg_node),
+                STRUCTDEF_NAME (structdef),
+                tyname);
     }
 
-    // getters
-    // create the scalar getter function _struct_get_<name>
+    // Create the scalar getter function _struct_get_<name>
     new_fun = generateGetter(arg_node, arg_info, structtype);
-    DBUG_PRINT ("Adding scalar getter '%s' to the function declaration"
-                " stack in arg_info",
-                FUNDEF_NAME(new_fun));
-    // push the getter on the info struct's fundec stack.
-    INFO_NEW_FUNDECS (arg_info) = TCappendFundef (INFO_NEW_FUNDECS (arg_info),
-                                                  new_fun);
+    DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
+                FUNDEF_NAME (new_fun));
+    FUNDEF_NEXT (new_fun) = INFO_NEW_FUNDECS (arg_info);
+    INFO_NEW_FUNDECS (arg_info) = new_fun;
 
-    // create the array getter function _struct_get_<name>
+    // Create the array getter function _struct_get_<name>
     new_fun = generateArrayGetter(arg_node, arg_info, structtype);
-    DBUG_PRINT ("Adding array getter '%s' to the function definition"
-                " stack in arg_info",
-                FUNDEF_NAME(new_fun));
-    // push the array accessor on the info struct's fundef stack.
-    INFO_NEW_FUNS (arg_info) = TCappendFundef (INFO_NEW_FUNS (arg_info),
-                                               new_fun);
+    DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
+                FUNDEF_NAME (new_fun));
+    FUNDEF_NEXT (new_fun) = INFO_NEW_FUNS (arg_info);
+    INFO_NEW_FUNS (arg_info) = new_fun;
 
-    // setters
-    // create the scalar setter function _struct_set_<name>
+    // Create the scalar setter function _struct_set_<name>
     new_fun = generateSetter(arg_node, arg_info, structtype);
-    DBUG_PRINT ("Adding scalar setter '%s' to the function declaration"
-                " stack in arg_info",
-                FUNDEF_NAME(new_fun));
-    // push the setter on the info struct's fundec stack.
-    INFO_NEW_FUNDECS (arg_info) = TCappendFundef (INFO_NEW_FUNDECS (arg_info),
-                                                  new_fun);
+    DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
+                FUNDEF_NAME (new_fun));
+    FUNDEF_NEXT (new_fun) = INFO_NEW_FUNDECS (arg_info);
+    INFO_NEW_FUNDECS (arg_info) = new_fun;
 
-
-    // create the array setter function _struct_get_<name>
+    // Create the array setter function _struct_get_<name>
     new_fun = generateArraySetter(arg_node, arg_info, structtype);
-    DBUG_PRINT ("Adding array setter '%s' to the function definition"
-                " stack in arg_info",
-                FUNDEF_NAME(new_fun));
-    // push the array setter on the info struct's fundef stack.
-    INFO_NEW_FUNS (arg_info) = TCappendFundef (INFO_NEW_FUNS (arg_info),
-                                               new_fun);
+    DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
+                FUNDEF_NAME (new_fun));
+    FUNDEF_NEXT (new_fun) = INFO_NEW_FUNS (arg_info);
+    INFO_NEW_FUNS (arg_info) = new_fun;
 
     // Continue with the next structelem.
-    INFO_ELEMCOUNT (arg_info)++;
+    INFO_ELEMCOUNT (arg_info) += 1;
     STRUCTELEM_NEXT (arg_node) = TRAVopt (STRUCTELEM_NEXT (arg_node), arg_info);
 
-    // Create an N_arg for this element so that we can createthe constructor's
-    // argument list. This is done bottom-up to so that the order of N_arg is
-    // consistent with the order in which the fields are declared in
-    // the N_structdef
-
+    /**
+     * Create an N_arg for this element so that we can createthe constructor's
+     * argument list. This is done bottom-up to so that the order of N_arg is
+     * consistent with the order in which the fields are declared in the
+     * N_structdef.
+     */
     avis = TBmakeAvis (STRcpy (STRUCTELEM_NAME (arg_node)),
                        TYcopyType (STRUCTELEM_TYPE (arg_node)));
     arg = TBmakeArg (avis, INFO_INIT_ARGS (arg_info));
@@ -1209,7 +1196,6 @@ HSstructelem (node *arg_node, info *arg_info)
 
     AVIS_DECL (avis) = arg;
     AVIS_DECLTYPE (avis) = TYcopyType (STRUCTELEM_TYPE (arg_node));
-
     INFO_INIT_ARGS (arg_info) = arg;
 
     DBUG_RETURN (arg_node);
