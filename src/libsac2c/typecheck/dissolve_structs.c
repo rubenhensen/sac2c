@@ -2430,14 +2430,14 @@ DSSret (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    RET_NEXT(arg_node) = TRAVopt (RET_NEXT(arg_node), arg_info);
+    RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
 
-    structdef = GetStructDef (RET_TYPE (arg_node) );
+    structdef = GetStructDef (RET_TYPE (arg_node));
     if (structdef != NULL) {
         DBUG_PRINT ("Expanding N_ret");
         expanded = ExpandRetType (structdef, RET_TYPE (arg_node));
         arg_node = FREEdoFreeNode (arg_node);
-        arg_node = expanded;
+        arg_node = TCappendRet (expanded, arg_node);
     }
 
     DBUG_RETURN (arg_node);
