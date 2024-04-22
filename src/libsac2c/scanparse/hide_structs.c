@@ -362,7 +362,7 @@ generateDefaultCons (ntype *basestructtype, info *arg_info, node *structdef)
  *
  ******************************************************************************/
 static node *
-generateZero ( ntype *basestructtype, info *arg_info, node* structdef)
+generateZero (ntype *basestructtype, info *arg_info, node* structdef)
 {
     node *avis_e, *arg, *ret, *spid, *n_return, *assigns, *fundef;
 
@@ -427,7 +427,7 @@ generateSelWith (void)
     withsel = TBmakePrf (F_sel_VxA,
         TBmakeExprs (TBmakeSpid (NULL, STRcpy ("new_idx")),
                      TBmakeExprs (TBmakeSpid (NULL, STRcpy ("array")),
-                                  NULL)) );
+                                  NULL)));
 
     code = TBmakeCode (TBmakeBlock (inner_assigns, NULL),
                        TBmakeExprs (withsel, NULL));
@@ -441,7 +441,7 @@ generateSelWith (void)
     CODE_USED (code) += 1;
 
     // `genarray (new_shape, zero (array))`
-    zero_arg = TBmakeExprs (TBmakeSpid (NULL, STRcpy ("array")) ,NULL);
+    zero_arg = TBmakeExprs (TBmakeSpid (NULL, STRcpy ("array")), NULL);
     withop = TBmakeGenarray (TBmakeSpid (NULL, STRcpy ("new_shape")),
                              TBmakeSpap (TBmakeSpid (NULL,
                                                      STRcpy ("zero")),
@@ -584,10 +584,10 @@ generateScalarSelect (ntype *basestructtype, info *arg_info)
                            TBmakeExprs (TBmakeSpid (NULL, STRcpy ("idx")),
                                         NULL));
     arr_arg = TBmakeSpid (NULL, STRcpy ("array"));
+
     sel_args = TBmakeExprs (idx_arg, TBmakeExprs (arr_arg, NULL));
     n_return = TBmakeSpap (TBmakeSpid (NULL, STRcpy ("sel")), sel_args);
-    n_return = TBmakeExprs (n_return, NULL);
-    n_return = TBmakeReturn (n_return);
+    n_return = TBmakeReturn (TBmakeExprs (n_return, NULL));
     n_return = TBmakeAssign (n_return, NULL);
 
     fundef = TBmakeFundef (STRcpy ("sel"),
@@ -806,7 +806,7 @@ generateArraySetter(node *elem, info *arg_info, ntype *structtype)
 
     DBUG_ENTER ();
 
-    // Create arguments `et[+] e , struct <x>[+] s` where et is the type of elem
+    // Create arguments `et[+] e, struct <x>[+] s` where et is the type of elem
     avis_s = TBmakeAvis (STRcpy ("s"),
                          TYmakeAUDGZ (TYcopyType (TYgetScalar (structtype))));
     avis_e = TBmakeAvis (
@@ -822,8 +822,8 @@ generateArraySetter(node *elem, info *arg_info, ntype *structtype)
     // Create return type `et[+]` where et is the type of elem
     ret = TBmakeRet (TYmakeAUDGZ (TYcopyType (TYgetScalar (structtype))), NULL);
 
-    // `_struct_set_<x>(sel(iv,e), sel(iv,s))`, cexpr for the partition
-    ty = STRUCTELEM_TYPE ( elem );
+    // `_struct_set_<x> (e[iv], s[iv])`, cexpr for the partition
+    ty = STRUCTELEM_TYPE (elem);
     ns = NULL;
 
     if (!TYisArray (ty) || !TYisSymb (TYgetScalar (ty))) {
@@ -876,7 +876,7 @@ generateArraySetter(node *elem, info *arg_info, ntype *structtype)
 
 /******************************************************************************
  *
- * @fn node *HSdoHideStructs (node *syntax_tree)
+ * @fn node *HSdoHideStructs (node *arg_node)
  *
  * @brief Prepare, initiate and clean up the HideStructs phase.
  *
@@ -888,8 +888,6 @@ HSdoHideStructs (node *arg_node)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Starting struct hiding.");
-
     arg_info = MakeInfo ();
 
     TRAVpush (TR_hs);
@@ -897,8 +895,6 @@ HSdoHideStructs (node *arg_node)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-
-    DBUG_PRINT ("Done hiding all structs.");
 
     DBUG_RETURN (arg_node);
 }
