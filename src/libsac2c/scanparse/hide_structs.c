@@ -69,13 +69,13 @@
  *
  * The array accessors and array muators are implemented as a with-loop that
  * simply maps the corresponding scalar version. Zero is implemented by
- * returning the default constructor; _struct_body_con(). Sel is implemented
+ * returning the default constructor; _struct_body_con (). Sel is implemented
  * with a with-loop over that uses _sel_VxA_ to select elements from 'array',
  * allows selecting subarrays.
  *
  * A later phase (DSS) is expected to give implementations for:
  * the scalar _struct_get_pos & _struct_set_pos,
- * _struct_con_body() and _struct_con_body(double[3] pos, int mass)
+ * _struct_con_body () and _struct_con_body (double[3] pos, int mass)
  * _shape_A_, _sel_VxA_ and _dim_A_.
  *
  * The renaming conventions are being defined in hide_structs.h via macros
@@ -246,13 +246,13 @@ zeroElem (node *elem)
     // We need to look at the dimensionality of the type.
     // If not a scalar then we need to withloop an array.
     if (TYgetDim (ty) == 0) {
-        // `zero([e_i])`
+        // `zero ([e_i])`
         arr = TBmakeArray (TYcopyType (STRUCTELEM_TYPE (elem)),
                            SHcreateShape (1, 0), NULL);
         res = TBmakeSpap (TBmakeSpid (ns, STRcpy ("zero")),
                           TBmakeExprs (arr, NULL));
     } else {
-        // First create the same `zero([e_i])`, removing the shape
+        // First create the same `zero ([e_i])`, removing the shape
         aty = TYmakeAKS (TYcopyType (TYgetScalar (STRUCTELEM_TYPE (elem))),
                          SHcreateShape (0));
         arr = TBmakeArray (aty, SHcreateShape (1, 0), NULL);
@@ -262,7 +262,7 @@ zeroElem (node *elem)
         // Get the shape from ty, and create an exprs chain of it
         shape = SHshape2Array (TYgetShape (ty));
 
-        // `with {}: genarray([shp], zero([e_i])`
+        // `with {}: genarray ([shp], zero ([e_i])`
         // Where shp is the shape of `e_i`s type
         res = TBmakeWith (NULL, NULL, TBmakeGenarray (shape, zero));
     }
@@ -616,7 +616,7 @@ generateScalarSelect (ntype *basestructtype, info *arg_info)
  *
  ******************************************************************************/
 static node *
-generateGetter(node *arg_node, info *arg_info, ntype *structtype)
+generateGetter (node *arg_node, info *arg_info, ntype *structtype)
 {
     node *avis, *arg, *ret, *fundec;
 
@@ -644,7 +644,7 @@ generateGetter(node *arg_node, info *arg_info, ntype *structtype)
                 STRUCTELEM_NAME (arg_node));
     DBUG_EXECUTE (PRTdoPrintHeaderFile (stderr, fundec););
 
-    DBUG_RETURN(fundec);
+    DBUG_RETURN (fundec);
 }
 
 /******************************************************************************
@@ -664,7 +664,7 @@ generateGetter(node *arg_node, info *arg_info, ntype *structtype)
  *
  ******************************************************************************/
 static node *
-generateArrayGetter(node *elem, info *arg_info, ntype *structtype)
+generateArrayGetter (node *elem, info *arg_info, ntype *structtype)
 {
     node *avis_e, *arg, *ret, *sel_args, *sel, *args;
     node *get, *code, *gen, *part, *shape, *zero;
@@ -684,11 +684,11 @@ generateArrayGetter(node *elem, info *arg_info, ntype *structtype)
         TYmakeAUDGZ (TYcopyType (TYgetScalar (STRUCTELEM_TYPE (elem)))),
         NULL);
 
-    // `_struct_get_x(s[iv])`, cexpr for the partition
-    sel_args = TBmakeExprs (TBmakeSpid (NULL, STRcpy("iv")),
+    // `_struct_get_x (s[iv])`, cexpr for the partition
+    sel_args = TBmakeExprs (TBmakeSpid (NULL, STRcpy ("iv")),
                             TBmakeExprs (TBmakeSpid (NULL, STRcpy ("s")),
                                          NULL));
-    sel = TBmakeSpap (TBmakeSpid (NULL, STRcpy("sel")), sel_args);
+    sel = TBmakeSpap (TBmakeSpid (NULL, STRcpy ("sel")), sel_args);
     args = TBmakeExprs (sel, NULL);
     get = TBmakeSpap (TBmakeSpid (NULL,
                                   STRcat (STRUCT_GETTER_PREFIX,
@@ -704,9 +704,9 @@ generateArrayGetter(node *elem, info *arg_info, ntype *structtype)
                        gen);
     CODE_USED (code) += 1;
 
-    // `_shape_A_(s)` and `zero([:s])` for genarray
+    // `_shape_A_(s)` and `zero ([:s])` for genarray
     shape = TBmakePrf (F_shape_A,
-                       TBmakeExprs (TBmakeSpid (NULL, STRcpy("s")),
+                       TBmakeExprs (TBmakeSpid (NULL, STRcpy ("s")),
                        NULL));
     zero = zeroElem (elem);
 
@@ -726,7 +726,7 @@ generateArrayGetter(node *elem, info *arg_info, ntype *structtype)
     DBUG_PRINT ("generated implementation for array getter of element %s",
                 STRUCTELEM_NAME (elem));
 
-    DBUG_RETURN(fundef);
+    DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
@@ -742,7 +742,7 @@ generateArrayGetter(node *elem, info *arg_info, ntype *structtype)
  *
  ******************************************************************************/
 static node *
-generateSetter(node *arg_node, info *arg_info, ntype *structtype)
+generateSetter (node *arg_node, info *arg_info, ntype *structtype)
 {
     node *avis, *arg, *ret, *fundec;
 
@@ -795,7 +795,7 @@ generateSetter(node *arg_node, info *arg_info, ntype *structtype)
  *
  ******************************************************************************/
 static node *
-generateArraySetter(node *elem, info *arg_info, ntype *structtype)
+generateArraySetter (node *elem, info *arg_info, ntype *structtype)
 {
     node *avis_e, *avis_s, *arg, *ret;
     node *sel_args, *sel, *set;
@@ -831,15 +831,15 @@ generateArraySetter(node *elem, info *arg_info, ntype *structtype)
       ns = NSgetNamespace (global.preludename);
     }
 
-    sel_args = TBmakeExprs (TBmakeSpid (NULL, STRcpy("iv")),
+    sel_args = TBmakeExprs (TBmakeSpid (NULL, STRcpy ("iv")),
                             TBmakeExprs (TBmakeSpid (NULL, STRcpy ("s")),
                                          NULL));
-    sel = TBmakeExprs (TBmakeSpap (TBmakeSpid (NULL, STRcpy("sel")), sel_args),
+    sel = TBmakeExprs (TBmakeSpap (TBmakeSpid (NULL, STRcpy ("sel")), sel_args),
                        NULL);
-    sel_args = TBmakeExprs (TBmakeSpid (NULL, STRcpy("iv")),
+    sel_args = TBmakeExprs (TBmakeSpid (NULL, STRcpy ("iv")),
                             TBmakeExprs (TBmakeSpid (NULL, STRcpy ("e")),
                                          NULL));
-    sel = TBmakeExprs (TBmakeSpap (TBmakeSpid (ns, STRcpy("sel")), sel_args),
+    sel = TBmakeExprs (TBmakeSpap (TBmakeSpid (ns, STRcpy ("sel")), sel_args),
                        sel);
     set = TBmakeSpap (TBmakeSpid (NULL, STRcat (STRUCT_SETTER_PREFIX,
                                                 STRUCTELEM_NAME (elem))),
