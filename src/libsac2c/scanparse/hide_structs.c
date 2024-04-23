@@ -116,7 +116,7 @@
  * @struct INFO
  *
  * @param new_fundecs List of N_fundec to be inserted into the module.
- * @param new_funs List of N_arg to be used to create the constructor.
+ * @param new_funs List of N_fundec to be inserted into the module.
  * @param init_args List of N_arg to be used to create the constructor.
  * @param structdef Pointer to the current structdef when traversing the struct
  * elements.
