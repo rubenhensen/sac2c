@@ -164,8 +164,6 @@ UAAfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (UAAcanHaveUnusedArguments (arg_node)) {
-        DBUG_PRINT ("----- Annotating unused arguments of %s -----",
-                    FUNDEF_NAME (arg_node));
         // Reset IsUsedInBody flags
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);

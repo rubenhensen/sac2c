@@ -238,9 +238,6 @@ UAARfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("----- Removing unused application arguments of %s -----",
-                FUNDEF_NAME (arg_node));
-
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     while (INFO_UNUSEDARGS (arg_info) != NULL) {
