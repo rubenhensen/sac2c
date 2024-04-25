@@ -2051,6 +2051,7 @@
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Fold" />
+          <node name="Break" />
           <node name="Propagate" />
         </travuser>
       </traversal>

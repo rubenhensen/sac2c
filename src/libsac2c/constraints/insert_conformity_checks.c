@@ -1069,6 +1069,36 @@ ICCfold (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
+ * @fn node *ICCbreak (node *arg_node, info *arg_info)
+ *
+ * @brief Inserts constraints for foldfix. For different modes see ICCcode
+ * and ICCgenerator.
+ *
+ ******************************************************************************/
+node *
+ICCbreak (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (INFO_GENERATOR (arg_info) != NULL) {
+        // Emit generator dependent constraints
+        /* TODO */
+    } else if (INFO_CEXPRS (arg_info) != NULL) {
+        // Emit cexpr constraints
+        /* TODO */
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+    } else {
+        // Emit withop-local constraints
+        /* TODO */
+    }
+
+    BREAK_NEXT (arg_node) = TRAVopt (BREAK_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * @fn node *ICCpropagate (node *arg_node, info *arg_info)
  *
  * @brief Inserts constraints for propagate. For different modes see ICCcode
