@@ -26,6 +26,7 @@
 #define SAC_DO_TRACE 1
 
 #include "runtime/essentials_h/std.h" // TRUE, ...
+#include "libsac/essentials/message.h"    // SAC_RuntimeError,...
 
 
 #define MAX_INT_DIGITS 21
@@ -95,6 +96,9 @@ encodeShapes (int *shapes)
     }
 
     char *current = malloc (shape_string_size * sizeof (char));
+    if (current == NULL) {
+        SAC_RuntimeError ("Allocation failed\n");
+    }
 
     current[0] = '\0';
 
@@ -245,6 +249,9 @@ SAC_persistence_add (char *filename, char *func_name, char *uuid, char *type_inf
                          + strlen_uuid + strlen_type_info + 5;
 
     destdir = malloc (sizeof (char) * strlen_destdir);
+    if (destdir == NULL) {
+        SAC_RuntimeError ("Allocation failed");
+    }
 
     sprintf (destdir, "%s/%s/%s/%s/%s", cachedir, mod_name, func_name, uuid, type_info);
 
@@ -436,6 +443,10 @@ SAC_persistence_get (char *key, char *func_name, char *uuid, char *type_info, ch
                    + strlen_uuid + strlen_type_info + strlen_shape
                    + strlen_extension + 6 // 5 "/" + null string at the end
                    ));
+
+    if (filename == NULL) {
+        SAC_RuntimeError ("Allocation failed");
+    }
 
     sprintf (filename, "%s/%s/%s/%s/%s/%s%s", cachedir, mod_name, func_name, uuid,
              type_info, shape, SAC_MODEXT_STRING);

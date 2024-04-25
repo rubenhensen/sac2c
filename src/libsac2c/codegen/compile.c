@@ -5751,7 +5751,8 @@ COMPprfIncRC (node *arg_node, info *arg_info)
 
     case N_globobj:
         name = OBJDEF_NAME (GLOBOBJ_OBJDEF (PRF_ARG1 (arg_node)));
-        type = OBJDEF_TYPE (GLOBOBJ_OBJDEF (PRF_ARG1 (arg_node)));
+        type = TYcopyType (OBJDEF_TYPE (GLOBOBJ_OBJDEF
+                        (PRF_ARG1 (arg_node))));
         num = NUM_VAL (PRF_ARG2 (arg_node));
 
         ret_node = MakeIncRcIcm (name, type, num, NULL);
@@ -5798,7 +5799,8 @@ COMPprfDecRC (node *arg_node, info *arg_info)
 
     case N_globobj:
         name = OBJDEF_NAME (GLOBOBJ_OBJDEF (PRF_ARG1 (arg_node)));
-        type = OBJDEF_TYPE (GLOBOBJ_OBJDEF (PRF_ARG1 (arg_node)));
+        type = TYcopyType (OBJDEF_TYPE (GLOBOBJ_OBJDEF
+                    (PRF_ARG1 (arg_node))));
         num = NUM_VAL (PRF_ARG2 (arg_node));
 
         ret_node = MakeDecRcIcm (name, type, num, NULL);

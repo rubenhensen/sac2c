@@ -23,7 +23,7 @@
 #include "shape.h"
 #include "compare_tree.h"
 
-static char *FAIL = "";
+static node *FAIL = (node *)0xfa1afe1;
 
 /*******************************************************************************
  */
@@ -319,7 +319,7 @@ FailMatch (node *stack)
 {
     DBUG_ENTER ();
     DBUG_PRINT ("match failed!");
-    if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
+    if ((stack != NULL) && (stack != FAIL) && (NODE_TYPE (stack) == N_set)) {
         stack = FREEdoFreeTree (stack);
     }
     DBUG_RETURN ((node *)FAIL);

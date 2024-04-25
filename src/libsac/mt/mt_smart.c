@@ -134,9 +134,13 @@ SAC_MT_smart_init (int type, char *file_id, char *arch_id, unsigned nr_threads)
         filename
           = malloc ((11 + strlen (file_id) + strlen (arch_id) + ndigits (nr_threads))
                     * sizeof (char));
+        if (filename == NULL) {
+            fprintf(stderr, "Allocation failed\n");
+            abort();
+        }
         sprintf (filename, "stat.%s.%s.%i.db", file_id, arch_id, nr_threads);
 
-        share.new_file = access (filename, F_OK) < 0 ? true : false;
+        share.new_file = (access (filename, F_OK) < 0);
         if (share.new_file == true) {
             share.fp = fopen (filename, "w+");
         } else {
