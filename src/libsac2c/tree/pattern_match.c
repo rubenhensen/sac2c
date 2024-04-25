@@ -275,7 +275,9 @@
 
 #include "cppcompat.h"
 
-static char *FAIL = "";
+/* A non-NULL address that hopefully segfaults. Does not exist by C standard,
+ * but on Linux 0 - 0x1000000000000000 is reserved for the kernel. */
+static node *FAIL = (node *)0xFA1AFE1;
 static int matching_level;
 
 static pm_mode_t *mmode;
@@ -446,6 +448,7 @@ freeStack (node *stack)
         /* It is important stack != (node *)FAIL as in that case
          * NODE_TYPE(stack) will attempt to read bogus memory (and
          * FAIL will generally not be properly aligned also). */
+        /* If somewhere in this tree is a FAIL, we are f'd */
         stack = FREEdoFreeTree (stack);
     } else {
         stack = NULL;
@@ -754,8 +757,7 @@ genericSubPatternMatcher (pattern *pat, node *inner_stack)
             DBUG_PRINT (PMINDENT "inner match %s",
                         (inner_stack == (node *)FAIL ? "failed"
                                                      : "left unmatched item(s)"));
-            inner_stack = freeStack (inner_stack);
-            inner_stack = (node *)FAIL;
+            inner_stack = failMatch (inner_stack);
         }
     }
     DBUG_RETURN (inner_stack);

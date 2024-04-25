@@ -341,7 +341,11 @@ EATavis (node *arg_node, info *arg_info)
         DBUG_PRINT ("replacing argument/vardec %s\'s type %s by ...",
                     AVIS_NAME (arg_node), tmp_str);
         new_type = TYfixAndEliminateAlpha (type);
-        TYfreeType (type);
+        /* FIXME Freeing type can lead to use after free in the
+         * TYfixAndEliminateAlpha (type) call for later traversals, as found
+         * by -fsanitize=address. Not always though. So sometimes an alias
+         * is created. We choose leak over reading uninitialised memory. */
+//        TYfreeType (type);
         type = new_type;
         /**
          * we try to avoid AKD(0) types and replace them by AKS([]) types

@@ -219,7 +219,10 @@ FREEattribExtLink (node *attr, node *parent)
 {
     DBUG_ENTER ();
 
-    if (attr != NULL) {
+    /* FIXME the falafal hack is because the pattern matcher can
+     * create a tree with a FAIL in there. Ideally, it should be
+     * fixed there. */
+    if (attr != NULL && attr != (node *)0xfa1afe1) {
         if ((NODE_TYPE (attr) == N_fundef) && (NODE_TYPE (parent) == N_ap)) {
             if ((FUNDEF_ISCONDFUN (attr) || (FUNDEF_ISLOOPFUN (attr))
                  || (FUNDEF_ISLACINLINE (attr)))
