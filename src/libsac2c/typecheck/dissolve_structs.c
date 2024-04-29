@@ -992,8 +992,8 @@ CreateAvisAndInsertVardec (ntype *ty, info *arg_info)
 
     DBUG_PRINT("Created avis %s", AVIS_NAME (avis));
 
-    INFO_NEW_VARDECS (arg_info) = TCappendVardec (TBmakeVardec (avis, NULL),
-                                                  INFO_NEW_VARDECS (arg_info));
+    INFO_NEW_VARDECS (arg_info) = TBmakeVardec (avis,
+                                                INFO_NEW_VARDECS (arg_info));
 
     DBUG_RETURN (avis);
 }
