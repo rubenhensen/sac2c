@@ -992,8 +992,8 @@ CreateAvisAndInsertVardec (ntype *ty, info *arg_info)
 
     DBUG_PRINT("Created avis %s", AVIS_NAME (avis));
 
-    INFO_NEW_VARDECS (arg_info) = TCappendVardec (TBmakeVardec (avis, NULL),
-                                                  INFO_NEW_VARDECS (arg_info));
+    INFO_NEW_VARDECS (arg_info) = TBmakeVardec (avis,
+                                                INFO_NEW_VARDECS (arg_info));
 
     DBUG_RETURN (avis);
 }
@@ -1229,29 +1229,32 @@ SelHyperplane(node *prf, node* sdef, info* arg_info)
 
     DBUG_ENTER ();
 
-    nt = ExpandTypeAt (sdef, NULL, INFO_REPLACE_BY (arg_info),  &i);
+    nt = ExpandTypeAt (sdef, NULL, INFO_REPLACE_BY (arg_info), &i);
     DBUG_ASSERT (INFO_MODE (arg_info) == mode_replace,
                  "Replacing _sel_VxA_ by sel is only done in replace mode");
 
-    sel_res_avis = CreateAvisAndInsertVardec (
-                       TYmakeAUD (TYgetScalar (TYcopyType (nt))),
-                       arg_info);
+    /* Only insert sacprelude::sel if we select a hyperplane */
+    if (TUisScalar (nt)) {
+        res = prf;
+    } else {
+        sel_res_avis = CreateAvisAndInsertVardec (TYcopyType(nt), arg_info);
 
-    DBUG_EXECUTE ({ char *tyname = TYtype2String (nt, FALSE, 0);
-                DBUG_PRINT ("res of sel %s ..", tyname);
-                tyname = MEMfree (tyname); });
+        DBUG_EXECUTE ({ char *tyname = TYtype2String (nt, FALSE, 0);
+                    DBUG_PRINT ("res of sel %s ..", tyname);
+                    tyname = MEMfree (tyname); });
 
-    fn = DSdispatchFunCall (NSgetNamespace (global.preludename),
-                            "sel",
-                            PRF_ARGS (prf));
-    DBUG_ASSERT (fn != NULL, "DSdispatchFunCall returned NULL");
+        fn = DSdispatchFunCall (NSgetNamespace (global.preludename),
+                                "sel",
+                                PRF_ARGS (prf));
+        DBUG_ASSERT (fn != NULL, "DSdispatchFunCall returned NULL");
 
-    CreateAssignAndInsert (sel_res_avis, fn, arg_info);
+        CreateAssignAndInsert (sel_res_avis, fn, arg_info);
 
-    tc_args = TBmakeExprs (TBmakeId (sel_res_avis), NULL);
-    tc_args = TBmakeExprs (TBmakeType (TYcopyType (nt)), tc_args);
+        tc_args = TBmakeExprs (TBmakeId (sel_res_avis), NULL);
+        tc_args = TBmakeExprs (TBmakeType (TYcopyType (nt)), tc_args);
 
-    res = TBmakePrf ( F_type_conv, tc_args);
+        res = TBmakePrf ( F_type_conv, tc_args);
+    }
 
     DBUG_RETURN (res);
 }
