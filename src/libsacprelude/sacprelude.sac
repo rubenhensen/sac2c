@@ -60,7 +60,7 @@ a[d:shp] sel (int[vlen] idx, a[vlen:vshp,d:shp] array)                         \
     res = with {                                                               \
             (_mul_SxV_ (0, shp) <= iv < shp)                                   \
               : _sel_VxA_ (_cat_VxV_ (idx, iv), array);                        \
-          } : genarray (shp, zero (array));                                    \
+          } : genarray (shp, _zero_A_ (array));                                \
     return res;                                                                \
 }
 
@@ -77,7 +77,7 @@ a[d:shp] _selVxADistmemLocal (int[vlen] idx, a[vlen:vshp,d:shp] array)         \
             {                                                                  \
               new_idx = _cat_VxV_ (idx, iv);                                   \
             } : _sel_VxA_distmem_local_ (new_idx, array);                      \
-          } : genarray (shp, zero (array));                                    \
+          } : genarray (shp, _zero_A_ (array));                                \
     return res;                                                                \
 }
 

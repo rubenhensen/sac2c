@@ -297,8 +297,8 @@ zeroElems (node *elem)
  * _struct_body _struct_con_body ()
  * {
  *     return _struct_con_body (
- *         with {} : genarray ([3], sacprelude_d::zero ([:double])),
- *         sacprelude_d::zero ([:int])
+ *         with {} : genarray ([3], _zero_A_ ([:double])),
+ *         _zero_A_ ([:int])
  *     );
  * }
  *
@@ -819,7 +819,7 @@ generateArraySetter (node *elem, info *arg_info, ntype *structtype)
     ns = NULL;
 
     if (!TYisArray (ty) || !TYisSymb (TYgetScalar (ty))) {
-      // Use sacprelude_p::sel if not a symbol type
+      // Use sacprelude::sel if not a symbol type
       ns = NSgetNamespace (global.preludename);
     }
 
