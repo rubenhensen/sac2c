@@ -67,7 +67,7 @@
  * within idxsn.
  *
  * We "optimise" 2 special cases:
- * 
+ *
  * 1) if we have a last partition which
  *    a) is full (ie ranges from 0*ubn to ubn without steps / width), and
  *    b) has an exprn that does not refer to idxsn or any of its components
@@ -77,27 +77,27 @@
  *    b) has an exprn that is identical to a[idxsn],
  *    THEN we create a withop of the form:
  *       modarray(a)
- *    Note here, that this cannot happen for multi-operator TCs as we cannot 
+ *    Note here, that this cannot happen for multi-operator TCs as we cannot
  *    have multiple expressions within the expression part of the TC!
  *
  *
  *
  * Implementation:
  * ---------------
- *   Most of the implementation is rather straight forward. We traverse 
+ *   Most of the implementation is rather straight forward. We traverse
  *   through the AST mainly looking for N_setwl nodes. However, since we
- *   have to lift expressions out of TCs but are so early that we are 
+ *   have to lift expressions out of TCs but are so early that we are
  *   neither SSA nor flattened, this requires some special attention.
  *   In essence, we achieve this by INFO_HSE_LASTASSIGN. We carefully
- *   try to make sure this always points the N_assign node whose 
+ *   try to make sure this always points the N_assign node whose
  *   ASSIGN_STMT we are currently traversing. When we come back
  *   to the N_assign, we replace it by whatever INFO_HSE_LASTASSIGN
  *   points to. As we traverse bottom-up through N_assign chains
  *   this approach actually works.
  *   There are a few exceptions, where we have to make sure things
- *   are lifted into the correct places. 
- *   1) within TCs, we have SETWL_ASSIGN and SETWL_EXPR. Anything 
- *      we lift from SETWL_EXPR actually needs to go to the end of 
+ *   are lifted into the correct places.
+ *   1) within TCs, we have SETWL_ASSIGN and SETWL_EXPR. Anything
+ *      we lift from SETWL_EXPR actually needs to go to the end of
  *      the N_assign chain in SETWL_ASSIGN. Therefore, we set
  *      INFO_HSE_LASTASSIGN to NULL before traversing SETWL_EXPR
  *      and append INFO_HSE_LASTASSIGN to SETWL_ASSIGN thereafter.
@@ -105,7 +105,7 @@
  *     blocks.
  *  3) we also have a rather special situation when traversing N_genera
  *     nodes. As we are going to lift the upper bound of the last
- *     partition out of the current TC, we need to make sure that 
+ *     partition out of the current TC, we need to make sure that
  *     all TCs within the upper bound that require a lifting by
  *     themselves are being place BEFORE those of the main TC.
  *     An example where this matters is:
@@ -114,8 +114,8 @@
  *                 | [i] < [10] };
  *    To achieve this, we use a similar trick as in cases 1) and 2):
  *    we set INFO_HSE_LASTASSIGN to NULL prior to traversing an
- *    generator and if something is being lifted during that 
- *    traversal, we store it in pot_generator_lifts (local var 
+ *    generator and if something is being lifted during that
+ *    traversal, we store it in pot_generator_lifts (local var
  *    in HSEsetwl) and perform the actual injection of the lifted
  *    assignments at the very end.
  *
@@ -215,9 +215,8 @@ BuildDefault (node *expr)
     DBUG_EXECUTE (PRTdoPrintFile (stderr, expr));
 
     shape = TCmakePrf1( F_shape_A, expr);
-    def = TCmakeSpap1 (NSgetNamespace (global.preludename),
-                       STRcpy ("zero"),
-                       DUPdoDupTree (expr));
+    def = TCmakePrf1 (F_zero_A, DUPdoDupTree (expr));
+
     DBUG_RETURN (SEUTbuildSimpleWl (shape, def));
 }
 
@@ -304,10 +303,10 @@ HSEdoEliminateSetExpressions (node *arg_node)
  * across the ENTIRE shape of the array it is copied from.
  * We look for two pattern here.
  *
- * Pattern 1 (implemented in pat1) is 
+ * Pattern 1 (implemented in pat1) is
  *    s_expr = _shape_ (expr)
  *
- * Pattern 2 is more intricate. here, we look for 
+ * Pattern 2 is more intricate. here, we look for
  *    s_expr = [ _sel_VxA_ ([0], _shape_ (expr)),
  *               _sel_VxA_ ([1], _shape_ (expr))...]
  *
@@ -360,7 +359,7 @@ IsShapeOf (node *s_expr, node *expr)
 }
 
 /**
- * This function checks whether the generator indices "idxs" are 
+ * This function checks whether the generator indices "idxs" are
  * used as indices in a given selection "array_expr"["idx_expr"].
  * We look for the following pattern:
  * Pattern 1:  idx_expr == idxs  (index vector case)
@@ -413,7 +412,7 @@ CheckCopy (node *idxs, node *idx_expr, node *array_expr)
 }
 
 /**
- * 
+ *
  * checks whether the given expression "expr" is a selection
  * of the form  <arr-expr>[ iv ] or
  *              <arr-expr>[ i_1, ..., i_n]
@@ -440,7 +439,7 @@ IsCopyBody (node *assigns, node *exprs, node *idxs)
         DBUG_ASSERT (NODE_TYPE (expr) == N_spid,
                      "non identifier in SETWL_EXPR found!");
         var = SPID_NAME (expr);
-        if ((ASSIGN_NEXT (assigns) == NULL) 
+        if ((ASSIGN_NEXT (assigns) == NULL)
             && (NODE_TYPE (ASSIGN_STMT( assigns)) == N_let)
             && STReq (var, SPIDS_NAME (ASSIGN_LHS( assigns)))) {
             expr = ASSIGN_RHS( assigns);
@@ -475,9 +474,7 @@ BuildWithop (node *setwl, node *expr, info *arg_info)
         def = DUPdoDupTree (expr);
     } else {
         shape = TCmakePrf1( F_shape_A, DUPdoDupTree (expr));
-        def = TCmakeSpap1 (NSgetNamespace (global.preludename),
-                           STRcpy ("zero"),
-                           DUPdoDupTree (expr));
+        def = TCmakePrf1 (F_zero_A, DUPdoDupTree (expr));
         def = SEUTbuildSimpleWl (shape, def);
     }
     res = TBmakeGenarray
@@ -502,7 +499,7 @@ BuildWithops (node *setwl, node *expr, info *arg_info)
         res = BuildWithop (setwl, EXPRS_EXPR (expr), arg_info);
         L_WITHOP_NEXT (res, rest);
     }
-    
+
     DBUG_RETURN (res);
 }
 
@@ -524,7 +521,7 @@ HSEassign (node *arg_node, info *arg_info)
     arg_node = INFO_HSE_LASTASSIGN (arg_info);
 
     INFO_HSE_LASTASSIGN (arg_info) = old_assign;
-    
+
     DBUG_RETURN (arg_node);
 }
 
@@ -567,19 +564,19 @@ HSEcode (node *arg_node, info *arg_info)
  *
  * FULLPART is true, iff one of the following pattern matches:
  * Pattern 1: ( . <= ? < ub)  (no step no width!)
- * Pattern 2: ( F_mul_SxV ( 0, ?) <= ? < ub) 
- * Pattern 3: ( [0,...,0] <= ? < ub) 
+ * Pattern 2: ( F_mul_SxV ( 0, ?) <= ? < ub)
+ * Pattern 3: ( [0,...,0] <= ? < ub)
  *
  * In case the relational operator for the upper bound is <=, we modify
- * the upper bound into _add_VxA_(1, ub) and adjust the operator 
+ * the upper bound into _add_VxA_(1, ub) and adjust the operator
  * accordingly before checking for the full partition. This ensures
- * as well that the final partition will be translated correctly into 
+ * as well that the final partition will be translated correctly into
  * a WL (see issue 2370). We have to exclude dot-symbols from this
- * transformation as that would produce illegal code. In case we 
+ * transformation as that would produce illegal code. In case we
  * meet a dot as upper bound, we only check for potential completeness
  * if the rel is <= !
  * While this also is being done in HWLD, the problem is that HWLD
- * does work on WLs only and its main purpose is to replace the 
+ * does work on WLs only and its main purpose is to replace the
  * dots; the standardisation of generator relations is "just a
  * by-product". In principle, we could move the entire standardisation
  * here, or even consider making it a stand-alone phase but that
@@ -600,7 +597,7 @@ HSEgenerator (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
-    
+
     lb = GENERATOR_BOUND1 (arg_node);
     INFO_HSE_FULLPART (arg_info) = FALSE;
 
@@ -632,7 +629,7 @@ HSEgenerator (node *arg_node, info *arg_info)
             }
         }
     }
-    
+
     pat = PMfree (pat);
 
     if (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_dot) {
@@ -654,7 +651,7 @@ HSEgenerator (node *arg_node, info *arg_info)
 
 
 /**
- * This is the centrepiece of this traversal. It generates partitions 
+ * This is the centrepiece of this traversal. It generates partitions
  * bottom up and it tries to avoid a partition for the last set notation:
  * { iv -> a[iv] | . <= iv < shape(a) } turns into modarray(a), and
  * { iv -> const | . <= iv < ub } turns into genarray( up, const),
@@ -662,7 +659,7 @@ HSEgenerator (node *arg_node, info *arg_info)
  * with {
  *    (lb <= iv < ub) : expr;
  * } : genarray (ub, genarray (shape (expr'), zero (expr')));
- * 
+ *
  * where expr' = [expr]_{iv}^{0}
  *
  * For details see the HSE description in sacdoc/bnf/desugaring.tex
@@ -697,7 +694,7 @@ HSEsetwl (node *arg_node, info *arg_info)
     INFO_HSE_VEC (arg_info) = SETWL_VEC (arg_node);
 
     /**************************************************************************
-     * traverse the generator (may contain setwls!) 
+     * traverse the generator (may contain setwls!)
      * This traversal infers INFO_HSE_FULLPART which is only valid
      * in case INFO_HSE_LASTPART is TRUE!
      */
@@ -757,7 +754,7 @@ HSEsetwl (node *arg_node, info *arg_info)
     }
     DBUG_PRINT( "expression is %sa copy partition!",
                 (INFO_HSE_COPY_FROM (arg_info) == NULL ?  "NOT " : ""));
-    
+
 
     /**************************************************************************
      * Finally, we build the WLs. We do so bottom up!
@@ -768,7 +765,7 @@ HSEsetwl (node *arg_node, info *arg_info)
         INFO_HSE_LASTPART (arg_info) = FALSE;
     }
 
-    /* Now, we add a new partition to arg_info, iff we are 
+    /* Now, we add a new partition to arg_info, iff we are
      *   not the last partition
      *   or, in case we are the last part, we have an incomplete partition,
      *   or, in case we are the last part and complete, we refer to the generator variable(s)
@@ -845,7 +842,7 @@ HSEsetwl (node *arg_node, info *arg_info)
     arg_node = FREEdoFreeTree (arg_node);
 
     if (oldinfo != NULL) {
-        arg_node = TBmakeWith (INFO_HSE_PART( arg_info), 
+        arg_node = TBmakeWith (INFO_HSE_PART( arg_info),
                                INFO_HSE_CODE( arg_info),
                                INFO_HSE_WITHOP( arg_info));
         INFO_HSE_LASTASSIGN (oldinfo) = INFO_HSE_LASTASSIGN (arg_info);

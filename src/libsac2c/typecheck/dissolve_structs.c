@@ -1385,10 +1385,9 @@ DSSmodule (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    // move the new fundefs out of the info struct to the start of the list
-
+    // Move the new fundefs out of the info struct to the start of the list
     MODULE_FUNS (arg_node) = TCappendFundef (INFO_NEW_FUNDEFS (arg_info),
-                                             MODULE_FUNS (arg_node) );
+                                             MODULE_FUNS (arg_node));
     INFO_NEW_FUNDEFS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
@@ -2339,6 +2338,22 @@ DSSprf (node *arg_node, info *arg_info)
             }
         }
         break;
+
+    /**
+     * Replace application of this primitive function by the generated `zero`.
+     */
+    case F_zero_A:
+        DBUG_PRINT ("found zero");
+        sdef = GetStructDef (ID_NTYPE (PRF_ARG1 (arg_node)));
+
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+
+        if (sdef != NULL) {
+            arg_node = TBmakeAp (STRUCTDEF_ZEROFUNCTION (sdef),
+                                 PRF_ARGS (arg_node));
+        }
+        break;
+
     case F_sel_VxA:
         sdef = GetStructDef( ID_NTYPE (PRF_ARG2 (arg_node)));
 

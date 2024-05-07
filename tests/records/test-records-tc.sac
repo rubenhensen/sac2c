@@ -1,0 +1,10 @@
+// -noWLF
+
+struct MyInt { int x; };
+
+int main()
+{
+    ints = { [i] -> i | [i] < [1000] };
+    arr = { [i] -> MyInt{ _sel_VxA_([i], ints) } | [i] < [1000] };
+    return _sel_VxA_([0], arr.x);
+}

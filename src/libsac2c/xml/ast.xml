@@ -4439,6 +4439,18 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="ZeroFunction">
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Fundef" />
+                <phases>
+                  <range from="pre_hs" to="popt_dss" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="DummyFlag" default="FALSE" />

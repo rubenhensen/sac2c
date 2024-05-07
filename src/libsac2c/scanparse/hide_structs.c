@@ -1000,6 +1000,7 @@ HSstructdef (node *arg_node, info *arg_info)
                 FUNDEF_NAME (new_fun));
     FUNDEF_NEXT (new_fun) = INFO_NEW_FUNS (arg_info);
     INFO_NEW_FUNS (arg_info) = new_fun;
+    STRUCTDEF_ZEROFUNCTION (arg_node) = new_fun;
 
     new_fun = generateDefaultCons (basestructtype, arg_info, arg_node);
     DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
