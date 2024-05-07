@@ -65,7 +65,7 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
          * give an error!
          */
         if (STReq (global.modulename, global.preludename)) {
-            CTIabort (EMPTY_LOC, 
+            CTIabort (EMPTY_LOC,
                       "Cannot load `%s' when compiling a module of the same "
                       "name. Try compiling with option -noprelude!", global.modulename);
         }
@@ -77,7 +77,6 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSaddSymbolByName ("_selVxADistmemLocal", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("_selSxADistmemLocal", SET_wrapperhead, global.preludename);
 #endif
-        DSaddSymbolByName ("zero", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("eq", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParams", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParamsReshape", SET_wrapperhead,
