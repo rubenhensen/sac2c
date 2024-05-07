@@ -644,6 +644,19 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
        SCSprf_all_V, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL,
        0, NULL, NULL, TEone, NULL, NULL),
 
+  /*
+   * Given an argument, this function returns the scalar zero value of the type
+   * of that argument. Even if the argument is an array, i.e. double[3,7], the
+   * function returns just the scalar zero value, i.e. 0d.
+   *
+   * @note We need not implement COMPprfZero, as during SCS the type is always
+   * known, and thus we can generate the constant zero value directly.
+   *
+   * @note This function is inserted by the conversion of tensor comprehensions
+   * to with-loops. This means that this primitive function might be applied to
+   * a user-defined type, i.e. records. For these cases an additional
+   * transformation is needed to apply the generated zero function instead.
+   */
   PRF (zero_A, (PA_A, PA_x, PA_x), 1, XXX, NTCCTprf_zero_A, NULL, NULL,
        SCSprf_zero_A, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL,
        0, NULL, NULL, TEone, NULL, NULL),
