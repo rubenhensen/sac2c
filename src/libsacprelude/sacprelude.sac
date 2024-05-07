@@ -57,11 +57,8 @@ inline                                                                         \
 a[d:shp] sel (int[vlen] idx, a[vlen:vshp,d:shp] array)                         \
     | _all_V_ (_le_SxV_ (0, idx)), _all_V_ (_lt_VxV_ (idx, vshp))              \
 {                                                                              \
-    res = with {                                                               \
-            (_mul_SxV_ (0, shp) <= iv < shp)                                   \
-              : _sel_VxA_ (_cat_VxV_ (idx, iv), array);                        \
-          } : genarray (shp, _zero_A_ (array));                                \
-    return res;                                                                \
+    return { iv -> _sel_VxA_ (_cat_VxV_ (idx, iv), array)                      \
+           | iv < shp };                                                       \
 }
 
 BUILT_IN (SEL_VxA)
@@ -72,13 +69,8 @@ inline                                                                         \
 a[d:shp] _selVxADistmemLocal (int[vlen] idx, a[vlen:vshp,d:shp] array)         \
     | _all_V_ (_le_SxV_ (0, idx)), _all_V_ (_lt_VxV_ (idx, vshp))              \
 {                                                                              \
-    res = with {                                                               \
-            (_mul_SxV_ (0, shp) <= iv < shp)                                   \
-            {                                                                  \
-              new_idx = _cat_VxV_ (idx, iv);                                   \
-            } : _sel_VxA_distmem_local_ (new_idx, array);                      \
-          } : genarray (shp, _zero_A_ (array));                                \
-    return res;                                                                \
+    return { iv -> _sel_VxA_distmem_local_ (_cat_VxV_ (idx, iv), array)        \
+           | iv < shp };                                                       \
 }
 
 BUILT_IN (SEL_VxA_distmem_local)
@@ -89,8 +81,7 @@ inline                                                                         \
 a[d:shp] _selSxADistmemLocal (int idx, a[n,d:shp] array)                       \
     | _le_SxS_ (0, idx), _lt_SxS_ (idx, n)                                     \
 {                                                                              \
-    res = _selVxADistmemLocal ([idx], array);                                  \
-    return res;                                                                \
+    return _selVxADistmemLocal ([idx], array);                                 \
 }
 
 BUILT_IN (SEL_SxA_distmem_local)
@@ -100,11 +91,10 @@ BUILT_IN (SEL_SxA_distmem_local)
 inline                                                                         \
 bool eq (a[d:shp] A, a[d:shp] B)                                               \
 {                                                                              \
-    res = with {                                                               \
-            (_mul_SxV_ (0, shp) <= iv < shp)                                   \
-              : _eq_SxS_ (_sel_VxA_ (iv, A), _sel_VxA_ (iv, B));               \
-          } : fold (sacprelude@BUILD_TYPE_POSTFIX@::and, true);                \
-    return res;                                                                \
+    return with {                                                              \
+        (_mul_SxV_ (0, shp) <= iv < shp)                                       \
+            : _eq_SxS_ (_sel_VxA_ (iv, A), _sel_VxA_ (iv, B));                 \
+    } : fold (sacprelude@BUILD_TYPE_POSTFIX@::and, true);                      \
 }
 
 BUILT_IN (EQ)
@@ -112,62 +102,53 @@ BUILT_IN (EQ)
 
 int ++ (int a)
 {
-    res = _add_SxS_ (a, 1);
-    return res;
+    return _add_SxS_ (a, 1);
 }
 
 inline
 bool and (bool a, bool b)
 {
-    res = _and_SxS_ (a, b);
-    return res;
+    return _and_SxS_ (a, b);
 }
 
 inline
 int * (int a, int b)
 {
-    res = _mul_SxS_ (a, b);
-    return res;
+    return _mul_SxS_ (a, b);
 }
 
 inline
 int prod (int[vlen] v)
 {
-    res = with {
-            ([0] <= iv < [vlen])
-              : _sel_VxA_ (iv, v);
-          } : fold (*, 1);
-    return res;
+    return with {
+        ([0] <= iv < [vlen]) : _sel_VxA_ (iv, v);
+    } : fold (sacprelude@BUILD_TYPE_POSTFIX@::*, 1);
 }
 
 int[*] adjustLacFunParamsReshape (bool[pdim:_] p, int[idim:_] i,
                                   int[.] iv, int[.] shp)
 {
-    res = _or_SxS_ (_eq_SxS_ (pdim, 0), _eq_SxS_ (idim, 0))
+    return _or_SxS_ (_eq_SxS_ (pdim, 0), _eq_SxS_ (idim, 0))
             ? i : _reshape_VxA_ (shp, i)[iv];
-    return res;
 }
 
 int[*] adjustLacFunParams (bool[pdim:_] p, int[idim:_] i,
                            int[.] iv)
 {
-    res = _or_SxS_ (_eq_SxS_ (pdim, 0), _eq_SxS_ (idim, 0))
+    return _or_SxS_ (_eq_SxS_ (pdim, 0), _eq_SxS_ (idim, 0))
             ? i : i[iv];
-    return res;
 }
 
 inline
 int partitionMin (int x, int y)
 {
-    res = _min_SxS_ (x, y);
-    return res;
+    return _min_SxS_ (x, y);
 }
 
 inline
 int partitionMax (int x, int y)
 {
-    res = _max_SxS_ (x, y);
-    return res;
+    return _max_SxS_ (x, y);
 }
 
 inline
@@ -216,9 +197,8 @@ inline
 bool[n] isPartitionIntersectNull (int[n] idxmin, int[n] idxmax,
                                   int[n] bound1, int[n] bound2)
 {
-    res = _or_VxV_ (_lt_VxV_ (idxmax, bound1),
-                    _ge_VxV_ (idxmin, bound2));
-    return res;
+    return _or_VxV_ (_lt_VxV_ (idxmax, bound1),
+                     _ge_VxV_ (idxmin, bound2));
 }
 
 /**
@@ -234,9 +214,8 @@ inline
 bool[n] isPartitionIntersectNull (int idxmin, int idxmax,
                                   int[n] bound1, int[n] bound2)
 {
-    res = _or_VxV_ (_lt_SxV_ (idxmax, bound1),
-                    _ge_SxV_ (idxmin, bound2));
-    return res;
+    return _or_VxV_ (_lt_SxV_ (idxmax, bound1),
+                     _ge_SxV_ (idxmin, bound2));
 }
 
 /**
@@ -254,9 +233,8 @@ inline
 bool[n] isPartitionIntersect1Part (int[n] idxmin, int[n] idxmax,
                                    int[n] bound1, int[n] bound2)
 {
-    res = _and_VxV_ (_ge_VxV_ (idxmin, bound1),
-                     _le_VxV_ (idxmax, bound2));
-    return res;
+    return _and_VxV_ (_ge_VxV_ (idxmin, bound1),
+                      _le_VxV_ (idxmax, bound2));
 }
 
 /**
@@ -273,9 +251,8 @@ inline
 bool[n] isPartitionIntersect1Part (int idxmin, int idxmax,
                                    int[n] bound1, int[n] bound2)
 {
-    res = _and_VxV_ (_ge_SxV_ (idxmin, bound1),
-                     _le_SxV_ (idxmax, bound2));
-    return res;
+    return _and_VxV_ (_ge_SxV_ (idxmin, bound1),
+                      _le_SxV_ (idxmax, bound2));
 }
 
 /**
@@ -284,8 +261,7 @@ bool[n] isPartitionIntersect1Part (int idxmin, int idxmax,
 inline
 int[n] partitionIntersectMax (int[n] PWLbound1, int ivmin)
 {
-    res = _max_VxS_ (PWLbound1, ivmin);
-    return res;
+    return _max_VxS_ (PWLbound1, ivmin);
 }
 
 /**
@@ -294,8 +270,7 @@ int[n] partitionIntersectMax (int[n] PWLbound1, int ivmin)
 inline
 int[n] partitionIntersectMax (int[n] PWLbound1, int[n] ivmin)
 {
-    res = _max_VxV_ (PWLbound1, ivmin);
-    return res;
+    return _max_VxV_ (PWLbound1, ivmin);
 }
 
 /**
@@ -304,8 +279,7 @@ int[n] partitionIntersectMax (int[n] PWLbound1, int[n] ivmin)
 inline
 int[n] partitionIntersectMin (int[n] PWLbound2, int ivmax)
 {
-    res = _min_VxS_ (PWLbound2, ivmax);
-    return res;
+    return _min_VxS_ (PWLbound2, ivmax);
 }
 
 /**
@@ -314,8 +288,7 @@ int[n] partitionIntersectMin (int[n] PWLbound2, int ivmax)
 inline
 int[n] partitionIntersectMin (int[n] PWLbound2, int[n] ivmax)
 {
-    res = _min_VxV_ (PWLbound2, ivmax);
-    return res;
+    return _min_VxV_ (PWLbound2, ivmax);
 }
 
 
