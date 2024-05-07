@@ -1839,30 +1839,28 @@ NTCCTprf_all_V (te_info *info, ntype *args)
 ntype *
 NTCCTprf_zero_A (te_info *info, ntype *args)
 {
-    ntype *array, *res;
-    char *err_msg;
+    ntype *array, *argtype, *res;
+    size_t num_args, i;
 
     DBUG_ENTER ();
 
     array = TYgetProductMember (args, 0);
-    TEassureScalar ("zero argument not scalar", array);
+    array = TYgetScalar (array);
 
-    err_msg = TEfetchErrors ();
-    if (err_msg != NULL) {
-        res = TYmakeBottomType (err_msg);
-    } else {
-        array = TYgetScalar (array);
+    num_args = TYgetProductSize (args);
+    res = TYmakeEmptyProductType (num_args);
 
+    for (i = 0; i < num_args; i++) {
         if (TYisSimple (array)) {
-            res = TYmakeAKV (array,
-                             COmakeZero (TYgetSimpleType (array),
-                                         SHmakeShape (0)));
+            argtype = TYmakeAKV (array,
+                                 COmakeZero (TYgetSimpleType (array),
+                                             SHmakeShape (0)));
         } else {
-            res = TYmakeAKS (TYcopyType (array), SHmakeShape (0));
+            argtype = TYmakeAKS (TYcopyType (array), SHmakeShape (0));
         }
-    }
 
-    res = TYmakeProductType (1, res);
+        TYsetProductMember (res, i, argtype);
+    }
 
     DBUG_RETURN (res);
 }

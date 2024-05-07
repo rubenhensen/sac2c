@@ -4439,10 +4439,14 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="ZeroFunction">
+        <attribute name="ZeroFunction" default="NULL">
+          <description>
+            Pointer to the generated zero function (`hide_structs.c`) that
+            returns the zero value of this struct.
+          </description>
           <type name="ExtLink">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
                 <node name="Fundef" />
                 <phases>
                   <range from="pre_hs" to="popt_dss" />

@@ -2285,6 +2285,8 @@ DSSprf (node *arg_node, info *arg_info)
                  "DSSprf should only be entered in mode_replace"
                  " or mode_repl_count");
 
+    DBUG_PRINT ("found application of %s", PRF_NAME (PRF_PRF (arg_node)));
+
     switch (PRF_PRF (arg_node)) {
     case F_dispatch_error:
         INFO_IN_PRF_DE (arg_info) = 1;
@@ -2343,14 +2345,27 @@ DSSprf (node *arg_node, info *arg_info)
      * Replace application of this primitive function by the generated `zero`.
      */
     case F_zero_A:
-        DBUG_PRINT ("found zero");
         sdef = GetStructDef (ID_NTYPE (PRF_ARG1 (arg_node)));
 
+        INFO_MODE (arg_info) = mode_in_place;
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
         if (sdef != NULL) {
-            arg_node = TBmakeAp (STRUCTDEF_ZEROFUNCTION (sdef),
+            node *new_node;
+
+            DBUG_ASSERT (STRUCTDEF_ZEROFUNCTION (sdef) != NULL,
+                         "struct has no zero function");
+            DBUG_ASSERT (NODE_TYPE (STRUCTDEF_ZEROFUNCTION (sdef)) == N_fundef,
+                         "expected N_fundef; got %s",
+                         NODE_TEXT (STRUCTDEF_ZEROFUNCTION (sdef)));
+            DBUG_PRINT ("replacing F_zero_A with generated zero function");
+
+            new_node = TBmakeAp (STRUCTDEF_ZEROFUNCTION (sdef),
                                  PRF_ARGS (arg_node));
+
+            PRF_ARGS (arg_node) = NULL;
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = new_node;
         }
         break;
 

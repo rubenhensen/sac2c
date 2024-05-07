@@ -26,7 +26,7 @@
  * Multi dimensional selections are transfomed to their withloop
  * representation, thus eleminating all dots.
  *
- * The selection pattern we support consists of a list of 
+ * The selection pattern we support consists of a list of
  * either expressions, single- or triple-dopts. We can have at
  * most one triple-dot though.
  *
@@ -41,8 +41,8 @@
  * } : genarray( shp, default);
  *
  * where
- *    shp == [ shape(array)[1] ] 
- *           ++ drop( 3, drop( -4, shape(array))) 
+ *    shp == [ shape(array)[1] ]
+ *           ++ drop( 3, drop( -4, shape(array)))
  *           ++ [ shape(array)[dim(array)-3], shape(array)[dim(array)-2]]
  *
  *    idx == [ x, index[1], y]
@@ -75,7 +75,7 @@
  *   The default value is constructed by "BuildSelectionDefault". While this
  *   in case of the presence of a triple-dot (as above) is simple, it gets
  *   a little more intricate in cases without a triple-dot. Those are covered
- *   by using the functionis "BuildSelectionElementShape" and 
+ *   by using the functionis "BuildSelectionElementShape" and
  *   "BuildDefaultWithloop".
  *
  *   Finally, the function "BuildWithLoop" constructs the overall result
@@ -173,9 +173,9 @@ FreeInfo (info *info)
 
 /**
  * As we change the element ranges from int to size_t we have several values
- * that are of size_t but still need to go into an N_num, ie. need to be 
+ * that are of size_t but still need to go into an N_num, ie. need to be
  * int. While the cases in this particular file denote dimensionalities
- * as they occur in shape strings and should never be that high, we want 
+ * as they occur in shape strings and should never be that high, we want
  * to capture cases if values get out of bound. Hence we wrap downcasts
  * into DBUG_ASSERTS.
  */
@@ -913,16 +913,13 @@ BuildDefaultWithloop (node *array, node *shape)
                                 TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
                                                  TBmakeDot (1), NULL, NULL)),
                     TBmakeCode (MAKE_EMPTY_BLOCK (),
-                                TBmakeExprs (TCmakeSpap1 (NSgetNamespace (
-                                                            global.preludename),
-                                                          STRcpy ("zero"),
-                                                          DUPdoDupTree (array)),
+                                TBmakeExprs (TCmakePrf1 (F_zero_A,
+                                                         DUPdoDupTree (array)),
                                              NULL)),
                     TBmakeGenarray (shape, NULL));
 
     GENARRAY_DEFAULT (WITH_WITHOP (result))
-      = TCmakeSpap1 (NSgetNamespace (global.preludename), STRcpy ("zero"),
-                     DUPdoDupTree (array));
+      = TCmakePrf1 (F_zero_A, DUPdoDupTree (array));
 
     CODE_USED (WITH_CODE (result))++;
     PART_CODE (WITH_PART (result)) = WITH_CODE (result);
@@ -962,26 +959,20 @@ BuildSelectionElementShape (node *array, dotinfo *info)
 static node *
 BuildSelectionDefault (node *array, dotinfo *info)
 {
-    node *result = NULL;
+    node *res;
 
     DBUG_ENTER ();
 
     if (info->triplepos == 0) {
-        /* no tripledot, build default */
-
+        // No tripledot, build default
         node *shape = BuildSelectionElementShape (array, info);
-
-        result = BuildDefaultWithloop (array, shape);
+        res = BuildDefaultWithloop (array, shape);
     } else {
-        /* default is just a scalar */
-
-        result = TBmakeExprs (DUPdoDupTree (array), NULL);
-        result
-          = TBmakeSpap (TBmakeSpid (NSgetNamespace (global.preludename), STRcpy ("zero")),
-                        result);
+        // Default is just a scalar
+        res = TCmakePrf1 (F_zero_A, DUPdoDupTree (array));
     }
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (res);
 }
 
 /**
