@@ -1038,7 +1038,6 @@ DUPstructdef (node *arg_node, info *arg_info)
     CopyCommonNodeData (new_node, arg_node);
 
     STRUCTDEF_FLAGSTRUCTURE (new_node) = STRUCTDEF_FLAGSTRUCTURE (arg_node);
-    STRUCTDEF_ZEROFUNCTION (new_node) = DUPTRAV (STRUCTDEF_ZEROFUNCTION (arg_node));
 
     DBUG_RETURN (new_node);
 }
