@@ -15,7 +15,7 @@ module sacprelude@BUILD_TYPE_POSTFIX@;
  */
 #endif
 
-provide { SACarg, sel, zero, eq, prod, ++, gridFiller, adjustLacFunParams,
+provide { SACarg, sel, eq, prod, ++, gridFiller, adjustLacFunParams,
           adjustLacFunParamsReshape, isPartitionIntersectNull, partitionMin,
           partitionMax, isPartitionIntersect1Part, partitionIntersectMax,
           partitionIntersectMin, partitionSlicer, _selVxADistmemLocal,
@@ -108,29 +108,6 @@ bool eq (a[d:shp] A, a[d:shp] B)                                               \
 }
 
 BUILT_IN (EQ)
-
-
-#define ZERO(a, za)                                                            \
-inline                                                                         \
-a zero (a[*] A)                                                                \
-{                                                                              \
-    return za;                                                                 \
-}
-
-ZERO (int, 0)
-ZERO (double, 0d)
-ZERO (float, 0f)
-ZERO (char, ' ')
-ZERO (bool, false)
-ZERO (byte, 0b)
-ZERO (short, 0s)
-ZERO (long, 0l)
-ZERO (longlong, 0ll)
-ZERO (ubyte, 0ub)
-ZERO (ushort, 0us)
-ZERO (uint, 0ui)
-ZERO (ulong, 0ul)
-ZERO (ulonglong, 0ull)
 
 
 int ++ (int a)
