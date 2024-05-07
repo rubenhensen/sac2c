@@ -1840,11 +1840,28 @@ ntype *
 NTCCTprf_zero_A (te_info *info, ntype *args)
 {
     ntype *array, *res;
+    char *err_msg;
 
     DBUG_ENTER ();
 
     array = TYgetProductMember (args, 0);
-    res = TYmakeAKS (TYcopyType (TYgetScalar (array)), SHmakeShape (0));
+    TEassureScalar ("zero argument not scalar", array);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        array = TYgetScalar (array);
+
+        if (TYisSimple (array)) {
+            res = TYmakeAKV (array,
+                             COmakeZero (TYgetSimpleType (array),
+                                         SHmakeShape (0)));
+        } else {
+            res = TYmakeAKS (TYcopyType (array), SHmakeShape (0));
+        }
+    }
+
     res = TYmakeProductType (1, res);
 
     DBUG_RETURN (res);

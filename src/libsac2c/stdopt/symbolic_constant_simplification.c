@@ -66,6 +66,7 @@
 #include "free.h"
 #include "globals.h"
 #include "ivexpropagation.h"
+#include "memory.h"
 #include "new_typecheck.h"
 #include "new_types.h"
 #include "pattern_match.h"
@@ -3168,6 +3169,33 @@ SCSprf_all_V (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @fn node *SCSprf_zero_A (node *arg_node, info *arg_info)
+ *
+ ******************************************************************************/
+node *
+SCSprf_zero_A (node *arg_node, info *arg_info)
+{
+    ntype *argtype;
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    argtype = ID_NTYPE (PRF_ARG1 (arg_node));
+
+    if (TYisScalar (argtype) && TYisSimple (TYgetScalar (argtype))) {
+        simpletype st = TYgetSimpleType (TYgetScalar (argtype));
+        constant *co = COmakeConstant (st,
+                                       SHmakeShape (0),
+                                       (void *)MEMmalloc (global.basetype_size[st]));
+        res = COconstant2AST (co);
+        co = COfreeConstant (co);
+    }
 
     DBUG_RETURN (res);
 }
