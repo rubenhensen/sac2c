@@ -1831,38 +1831,28 @@ NTCCTprf_all_V (te_info *info, ntype *args)
                          SHmakeShape (0));
     }
 
-    res = TYmakeProductType (1, res);
-
-    DBUG_RETURN (res);
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 ntype *
 NTCCTprf_zero_A (te_info *info, ntype *args)
 {
-    ntype *array, *argtype, *res;
-    size_t num_args, i;
+    ntype *array, *res;
 
     DBUG_ENTER ();
 
     array = TYgetProductMember (args, 0);
     array = TYgetScalar (array);
 
-    num_args = TYgetProductSize (args);
-    res = TYmakeEmptyProductType (num_args);
-
-    for (i = 0; i < num_args; i++) {
-        if (TYisSimple (array)) {
-            argtype = TYmakeAKV (array,
-                                 COmakeZero (TYgetSimpleType (array),
-                                             SHmakeShape (0)));
-        } else {
-            argtype = TYmakeAKS (TYcopyType (array), SHmakeShape (0));
-        }
-
-        TYsetProductMember (res, i, argtype);
+    if (TYisSimple (array)) {
+        res = TYmakeAKV (array,
+                         COmakeZero (TYgetSimpleType (array),
+                                     SHmakeShape (0)));
+    } else {
+        res = TYmakeAKS (TYcopyType (array), SHmakeShape (0));
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
