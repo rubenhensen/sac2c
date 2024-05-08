@@ -3996,6 +3996,7 @@
       include="dissolve_structs.h">
       <travuser>
         <node name="Module" />
+        <node name="Structdef" />
         <node name="Avis" />
         <node name="Fundef" />
         <node name="Arg" />

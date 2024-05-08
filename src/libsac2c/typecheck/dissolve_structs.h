@@ -6,6 +6,7 @@
 extern node *DSSdoDeStruct (node *syntax_tree);
 
 extern node *DSSmodule (node *arg_node, info *arg_info);
+extern node *DSSstructdef (node *arg_node, info *arg_info);
 extern node *DSSfundef (node *arg_node, info *arg_info);
 extern node *DSSblock (node *arg_node, info *arg_info);
 extern node *DSSvardec (node *arg_node, info *arg_info);

@@ -1534,6 +1534,23 @@ DSSfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *DSSstructdef (node *arg_node, info *arg_info)
+ *
+ * @brief The zero functions generated for records no longer need to be sticky.
+ *
+ ******************************************************************************/
+node *
+DSSstructdef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    FUNDEF_ISSTICKY (STRUCTDEF_ZEROFUNCTION (arg_node)) = FALSE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *DSSblock (node *arg_node, info *arg_info)
  *
  * @brief Visit variable declarations and assignments and adds the newly
