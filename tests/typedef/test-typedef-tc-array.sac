@@ -1,0 +1,29 @@
+// Tensor comprehensions should be supported for user-defined types. This requires
+// that the zero function we generate when converting tensor comprehensions into
+// with-loops is applicable to both built-in types and user-defined types.
+// With this test we ensure that the default value is correctly [0,0] and not 0.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 42
+
+typedef int[2] myInts;
+
+myInts[*] sel(int[n] idx, myInts[*] arr)
+{
+    shp = _drop_SxV_(n, _shape_A_((int[*])arr));
+    shp = _drop_SxV_(_sub_SxS_(0, 1), shp);
+    res = { iv -> [_sel_VxA_(_cat_VxV_(_cat_VxV_( idx, iv ), [0]), (int[*])arr),
+                   _sel_VxA_(_cat_VxV_(_cat_VxV_( idx, iv ), [1]), (int[*])arr)]
+          | iv < shp };
+    return (myInts[*])res;
+}
+
+int main()
+{
+    arr = { [i] -> (myInts)[i, i] | [i] < [100] };
+    x = sel([42], arr);
+    return _sel_VxA_([0], (int[2])x);
+}
