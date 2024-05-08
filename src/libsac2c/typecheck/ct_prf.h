@@ -39,6 +39,7 @@ extern ntype *NTCCTprf_shape_A (te_info *info, ntype *args);
 extern ntype *NTCCTprf_reshape_VxA (te_info *info, ntype *args);
 extern ntype *NTCCTprf_sel_VxA (te_info *info, ntype *args);
 extern ntype *NTCCTprf_all_V (te_info *info, ntype *args);
+extern ntype *NTCCTprf_zero_A (te_info *info, ntype *args);
 extern ntype *NTCCTprf_sel_VxIA (te_info *info, ntype *args);
 extern ntype *NTCCTprf_idx_selS (te_info *info, ntype *args);
 extern ntype *NTCCTprf_shape_sel (te_info *info, ntype *args);

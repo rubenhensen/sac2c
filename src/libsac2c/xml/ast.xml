@@ -3996,6 +3996,7 @@
       include="dissolve_structs.h">
       <travuser>
         <node name="Module" />
+        <node name="Structdef" />
         <node name="Avis" />
         <node name="Fundef" />
         <node name="Arg" />
@@ -4434,6 +4435,22 @@
                 <any />
                 <phases>
                   <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="ZeroFunction" default="NULL">
+          <description>
+            Pointer to the generated zero function (`hide_structs.c`) that
+            returns the zero value of this struct.
+          </description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="yes">
+                <node name="Fundef" />
+                <phases>
+                  <range from="pre_hs" to="popt_dss" />
                 </phases>
               </target>
             </targets>

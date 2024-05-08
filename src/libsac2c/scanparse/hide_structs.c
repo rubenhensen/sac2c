@@ -230,7 +230,6 @@ zeroElem (node *elem)
 {
     ntype *ty, *aty;
     node *res, *arr, *zero, *shape;
-    namespace_t *ns = NULL;
 
     DBUG_ENTER ();
 
@@ -238,26 +237,19 @@ zeroElem (node *elem)
 
     ty = STRUCTELEM_TYPE (elem);
 
-    // get the zero function from the prelude if not a symbol type
-    if (!TYisArray (ty) || !TYisSymb (TYgetScalar (ty))) {
-        ns = NSgetNamespace (global.preludename);
-    }
-
     // We need to look at the dimensionality of the type.
     // If not a scalar then we need to withloop an array.
     if (TYgetDim (ty) == 0) {
         // `zero ([e_i])`
         arr = TBmakeArray (TYcopyType (STRUCTELEM_TYPE (elem)),
                            SHcreateShape (1, 0), NULL);
-        res = TBmakeSpap (TBmakeSpid (ns, STRcpy ("zero")),
-                          TBmakeExprs (arr, NULL));
+        res = TCmakePrf1 (F_zero_A, arr);
     } else {
         // First create the same `zero ([e_i])`, removing the shape
         aty = TYmakeAKS (TYcopyType (TYgetScalar (STRUCTELEM_TYPE (elem))),
                          SHcreateShape (0));
         arr = TBmakeArray (aty, SHcreateShape (1, 0), NULL);
-        zero = TBmakeSpap (TBmakeSpid (ns, STRcpy ("zero")),
-                           TBmakeExprs (arr, NULL));
+        zero = TCmakePrf1 (F_zero_A, arr);
 
         // Get the shape from ty, and create an exprs chain of it
         shape = SHshape2Array (TYgetShape (ty));
@@ -305,8 +297,8 @@ zeroElems (node *elem)
  * _struct_body _struct_con_body ()
  * {
  *     return _struct_con_body (
- *         with {} : genarray ([3], sacprelude_d::zero ([:double])),
- *         sacprelude_d::zero ([:int])
+ *         with {} : genarray ([3], _zero_A_ ([:double])),
+ *         _zero_A_ ([:int])
  *     );
  * }
  *
@@ -392,7 +384,9 @@ generateZero (ntype *basestructtype, info *arg_info, node* structdef)
                            TBmakeBlock (assigns, NULL),
                            NULL);
 
+    FUNDEF_ISSTICKY (fundef) = TRUE;
     FUNDEF_ISINLINE (fundef) = TRUE;
+
     DBUG_PRINT ("generated implementation of \"zero\"");
 
     DBUG_RETURN (fundef);
@@ -441,11 +435,9 @@ generateSelWith (void)
     CODE_USED (code) += 1;
 
     // `genarray (new_shape, zero (array))`
-    zero_arg = TBmakeExprs (TBmakeSpid (NULL, STRcpy ("array")), NULL);
+    zero_arg = TBmakeSpid (NULL, STRcpy ("array"));
     withop = TBmakeGenarray (TBmakeSpid (NULL, STRcpy ("new_shape")),
-                             TBmakeSpap (TBmakeSpid (NULL,
-                                                     STRcpy ("zero")),
-                                                     zero_arg));
+                             TCmakePrf1 (F_zero_A, zero_arg));
 
     DBUG_RETURN (TBmakeWith (part, code, withop));
 
@@ -827,7 +819,7 @@ generateArraySetter (node *elem, info *arg_info, ntype *structtype)
     ns = NULL;
 
     if (!TYisArray (ty) || !TYisSymb (TYgetScalar (ty))) {
-      // Use sacprelude_p::sel if not a symbol type
+      // Use sacprelude::sel if not a symbol type
       ns = NSgetNamespace (global.preludename);
     }
 
@@ -998,6 +990,7 @@ HSstructdef (node *arg_node, info *arg_info)
     new_fun = generateZero (basestructtype, arg_info, arg_node);
     DBUG_PRINT ("Pushing '%s' to the function definition stack of arg_info",
                 FUNDEF_NAME (new_fun));
+    STRUCTDEF_ZEROFUNCTION (arg_node) = new_fun;
     FUNDEF_NEXT (new_fun) = INFO_NEW_FUNS (arg_info);
     INFO_NEW_FUNS (arg_info) = new_fun;
 

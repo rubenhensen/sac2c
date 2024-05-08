@@ -19,7 +19,7 @@
 /*******************************************************************************
  *
  * We are currently in the process of changing the prfs on arrays to fully
- * support nesting. This is needed for the records but will benefit other 
+ * support nesting. This is needed for the records but will benefit other
  * scenarios as well. We believe that the implementation is complete, but it
  * may turn out that we overlooked one or the other case and it
  * may also turn out that this creates problems in other contexts such as
@@ -33,11 +33,11 @@
  */
 #define FULL_NESTING
 
-/* 
+/*
  * The key change here is that we do no longer restrict primitive operations
  * such as _dim_ and _shape_ to built-in types.
- * Instead, we consider nesting as being guided by the element type whatever 
- * that type is. So one could say that 
+ * Instead, we consider nesting as being guided by the element type whatever
+ * that type is. So one could say that
  * 'Types should always imply conceptual nesting!'
  * Concretely, this means:
  *
@@ -1831,9 +1831,28 @@ NTCCTprf_all_V (te_info *info, ntype *args)
                          SHmakeShape (0));
     }
 
-    res = TYmakeProductType (1, res);
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
 
-    DBUG_RETURN (res);
+ntype *
+NTCCTprf_zero_A (te_info *info, ntype *args)
+{
+    ntype *array, *res;
+
+    DBUG_ENTER ();
+
+    array = TYgetProductMember (args, 0);
+    array = TYgetScalar (array);
+
+    if (TYisSimple (array)) {
+        res = TYmakeAKV (array,
+                         COmakeZero (TYgetSimpleType (array),
+                                     SHmakeShape (0)));
+    } else {
+        res = TYmakeAKS (TYcopyType (array), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************

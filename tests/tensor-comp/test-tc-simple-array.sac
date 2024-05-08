@@ -1,0 +1,14 @@
+// Test a simple tensor comprehension.
+// Given that the inner element is an array.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 42
+
+int main()
+{
+    arr = { [i] -> [i, i] | [10] < [i] < [100] };
+    return _sel_VxA_([42, 1], arr);
+}

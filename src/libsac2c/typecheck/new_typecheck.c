@@ -1052,7 +1052,11 @@ NTClet (node *arg_node, info *arg_info)
         || (NODE_TYPE (LET_EXPR (arg_node)) == N_with)) {
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
             DBUG_ASSERT (TCcountIds (lhs) >= TYgetProductSize (rhs_type),
-                         "fun ap yields more return values  than lhs vars available!");
+                         "application of %s yields %lu return values "
+                         "but only %lu vars specified on the lhs",
+                         AP_NAME (LET_EXPR (arg_node)),
+                         TYgetProductSize (rhs_type),
+                         TCcountIds (lhs));
         } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
             if ((PRF_PRF (LET_EXPR (arg_node)) != F_type_error)
                 && (TCcountIds (lhs) != TYgetProductSize (rhs_type))) {
