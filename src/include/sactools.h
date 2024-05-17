@@ -81,7 +81,8 @@ load_local_library (const char *library)
     free (tmp);
 
     if (!libptr) {
-        fprintf (stderr, "ERROR: library '%s' not found.\n", library);
+        fprintf (stderr, "ERROR: library '%s' not found in '%s'.\n",
+                         library, DLL_BUILD_DIR);
         report_error ();
         exit (10);
     }
@@ -108,6 +109,9 @@ load_global_library (const char *library)
         strcat (tmp, library);
         libptr = dlopen (tmp, DLOPEN_FLAGS);
         if (!libptr) {
+            fprintf (stderr, "ERROR: unable to load library '%s' from "
+                             "'%s', trying a different path...\n", library, DLL_DIR);
+            report_error ();
             // finally we give up on global scope, and look in the build dir
             libptr = load_local_library (library);
         }

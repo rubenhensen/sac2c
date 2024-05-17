@@ -4,20 +4,34 @@ SaC Archive
 What?
 -----
 
-This archive contains the SaC compiler and runtime libraries.
+This archive contains the SaC compiler and runtime libraries. These are
+designed to be installable into any location on your filesystem; this is
+especially useful for local installs (e.g. under ~/.local).
 
 Install?
 --------
 
+Please make sure to have BASH, GCC, Make, and Python3 installed!
+
 Run the `install.sh' script, ensure that you specify:
-  -s for the source location of the SaC compiler and library files, e.g. the
-     location you unpacked the tarball.
   -i for the install location of where to place the files
+
+Additional options can be passed after the giving `--', such as
+  -S for creating symlinks to the prefered variant of the compiler
+  -v for verbose printing
+
+For example, to install into your home directory and activate symlinks:
+
+```
+export PATH=/home/hans/.local/bin:$PATH      # that you have PATH set correctly
+bash install.sh -i /home/hans/.local -- -S
+sac2c -V
+```
 
 Additionaly Details
 -------------------
 
-The standard library of SaC-Lang can be found at github.com/sacbase. After compiling
+The standard library of SaC language can be found at github.com/sacbase. After compiling
 the library, you are going to have to create a config file in your home directory
 called `.sac2crc'. In this file you'll need to add the search path of the stdlib's
 .so files in order for the compiler to use them. An example of what this file contains
@@ -36,5 +50,3 @@ Need Help
 
 Head on over to www.sac-home.org and have a look at the `Download' pages for more
 up-to-date details. Or if all else fails, email us yetis at info@sac-home.org.
-
-
