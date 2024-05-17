@@ -15,7 +15,8 @@ MACRO (CHECK_PYTHON_MODULE module)
     UNSET (_module_status)
 ENDMACRO ()
 
-# The version manager requires Puthon 3.
+# The version manager requires Python 3.
+SET (Python3_FIND_UNVERSIONED_NAMES FIRST)
 FIND_PACKAGE (Python3 REQUIRED)
 
 # make sure we have the Python argparse module available
