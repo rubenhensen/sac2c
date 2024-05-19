@@ -1,11 +1,12 @@
-#ifndef _SAC_H_
-#define _SAC_H_
+#ifndef _SACTOOLS_H_
+#define _SACTOOLS_H_
 
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "sacdirs.h"
 
 typedef union {
@@ -84,7 +85,7 @@ load_local_library (const char *library)
         fprintf (stderr, "ERROR: library '%s' not found in '%s'.\n",
                          library, DLL_BUILD_DIR);
         report_error ();
-        exit (10);
+        exit (9);
     }
 
     return libptr;
@@ -107,15 +108,24 @@ load_global_library (const char *library)
         strcpy (tmp, DLL_DIR);
         strcat (tmp, "/");
         strcat (tmp, library);
-        libptr = dlopen (tmp, DLOPEN_FLAGS);
-        if (!libptr) {
+
+        switch (access (tmp, F_OK)) {
+        case 0:
+          libptr = dlopen (tmp, DLOPEN_FLAGS);
+          free (tmp);
+
+          if (libptr) {
+            // we can simply return the library pointer
+            break;
+          } else {
+            report_error ();
             fprintf (stderr, "ERROR: unable to load library '%s' from "
                              "'%s', trying a different path...\n", library, DLL_DIR);
-            report_error ();
-            // finally we give up on global scope, and look in the build dir
-            libptr = load_local_library (library);
+          }
+          // fall through
+        default:
+          libptr = load_local_library (library);
         }
-        free (tmp);
     }
 
     return libptr;
@@ -187,5 +197,5 @@ launch_function_from_library (const char *library, const char *sac2crc,
     return ret;
 }
 
-#endif
+#endif /* _SACTOOLS_H_ */
 // vim: ts=2 sw=2 et:
