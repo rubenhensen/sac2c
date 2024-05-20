@@ -71,15 +71,11 @@ static inline void *
 load_local_library (const char *library)
 {
     void *libptr;
-    char *tmp = malloc (strlen (DLL_BUILD_DIR) + strlen (library) + 2);
+    char path[PATH_MAX];
 
-    strcpy (tmp, DLL_BUILD_DIR);
-    strcat (tmp, "/");
-    strcat (tmp, library);
+    snprintf(path, sizeof(char)*PATH_MAX, DLL_BUILD_DIR "/%s", library);
 
-    libptr = dlopen (tmp, DLOPEN_FLAGS);
-
-    free (tmp);
+    libptr = dlopen (path, DLOPEN_FLAGS);
 
     if (!libptr) {
         fprintf (stderr, "ERROR: library '%s' not found in '%s'.\n",
@@ -99,20 +95,17 @@ static inline void *
 load_global_library (const char *library)
 {
     void *libptr;
+    char path[PATH_MAX];
 
     // we try to load via ldconfig/LD_LIBRARY_PATH
     libptr = dlopen (library, DLOPEN_FLAGS);
     if (!libptr) {
         // if this fails, we load via an absolute path
-        char *tmp = malloc (strlen (DLL_DIR) + strlen (library) + 2);
-        strcpy (tmp, DLL_DIR);
-        strcat (tmp, "/");
-        strcat (tmp, library);
+        snprintf(path, sizeof(char)*PATH_MAX, DLL_DIR "/%s", library);
 
-        switch (access (tmp, F_OK)) {
+        switch (access (path, F_OK)) {
         case 0:
-          libptr = dlopen (tmp, DLOPEN_FLAGS);
-          free (tmp);
+          libptr = dlopen (path, DLOPEN_FLAGS);
 
           if (libptr) {
             // we can simply return the library pointer
