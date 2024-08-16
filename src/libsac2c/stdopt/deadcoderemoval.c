@@ -527,10 +527,7 @@ DCRreturn (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * function:
- *   node *DCRlet(node *arg_node , info *arg_info)
- *
- * description:
+ * @fn node *DCRlet (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
@@ -538,23 +535,32 @@ DCRlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /*
-     * Traverse lhs identifiers
-     */
+    // Traverse lhs identifiers
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
-    // ensure we never remove an application of F_guard if the LHS is void!
-    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-        && (PRF_PRF (LET_EXPR (arg_node)) == F_guard)
-        && TCcountIds (LET_IDS (arg_node)) == 0) {
-        INFO_REMASSIGN (arg_info) = FALSE;
+    /**
+     * Ensure we never remove an application of F_guard and F_conditional_error.
+     * This case distinction is needed because the LHS of these primitive
+     * functions has become void at this point.
+     */
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
+        switch (PRF_PRF (LET_EXPR (arg_node))) {
+        case F_guard:
+        case F_conditional_error:
+            INFO_REMASSIGN (arg_info) = FALSE;
+            break;
+
+        default:
+            break;
+        }
     }
 
+
     if (!INFO_REMASSIGN (arg_info)) {
-        /* traverse right side of let */
+        // Traverse right side of let
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-        /* Restore remassign information */
+        // Restore remassign information
         INFO_REMASSIGN (arg_info) = FALSE;
     }
 

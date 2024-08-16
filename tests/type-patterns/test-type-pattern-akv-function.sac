@@ -6,7 +6,7 @@
 // to guard functions.
 //
 // SAC_TEST|include common.mk
-// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check tc -bopt
+// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check c -bopt
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
 // SAC_TEST|all: <file-name>

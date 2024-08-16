@@ -103,9 +103,9 @@ TPSdoPrintTypePatternStatistics (node *arg_node)
  *
  * @fn node *TPSprf (node *arg_node, info *arg_info)
  *
- * @brief If we encounter a type pattern error, we know that we were not able to
- * statically resolve whether it is true of false. Print the error message of
- * this type pattern error.
+ * @brief If we encounter a type pattern error at this point, we know that we
+ * were not able to statically resolve whether it is true of false. Print the
+ * error message of this type pattern error.
  *
  ******************************************************************************/
 node *
@@ -113,18 +113,16 @@ TPSprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (PRF_PRF (arg_node) == F_guard_error) {
+    switch (PRF_PRF (arg_node)) {
+    case F_conditional_error:
         INFO_ALLGONE (arg_info) = FALSE;
+        char *err = STR_STRING (PRF_ARG3 (arg_node));
+        CTItell (0, "    %s", err);
+        break;
 
-        /**
-         * Type pattern error messages always start with "Type pattern error in
-         * definition of". Remove this many characters from the error string to
-         * make them easier to read.
-         */
-        char *error = TYgetBottomError (TYPE_TYPE (PRF_ARG1 (arg_node)));
-        DBUG_ASSERT (STRlen (error) > 36, "error string too short");
-        error = STRsubStr (error, 36, (ssize_t)STRlen (error));
-        CTItell (0, "    %s", error);
+    default:
+        // Nothing to do
+        break;
     }
 
     DBUG_RETURN (arg_node);

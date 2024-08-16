@@ -539,7 +539,6 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
 {
     node *res;
     node *res_ret, *fundef_ret;
-    node *impl_fun, *impl_wrapper;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
 #endif
@@ -550,13 +549,6 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
     DBUG_PRINT ("specializing %s for %s", CTIitemName (fundef), tmp_str);
     DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
-    if (FUNDEF_CHECKIMPLFUNDEF (fundef) != NULL) {
-        impl_fun = FUNDEF_CHECKIMPLFUNDEF (fundef);
-        if (FUNDEF_WRAPPERFUNDEF (impl_fun) != NULL) {
-            impl_wrapper = FUNDEF_WRAPPERFUNDEF (impl_fun);
-            impl_wrapper = DoSpecialize (impl_wrapper, impl_fun, args, rets);
-        }
-    }
     /*
      * in case of a function loaded from a module, the body may be missing, so
      * fetch it.

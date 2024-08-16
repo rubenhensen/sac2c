@@ -16,7 +16,7 @@
  * DCI: dead code inference
  *
  * This traversal is setting AVIS_ISDEAD for all variables of a given
- * function body. 
+ * function body.
  *
  * Implementation:
  *    a) core mechanism:
@@ -26,7 +26,7 @@
  *    Then, we make a bottom-up traversal (ensured by DCIassign). Starting
  *    from DCIreturn, we traverse only identifiers that are needed, marking
  *    AVIS_ISDEAD as FALSE in DCIid.
- *    When traversing a LHS (DCIids), we signal to DCIlet through 
+ *    When traversing a LHS (DCIids), we signal to DCIlet through
  *    INFO_ONEIDSNEEDED that at least one result is needed. Then, and only
  *    then, we traverse the RHS which can mark further variables as alive!
  *    There are two exceptions: F_accu enforceis the liveness of its arguments.
@@ -484,14 +484,22 @@ DCIlet (node *arg_node, info *arg_info)
 
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
-    /*
-     * accu() must never become dead code
+    /**
+     * F_accu, F_guard, and F_conditional_error must never become dead code.
+     * This case distinction is needed because the LHS of these primitive
+     * functions has become void at this point.
      */
-    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-        && ((PRF_PRF (LET_EXPR (arg_node)) == F_accu)
-            || ( (PRF_PRF (LET_EXPR (arg_node)) == F_guard)
-                  && (TCcountIds (LET_IDS (arg_node)) == 0) ))) {
-        INFO_ONEIDSNEEDED (arg_info) = TRUE;
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
+        switch (PRF_PRF (LET_EXPR (arg_node))) {
+        case F_accu:
+        case F_guard:
+        case F_conditional_error:
+            INFO_ONEIDSNEEDED (arg_info) = TRUE;
+            break;
+
+        default:
+            break;
+        }
     }
 
     if (INFO_ONEIDSNEEDED (arg_info)) {

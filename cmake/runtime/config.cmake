@@ -24,6 +24,8 @@ SET (SAC2C_EXTRA_INC
 
 # add sacprelude file with postfix in module and file name.
 CONFIGURE_FILE ("${SAC2C_SOURCE_DIR}/src/libsacprelude/sacprelude.sac" "${PROJECT_BINARY_DIR}/sacprelude${BUILD_TYPE_POSTFIX}.sac" @ONLY)
+# add rterror file with postfix in module and file name.
+CONFIGURE_FILE ("${SAC2C_SOURCE_DIR}/src/libsacprelude/rterror.sac" "${PROJECT_BINARY_DIR}/rterror${BUILD_TYPE_POSTFIX}.sac" @ONLY)
 
 # Make sure that all the libraries are found here.
 SET (DLL_BUILD_DIR "${PROJECT_BINARY_DIR}/lib")

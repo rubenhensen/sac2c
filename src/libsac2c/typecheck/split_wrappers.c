@@ -496,8 +496,6 @@ SWRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    FUNDEF_WRAPPERFUNDEF (arg_node) = NULL;
-
     if (INFO_TRAVNO (arg_info) == 1) {
         /*
          * first traversal -> build wrapper functions and their bodies

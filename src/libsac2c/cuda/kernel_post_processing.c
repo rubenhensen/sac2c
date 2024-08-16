@@ -434,7 +434,6 @@ KPPprf (node *arg_node, info *arg_info)
           = TCappendExprs (PRF_ARGS (arg_node), TCids2Exprs (INFO_WITH3IDS (arg_info)));
         break;
     case F_type_conv:
-    case F_type_fix:
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         rhs_avis = ID_AVIS (PRF_ARG2 (arg_node));
         arg_node = FREEdoFreeNode (arg_node);

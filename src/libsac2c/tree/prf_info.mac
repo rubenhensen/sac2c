@@ -924,31 +924,50 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
        COMPprfTypeConv, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
        TEone, NULL, NULL),
 
-  PRF (type_fix, (PA_x, PA_x, PA_x), 2, XXX, NTCCTprf_type_fix, NULL,
-       COMPprfTypeConv, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
-       TEone, NULL, NULL),
-
   PRF (type_error, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_id, NULL,
        COMPprfTypeError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
        TEn, NULL, NULL),
 
-  /**
-   * This primitive function behaves similarly to F_type_error, however it
-   * handles the specific case where one or more of these guard errors are
-   * followed by an F_guard. Because of this, instead of aborting the program
-   * with an error message, we instead print that message and return false.
-   * This allows multiple guard error messages to be printed, before the
-   * F_guard sees that false was returned by one or more F_guard_errors, and
-   * aborts the program.
-   * Not indended to be used externally.
-   */
-  PRF (guard_error, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_id, NULL,
-       COMPprfGuardError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
-       TEone, NULL, NULL),
-
   PRF (dispatch_error, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_dispatch_error, NULL,
        COMPprfDispatchError, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL,
        TEval, NULL, NULL),
+
+  /**
+   * @fn acc' = conditional_error (acc, pred, "msg");
+   *
+   * @brief This function is used to weave predicates and checks into the
+   * control flow of the program. It expects an boolean accumulator, a boolean
+   * predicate, and an error message. Iff both the accumulator and predicate are
+   * true, then the result is true. If the predicate is false, we raise an error
+   * with the given error message. This can occur both during compile-time and
+   * runtime. This approach is preferred to guards because guards hide type
+   * information, which inhibits optimisation, and because by separating the
+   * accumulator and predicate we are more likely to be able to statically
+   * resolve distinct predicates, even ones that appear in between other
+   * predicates.
+   *
+   * @note The error message is implemented as an N_str node. Special care needs
+   * to be taken to ensure that this argument is not flattened and type checked.
+   *
+   * @note If we statically know a predicate is false, we raise an error through
+   * SCS and not the type checker. We do this because we cannot access the error
+   * message through the type checker.
+   *
+   * @note In order to weave these checks into the control flow, one must ensure
+   * that the final accumulated value is used. Typically, this would be done
+   * through the global object function rterror::conditionalAbort.
+   *
+   * @example
+   * ```
+   *   acc = true;
+   *   acc = conditional_error (acc, n == shape(x)[0], "n is incorrect");
+   *   acc = conditional_error (acc, m == shape(x)[1], "m is incorrect");
+   *   rterror::conditionalAbort (acc);
+   * ```
+   */
+  PRF (conditional_error, (PA_S, PA_S, PA_x), 3 - 1, XXX, NTCCTprf_conditional_error,
+       NULL, COMPprfConditionalError, SCSprf_conditional_error, NULL, NULL,
+       SAAdim_is_0, SAAshp_is_empty, NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   /*******************************************************************************
    * Function for implementing the encoding of shape details in wrapper entry
@@ -970,13 +989,12 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
    */
 
   /**
-   * x1', .., xn' = guard (x1, .., xn, typ1, .., typn, pred1, .., predm);
-   * Guards expects n values with corresponding types, and m boolean predicates.
-   * If all predicates are true then guard behaves as the identify function on
-   * arguments xi, otherwise an error will be raised. These guards serve as a
-   * barrier for optimisation and code rewrites around conformity checks and
-   * type pattern checks.
-   * Not indended to be used externally.
+   * @fn x1', .., xn' = guard (x1, .., xn, pred1, .., predm);
+   *
+   * @brief Guards expects n values and m boolean predicates. If all predicates
+   * are true then guard behaves as the identify function on arguments xi,
+   * otherwise an error will be raised. These guards serve as a barrier for
+   * optimisation and code rewrites around type pattern checks.
    */
   PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_guard, NULL, COMPprfGuard,
        SCSprf_guard, NULL, NULL, SAAdim_guard, SAAshp_guard, NULL, 0, NULL,

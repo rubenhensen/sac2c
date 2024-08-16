@@ -1,5 +1,5 @@
-// Test whether an error is generated at compile time when the given arrays
-// do not match the type pattern `type[n:shp]'.
+// Test whether the global RTerror object inserted by type patterns plays nicely
+// with with-loops.
 //
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check c
@@ -11,13 +11,24 @@
 
 int foo (int[n:shp] a, int[n:shp] b)
 {
+    return n;
+}
+
+// shape(xs) should equal shape(iv)
+int bar (int[n:shp] xs, int[n:shp] iv)
+{
     return _sel_VxA_ ([0], shp);
 }
 
 int main()
 {
-    a = [1, 2, 3];
-    b = [[1, 2]];
-    res = foo (a, b);
+    shp = [2, 3, 4];
+
+    // shape(xs) == [5]
+    xs = { iv -> foo (iv, iv) | iv < [5] };
+    // shape(iv) == [3]
+    res = { iv -> bar (iv, xs) | iv < shp };
+
+    res = _sel_VxA_ ([0, 0, 0], res);
     return res;
 }

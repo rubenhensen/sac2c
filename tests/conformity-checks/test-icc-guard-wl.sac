@@ -1,7 +1,7 @@
 // Check whether both a pre- and a post-guard are generated with-loops.
 //
 // SAC_TEST|include common.mk
-// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check tc
+// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check c
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
 // SAC_TEST|all: <file-name>
@@ -10,9 +10,9 @@
 // SAC_TEST|<tab>OUTPUT=`$(CALL_SAC2C) -bpopt -printfun foo $< 2>&1`;           <nlslash>
 // SAC_TEST|<tab>echo "$$OUTPUT" | $(GREP_COMMAND_OUTPUT) "_guard_" 2;          <nlslash>
 //
-// If we try to run this program, we expect two warnings, and an error.
+// If we try to run this program, we expect a warning, and an error.
 // SAC_TEST|<tab>$(CALL_SAC2C) $<;                                              <nlslash>
-// SAC_TEST|<tab>./a.out 2>&1 | $(GREP_COMMAND_OUTPUT) "runtime warning" 2;     <nlslash>
+// SAC_TEST|<tab>./a.out 2>&1 | $(GREP_COMMAND_OUTPUT) "runtime warning" 1;     <nlslash>
 // SAC_TEST|<tab>./a.out 2>&1 | $(GREP_COMMAND_OUTPUT) "runtime error" 1;       <nlslash>
 
 int[*] foo (int[*] shp)

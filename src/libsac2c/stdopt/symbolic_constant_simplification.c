@@ -73,6 +73,7 @@
 #include "polyhedral_utilities.h"
 #include "saa_constant_folding.h"
 #include "shape.h"
+#include "str.h"
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -3233,9 +3234,39 @@ SCSprf_reshape (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
+ * @fn node *SCSprf_conditional_error (node *arg_node, info *arg_info)
+ *
+ ******************************************************************************/
+node *
+SCSprf_conditional_error (node *arg_node, info *arg_info)
+{
+    node *pred, *res = NULL;
+    ntype *pred_type;
+    char *err_msg;
+
+    DBUG_ENTER ();
+
+    pred = PRF_ARG2 (arg_node);
+    pred_type = ID_NTYPE (pred);
+    if (TYisAKV (pred_type)) {
+        if (COisFalse (TYgetValue (pred_type), FALSE)) {
+            // Predicate is statically known to be false; return bottom
+            err_msg = STR_STRING (PRF_ARG3 (arg_node));
+            res = TBmakeType (TYmakeBottomType (STRcpy (err_msg)));
+        } else {
+            // Predicate is statically known to be true; return the accumulator
+            res = DUPdoDupNode (PRF_ARG1 (arg_node));
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
  * @fn node *SCSprf_guard (node *arg_node, info *arg_info)
  *
- * @brief x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
+ * @brief x1', .., xn' = guard (x1, .., xn, p1, .., pm)
  * If all boolean predicates pi are true, then guard behaves as the identity
  * function, and the result is x1, .., xn.
  *
@@ -3249,31 +3280,28 @@ SCSprf_guard (node *arg_node, info *arg_info)
 {
     bool changed;
     size_t num_args, num_rets;
-    node *last_typ, *last_arg, *preds, *res;
+    node *last_arg, *preds, *res;
 
     DBUG_ENTER ();
 
     num_rets = PRF_NUMVARIABLERETS (arg_node);
     DBUG_ASSERT (num_rets > 0, "guard has no return values");
     num_args = TCcountExprs (PRF_ARGS (arg_node));
-    DBUG_ASSERT (num_args >= num_rets * 2 + 1,
+    DBUG_ASSERT (num_args >= num_rets + 1,
                  "guard requires at least %lu arguments, got %lu",
-                 num_rets * 2 + 1, num_args);
+                 num_rets + 1, num_args);
 
-    // Skip x1, .., xn, t1, .., tn
-    last_arg = TCgetNthExprs (num_rets - 1, PRF_ARGS (arg_node));
-    last_typ = TCgetNthExprs (num_rets * 2 - 1, PRF_ARGS (arg_node));
-    preds = EXPRS_NEXT (last_typ);
+    // Skip x1, .., xn
+    last_arg = TCgetNthExprs (num_rets - 1, PRF_ARGS (arg_node)); // xn
+    preds = EXPRS_NEXT (last_arg); // p1
 
     // Strip all predicates that we statically know are true
     changed = StripTrues (&preds);
-    EXPRS_NEXT (last_typ) = preds;
+    EXPRS_NEXT (last_arg) = preds;
 
     if (changed) {
         if (preds == NULL) {
             DBUG_PRINT ("No predicates remain, replacing guard with identity");
-            // Remove N_exprs chain of types t1, .., tn
-            EXPRS_NEXT (last_arg) = FREEdoFreeTree (EXPRS_NEXT (last_arg));
             // Duplicate N_exprs chain x1, .., xn
             res = DUPdoDupTree (PRF_ARGS (arg_node));
         } else {

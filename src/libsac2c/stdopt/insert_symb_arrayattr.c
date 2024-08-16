@@ -1341,8 +1341,7 @@ ISAAids (node *arg_node, info *arg_info)
         && (NODE_TYPE (INFO_RHS (arg_info)) != N_str)
         && (!((NODE_TYPE (INFO_RHS (arg_info)) == N_prf)
               && ((PRF_PRF (INFO_RHS (arg_info)) == F_saabind)
-                  || (PRF_PRF (INFO_RHS (arg_info)) == F_type_conv)
-                  || (PRF_PRF (INFO_RHS (arg_info)) == F_type_fix))))) {
+                  || (PRF_PRF (INFO_RHS (arg_info)) == F_type_conv))))) {
         if (AVIS_DIM (avis) == NULL) {
             if (TUdimKnown (AVIS_TYPE (avis))) {
                 AVIS_DIM (avis) = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));

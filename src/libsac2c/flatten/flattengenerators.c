@@ -717,6 +717,7 @@ FLATGprf (node *arg_node, info *arg_info)
         INFO_EXPRSISINPRF (arg_info) = FALSE;
         break;
     case F_dispatch_error:
+    case F_conditional_error:
     case F_idx_shape_sel:
         break;
     }

@@ -1,7 +1,7 @@
 // Type patterns are allowed for external definitions.
 //
 // SAC_TEST|include common.mk
-// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check tc
+// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check c
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
 // Create empty external file to avoid missing file error.

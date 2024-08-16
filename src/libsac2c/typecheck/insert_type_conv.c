@@ -41,7 +41,6 @@ struct INFO {
     node *rets;
     node *assign;
     node *ret;
-    bool fix_type;
 };
 
 /*
@@ -50,7 +49,6 @@ struct INFO {
 #define INFO_INSTC_RETS(n) ((n)->rets)
 #define INFO_INSTC_NEW_ASSIGN(n) ((n)->assign)
 #define INFO_INSTC_RETURN(n) ((n)->ret)
-#define INFO_INSTC_FIXTYPE(n) ((n)->fix_type)
 
 /*
  * INFO functions
@@ -67,7 +65,6 @@ MakeInfo (void)
     INFO_INSTC_RETS (result) = NULL;
     INFO_INSTC_NEW_ASSIGN (result) = NULL;
     INFO_INSTC_RETURN (result) = NULL;
-    INFO_INSTC_FIXTYPE (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -119,36 +116,6 @@ CreateTypeConv (node *avis, ntype *type)
 
 /******************************************************************************
  *
- * function:
- *   node *CreateTypeFix( node *avis, ntype *type)
- *
- * description:
- *   assuming avis points to "unknown[*] a"
- *   and type points to "int[.]"
- *   we create an assignment of the form
- *
- *   a = _type_fix_( int[.], a);
- *
- ******************************************************************************/
-
-static node *
-CreateTypeFix (node *avis, ntype *type)
-{
-    node *res;
-
-    DBUG_ENTER ();
-
-    res = TBmakeLet (TBmakeIds (avis, NULL),
-                     TCmakePrf2 (F_type_fix,
-                                 TBmakeType (TYcopyType (type)),
-                                 TBmakeId (avis)));
-    res = TBmakeAssign (res, NULL);
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
  * Traversal Functions:
  */
 
@@ -167,9 +134,6 @@ INSTCfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        // Fix the type in the case of a type pattern function
-        INFO_INSTC_FIXTYPE (arg_info) = FUNDEF_CHECKIMPLFUNDEF (arg_node) != NULL;
-
         INFO_INSTC_RETS (arg_info) = FUNDEF_RETS (arg_node);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
@@ -297,9 +261,7 @@ INSTCids (node *arg_node, info *arg_info)
     if (!TYisAUD (IDS_NTYPE (arg_node))
         && (!TYisSimple (scalar_type) || (TYgetSimpleType (scalar_type) != T_unknown))) {
 
-        assign = INFO_INSTC_FIXTYPE (arg_info)
-            ? CreateTypeFix (IDS_AVIS (arg_node), IDS_NTYPE (arg_node))
-            : CreateTypeConv (IDS_AVIS (arg_node), IDS_NTYPE (arg_node));
+        assign = CreateTypeConv (IDS_AVIS (arg_node), IDS_NTYPE (arg_node));
 
         ASSIGN_NEXT (assign) = INFO_INSTC_NEW_ASSIGN (arg_info);
         INFO_INSTC_NEW_ASSIGN (arg_info) = assign;
@@ -358,9 +320,7 @@ INSTCid (node *arg_node, info *arg_info)
         } else {
             old_type = RET_TYPE (INFO_INSTC_RETS (arg_info));
             if (!TYisAUD (old_type)) {
-            assign = INFO_INSTC_FIXTYPE (arg_info)
-                ? CreateTypeFix (ID_AVIS (arg_node), old_type)
-                : CreateTypeConv (ID_AVIS (arg_node), old_type);
+                assign = CreateTypeConv (ID_AVIS (arg_node), old_type);
 
                 ASSIGN_NEXT (assign) = INFO_INSTC_NEW_ASSIGN (arg_info);
                 INFO_INSTC_NEW_ASSIGN (arg_info) = assign;

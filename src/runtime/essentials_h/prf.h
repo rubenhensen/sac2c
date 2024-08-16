@@ -454,14 +454,16 @@
  *
  ******************************************************************************/
 
+#define SAC_ND_PRF_CONDITIONAL_ERROR(filename, line, col, acc_NT, pred_NT, err_msg)      \
+    if (!SAC_ND_READ (pred_NT, 0)) {                                                     \
+        SAC_ND_A_FIELD (acc_NT) = 0;                                                     \
+        SAC_RuntimeWarningLoc (filename, line, col, err_msg);                            \
+    }
+
 #define SAC_ND_PRF_GUARD(filename, line, col, pred_NT, context)                          \
     if (!SAC_ND_READ (pred_NT, 0)) {                                                     \
         SAC_RuntimeErrorLoc (filename, line, col, context);                              \
     }
-
-#define SAC_ND_PRF_GUARD_ERROR(filename, line, col, to_NT, error)                        \
-    SAC_RuntimeWarningLoc (filename, line, col, error);                                  \
-    SAC_ND_A_FIELD (to_NT) = 0;
 
 #define SAC_ND_PRF_TYPE_CONSTRAINT_AKD(filename, line, col, to_NT, from_NT, scl)         \
     if (SAC_ND_A_DIM (from_NT) == scl) {                                                 \

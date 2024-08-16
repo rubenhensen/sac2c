@@ -3,6 +3,7 @@
 // their type patterns are analyses and their types are set.
 //
 // SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -ecc -check c
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
 // SAC_TEST|all: <file-name-we>

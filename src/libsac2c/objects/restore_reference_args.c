@@ -402,6 +402,13 @@ RERAprf (node *arg_node, info *arg_info)
         break;
 
     /**
+     * acc' = conditional_error (acc, pred, "msg")
+     */
+    case F_conditional_error:
+        SubstituteReferenceArg (lhs, ID_DECL (PRF_ARG1 (arg_node)));
+        break;
+
+    /**
      * check whether rhs is a prop_obj and in that case substitute lhs of any
      * reference arguments by rhs.
      */
@@ -422,7 +429,7 @@ RERAprf (node *arg_node, info *arg_info)
         break;
 
     /**
-     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
+     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
      */
     case F_guard:
         args = PRF_ARGS (arg_node);

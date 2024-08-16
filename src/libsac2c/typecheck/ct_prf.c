@@ -485,41 +485,6 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
 
 /******************************************************************************
  *
- * @fn ntype *NTCCTprf_type_fix (te_info *info, ntype *elems)
- *
- * @brief The returned type is always fixed to the given type, as opposed to
- * F_type_conv, which allows for a conversion in the TY_gt case.
- *
- ******************************************************************************/
-ntype *
-NTCCTprf_type_fix (te_info *info, ntype *args)
-{
-    ntype *type, *arg, *res;
-    ct_res cmp;
-    char *err_msg;
-
-    DBUG_ENTER ();
-
-    type = TYgetProductMember (args, 0);
-    arg = TYgetProductMember (args, 1);
-    cmp = TYcmpTypes (type, arg);
-
-    if (cmp == TY_eq || cmp == TY_lt || cmp == TY_gt) {
-        res = TYcopyType (type);
-    } else {
-        TEhandleError (TEgetLine (info), TEgetFile (info),
-                       "Inferred type %s should match declared type %s",
-                       TYtype2String (arg, FALSE, 0),
-                       TYtype2String (type, FALSE, 0));
-        err_msg = TEfetchErrors ();
-        res = TYmakeBottomType (err_msg);
-    }
-
-    DBUG_RETURN (TYmakeProductType (1, res));
-}
-
-/******************************************************************************
- *
  * function:
  *    ntype *NTCCTprf_nest( te_info *info, ntype *elems)
  *
@@ -604,9 +569,46 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
 
 /******************************************************************************
  *
+ * @fn ntype *NTCCTprf_conditional_error (te_info *info, ntype *args)
+ *
+ * @brief acc' = conditional_error (acc, pred, "msg")
+ * Where acc and pred are boolean scalars, and msg is an N_str node. If the
+ * value of pred is statically known to be false we could already raise an error
+ * at this point. However we choose to leave this to SCS, so that it can use the
+ * string argument to provide a more detailed error message.
+ *
+ ******************************************************************************/
+ntype *
+NTCCTprf_conditional_error (te_info *info, ntype *args)
+{
+    ntype *acc, *pred, *res;
+    char *err_msg;
+
+    DBUG_ENTER ();
+
+    acc = TYgetProductMember (args, 0);
+    TEassureBoolS ("conditional error acc", acc);
+    pred = TYgetProductMember (args, 1);
+    TEassureBoolS ("conditional error pred", pred);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else if (TYisAKV (pred) && COisTrue (TYgetValue (pred), TRUE)) {
+        // Predicate is statically known to be true; return the accumulator
+        res = TYcopyType (acc);
+    } else {
+        res = TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
  * @fn ntype *NTCCTprf_guard (te_info *info, ntype *args)
  *
- * @brief x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
+ * @brief x1', .., xn' = guard (x1, .., xn, p1, .., pm)
  * Where xi are anything, ti are types, and pj are boolean scalars.
  * - If all boolean predicates pj are true, then guard behaves as the identity
  *   function, and the result is x1, .., xn.
@@ -630,12 +632,12 @@ NTCCTprf_guard (te_info *info, ntype *args)
                  "expected at least one return value for guard, got %lu",
                  num_rets);
     num_args = TYgetProductSize (args);
-    DBUG_ASSERT (num_args >= num_rets * 2 + 1,
+    DBUG_ASSERT (num_args >= num_rets + 1,
                  "guard requires at least %lu arguments, got %lu",
-                 num_rets * 2 + 1, num_args);
+                 num_rets + 1, num_args);
 
-    // Skip xi and ti, and check each predicate pj
-    for (i = num_rets * 2; i < num_args; i++) {
+    // Skip xi; check each predicate pj
+    for (i = num_rets; i < num_args; i++) {
         member = TYgetProductMember (args, i);
         TEassureBoolS ("guard predicate", member);
 
@@ -670,9 +672,9 @@ NTCCTprf_guard (te_info *info, ntype *args)
             } else {
                 /**
                  * The predicates could be true, but we are not sure.
-                 * Use the type given by argument ti instead.
+                 * Hide the result value.
                  */
-                member = TYgetProductMember (args, i + num_rets);
+                member = TYeliminateAKV (TYgetProductMember (args, i));
             }
 
             TYsetProductMember (res, i, TYcopyType (member));
