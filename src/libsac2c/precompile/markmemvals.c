@@ -889,7 +889,7 @@ MMVprfPropObjOut (node *arg_node, info *arg_info)
  *
  * @fn node *MMVprfGuard( node *arg_node, info *arg_info)
  *
- * @brief x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
+ * @brief x1', .., xn' = guard (x1, .., xn, p1, .., pm)
  * - rename x1, .., xn, p1, .., pm
  * - insert (xi', xi) into LUT
  *

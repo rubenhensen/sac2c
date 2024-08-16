@@ -2321,7 +2321,6 @@ DSSprf (node *arg_node, info *arg_info)
 
         INFO_IN_PRF_DE (arg_info) = 0;
         break;
-    case F_type_fix:
     case F_type_conv:
         // Continue mode_repl_count
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);

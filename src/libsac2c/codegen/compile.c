@@ -8219,38 +8219,6 @@ COMPprfTypeError (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
-/******************************************************************************
- *
- * @fn node *COMPprfGuardError (node *arg_node, info *arg_info)
- *
- * @brief Creates the ICM for guard errors, which prints the guard error message
- * to the console, and then always returns false. F_guard is then expected to
- * catch this false value and abort the program. This allows us to print
- * multiple error messages in the case that multiple guards fail.
- *
- ******************************************************************************/
-static node *
-COMPprfGuardError (node *arg_node, info *arg_info)
-{
-    node *ids;
-    char *error;
-    node *ret_node;
-
-    DBUG_ENTER ();
-
-    ids = INFO_LASTIDS (arg_info);
-    error = TYgetBottomError (TYPE_TYPE (PRF_ARG1 (arg_node)));
-    ret_node = TCmakeAssignIcm5 ("ND_PRF_GUARD_ERROR",
-                                 TCmakeStrCopy (global.filename),
-                                 TBmakeNumuint (global.linenum),
-                                 TBmakeNumuint (global.colnum),
-                                 DUPdupIdsIdNt (ids),
-                                 TCmakeStrCopy (error),
-                                 NULL);
-
-    DBUG_RETURN (ret_node);
-}
-
 /** <!--*******************************************************************-->
  *
  * @fn COMPprfWrapperShapeEncode( node *arg_node, info *arg_info)
@@ -8364,6 +8332,35 @@ COMPprfDispatchError (node *arg_node, info *arg_info)
                                  TCids2ExprsNt (let_ids), DUPdoDupNode (funname),
                                  TBmakeNumuint (TCcountExprs (funargs)),
                                  DUPdupExprsNt (funargs), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * @fn node *COMPprfConditionalError (node *arg_node, info *arg_info)
+ *
+ ******************************************************************************/
+static node *
+COMPprfConditionalError (node *arg_node, info *arg_info)
+{
+    node *acc, *pred, *err_msg;
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    acc = PRF_ARG1 (arg_node);
+    pred = PRF_ARG2 (arg_node);
+    err_msg = PRF_ARG3 (arg_node);
+
+    ret_node = TCmakeAssignIcm6 ("ND_PRF_CONDITIONAL_ERROR",
+                                 TCmakeStrCopy (global.filename),
+                                 TBmakeNumuint (global.linenum),
+                                 TBmakeNumuint (global.colnum),
+                                 DUPdupNodeNt (acc),
+                                 DUPdupNodeNt (pred),
+                                 DUPdoDupNode (err_msg),
+                                 NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -8926,7 +8923,7 @@ COMPprfGuard (node *arg_node, info *arg_info)
     context = PRF_CONTEXTSTRING (arg_node);
     DBUG_ASSERT (PRF_NUMVARIABLERETS (arg_node) == 0,
                  "All guarded arguments of _guard_ should have been stripped "
-                 "away bu mem:racc. Found %zu return values!", 
+                 "away bu mem:racc. Found %zu return values!",
                  PRF_NUMVARIABLERETS (arg_node));
 
     preds = PRF_ARGS (arg_node);

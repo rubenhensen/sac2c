@@ -314,10 +314,9 @@ CPprf (node *arg_node, info *arg_info)
     case F_shape_A:
     case F_accu:
     case F_type_conv:
-    case F_type_fix:
     case F_type_error:
-    case F_guard_error:
     case F_dispatch_error:
+    case F_conditional_error:
     case F_sel_VxA:
     case F_copy:
     case F_guard:

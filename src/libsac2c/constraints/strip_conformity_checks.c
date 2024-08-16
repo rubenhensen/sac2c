@@ -302,6 +302,7 @@ SCCprf (node *arg_node, info *arg_info)
     case F_shape_matches_dim_VxA:
     case F_val_lt_shape_VxA:
     case F_prod_matches_prod_shape_VxA:
+    case F_conditional_error:
         if (!global.runtimecheck.conformity && global.insertconformitychecks) {
             INFO_LHS (arg_info) = RenameOrReplaceRets (0, 1, lhs, args,
                                     &INFO_PREASSIGNS (arg_info));
@@ -333,7 +334,7 @@ SCCprf (node *arg_node, info *arg_info)
 
     /**
      * Prfs with a variable number of identities.
-     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
+     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
      */
     case F_guard:
         if (!global.runtimecheck.conformity && global.insertconformitychecks) {

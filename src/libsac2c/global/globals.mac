@@ -70,6 +70,8 @@ GLOBAL (const char *, version_id, SAC2C_VERSION, xfree_dummy, )
 
 GLOBAL (const char *, preludename, SAC_PRELUDE_NAME, xfree_dummy, )
 
+GLOBAL (const char *, rterrorname, SAC_RTERROR_NAME, xfree_dummy, )
+
 /*
  *  Flag to enable/disable loading of prelude
  */
@@ -297,7 +299,7 @@ GLOBAL (bool, dynamic_shapes, FALSE, xfree_dummy, )
 
 
 /*
- * Runtime specialization mode. Only relevant in case rtspec is 
+ * Runtime specialization mode. Only relevant in case rtspec is
  * enabled which happens through sac2crc's RTSPEC.
  * Like all sac2crc values, it is available in global.config as
  * global.config.rtspec
@@ -1350,7 +1352,7 @@ GLOBAL_NOINIT (char *, build_sac2crc_location, NULL, xfree_dummy, )
 GLOBAL_NOINIT (char *, global_sac2clib_location, NULL, xfree_dummy, )
 GLOBAL_NOINIT (char *, build_sac2clib_location, NULL, xfree_dummy, )
 /*
- * These variables keep the default and the build location of this 
+ * These variables keep the default and the build location of this
  * library helping other programs such as jupyter to find the library
  * once they have found the executable.
  */

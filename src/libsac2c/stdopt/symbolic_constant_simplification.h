@@ -106,6 +106,7 @@ extern node *SCSprf_min_VxV (node *arg_node, info *arg_info);
 extern node *SCSprf_max_SxS (node *arg_node, info *arg_info);
 extern node *SCSprf_max_VxV (node *arg_node, info *arg_info);
 extern node *SCSprf_shape (node *arg_node, info *arg_info);
+extern node *SCSprf_conditional_error (node *arg_node, info *arg_info);
 extern node *SCSprf_guard (node *arg_node, info *arg_info);
 extern node *SCSprf_noteminval (node *arg_node, info *arg_info);
 extern node *SCSprf_notemaxval (node *arg_node, info *arg_info);

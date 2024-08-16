@@ -143,6 +143,8 @@ LoadPreludeFunctions (node *syntax_tree)
     DSaddSymbolByName ("wrapDouble", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("wrapChar", SET_wrapperhead, global.preludename);
 
+    DSaddSymbolByName ("conditionalAbort", SET_wrapperhead, global.rterrorname);
+
     DBUG_RETURN (syntax_tree);
 }
 

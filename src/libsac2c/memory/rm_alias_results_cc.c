@@ -313,35 +313,40 @@ EMRACClet (node *arg_node, info *arg_info)
 node *
 EMRACCprf (node *arg_node, info *arg_info)
 {
-    node *exprs;
-    node *nargs;
-    size_t i,n;
+    size_t i, n;
 
     DBUG_ENTER ();
 
-    PRF_ARGS (arg_node) = TRAVopt(PRF_ARGS (arg_node), arg_info);
+    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
 
     switch (PRF_PRF (arg_node)) {
+    /**
+     * v, p = type_constraint (t, a); R
+     *   => p = type_constraint (t, a); R[v\a]
+     */
     case F_type_constraint:
-        /*
-         * v,p = type_constraint( t, a); R
-         * => p = type_constraint( t, a); R[v\a]
-         */
-        arg_info
-          = Substitute (&LET_IDS (INFO_LET (arg_info)), PRF_ARG2 (arg_node), arg_info);
+        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
+                               PRF_ARG2 (arg_node),
+                               arg_info);
         break;
 
+    /**
+     * va, vb, p = same_shape_AxA (a, b); R
+     *   => p = same_shape_AxA (a, b); R[va\a][vb\b]
+     */
     case F_same_shape_AxA:
-        /*
-         * va,vb,p = same_shape_AxA(a,b); R
-         * => p = same_shape_AxA(a,b); R[va\a][vb\b]
-         */
-        arg_info
-          = Substitute (&LET_IDS (INFO_LET (arg_info)), PRF_ARG1 (arg_node), arg_info);
-        arg_info
-          = Substitute (&LET_IDS (INFO_LET (arg_info)), PRF_ARG2 (arg_node), arg_info);
+        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
+                               PRF_ARG1 (arg_node),
+                               arg_info);
+        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
+                               PRF_ARG2 (arg_node),
+                               arg_info);
         break;
 
+    /**
+     * v, p = constraint (a, b); R
+     *   => p = constraint (a, b); R[v\a]
+     */
     case F_shape_matches_dim_VxA:
     case F_non_neg_val_V:
     case F_non_neg_val_S:
@@ -350,37 +355,47 @@ EMRACCprf (node *arg_node, info *arg_info)
     case F_val_le_val_SxS:
     case F_val_lt_val_SxS:
     case F_prod_matches_prod_shape_VxA:
-        /*
-         * v,p = constraint(a,b); R
-         * => p = constraint(a,b) R[v\a]
-         */
-        arg_info
-          = Substitute (&LET_IDS (INFO_LET (arg_info)), PRF_ARG1 (arg_node), arg_info);
+        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
+                               PRF_ARG1 (arg_node),
+                               arg_info);
         break;
 
+    /**
+     * acc' = conditional_error (acc, pred, "msg"); R
+     *   => constraint (pred, "msg"); R[acc'\acc]
+     */
+    case F_conditional_error:
+        // Substitute acc
+        arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
+                               PRF_ARG1 (arg_node),
+                               arg_info);
+        // Remove acc from args chain
+        //PRF_ARGS (arg_node) = FREEdoFreeNode (PRF_ARGS (arg_node));
+        break;
+
+    /**
+     * v1, .., vn = guard (x1, .., xn, p1, .., pm); R
+     *   => constraint (p1, .., pm); R[vi\xi]
+     */
     case F_guard:
-        /*
-         * v1,...,vn = _guard_(a1,...,an,t1,...,tn,p1,...,pm); R
-         * => constraint(p1,...,pm); R[vi\ai]
-         */
         n = PRF_NUMVARIABLERETS (arg_node);
-        exprs = PRF_ARGS (arg_node);
-        for (i=0; i<n; i++) {
+        for (i = 0; i < n; i++) {
+            // Substitute xi
             arg_info = Substitute (&LET_IDS (INFO_LET (arg_info)),
-                                   EXPRS_EXPR (exprs), arg_info);
-            exprs = EXPRS_NEXT (exprs);
+                                   PRF_ARG1 (arg_node),
+                                   arg_info);
+            // Remove xi from args chain
+            PRF_ARGS (arg_node) = FREEdoFreeNode (PRF_ARGS (arg_node));
         }
-        if (n >= 1) {
-            exprs = TCgetNthExprs (n-1, exprs);
-            nargs = EXPRS_NEXT (exprs);
-            EXPRS_NEXT (exprs) = NULL;
-            PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));
-            PRF_ARGS (arg_node) = nargs;
-            PRF_NUMVARIABLERETS (arg_node) = 0;
-        }
+
+        PRF_NUMVARIABLERETS (arg_node) = 0;
         break;
 
-    default:; /* do nothing */
+    /**
+     * Nothing to do
+     */
+    default:
+        break;
     }
 
     DBUG_RETURN (arg_node);

@@ -1313,7 +1313,6 @@ EMALassign (node *arg_node, info *arg_info)
      */
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-
     /*
      * Traverse RHS of assignment
      */
@@ -2028,6 +2027,7 @@ EMALprf (node *arg_node, info *arg_info)
      * a,... = accu (iv, n, ...) and prop_obj
      * v = unshare (a, iv1, .., ivn) where v aliases a
      * v,... = type_error (...)
+     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
      * Require a special treatment as none of their return values must be
      * allocated.
      */
@@ -2038,24 +2038,10 @@ EMALprf (node *arg_node, info *arg_info)
     case F_syncout:
     case F_UAR_dummy_type:
     case F_type_conv:
-    case F_type_fix:
     case F_type_error:
     case F_dispatch_error:
+    case F_conditional_error:
     case F_unshare:
-        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-        INFO_MUSTFILL (arg_info) = EA_nofill;
-        break;
-
-    case F_guard_error:
-        als->dim = TBmakeNum (0);
-        als->shape = TCcreateZeroVector (0, T_bool);
-        break;
-
-    /**
-     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
-     * Guard allocations will be removed from the final program,
-     * and thus no allocation must occur.
-     */
     case F_guard:
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
         INFO_MUSTFILL (arg_info) = EA_nofill;

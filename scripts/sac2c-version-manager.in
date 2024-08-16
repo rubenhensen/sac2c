@@ -138,6 +138,10 @@ def list_of_files (prefix, ver, build_type):
     l.extend (find_files_rec (os.path.join (prefix, "libexec", "sac2c", ver),
                               "libsacprelude*%sTree%s" % (bt_postfix, SHARED_LIB_EXT)))
 
+    # $prefix/libexec/sac2c/$version/{librterror${bt}*Tree.so}
+    l.extend (find_files_rec (os.path.join (prefix, "libexec", "sac2c", ver),
+                              "librterror*%sTree%s" % (bt_postfix, SHARED_LIB_EXT)))
+
     # $prefix/libexec/sac2c/$version/{sac2c$bt, sac4c$bt, ...}
     for b in SAC2C_BINARIES:
         l.append (os.path.join (prefix, "libexec", "sac2c", ver, os.path.join (*b) + bt_postfix))

@@ -197,12 +197,7 @@ PMMskipPrf (intptr_t param, node *expr)
             rhs = LET_EXPR (let);
             if ((NODE_TYPE (rhs) == N_prf) && (prfInspectFun (PRF_PRF (rhs)))) {
                 switch (PRF_PRF(rhs)) {
-                    #if 0
-                    // We should never skip past guards!
-                    // Will be removed entirely in the future when we are more
-                    // sure that this does not introduce any other problems...
-                    case F_guard:           // x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
-                    #endif
+                    case F_guard:           // x1', .., xn' = guard (x1, .., xn, p1, .., pm)
                     case F_same_shape_AxA:  // x', y', p = same_shape (x, y)
                     case F_non_neg_val_S:   // x', p = non_neg (x)
                     case F_non_neg_val_V:   // x', p = non_neg (x)
@@ -290,14 +285,7 @@ bool
 PMMisGuard (prf prfun)
 {
     DBUG_ENTER ();
-    #if 0
-    // We should never skip past guards!
-    // Will be removed entirely in the future when we are more
-    // sure that this does not introduce any other problems...
     DBUG_RETURN (prfun == F_guard);
-    #else
-    DBUG_RETURN (FALSE);
-    #endif
 }
 
 /**

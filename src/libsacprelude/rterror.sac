@@ -1,0 +1,38 @@
+class rterror@BUILD_TYPE_POSTFIX@;
+
+classtype bool;
+
+provide { conditionalAbort };
+
+objdef rterror@BUILD_TYPE_POSTFIX@ state = new();
+
+rterror@BUILD_TYPE_POSTFIX@ new()
+{
+    return (rterror@BUILD_TYPE_POSTFIX@)true;
+}
+
+void conditionalAbort(bool p)
+{
+    if (_not_S_(p)) {
+        /**
+         * We force a zero-devision here in order to abort the program.
+         * At this point, any preceding `F_conditional_error`s will have already
+         * logged the required error messages, so there is nothing more we have
+         * to do at this point.
+         * However in the future we might be able to print the stack-trace here.
+         */
+        v = _div_SxS_(1, _hideValue_SxA_(0, 0));
+
+        /**
+         * Change the state to ensure it is weaved into the control flow instead
+         * of being potentially optimised away.
+         */
+        res = _eq_SxS_(v, 1);
+        set(state, res);
+    }
+}
+
+void set(rterror@BUILD_TYPE_POSTFIX@ &s, bool v)
+{
+    s = to_rterror@BUILD_TYPE_POSTFIX@(v);
+}

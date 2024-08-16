@@ -239,8 +239,6 @@ typedef struct CONSTRAINT_INFO {
  * for the resolution of the entire function, updating it as we go.
  *
  * @param RI_FUNDEF The name of the function we are resolving.
- * @param RI_PRED The unique name of the predicate we are using,
- *        e.g. _rtp_12_pred.
  * @param RI_ISARGUMENT Whether the type pattern we are currently resolving is
  *        a type pattern of an argument.
  * @param RI_ENV A mapping from features to their collected constraints.
@@ -260,7 +258,6 @@ typedef struct CONSTRAINT_INFO {
  ******************************************************************************/
 typedef struct RESOLUTION_INFO {
     node *fundef;
-    char *pred;
     bool is_argument;
     lut_t *env;
     node *exist;
@@ -273,7 +270,6 @@ typedef struct RESOLUTION_INFO {
 } resolution_info;
 
 #define RI_FUNDEF(n) ((n)->fundef)
-#define RI_PRED(n) ((n)->pred)
 #define RI_ISARGUMENT(n) ((n)->is_argument)
 #define RI_ENV(n) ((n)->env)
 #define RI_EXIST(n) ((n)->exist)
@@ -301,7 +297,6 @@ MakeResolutionInfo (void)
     ri = (resolution_info *)MEMmalloc (sizeof (resolution_info));
 
     RI_FUNDEF (ri) = NULL;
-    RI_PRED (ri) = NULL;
     RI_ISARGUMENT (ri) = TRUE;
     RI_ENV (ri) = LUTgenerateLut();
     RI_EXIST (ri) = NULL;
@@ -329,7 +324,6 @@ ClearResolutionInfo (resolution_info *ri)
     DBUG_ENTER ();
 
     RI_FUNDEF (ri) = NULL;
-    RI_PRED (ri) = MEMfree (RI_PRED (ri));
     RI_ENV (ri) = LUTremoveContentLut (RI_ENV (ri));
     RI_EXIST (ri) = FREEoptFreeTree (RI_EXIST (ri));
     RI_DEFINED (ri) = FREEoptFreeTree (RI_DEFINED (ri));
@@ -709,19 +703,19 @@ GenerateConstraints (char *v, node *pattern, resolution_info *ri)
 
 /******************************************************************************
  *
- * @fn node *MakeFeatureGuard (char *id, char *pred, constraint_info *ci)
+ * @fn node *MakeFeatureGuard (char *id, constraint_info *ci)
  *
  * @brief Given a feature, and one of its constraints, we generate a check
  * to insert into the code that either returns the predicate, or a bottom
  * type with a descriptive error message if the check failed.
  *
- * @example pred = id == expr() ? pred : _|_("error message");
+ * @example acc' = conditional_error (acc, pred, "msg");
  *
  ******************************************************************************/
 static node *
-MakeFeatureGuard (char *id, char *pred, constraint_info *ci)
+MakeFeatureGuard (char *id, constraint_info *ci)
 {
-    node *constraint, *type, *res;
+    node *constraint, *res;
     char *error;
 
     DBUG_ENTER ();
@@ -755,12 +749,13 @@ MakeFeatureGuard (char *id, char *pred, constraint_info *ci)
     }
 
     error = SBUF2strAndFree (&CI_ERROR (ci));
-    type = TBmakeType (TYmakeBottomType (STRcpy (error)));
 
-    // Generate an expression: pred = constraint() ? pred : _|_
-    res = TCmakePrf1 (F_guard_error, type);
-    res = TBmakeFuncond (constraint, TBmakeSpid (NULL, STRcpy (pred)), res);
-    res = TBmakeLet (TBmakeSpids (STRcpy (pred), NULL), res);
+    // acc' = conditional_error (acc, pred, "msg");
+    res = TCmakePrf3 (F_conditional_error,
+                      TBmakeSpid (NULL, STRcpy (GTP_PRED_NAME)),
+                      constraint,
+                      TBmakeStr (error));
+    res = TBmakeLet (TBmakeSpids (STRcpy (GTP_PRED_NAME), NULL), res);
     res = TBmakeAssign (res, NULL);
 
     DBUG_RETURN (res);
@@ -783,7 +778,7 @@ CreateDimCheck (char *id, constraint_info *ci, resolution_info *ri)
     DBUG_ENTER ();
 
     DBUG_PRINT ("creating a dim check for %s", id);
-    res = MakeFeatureGuard (id, RI_PRED (ri), ci);
+    res = MakeFeatureGuard (id, ci);
 
     if (CI_ISARGUMENT (ci)) {
         RI_PRECHECKS (ri) = TCappendAssign (res, RI_PRECHECKS (ri));
@@ -812,7 +807,7 @@ CreateCheck (char *id, constraint_info *ci, resolution_info *ri)
     DBUG_ENTER ();
 
     DBUG_PRINT ("creating a check for %s", id);
-    res = MakeFeatureGuard (id, RI_PRED (ri), ci);
+    res = MakeFeatureGuard (id, ci);
 
     if (CI_ISARGUMENT (ci)) {
         RI_PRECHECKS (ri) = TCappendAssign (RI_PRECHECKS (ri), res);
@@ -1061,7 +1056,6 @@ RTPFfundef (node *arg_node, info *arg_info)
 
     ri = INFO_RESOLUTION (arg_info);
     RI_FUNDEF (ri) = arg_node;
-    RI_PRED (ri) = STRcpy (TRAVtmpVarName ("pred"));
 
     RI_ISARGUMENT (ri) = TRUE;
     // First add all arguments to defined before traversing their type patterns
@@ -1085,14 +1079,12 @@ RTPFfundef (node *arg_node, info *arg_info)
     if (global.insertconformitychecks) {
         if (RI_PRECHECKS (ri) != NULL || FUNDEF_PRECONDS (arg_node) != NULL) {
             pre = GTPmakePreCheck (arg_node,
-                                   RI_PRED (ri),
                                    RI_PREASSIGNS (ri),
                                    RI_PRECHECKS (ri));
         }
 
         if (RI_POSTCHECKS (ri) != NULL || FUNDEF_POSTCONDS (arg_node) != NULL) {
             post = GTPmakePostCheck (arg_node,
-                                     RI_PRED (ri),
                                      RI_POSTASSIGNS (ri),
                                      RI_POSTCHECKS (ri),
                                      RI_RETURNIDS (ri));
@@ -1294,7 +1286,6 @@ RTPEfundef (node *arg_node, info *arg_info)
 
     ri = INFO_RESOLUTION (arg_info);
     RI_FUNDEF (ri) = arg_node;
-    RI_PRED (ri) = STRcpy (TRAVtmpVarName ("pred"));
 
     RI_ISARGUMENT (ri) = TRUE;
     // First add all arguments to defined before traversing their type patterns
@@ -1312,7 +1303,6 @@ RTPEfundef (node *arg_node, info *arg_info)
     if (global.insertconformitychecks) {
         if (RI_PRECHECKS (ri) != NULL || FUNDEF_PRECONDS (arg_node) != NULL) {
             pre = GTPmakePreCheck (arg_node,
-                                   RI_PRED (ri),
                                    RI_PREASSIGNS (ri),
                                    RI_PRECHECKS (ri));
             INFO_NEWFUNDEFS (arg_info) =
@@ -1321,7 +1311,6 @@ RTPEfundef (node *arg_node, info *arg_info)
 
         if (RI_POSTCHECKS (ri) != NULL || FUNDEF_POSTCONDS (arg_node) != NULL) {
             post = GTPmakePostCheck (arg_node,
-                                     RI_PRED (ri),
                                      RI_POSTASSIGNS (ri),
                                      RI_POSTCHECKS (ri),
                                      RI_RETURNIDS (ri));

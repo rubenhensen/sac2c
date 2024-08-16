@@ -1,0 +1,22 @@
+// Type pattern checks should be optimised away in the case we can statically
+// infer that the checks succeed.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noprelude -ecc -check c -bopt
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "_conditional_error_" 0
+
+int foo (int[n,p,d:shp] a, int[n,q,d:shp] b)
+{
+    return _add_SxS_ (p, q);
+}
+
+int main()
+{
+    a = { iv -> iv | iv < [1,4,1,2,3] };
+    b = { iv -> iv | iv < [1,5,1,2,3] };
+    res = foo (a, b);
+    return res;
+}

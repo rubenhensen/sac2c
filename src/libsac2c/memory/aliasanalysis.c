@@ -648,7 +648,6 @@ EMAAprf (node *arg_node, info *arg_info)
         break;
 
     case F_type_conv:
-    case F_type_fix:
         MarkAllIdsAliasing (lhs, INFO_MASK (arg_info));
         MarkIdAliasing (PRF_ARG2 (arg_node), INFO_MASK (arg_info));
         break;
@@ -662,7 +661,7 @@ EMAAprf (node *arg_node, info *arg_info)
         break;
 
     /**
-     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
+     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
      * Each xi' is an alias of xi.
      */
     case F_guard:

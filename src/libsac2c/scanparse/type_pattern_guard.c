@@ -19,8 +19,9 @@
  *
  ******************************************************************************/
 #include "ctype.h"
-#include "free.h"
 #include "DupTree.h"
+#include "free.h"
+#include "globals.h"
 #include "memory.h"
 #include "namespaces.h"
 #include "new_types.h"
@@ -65,23 +66,46 @@ IsValidFundefName (char *name)
 
 /******************************************************************************
  *
+ * @fn char *GTPmakeValidFundefName (char *guard_str, char *fundef_name)
+ *
+ * @brief Generates a unique function name, based on an existing function name.
+ * If this function name contains no special characters, we prepend a unique
+ * identifier. Otherwise, in cases such as an overloaded operator (+, -, *, /),
+ * we only return this unique identifier.
+ *
+ ******************************************************************************/
+char *
+GTPmakeValidFundefName (const char *guard_str, char *fundef_name)
+{
+    char *name, *res;
+
+    DBUG_ENTER ();
+
+    name = TRAVtmpVarName (guard_str);
+    res = IsValidFundefName (fundef_name)
+            ? STRcatn (3, name, "_", fundef_name)
+            : STRcpy (name);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
  * @fn node *MakeConditionGuards (const char *guard_str, node *fundef,
- *                                const char *pred, node *conditions)
+ *                                node *conditions)
  *
  * @brief Convert conditions, e.g. foo(int a) | a > 0, to checks for our pre-
  * and post-check functions. Namely, for this example, we generate
- *   pred = a > 0 ? pred : _|_ ("condition failed");
+ *   acc' = conditional_error (acc, a > 0, "condition failed");
  *
  * @todo If we convert the condition to a string we can make our error message
  * more descriptive: "condition a > 0 failed".
  *
  ******************************************************************************/
 static node *
-MakeConditionGuards (const char *guard_str, node *fundef,
-                     const char *pred, node *conditions)
+MakeConditionGuards (const char *guard_str, node *fundef, node *conditions)
 {
-    node *guard, *bottom;
-    node *res = NULL;
+    node *guard, *res = NULL;
     str_buf *buf;
 
     DBUG_ENTER ();
@@ -91,14 +115,17 @@ MakeConditionGuards (const char *guard_str, node *fundef,
     while (conditions != NULL) {
         buf = SBUFprintf (buf, "Type pattern %s-condition of %s failed",
                                guard_str, FUNDEF_NAME (fundef));
-        bottom = TBmakeType (TYmakeBottomType (SBUF2str (buf)));
-        guard = TBmakeFuncond (EXPRS_EXPR (conditions),
-                               TBmakeSpid (NULL, STRcpy (pred)),
-                               TCmakePrf1 (F_guard_error, bottom));
-        guard = TBmakeLet (TBmakeSpids (STRcpy (pred), NULL), guard);
+
+        // acc' = conditional_error (acc, pred, "msg");
+        guard = TCmakePrf3 (F_conditional_error,
+                            TBmakeSpid (NULL, STRcpy (GTP_PRED_NAME)),
+                            EXPRS_EXPR (conditions),
+                            TBmakeStr (SBUF2str (buf)));
+        guard = TBmakeLet (TBmakeSpids (STRcpy (GTP_PRED_NAME), NULL), guard);
         res = TCappendAssign (res, TBmakeAssign (guard, NULL));
 
-        conditions = EXPRS_NEXT (conditions);
+        EXPRS_EXPR (conditions) = NULL;
+        conditions = FREEdoFreeNode (conditions);
     }
 
     buf = SBUFfree (buf);
@@ -113,8 +140,8 @@ MakeConditionGuards (const char *guard_str, node *fundef,
  *
  * @brief Generates the pre- or post-check function, based on the original
  * function definition, the new arguments, and the new function body.
- * For example:
  *
+ * @example
  * inline
  * bool foo_post (int[*] a, int[*] b, int[+] res) {
  *     pred = true;
@@ -123,9 +150,9 @@ MakeConditionGuards (const char *guard_str, node *fundef,
  *     return pred;
  * }
  *
- * Note that whereas the pre-check function only requires the original
- * arguments. The post-check functions also requires the returned values, since
- * these can also contain type patterns.
+ * @note Whereas the pre-check function only requires the original arguments.
+ * The post-check functions also requires the returned values, since these can
+ * also contain type patterns.
  *
  ******************************************************************************/
 static node *
@@ -157,61 +184,7 @@ MakeGuardFundef (const char *guard_str, node *fundef, node *args, node *body)
 
 /******************************************************************************
  *
- * @fn node *AddPred (char *pred, node *body)
- *
- * @brief Surrounds a function body with an assignment and return of the
- * predicate. This results in the following function:
- *
- * bool foo_pre (int[*] a, int[*] b) {
- *     pred = true;
- *     ...
- *     return pred;
- * }
- *
- ******************************************************************************/
-static node *
-AddPred (char *pred, node *body)
-{
-    node *let, *ret;
-
-    DBUG_ENTER ();
-
-    let = TBmakeLet (TBmakeSpids (STRcpy (pred), NULL), TBmakeBool (TRUE));
-    ret = TBmakeReturn (TBmakeExprs (TBmakeSpid (NULL, STRcpy (pred)), NULL));
-    body = TCappendAssign (TBmakeAssign (let, body), TBmakeAssign (ret, NULL));
-
-    DBUG_RETURN (body);
-}
-
-/******************************************************************************
- *
- * @fn char *GTPmakeValidFundefName (char *guard_str, char *fundef_name)
- *
- * @brief Generates a unique function name, based on an existing function name.
- * If this function name contains no special characters, we prepend a unique
- * identifier. Otherwise, in cases such as an overloaded operator (+, -, *, /),
- * we only return this unique identifier.
- *
- ******************************************************************************/
-char *
-GTPmakeValidFundefName (const char *guard_str, char *fundef_name)
-{
-    char *name, *res;
-
-    DBUG_ENTER ();
-
-    name = TRAVtmpVarName (guard_str);
-    res = IsValidFundefName (fundef_name)
-            ? STRcatn (3, name, "_", fundef_name)
-            : STRcpy (name);
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * @fn node *GTPmakePreCheck (node *fundef, char *pred,
- *                            node *assigns, node *checks)
+ * @fn node *GTPmakePreCheck (node *fundef, node *assigns, node *checks)
  *
  * @brief Generates a function that containts the pre-conditions for a function
  * with type patterns. It returns true if all constraints are satisfied,
@@ -221,27 +194,39 @@ GTPmakeValidFundefName (const char *guard_str, char *fundef_name)
  *
  ******************************************************************************/
 node *
-GTPmakePreCheck (node *fundef, char *pred, node *assigns, node *checks)
+GTPmakePreCheck (node *fundef, node *assigns, node *checks)
 {
-    node *args, *conds, *res;
+    node *conditions, *pred_let, *pred_ret;
+    node *formal_args, *res;
 
     DBUG_ENTER ();
 
-    args = DUPdoDupTree (FUNDEF_ARGS (fundef));
-    conds = MakeConditionGuards ("pre", fundef, pred, FUNDEF_PRECONDS (fundef));
+    // Build function body bottom-up
+    pred_ret = TBmakeSpid (NULL, STRcpy (GTP_PRED_NAME));
+    pred_ret = TBmakeReturn (TBmakeExprs (pred_ret, NULL));
+    res = TBmakeAssign (pred_ret, NULL);
+
+    conditions = MakeConditionGuards ("pre", fundef, FUNDEF_PRECONDS (fundef));
+    res = TCappendAssign (conditions, res);
     FUNDEF_PRECONDS (fundef) = NULL;
 
-    res = TCappendAssign (assigns, checks);
-    res = TCappendAssign (res, conds);
-    res = AddPred (pred, res);
-    res = MakeGuardFundef ("pre", fundef, args, res);
+    res = TCappendAssign (checks, res);
+    res = TCappendAssign (assigns, res);
+
+    pred_let = TBmakeLet (TBmakeSpids (STRcpy (GTP_PRED_NAME), NULL),
+                          TBmakeBool (TRUE));
+    res = TBmakeAssign (pred_let, res);
+
+    // Build guard function
+    formal_args = DUPdoDupTree (FUNDEF_ARGS (fundef));
+    res = MakeGuardFundef ("pre", fundef, formal_args, res);
 
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
- * @fn node *GTPmakePostCheck (node *fundef, char *pred, node *assigns,
+ * @fn node *GTPmakePostCheck (node *fundef, node *assigns,
  *                             node *checks, node *return_ids)
  *
  * @brief Generates a function that containts the post-conditions for a function
@@ -252,18 +237,17 @@ GTPmakePreCheck (node *fundef, char *pred, node *assigns, node *checks)
  *
  ******************************************************************************/
 node *
-GTPmakePostCheck (node *fundef, char *pred, node *assigns,
+GTPmakePostCheck (node *fundef, node *assigns,
                   node *checks, node *return_ids)
 {
-    node *args, *conds, *post_lhs, *rets, *res;
+    node *conditions, *pred_let, *pred_ret;
+    node *formal_args, *rets, *post_lhs, *res;
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("GTPmakePostCheck");
-
-    args = DUPdoDupTree (FUNDEF_ARGS (fundef));
-    post_lhs = return_ids;
+    formal_args = DUPdoDupTree (FUNDEF_ARGS (fundef));
     rets = FUNDEF_RETS (fundef);
+    post_lhs = return_ids;
 
     while (rets != NULL) {
         char *v = SPID_NAME (EXPRS_EXPR (post_lhs));
@@ -272,20 +256,30 @@ GTPmakePostCheck (node *fundef, char *pred, node *assigns,
 
         AVIS_DECL (avis) = arg;
         AVIS_DECLTYPE (avis) = TYcopyType (RET_TYPE (rets));
-        args = TCappendArgs (args, arg);
+        formal_args = TCappendArgs (formal_args, arg);
 
         rets = RET_NEXT (rets);
         post_lhs = EXPRS_NEXT (post_lhs);
     }
 
-    conds = MakeConditionGuards ("post", fundef, pred, FUNDEF_POSTCONDS (fundef));
+    // Build function body bottom-up
+    pred_ret = TBmakeSpid (NULL, STRcpy (GTP_PRED_NAME));
+    pred_ret = TBmakeReturn (TBmakeExprs (pred_ret, NULL));
+    res = TBmakeAssign (pred_ret, NULL);
+
+    conditions = MakeConditionGuards ("post", fundef, FUNDEF_POSTCONDS (fundef));
+    res = TCappendAssign (conditions, res);
     FUNDEF_POSTCONDS (fundef) = NULL;
 
-    res = TCappendAssign (assigns, checks);
-    res = TCappendAssign (res, conds);
+    res = TCappendAssign (checks, res);
+    res = TCappendAssign (assigns, res);
 
-    res = AddPred (pred, res);
-    res = MakeGuardFundef ("post", fundef, args, res);
+    pred_let = TBmakeLet (TBmakeSpids (STRcpy (GTP_PRED_NAME), NULL),
+                          TBmakeBool (TRUE));
+    res = TBmakeAssign (pred_let, res);
+
+    // Build guard function
+    res = MakeGuardFundef ("post", fundef, formal_args, res);
 
     DBUG_RETURN (res);
 }
@@ -342,45 +336,6 @@ ConvertRets (node *rets, node **spids, node **exprs)
 
 /******************************************************************************
  *
- * @fn node *MakeGuardLet (node *ids, node *exprs, node* types, char *pred,
- *                         const char *context)
- *
- * @brief Creates a guard assignment:
- *   x1', ..., xn' = guard (x1, .., xn, t1, .., tn, pred)
- * That guards the given identifiers, based on the given predicate.
- *
- ******************************************************************************/
-static node *
-MakeGuardLet (node *ids, node *exprs, node* types, char *pred,
-              const char *context)
-{
-    node *spid, *prf, *res;
-    size_t num_rets;
-
-    DBUG_ENTER ();
-
-    num_rets = TCcountExprs (exprs);
-
-    // Append types to arguments
-    exprs = TCappendExprs (exprs, types);
-    // Append predicate to arguments
-    spid = TBmakeSpid (NULL, STRcpy (pred));
-    exprs = TCappendExprs (exprs, TBmakeExprs (spid, NULL));
-
-    // Create guard primitive
-    prf = TBmakePrf (F_guard, exprs);
-
-    PRF_NUMVARIABLERETS (prf) = num_rets;
-    PRF_CONTEXTSTRING (prf) = STRcpy (context);
-    DBUG_PRINT ("guard created with %lu return values", num_rets);
-
-    res = TBmakeLet (ids, prf);
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
  * @fn node *GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
  *
  * @brief Surrounds a function with type patterns with the newly generated pre-
@@ -395,12 +350,8 @@ GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
     node *pre_lhs = NULL, *pre_args = NULL;
     node *post_lhs = NULL, *post_args = NULL;
     node *ap, *let, *body;
-    str_buf *buf;
-    char *pred;
 
     DBUG_ENTER ();
-
-    pred = TRAVtmpVarName ("pred");
 
     ConvertArgs (FUNDEF_ARGS (fundef), &pre_lhs, &pre_args);
     ConvertRets (FUNDEF_RETS (fundef), &post_lhs, &post_args);
@@ -409,34 +360,16 @@ GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
     body = TBmakeAssign (TBmakeReturn (DUPdoDupTree (post_args)), NULL);
 
     if (post != NULL) {
-        // x, y, z = guard (x, y, z, pred)
-        buf = SBUFcreate (256);
-        buf = SBUFprintf (buf, "One or more type pattern post-conditions "
-                               "of %s failed", FUNDEF_NAME (fundef));
-        let = MakeGuardLet (DUPdoDupTree (post_lhs),
-                            DUPdoDupTree (post_args),
-                            TUmakeTypeExprsFromRets (FUNDEF_RETS (fundef)),
-                            pred,
-                            SBUF2strAndFree (&buf));
-
-        body = TBmakeAssign (let, body);
+        // x, y, z = conditionalAbort (x, y, z, pred)
+        let = TCmakeSpap1 (NSgetNamespace (global.rterrorname),
+                           STRcpy ("conditionalAbort"),
+                           TBmakeSpid (NULL, STRcpy (GTP_PRED_NAME)));
+        body = TBmakeAssign (TBmakeLet (NULL, let), body);
 
         // pred = foo_post (a, b, x, y, z)
-        ap = TBmakeAp (post, TCappendExprs (DUPdoDupTree (pre_args), post_args));
-        let = TBmakeLet (TBmakeSpids (STRcpy (pred), NULL), ap);
-        body = TBmakeAssign (let, body);
-    }
-
-    if (pre != NULL) {
-        // x, y, z = guard (x, y, z, pred)
-        buf = SBUFcreate (256);
-        buf = SBUFprintf (buf, "One or more type pattern pre-conditions "
-                               "of %s failed", FUNDEF_NAME (fundef));
-        let = MakeGuardLet (DUPdoDupTree (post_lhs),
-                            DUPdoDupTree (post_args),
-                            TUmakeTypeExprsFromRets (FUNDEF_RETS (fundef)),
-                            pred,
-                            SBUF2strAndFree (&buf));
+        ap = TBmakeAp (post,
+                       TCappendExprs (DUPdoDupTree (pre_args), post_args));
+        let = TBmakeLet (TBmakeSpids (STRcpy (GTP_PRED_NAME), NULL), ap);
         body = TBmakeAssign (let, body);
     }
 
@@ -447,27 +380,21 @@ GTPmodifyFundef (node *fundef, node *impl, node *pre, node *post)
     body = TBmakeAssign (let, body);
 
     if (pre != NULL) {
-        // a, b = guard (a, b, pred)
-        buf = SBUFcreate (256);
-        buf = SBUFprintf (buf, "One or more type pattern pre-conditions "
-                               "of %s failed", FUNDEF_NAME (fundef));
-        let = MakeGuardLet (pre_lhs,
-                            DUPdoDupTree (pre_args),
-                            TUmakeTypeExprsFromArgs (FUNDEF_ARGS (fundef)),
-                            pred,
-                            SBUF2strAndFree (&buf));
-        body = TBmakeAssign (let, body);
+        // a, b = conditionalAbort (a, b, pred)
+        let = TCmakeSpap1 (NSgetNamespace (global.rterrorname),
+                           STRcpy ("conditionalAbort"),
+                           TBmakeSpid (NULL, STRcpy (GTP_PRED_NAME)));
+        body = TBmakeAssign (TBmakeLet (NULL, let), body);
 
         // pre_pred = foo_pre (a, b)
         ap = TBmakeAp (pre, pre_args);
-        let = TBmakeLet (TBmakeSpids (STRcpy (pred), NULL), ap);
+        let = TBmakeLet (TBmakeSpids (STRcpy (GTP_PRED_NAME), NULL), ap);
         body = TBmakeAssign (let, body);
     }
 
     FUNDEF_ASSIGNS (fundef) = FREEoptFreeTree (FUNDEF_ASSIGNS (fundef));
     FUNDEF_ASSIGNS (fundef) = body;
     FUNDEF_ISINLINE (fundef) = TRUE;
-    FUNDEF_CHECKIMPLFUNDEF (fundef) = impl;
 
     DBUG_PRINT ("modified function %s", FUNDEF_NAME (fundef));
 

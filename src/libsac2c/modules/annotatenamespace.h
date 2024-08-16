@@ -20,7 +20,6 @@ extern node *ANSprovide (node *arg_node, info *arg_info);
 extern node *ANSfundef (node *arg_node, info *arg_info);
 extern node *ANStypedef (node *arg_node, info *arg_info);
 extern node *ANSobjdef (node *arg_node, info *arg_info);
-extern node *ANSprf (node *arg_node, info *arg_info);
 extern node *ANSspap (node *arg_node, info *arg_info);
 extern node *ANSwhile (node *arg_node, info *arg_info);
 extern node *ANSdo (node *arg_node, info *arg_info);

@@ -73,6 +73,7 @@
 #define PF_MAXFUNAP             @PF_MAXFUNAP@
 #define PF_MAXFUNNAMELEN        @PF_MAXFUNNAMELEN@
 #define SAC_PRELUDE_NAME        "@SAC_PRELUDE_NAME@"
+#define SAC_RTERROR_NAME        "@SAC_RTERROR_NAME@"
 #define SBRK_T                  @SBRK_T@
 
 // XXX we do not define SHARED_LIB_EXT here, as it is used only when building tools

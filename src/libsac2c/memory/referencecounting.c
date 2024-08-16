@@ -555,12 +555,21 @@ RCIprf (node *arg_node, info *arg_info)
      * - a must be counted like a funap use of a
      */
     case F_type_error:
-    case F_guard_error:
     case F_dispatch_error:
     case F_type_conv:
-    case F_type_fix:
         INFO_MODE (arg_info) = rc_apuse;
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        break;
+
+    /**
+     * acc' = conditional_error (acc, pred, "msg")
+     * - Traverse acc and pred as prf
+     * - Ignore msg
+     */
+    case F_conditional_error:
+        INFO_MODE (arg_info) = rc_prfuse;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         break;
 
     /**
@@ -618,9 +627,8 @@ RCIprf (node *arg_node, info *arg_info)
         break;
 
     /**
-     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
+     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
      * - Traverse xi as app since they are aliased into xi'
-     * - Types ti must not be traversed as they are N_type nodes
      * - Traverse pj as prf
      */
     case F_guard:
@@ -634,9 +642,6 @@ RCIprf (node *arg_node, info *arg_info)
             lhs = IDS_NEXT (lhs);
             args = EXPRS_NEXT (args);
         }
-
-        // Skip ti as they are N_type nodes
-        args = TCgetNthExprs (PRF_NUMVARIABLERETS (arg_node), args);
 
         // Traverse remaining pj as prf
         INFO_MODE (arg_info) = rc_prfuse;

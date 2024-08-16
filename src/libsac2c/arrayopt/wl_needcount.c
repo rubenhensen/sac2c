@@ -346,6 +346,7 @@ WLNCid (node *arg_node, info *arg_info)
         case F_val_le_val_VxV:
         case F_val_le_val_SxS:
         case F_shape_matches_dim_VxA:
+        case F_conditional_error:
         case F_guard:
         case F_noteintersect:
             break;

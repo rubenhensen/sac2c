@@ -181,10 +181,6 @@ ETCprf (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("Found N_prf");
     switch (PRF_PRF (arg_node)) {
-    /**
-     * Types can always become more specific at a later optimisation cycle, so
-     * whereas we can eliminate F_type_conv we never eliminate F_type_fix.
-     */
     case F_type_conv:
         DBUG_PRINT ("Found F_type_conv");
         if (TYleTypes (ID_NTYPE (PRF_ARG2 (arg_node)),

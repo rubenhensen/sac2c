@@ -104,8 +104,7 @@ FreeInfo (info *info)
 
 /******************************************************************************
  *
- * @fn node *MakeGuard (node *lhs, node *args, node *types, node *preds,
- *                      const char *msg)
+ * @fn node *MakeGuard (node *lhs, node *args, node *preds, const char *msg)
  *
  * @brief Creates a new guard primitive function and assignment from the given
  * lhs, and the given arguments (the guarded arguments, their types, and the
@@ -115,14 +114,14 @@ FreeInfo (info *info)
  *
  ******************************************************************************/
 static node *
-MakeGuard (node *lhs, node *args, node *types, node *preds, const char *msg)
+MakeGuard (node *lhs, node *args, node *preds, const char *msg)
 {
     node *prf, *assign;
 
     DBUG_ENTER ();
 
     // Append types and predicates to actual arguments
-    args = TCappendExprs (args, TCappendExprs (types, preds));
+    args = TCappendExprs (args, preds);
 
     // Create guard
     prf = TBmakePrf (F_guard, args);
@@ -167,7 +166,7 @@ EmitPreGuard (node **prf_args /* inout */, node **vardecs /* inout */,
 {
     node *avis;
     node *orig_args, *args, *prev_arg;
-    node *lhs = NULL, *typ, *typs = NULL;
+    node *lhs = NULL;
     node *assign;
 
     DBUG_ENTER ();
@@ -222,14 +221,12 @@ EmitPreGuard (node **prf_args /* inout */, node **vardecs /* inout */,
 
         // Convert avis to required nodes
         lhs = TCappendIds (lhs, TBmakeIds (avis, NULL));
-        typ = TBmakeType (TYcopyType (AVIS_TYPE (avis)));
-        typs = TCappendExprs (typs, TBmakeExprs (typ, NULL));
 
         prev_arg = args;
         args = EXPRS_NEXT (args);
     }
 
-    assign = MakeGuard (lhs, orig_args, typs, preds, msg);
+    assign = MakeGuard (lhs, orig_args, preds, msg);
 
     DBUG_RETURN (assign);
 }
@@ -258,7 +255,7 @@ EmitPostGuard (node **prf_lhs /* inout */, node **vardecs /* inout */,
 {
     node *avis;
     node *orig_lhs, *lhs;
-    node *args = NULL, *typ, *typs = NULL;
+    node *args = NULL;
     node *assign;
 
     DBUG_ENTER ();
@@ -280,13 +277,11 @@ EmitPostGuard (node **prf_lhs /* inout */, node **vardecs /* inout */,
 
         // Convert avis to required nodes
         args = TCappendExprs (args, TBmakeExprs (TBmakeId (avis), NULL));
-        typ = TBmakeType (TYcopyType (AVIS_TYPE (avis)));
-        typs = TCappendExprs (typs, TBmakeExprs (typ, NULL));
 
         lhs = IDS_NEXT (lhs);
     }
 
-    assign = MakeGuard (orig_lhs, args, typs, preds, msg);
+    assign = MakeGuard (orig_lhs, args, preds, msg);
 
     DBUG_RETURN (assign);
 }

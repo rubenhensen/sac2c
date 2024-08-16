@@ -2457,9 +2457,9 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         break;
 
     /**
-     * x1', .., xn' = guard (x1, .., xn, t1, .., tn, p1, .., pm)
+     * x1', .., xn' = guard (x1, .., xn, p1, .., pm)
      * - propagate extrema of xi to xi'
-     * - ignore ti and pj
+     * - ignore pj
      */
     case F_guard:
         // Propagate extrema of xi to xi'
