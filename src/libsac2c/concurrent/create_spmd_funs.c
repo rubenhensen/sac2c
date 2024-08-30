@@ -38,10 +38,7 @@
  *
  *   For all LOCAL VARIABLES needed in the new spmd functions we collect
  *   those variables that are being locally defined within the with loop
- *   body. We add to these the left hand side variables of the with-loop
- *   and, for fold with loops, we provide freshly named temporary variables
- *   for each return value. These are needed for the fold operation within
- *   the synchronisation barrier.
+ *   body. We add to these the left hand side variables of the with-loop.
  *
  *   Finally, the newly generated functions are inserted at the end of the
  *   fundef chain.
@@ -301,65 +298,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-static node *
-ATravCAVexprs (node *arg_node, info *arg_info)
-{
-    node *vardecs, *vardec;
-
-    DBUG_ENTER ();
-
-    vardecs = TRAVopt (EXPRS_NEXT (arg_node), arg_info);
-
-    vardec = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
-
-    VARDEC_NEXT (vardec) = vardecs;
-
-    DBUG_RETURN (vardec);
-}
-
-static node *
-ATravCAVid (node *arg_node, info *arg_info)
-{
-    node *vardec;
-
-    DBUG_ENTER ();
-
-    vardec = TBmakeVardec (TBmakeAvis (TRAVtmpVarName (ID_NAME (arg_node)),
-                                       TYcopyType (AVIS_TYPE (ID_AVIS (arg_node)))),
-                           NULL);
-    VARDEC_ISSTICKY (vardec) = TRUE;
-
-    DBUG_RETURN (vardec);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static node *CreateAuxiliaryVardecsFromRets( node *rets)
- *
- * @brief generates one fresh vardec for each return identifier. These will
- *   later be used during code generation for the final folding code within
- *   the synchronisation barrier of the SPMD function.
- *
- *****************************************************************************/
-
-static node *
-CreateAuxiliaryVardecsFromRetExprs (node *retexprs)
-{
-    anontrav_t cav_trav[3]
-      = {{N_exprs, &ATravCAVexprs}, {N_id, &ATravCAVid}, {(nodetype)0, NULL}};
-    node *vardecs;
-
-    DBUG_ENTER ();
-
-    TRAVpushAnonymous (cav_trav, &TRAVsons);
-
-    vardecs = TRAVopt (retexprs, NULL);
-
-    TRAVpop ();
-
-    DBUG_RETURN (vardecs);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn static void HandleLocal( node *avis, info *arg_info)
@@ -455,8 +393,6 @@ CreateSpmdFundef (node *arg_node, info *arg_info)
 
     args = INFO_ARGS (arg_info);
     INFO_ARGS (arg_info) = NULL;
-
-    vardecs = TCappendVardec (CreateAuxiliaryVardecsFromRetExprs (retexprs), vardecs);
 
     withlet = DUPdoDupTreeLut (arg_node, INFO_LUT (arg_info));
     INFO_LUT (arg_info) = LUTremoveContentLut (INFO_LUT (arg_info));

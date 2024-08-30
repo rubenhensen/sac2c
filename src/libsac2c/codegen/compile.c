@@ -3863,7 +3863,22 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
  *
  * @fn  node *MakeFunRetArgsSpmd( node *arg_node, info *arg_info)
  *
- * @brief  Generates ICMs for N_return-node found in body of a SPMD-function.
+ * @brief  Generates the arguments for SPMDFUN_RET pertaining to each N_return
+ *         node. These are quintuplets of the form: 
+ *
+ *            return-variable-name,
+ *              dummy-variable-for-fold-name,
+ *                type of the return variable,
+ *                  ND | MT | XT | ST,
+ *                    foldfun-name | NONE
+ *
+ *         For non-fold return values the tag is ND and foldfun is NONE.
+ *         The dummy variable and its type is always inserted....
+ *         NB: prior to #issue 2430, the N_vardec nodes for the dummy-variables
+ *         were inserted into the AST during mt:spmdf. 
+ *         Now, we create them here. This works well, as the compilation of 
+ *         the vardecs anyways is done *after* the compilation of the function
+ *         body :-)
  *
  ******************************************************************************/
 
@@ -3878,6 +3893,7 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     size_t i;
     node *icm_args = NULL;
     node *last_arg = NULL;
+    node *avis;
     node *vardecs;
     ntype *type;
     node *val_nt;
@@ -3920,9 +3936,15 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
 
             DBUG_ASSERT (vardecs != NULL, "Too few vardecs in SPMD function");
 
-            val_nt = TBmakeId (VARDEC_AVIS (vardecs));
+            // create dummy variable and prepend it to the vardec chain!
+            avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (EXPRS_EXPR (ret_exprs))),
+                               TYcopyType (type));
+            vardecs = TBmakeVardec (avis, vardecs);
+            VARDEC_ISSTICKY (vardecs) = TRUE;
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info)) = vardecs;
+
+            val_nt = TBmakeId (avis);
             ID_NT_TAG (val_nt) = NTUcreateNtTagFromNType (ID_NAME (val_nt), VARDEC_NTYPE (vardecs));
-            vardecs = VARDEC_NEXT (vardecs);
 
             if (foldfun == NULL) {
                 foldfun_tag = TCmakeIdCopyString ("ND");
