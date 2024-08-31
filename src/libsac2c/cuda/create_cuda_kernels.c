@@ -43,6 +43,7 @@
  *    ==>
  *
  *   var1 = ...
+ *
  *   _cuda_thread_space_( ShiftLB ( Gen), l0, 5, l2, 4, u1, u2, 1, 1, 1, 1, 1, 1);
  *                                        \-------/  \-------/  \-----/  \-----/
  *   a_mem = CUDA_kernel( a_mem, l0, l1, l2, u0, u1, u2, var1);
@@ -66,6 +67,10 @@
  *     return a_mem;
  *   }
  *
+ * NB: _cuda_thread_space_ later computes the grid and block parameters from
+ *                         the given arguments.
+ *     _cuda_index_space_ later computes iv, eat1, eat2, and eat3 from the 
+ *                        thread indices of the kernel.
  *
  * 
  * implementation:
@@ -77,22 +82,22 @@
  *   and locally defined ones (N_ids).
  *   For all these variables, upon first encounter we create new, identically name
  *   N_avis nodes and keep track of this through a LUT (old avis, new avis).
- *   -> For the relatively free vars (N_id), we then create N_arg and N_exprs chains
- *   (INFO_ARGS, INFO_PARAMS) for creating a matching pair a function signature
+ *   -> For the relatively free vars (N_id nodes), we then create N_arg and N_exprs
+ *   chains (INFO_ARGS, INFO_PARAMS) for creating a matching pair a function signature
  *   and a function call.
  *   -> For the local vars (N_ids), we create N_vardec nodes (INFO_VARDECS).
  *   The handling of these variables is implemented in
  *      ProcessRelFreeVariable (avis, name, arg_info), and 
- *      ProcessLocalVariable (avis, name, arg_info)
+ *      ProcessLocalVariable (avis, name, arg_info), respectively.
  *   
  *   We change all links to the old N_avis nodes into the new ones. This is correct
  *   as we are traversing the copy of the code which will constitute the body of the
  *   kernel!
  *
- *   Before the aforementioned traversal of the body in spe, CUKNLpart actually 
+ *   Before the aforementioned traversal of the new, to-be function body, CUKNLpart
  *   traverses N_withop and N_withid, thereafter the N_generator.
  *
- *   During N_withop, we make identify the returned memory (INFO_TRAVMEM)
+ *   During N_withop, we identify the returned memory (INFO_TRAVMEM)
  *   which triggers in CUKNLid the creation of return expressions for the kernel
  *   function (INFO_RETEXPRS) and the N_rets as well (INFO_RETS).
  *   This is implemented in 
@@ -103,19 +108,19 @@
  *   insert allocations (INFO_ALLOCASSIGNS) and free (INFO_FREEASSIGNS) operations.
  *   This is implemented in
  *      CreateAllocAndFree (avis, arg_info)
- *   We also pu WITHID_VEC as exprs chain into INFO_INDEXSPACE
+ *   We also put WITHID_VEC as exprs chain into INFO_INDEXSPACE
  *   and the WITHID_IDS as exprs chain in INFO_WLIDS.
  *   Finally, we generate the prf for computing the wlidx. We use a copy of
  *   INFO_WLIDS for the arguments and store the prf call in INFO_PRFWLIDXS.
  *   
- *   After the traversal of the body in spe, we traverse the N_generator.
+ *   After the traversal of the body to-be, we traverse the N_generator.
  *   While doing so, we collect the bounds as exprs chains and append them
  *   to INFO_THREADSPACE and to INFO_INDEXSPACE. This is implemented in 
  *      HandleBoundStepWidthExprs (array, dims, name, arg_info)
  *   Thereafter, we assemble the prf calls _cuda_thread_space_ and
  *   _cuda_index_space_ in INFO_THREADSPACE and INFO_INDEXSPACE.
  *
- *   Now, we have components together. For the new kernel fun, we have:
+ *   Now, we have all components for the new kernel together:
  *      INFO_ARGS          - contains the function arguments
  *      INFO_RETS          - contains the function return types
  *      INFO_VARDECS       - contains the local variable declarations
@@ -681,6 +686,36 @@ CreateRetsAndRetexprs (node *avis, info *arg_info)
     DBUG_RETURN ();
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *FindMem (node *wlidx_avis, node *withop)
+ *
+ * @brief return the WITHOP_MEM pointer of the first withop whose 
+ *        WITHOP_IDX matches the wlidx_avis.
+ *        This function is needed for the wlidx computation in
+ *        CUKNLwithid in order to find a matching shape for a giveni wlidx.
+ *
+ *****************************************************************************/
+static node *
+FindMem (node *wlidx_avis, node *withop)
+{
+    node *mem;
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("searching WITHOP_MEM for '%s'", AVIS_NAME (wlidx_avis));
+    while (wlidx_avis!=WITHOP_IDX (withop)) {
+        DBUG_PRINT ("found WITHOP_IDX '%s'; trying next withop",
+                    AVIS_NAME (WITHOP_IDX (withop)));
+        withop = WITHOP_NEXT (withop);
+        DBUG_ASSERT (withop!=NULL, "matching withop for wlidx '%s' not found!",
+                                   AVIS_NAME (wlidx_avis));
+    }
+    mem = WITHOP_MEM (withop);
+    DBUG_PRINT ("found '%s'", AVIS_NAME (mem));
+
+    DBUG_RETURN (mem);
+}
+
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -1096,10 +1131,10 @@ CUKNLwithid (node *arg_node, info *arg_info)
 
     if (INFO_IN_CUDA_WL (arg_info)) {
 
+        // Process the vector variable 'wlvec':
         DBUG_ASSERT (NODE_TYPE (wlvec) == N_id,
                      "Non N_id node found in N_withid->vec!");
-        iv_new_avis = ProcessLocalVariable (ID_AVIS (WITHID_VEC (arg_node)),
-                                            NULL, arg_info);
+        iv_new_avis = ProcessLocalVariable (ID_AVIS (wlvec), NULL, arg_info);
         CreateAllocAndFree (iv_new_avis, arg_info);
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
             ID_AVIS (WITHID_VEC (arg_node)) = iv_new_avis;
@@ -1108,11 +1143,11 @@ CUKNLwithid (node *arg_node, info *arg_info)
                                                       NULL);
         }
 
+        // Process the scalar variables 'wlids':
         while (wlids != NULL) {
             id = EXPRS_EXPR (wlids);
             new_avis = ProcessLocalVariable (ID_AVIS (id), NULL, arg_info);
             CreateAllocAndFree (new_avis, arg_info);
-
             if (INFO_IN_CUDA_PARTITION (arg_info)) {
                 ID_AVIS (id) = new_avis;
             } else {
@@ -1124,7 +1159,8 @@ CUKNLwithid (node *arg_node, info *arg_info)
             wlids = EXPRS_NEXT (wlids);
         }
 
-        while (wlidxs != NULL && withop != NULL) {
+        // Process the offsets into the unrollings 'wlidxs':
+        while (wlidxs != NULL) {
             id = EXPRS_EXPR (wlidxs);
             new_avis = ProcessLocalVariable (ID_AVIS (id), NULL, arg_info);
 
@@ -1133,7 +1169,7 @@ CUKNLwithid (node *arg_node, info *arg_info)
             } else {
                 CreateAllocAndFree (new_avis, arg_info);
 
-                node *mem_id = WITHOP_MEM (withop);
+                node *mem_id = FindMem (ID_AVIS (id), withop);
                 DBUG_ASSERT (NODE_TYPE (mem_id) == N_id,
                              "Non N_id node found in withop->mem");
                 node *mem_avis = ID_AVIS (mem_id);
@@ -1164,10 +1200,6 @@ CUKNLwithid (node *arg_node, info *arg_info)
             }
 
             wlidxs = EXPRS_NEXT (wlidxs);
-            withop = WITHOP_NEXT (withop);
-            DBUG_ASSERT (((wlidxs == NULL && withop == NULL)
-                          || (wlidxs != NULL && withop != NULL)),
-                         "#withop != #N_withid->wlidxs!");
         }
     }
 

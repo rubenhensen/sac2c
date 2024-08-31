@@ -977,9 +977,10 @@ IWLMEMids (node *arg_node, info *arg_info)
                 AVIS_SSAASSIGN (ids_avis) = INFO_POSTASSIGNS (arg_info);
             }
 
-            /* We stop creating any further device2host assigns */
-            /* XXX what about multi-operator WLs? */
-            INFO_CREATE_D2H (arg_info) = FALSE;
+            /* We stop creating any further device2host assigns
+             * if this is the last N_ids of a WL-LHS. */
+            if (IDS_NEXT (arg_node) == NULL)
+                INFO_CREATE_D2H (arg_info) = FALSE;
         }
     }
 
