@@ -24,7 +24,7 @@
  *         are LaC funs or functions from the module "Math". NB: we 
  *         do traverse into the LaC fun bodies here!                  &&
  *
- *     (6) The N_withops supported are *single operator* WLs of the kind
+ *     (6) The N_withops supported are (multi) operator WLs of the kind
  *         N_genarray, N_modarray, or N_fold; for these, we have the
  *         following constraints:
  *           N_genarray and N_modarray:
@@ -438,15 +438,6 @@ ACUWLgenarray (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("    checking N_genarray!");
     if (!INFO_INWL (arg_info)) {
-        DBUG_PRINT ("      checking single operator!");
-        if (GENARRAY_NEXT (arg_node) != NULL) {
-            INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarn (LINE_TO_LOC (global.linenum),
-                     "Cannot cudarize with-loop due to multiple operators!");
-        }
-        DBUG_PRINT ("      %s!",
-                    (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
-
         DBUG_PRINT ("      checking AKD!");
         if (!TUdimKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
@@ -456,6 +447,8 @@ ACUWLgenarray (node *arg_node, info *arg_info)
         }
         DBUG_PRINT ("      %s!",
                     (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
+
+        GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
     } else {
         if (IDS_AVIS (INFO_LETIDS (arg_info))
              != ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (INFO_CODE (arg_info))))) {
@@ -485,17 +478,13 @@ ACUWLmodarray (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("    checking N_modarray!");
     if (!INFO_INWL (arg_info)) {
-        if (MODARRAY_NEXT (arg_node) != NULL) {
-            INFO_CUDARIZABLE (arg_info) = FALSE;
-            CTIwarn (LINE_TO_LOC (global.linenum),
-                     "Cannot cudarize with-loop due to multiple operators!");
-        }
         if (!TUdimKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
             CTIwarn (LINE_TO_LOC (global.linenum),
                      "Cannot cudarize modarray-with-loop as modarray-"
                      "with-loops require statically known result dimensions!");
         }
+        MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
     } else {
         if (IDS_AVIS (INFO_LETIDS (arg_info))
              != ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (INFO_CODE (arg_info))))) {
