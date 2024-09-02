@@ -2470,6 +2470,7 @@ shape *
 GetWlIterShape (node *wl, node *res_ids)
 {
     node *withop, *shp_node;
+    int iv_len;
     shape *iter_shp;            /* iter-shp for a single with-op */
     shape *ret_iter_shp = NULL; /* final iter-shp which will be returned */
 
@@ -2480,6 +2481,10 @@ GetWlIterShape (node *wl, node *res_ids)
      * determine the iter-shp for each operand and merge the results later on
      */
     withop = WITH_WITHOP (wl);
+    iv_len = WITH_PART (wl) != NULL ? TCcountIds (WITHID_IDS (
+                                                    PART_WITHID (
+                                                      WITH_PART (wl))))
+                                    : -1;
     while (withop != NULL) {
         /* initialization */
         iter_shp = NULL;
@@ -2505,8 +2510,10 @@ GetWlIterShape (node *wl, node *res_ids)
             break;
 
         case N_modarray:
-            if (TYisAKV (IDS_NTYPE (res_ids)) || TYisAKS (IDS_NTYPE (res_ids))) {
-                iter_shp = SHcopyShape (TYgetShape (IDS_NTYPE (res_ids)));
+            if ((iv_len >= 0)
+                && (TYisAKV (IDS_NTYPE (res_ids))
+                    || TYisAKS (IDS_NTYPE (res_ids)))) {
+                iter_shp = SHtakeFromShape (iv_len, TYgetShape (IDS_NTYPE (res_ids)));
             }
             break;
 
