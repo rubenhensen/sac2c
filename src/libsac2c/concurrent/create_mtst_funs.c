@@ -6,43 +6,181 @@
  *
  * description:
  *
- *   This file implements a program traversal that creates MT-variants of all
- *   functions executed in parallel by multiple threads.
+ *   In the MT backend, we implement a flat level of parallelism. That means
+ *   whenever we encounter a with-loop that can be executed in parallel while
+ *   we *are* already executing in parallel, we execute that "inner" with-loop
+ *   sequentially.
+ *   To avoid runtime checks as much as possible, we trace the control flow
+ *   keeping track whether we are still single-threaded (ST) or already inside
+ *   a with-loop that is executed in parallel (MT).
+ *   In case functions are colled from both contexts or whenever we cannot
+ *   statically decide in which context we are, this can, at worst, lead to
+ *   a duplication of the code.
  *
- *   The traversal uses the following rules:
- *     - Start traversing at any exported or provided fundef.
- *     - Classify the current context as ST.
- *     - When we encounter a function application:
+ *   For example:
+ *
+ *     int[*] id (int[*] a)
+ *     {  return a; }
+ *   
+ *     int[.] par (int[.] a)
+ *     {  return with {   // parallel!
+ *                (. <= iv <= .) : a[iv] + 1;
+ *               } : modarray (a);
+ *     }
+ *   
+ *     int[.,.] nested_par (int[.,.] a)
+ *     {  return with {   // parallel!
+ *                (. <= [i] <= .) : par (a[i]);
+ *               } : modarray (a);
+ *     }
+ *   
+ *     int main ()
+ *     {
+ *         a = id (iota (100));
+ *         b = par (a);
+ *         c = reshape ([10,10], a);
+ *         d = nested_par (c);
+ *         ...
+ *     }
+ *
+ *   ==>
+ *
+ *     int[*] id#ST (int[*] a)
+ *     {  return a; }
+ *
+ *     int[.] par#ST (int[.] a)
+ *     {  return with {   // parallel!
+ *                (. <= iv <= .) : a[iv] + 1;
+ *               } : modarray (a);
+ *     }
+ *
+ *     int[.] par#MT (int[.] a)
+ *     {  return with {   // sequential!
+ *                (. <= iv <= .) : a[iv] + 1;
+ *               } : modarray (a);
+ *     }
+ *
+ *     int[.,.] nested_par#ST (int[.,.] a)
+ *     {  return with {   // parallel!
+ *                (. <= [i] <= .) : par#MT (a[i]);
+ *               } : modarray (a);
+ *     }
+ *
+ *     int main#ST ()
+ *     {
+ *         a = id#ST (iota#ST (100));
+ *         b = par#ST (a);
+ *         c = reshape#ST ([10,10], a);
+ *         d = nested_par#ST (c);
+ *         ...
+ *     }
+ *
+ *   Here, we can see how the function "par" gets duplicated,
+ *   how the function calls are adjusted, and how the with-loop
+ *   in the par#MT version gets turned into a sequential as this
+ *   version is called from a parallel context only!
+ *
+ *   To make matters a bit more "interesting", we can encounter 
+ *   not only sequential and parallel with-loops but also 
+ *   potentially-parallel ones, whenever we cannot statically decide
+ *   whether it is worth-while or even possible to run that 
+ *   with-loop in parallel. In fact, the 'par' example from above,
+ *   if left unspecialised, would be such a case. Here, we would
+ *   face roughly the following code when entering this traversal:
+ *
+ *     int[.] par (int[.] a)
+ *     {  if (run_mt_genarray (b_mem, 250)) {
+ *            b = with {   // parallel!
+ *                (. <= iv <= .) : a[iv] + 1;
+ *               } : modarray (a);
+ *        } else {
+ *            b = with {   // sequential!
+ *                (. <= iv <= .) : a[iv] + 1;
+ *               } : modarray (a);
+ *        }
+ *        return b;
+ *     }
+ *
+ *   Again, we need to create an MT and an ST version, but they would
+ *   look like this:
+ *
+ *     int[.] par#MT (int[.] a)
+ *     {  
+ *        b = with {   // sequential!
+ *            (. <= iv <= .) : a[iv] + 1;
+ *           } : modarray (a);
+ *        return b;
+ *     }
+ *
+ *     int[.] par#ST (int[.] a)
+ *     {
+ *         pred = run_mt_genarray (b_mem, 250);
+ *         if (pred) {
+ *            b = with {   // parallel!
+ *                (. <= iv <= .) : a[iv] + 1;
+ *               } : modarray (a);
+ *        } else {
+ *            b = with {   // sequential!
+ *                (. <= iv <= .) : a[iv] + 1;
+ *               } : modarray (a);
+ *        }
+ *        return b;
+ *     }
+ *
+ *   Finally, we may encounter functions that are not called at all.
+ *   Although these are dead code and could have been eliminated by 
+ *   DFR, the user can turn this optimisation off or DFR can be 
+ *   buggy (see issues #2432 and #2433 for examples).
+ *   While this is not a problem for functions that have parallel
+ *   or sequential with-loops, it is a problem for potentially
+ *   parallel ones. For these, we need to make sure we lift the
+ *   predicate as in the 'par#ST' example from above. (see issue 
+ *   #2432).
+ *
+ *   The traversal is implemented as follows:
+ *   Conceptually, we have three different traversals:
+ *     1) we skip through the fundef until we find "main".
+ *        This is implemented by a simple loop in MTSTFmodule.
+ *     2) we follow the callgraph through MTSTFap nodes starting
+ *        at MTSTFfundef of main.
+ *        At the start, we set the context to ST
+ *        (INFO_MTCONTEXT == false).
+ *        When we encounter a function (MTSTFfundef), we do:
  *        - If it is not marked, mark it with the current marker.
  *           - Traverse into the function recursively.
- *        - If it is marked with our current marker, skip.
- *        - If it is marked with the other marker, create a copy of the
- *          fundef and mark that one with our marker. Replace application with
- *          application to this function. Traverse into the new function.
- *     - When we encounter a with-loop tagged for parallelisation by the cost
- *       model:
+ *        - If it is marked with our current marker, return.
+ *        - If it is marked with the other marker, check whether 
+ *          FUNDEF_COMPANION already exists; if not, create a copy of the
+ *          fundef and mark that one with our marker. Put the new fundef 
+ *          into INFO_COMPANIONS, make sure both functions have
+ *          FUNDEF_COMPANION apropriately set, and replace the old
+ *          application with an application to the companion function.
+ *          Traverse into the companion if it was freshly built.
+ *        When we encounter a with-loop (MTSTFwith2) tagged for
+ *        parallelisation by the cost model:
  *        - If the current marker is ST, set the current marker to MT and
  *          enter the with-loop. Reset marker to ST upon return.
  *        - If the current marker is MT, untag the with-loop and leave it
  *          to sequential execution (more precisely replicated parallel
  *          execution due to an outer parallelisation context).
- *     - When we encounter a conditional introduced by the MT cost model (i.e.
- *       (parallel or sequntial execution of a with-loop depending on data
- *       not available before runtime) or CUDA cost model
+ *        When we encounter a conditional (MTSTFcond) introduced by the MT
+ *        cost model (i.e. parallel or sequntial execution of a with-loop
+ *        depending on data not available before runtime) or CUDA cost model
  *        - If the current marker is ST, we continue traversing into both
- *          branches.
+ *          branches and lift the conditional out.
  *        - If the current marker is MT, we eliminate the conditional and
  *          the parallel/CUDA branch and continue with the sequential branch.
- *
- *    This algorithm repeats until all functions are marked and thus a fixed
- *    point is reached. Tagged functions are put in the MT subnamespace.
+ *     3) we traverse through the fundef chain looking for functions that 
+ *        have not yet been marked; These functions are deleted. At the end
+ *        the chain, append the INFO_COMPANIONS. Again, we implement this 
+ *        simple traversal in MTSTFmodule.
  *
  *****************************************************************************/
 
 #include "create_mtst_funs.h"
 #include "create_mtst_funs_module.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "MTSTF"
 #include "debug.h"
 
 #include "tree_basic.h"
@@ -64,7 +202,6 @@
 
 struct INFO {
     bool mtcontext :1;
-    bool onspine :1;
     node *vardecs;
     node *companions;
     node *spmdassigns;
@@ -76,7 +213,6 @@ struct INFO {
  */
 
 #define INFO_MTCONTEXT(n) ((n)->mtcontext)
-#define INFO_ONSPINE(n) ((n)->onspine)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_COMPANIONS(n) ((n)->companions)
 #define INFO_SPMDASSIGNS(n) ((n)->spmdassigns)
@@ -96,7 +232,6 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_MTCONTEXT (result) = FALSE;
-    INFO_ONSPINE (result) = FALSE;
     INFO_VARDECS (result) = NULL;
     INFO_COMPANIONS (result) = NULL;
     INFO_SPMDASSIGNS (result) = NULL;
@@ -257,74 +392,40 @@ MakeCompanion (node *fundef)
 
 /******************************************************************************
  *
- * @fn node *HandleApFold( node *arg_node, info *arg_info)
- *
- *  @brief Joint traversal function for N_ap and N_fold nodes.
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
+ * @fn void SetMtNamespace (node * fundef)
  *
  *****************************************************************************/
 
-static node *
-HandleApFold (node *callee, info *arg_info)
+static void
+SetMtNamespace (node * fundef)
 {
+    namespace_t *old_namespace;
+
     DBUG_ENTER ();
-
-    if (FUNDEF_ISMTFUN (callee) || FUNDEF_ISSTFUN (callee)) {
-        /*
-         * This function has already been processed before.
-         */
-        if ((FUNDEF_ISMTFUN (callee) && INFO_MTCONTEXT (arg_info))
-            || (FUNDEF_ISSTFUN (callee) && !INFO_MTCONTEXT (arg_info))) {
-            /*
-             * The called function is already in the right mode.
-             * Hence, we do nothing.
-             */
-        } else {
-            /*
-             * The called function is in the wrong mode.
-             */
-            if (FUNDEF_COMPANION (callee) == NULL) {
-                /*
-                 * There is no companion yet, so we must create one,
-                 * exchange the callee with its companion, traverse
-                 * the new companion to recursively bring it into the right mode,
-                 * and eventually append it to the list of companions.
-                 */
-
-                callee = TRAVdo (MakeCompanion (callee), arg_info);
-
-                FUNDEF_NEXT (callee) = INFO_COMPANIONS (arg_info);
-                INFO_COMPANIONS (arg_info) = callee;
-            } else {
-                /*
-                 * The companion already exists. So, we simply exchange the called
-                 * function.
-                 */
-                callee = FUNDEF_COMPANION (callee);
-            }
-        }
-    } else {
-        /*
-         * This function has not yet been processed at all.
-         * We turn it into the right mode and continue traversal in the callee,
-         * unless it is an external function that cannot be replicated for either
-         * mode.
-         */
-
-        if (!FUNDEF_ISEXTERN (callee)) {
-            FUNDEF_ISMTFUN (callee) = INFO_MTCONTEXT (arg_info);
-            FUNDEF_ISSTFUN (callee) = !INFO_MTCONTEXT (arg_info);
-
-            callee = TRAVdo (callee, arg_info);
-        }
-    }
-
-    DBUG_RETURN (callee);
+    old_namespace = FUNDEF_NS (fundef);
+    FUNDEF_NS (fundef) = NSgetMTNamespace (old_namespace);
+    old_namespace = NSfreeNamespace (old_namespace);
+    DBUG_RETURN ();
 }
+
+/******************************************************************************
+ *
+ * @fn void SetStNamespace (node * fundef)
+ *
+ *****************************************************************************/
+
+static void
+SetStNamespace (node * fundef)
+{
+    namespace_t *old_namespace;
+
+    DBUG_ENTER ();
+    old_namespace = FUNDEF_NS (fundef);
+    FUNDEF_NS (fundef) = NSgetSTNamespace (old_namespace);
+    old_namespace = NSfreeNamespace (old_namespace);
+    DBUG_RETURN ();
+}
+
 
 /******************************************************************************
  *
@@ -342,11 +443,40 @@ HandleApFold (node *callee, info *arg_info)
 node *
 MTSTFmodule (node *arg_node, info *arg_info)
 {
+    node * fundefs;
+    node * last;
     DBUG_ENTER ();
 
-    INFO_ONSPINE (arg_info) = TRUE;
+    fundefs = MODULE_FUNS (arg_node);
 
-    MODULE_FUNS (arg_node) = TRAVopt(MODULE_FUNS (arg_node), arg_info);
+    DBUG_PRINT ("Searching for main...");
+
+    while ((fundefs != NULL) && !FUNDEF_ISMAIN (fundefs)) {
+        fundefs = FUNDEF_NEXT (fundefs);
+    }
+    DBUG_ASSERT (fundefs != NULL, "main function missing!");
+
+    DBUG_PRINT ("Traversing call-graph starting at main...");
+    DBUG_PRINT ("  setting context to ST");
+    INFO_MTCONTEXT (arg_info) = FALSE;
+    fundefs = TRAVdo (fundefs, arg_info);
+
+    DBUG_PRINT ("Searching for untagged functions...");
+    fundefs = MODULE_FUNS (arg_node);
+    last = NULL;
+    while (fundefs != NULL) {
+        DBUG_PRINT ("  traversing function '%s'", FUNDEF_NAME (fundefs));
+        if (!FUNDEF_ISSTFUN (fundefs) && !FUNDEF_ISMTFUN (fundefs)) {
+            DBUG_PRINT ("  deleting dead function");
+            fundefs = FREEdoFreeNode (fundefs); // zombiefies fundef only!
+        }
+        FUNDEF_COMPANION (fundefs) = NULL;
+        last = fundefs;
+        fundefs = FUNDEF_NEXT (fundefs);
+    }
+    DBUG_PRINT ("appending companions");
+    FUNDEF_NEXT (last) = INFO_COMPANIONS (arg_info);
+    MODULE_FUNS (arg_node) = FREEremoveAllZombies (MODULE_FUNS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -367,81 +497,54 @@ MTSTFmodule (node *arg_node, info *arg_info)
 node *
 MTSTFfundef (node *arg_node, info *arg_info)
 {
+    node *vardecs;
     DBUG_ENTER ();
 
-    if (INFO_ONSPINE (arg_info)) {
+    DBUG_PRINT ("  traversing function '%s'", FUNDEF_NAME (arg_node));
 
-        if (FUNDEF_ISMAIN (arg_node)) {
-            FUNDEF_ISSTFUN (arg_node) = TRUE;
+    vardecs = INFO_VARDECS (arg_info);
+    INFO_VARDECS (arg_info) = NULL;
 
-            INFO_MTCONTEXT (arg_info) = FALSE;
-            INFO_ONSPINE (arg_info) = FALSE;
-            arg_node = TRAVdo (arg_node, arg_info);
-            INFO_ONSPINE (arg_info) = TRUE;
-        }
-
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (!FUNDEF_ISSTFUN (arg_node) && !FUNDEF_ISMTFUN (arg_node)) {
+        DBUG_PRINT ("  not marked yet");
+        if (INFO_MTCONTEXT (arg_info)) {
+            DBUG_PRINT ("  setting to MT");
+            FUNDEF_ISMTFUN (arg_node) = TRUE;
+            SetMtNamespace (arg_node);
         } else {
-            /*
-             * We are at the end of the spine, so we append the companions
-             * collected in the info structure if they exist. If they do exist,
-             * we also traverse into them. This has no effect during the top-down
-             * traversal as the companions have been fully processed yet, but we
-             * need to clean up properly throughout *all* functions during the
-             * bottom-up traversal. Likewise, we need to set the appropriate name
-             * space for *all* functions.
-             */
-            if (INFO_COMPANIONS (arg_info) != NULL) {
-                FUNDEF_NEXT (arg_node) = INFO_COMPANIONS (arg_info);
-                INFO_COMPANIONS (arg_info) = NULL;
-                FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+            DBUG_PRINT ("  setting to ST");
+            FUNDEF_ISSTFUN (arg_node) = TRUE;
+            SetStNamespace (arg_node);
+        }
+        DBUG_PRINT ("  traversing body");
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+    } else if ((INFO_MTCONTEXT (arg_info) && FUNDEF_ISSTFUN (arg_node))
+               || (!INFO_MTCONTEXT (arg_info) && FUNDEF_ISMTFUN (arg_node))) {
+        DBUG_PRINT ("  wrongly tagged fundef found");
+        if (FUNDEF_COMPANION (arg_node) != NULL) {
+            DBUG_PRINT ("  existing companion found");
+            arg_node = FUNDEF_COMPANION (arg_node);
+        } else {
+            DBUG_PRINT ("  creating new companion");
+            arg_node = MakeCompanion (arg_node);
+            if (INFO_MTCONTEXT (arg_info)) {
+                DBUG_PRINT ("  setting to MT");
+                SetMtNamespace (arg_node);
+            } else {
+                DBUG_PRINT ("  setting to ST");
+                SetStNamespace (arg_node);
             }
-        }
-
-        /*
-         * On the traversal back up the tree, put all functions marked MT into
-         * the MT namespace and all functions marked ST into the ST name space.
-         */
-        if (FUNDEF_ISMTFUN (arg_node)) {
-            namespace_t *old_namespace = FUNDEF_NS (arg_node);
-            FUNDEF_NS (arg_node) = NSgetMTNamespace (old_namespace);
-            old_namespace = NSfreeNamespace (old_namespace);
-        }
-
-        if (FUNDEF_ISSTFUN (arg_node)) {
-            namespace_t *old_namespace = FUNDEF_NS (arg_node);
-            FUNDEF_NS (arg_node) = NSgetSTNamespace (old_namespace);
-            old_namespace = NSfreeNamespace (old_namespace);
-        }
-
-        /*
-         * We clear all companion attributes as they are only meaningful and legal
-         * within the current phase.
-         */
-        FUNDEF_COMPANION (arg_node) = NULL;
-    } else {
-        /*
-         * We are *not* at the spine of the fundef chain.
-         */
-        DBUG_ASSERT (FUNDEF_ISSTFUN (arg_node) || FUNDEF_ISMTFUN (arg_node),
-                     "Encountered off-spine fundef that is neither MT nor ST.");
-
-        INFO_MTCONTEXT (arg_info) = FUNDEF_ISMTFUN (arg_node);
-
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            node *vardecs;
-
-            vardecs = INFO_VARDECS (arg_info);
-            INFO_VARDECS (arg_info) = NULL;
-
+            DBUG_PRINT ("  traversing body");
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-            FUNDEF_VARDECS (arg_node)
-              = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDECS (arg_node));
-            INFO_VARDECS (arg_info) = vardecs;
         }
+    } else {
+        DBUG_PRINT ("  matching tag found; nothing to do!");
     }
+
+    FUNDEF_VARDECS (arg_node)
+        = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDECS (arg_node));
+    INFO_VARDECS (arg_info) = vardecs;
 
     DBUG_RETURN (arg_node);
 }
@@ -465,6 +568,7 @@ MTSTFcond (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (IsSpmdConditional (arg_node) || IsCudaConditional (arg_node)) {
+	DBUG_PRINT ("dynamic concurrency check found");
         if (INFO_MTCONTEXT (arg_info)) {
             /*
              * We are already in an MT context and this is a special conditional
@@ -472,6 +576,7 @@ MTSTFcond (node *arg_node, info *arg_info)
              * until runtime. We can now decide that we do *not* want to parallelise
              * the associated with-loop in the current context.
              */
+            DBUG_PRINT ("within MT => delete concurrency check");
 
             COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
@@ -492,6 +597,7 @@ MTSTFcond (node *arg_node, info *arg_info)
              */
             node *new_avis;
 
+            DBUG_PRINT ("lifting concurrency check");
             COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
             COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
@@ -637,7 +743,7 @@ MTSTFap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    AP_FUNDEF (arg_node) = HandleApFold (AP_FUNDEF (arg_node), arg_info);
+    AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -660,7 +766,7 @@ MTSTFfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    FOLD_FUNDEF (arg_node) = HandleApFold (FOLD_FUNDEF (arg_node), arg_info);
+    FOLD_FUNDEF (arg_node) = TRAVdo (FOLD_FUNDEF (arg_node), arg_info);
 
     FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
 

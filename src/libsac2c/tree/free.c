@@ -326,7 +326,7 @@ FREEoptFreeTree (node *free_node)
 /******************************************************************************
  *
  * Function:
- *   node *FreeZombie( node *fundef)
+ *   node *FREEfreeZombie( node *fundef)
  *
  * Description:
  *   - if head of 'fundef' is a zombie:
@@ -335,15 +335,15 @@ FREEoptFreeTree (node *free_node)
  *       Returns 'fundef' in unmodified form.
  *
  ******************************************************************************/
-static node *
-FreeZombie (node *fundef)
+node *
+FREEfreeZombie (node *fundef)
 {
     node *tmp;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
-                 "FreeZombie() is suitable for N_fundef nodes only!");
+                 "FREEfreeZombie() is suitable for N_fundef nodes only!");
 
     if (FUNDEF_ISZOMBIE (fundef)) {
 
@@ -400,7 +400,7 @@ FREEremoveAllZombies (node *arg_node)
         FUNDEF_NEXT (arg_node) = FREEremoveAllZombies (FUNDEF_NEXT (arg_node));
     }
 
-    arg_node = FreeZombie (arg_node);
+    arg_node = FREEfreeZombie (arg_node);
 
     DBUG_RETURN (arg_node);
 }
