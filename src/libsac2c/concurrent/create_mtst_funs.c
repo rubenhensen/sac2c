@@ -148,6 +148,9 @@
  *        When we encounter a function (MTSTFfundef), we do:
  *        - If it is not marked, mark it with the current marker.
  *           - Traverse into the function recursively.
+ *           - if it has no body, mark it FUNDEF_ISNEEDED to
+ *             make sure traversal 3) does not delete vital
+ *             functions.
  *        - If it is marked with our current marker, return.
  *        - If it is marked with the other marker, check whether 
  *          FUNDEF_COMPANION already exists; if not, create a copy of the
@@ -466,11 +469,13 @@ MTSTFmodule (node *arg_node, info *arg_info)
     last = NULL;
     while (fundefs != NULL) {
         DBUG_PRINT ("  traversing function '%s'", FUNDEF_NAME (fundefs));
-        if (!FUNDEF_ISSTFUN (fundefs) && !FUNDEF_ISMTFUN (fundefs)) {
+        if (!FUNDEF_ISSTFUN (fundefs) && !FUNDEF_ISMTFUN (fundefs)
+            && !FUNDEF_ISNEEDED (fundefs)) {
             DBUG_PRINT ("  deleting dead function");
             fundefs = FREEdoFreeNode (fundefs); // zombiefies fundef only!
         }
         FUNDEF_COMPANION (fundefs) = NULL;
+        FUNDEF_ISNEEDED (fundefs) = FALSE;
         last = fundefs;
         fundefs = FUNDEF_NEXT (fundefs);
     }
@@ -507,17 +512,22 @@ MTSTFfundef (node *arg_node, info *arg_info)
 
     if (!FUNDEF_ISSTFUN (arg_node) && !FUNDEF_ISMTFUN (arg_node)) {
         DBUG_PRINT ("  not marked yet");
-        if (INFO_MTCONTEXT (arg_info)) {
-            DBUG_PRINT ("  setting to MT");
-            FUNDEF_ISMTFUN (arg_node) = TRUE;
-            SetMtNamespace (arg_node);
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            if (INFO_MTCONTEXT (arg_info)) {
+                DBUG_PRINT ("  setting to MT");
+                FUNDEF_ISMTFUN (arg_node) = TRUE;
+                SetMtNamespace (arg_node);
+            } else {
+                DBUG_PRINT ("  setting to ST");
+                FUNDEF_ISSTFUN (arg_node) = TRUE;
+                SetStNamespace (arg_node);
+            }
+            DBUG_PRINT ("  traversing body");
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         } else {
-            DBUG_PRINT ("  setting to ST");
-            FUNDEF_ISSTFUN (arg_node) = TRUE;
-            SetStNamespace (arg_node);
+            DBUG_PRINT ("  no body => unmarked");
+            FUNDEF_ISNEEDED (arg_node) = TRUE;
         }
-        DBUG_PRINT ("  traversing body");
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     } else if ((INFO_MTCONTEXT (arg_info) && FUNDEF_ISSTFUN (arg_node))
                || (!INFO_MTCONTEXT (arg_info) && FUNDEF_ISMTFUN (arg_node))) {
@@ -536,15 +546,21 @@ MTSTFfundef (node *arg_node, info *arg_info)
                 SetStNamespace (arg_node);
             }
             DBUG_PRINT ("  traversing body");
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         }
     } else {
         DBUG_PRINT ("  matching tag found; nothing to do!");
     }
 
-    FUNDEF_VARDECS (arg_node)
-        = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDECS (arg_node));
+    if (INFO_VARDECS (arg_info) != NULL) {
+        DBUG_ASSERT (FUNDEF_BODY (arg_node) != NULL, "vardecs generated for"
+                                                     " function wo body!");
+        FUNDEF_VARDECS (arg_node)
+            = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDECS (arg_node));
+    }
     INFO_VARDECS (arg_info) = vardecs;
+
+    DBUG_PRINT ("  finished function '%s'", FUNDEF_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
