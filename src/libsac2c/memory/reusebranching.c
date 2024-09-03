@@ -354,9 +354,8 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
 
                 /*
                  * Put cids into retexprs
-                 * TODO: Check order
                  */
-                retexprs = TBmakeExprs (TBmakeId (cavis), retexprs);
+                retexprs = TCappendExprs (retexprs, TBmakeExprs (TBmakeId (cavis), NULL));
 
                 thenids = IDS_NEXT (thenids);
                 elseids = IDS_NEXT (elseids);
