@@ -11007,7 +11007,6 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *shpfac_decl_icms = NULL;
     node *shpfac_def_icms = NULL;
     node *tmp_ids;
-    node *idxs_exprs;
     node *withop;
     node *let_neutral;
     char *break_label_str;
@@ -11032,13 +11031,10 @@ COMPwith2 (node *arg_node, info *arg_info)
      * build arguments for  'WL_SCHEDULE__BEGIN'-ICM and 'WL_SCHEDULE__END'-ICM
      */
 
-    WITH2_WITHOP (arg_node) = RemoveIdxDuplicates (WITH2_WITHOP (arg_node));
-
     /*
      * build all required(!) shape factors
      */
     tmp_ids = wlids;
-    idxs_exprs = WITH2_IDXS (wlnode);
     withop = WITH2_WITHOP (wlnode);
 
     while (withop != NULL) {
@@ -11058,13 +11054,19 @@ COMPwith2 (node *arg_node, info *arg_info)
                                                 FALSE, TRUE, FALSE, NULL),
                                   DUPdupIdNt (WITH2_VEC (wlnode)),
                                   TBmakeNum (WITH2_DIMS (arg_node)), shpfac_def_icms);
-
-            idxs_exprs = EXPRS_NEXT (idxs_exprs);
         }
 
         tmp_ids = IDS_NEXT (tmp_ids);
         withop = WITHOP_NEXT (withop);
     }
+
+    /*
+     * We do need WL_DECLARE_SHAPE_FACTOR and WL_DEFINE_SHAPE_FACTOR
+     * for *all* withops so we can generate -check t stuff (see issue 2437).
+     * However, we do *not* need to maintain any duplicates within the WL body.
+     */
+
+    WITH2_WITHOP (arg_node) = RemoveIdxDuplicates (WITH2_WITHOP (arg_node));
 
     icm_args = TBmakeExprs (TBmakeNum (WITH2_DIMS (arg_node)), NULL);
 
