@@ -18,6 +18,7 @@ extern node *EMREcond (node *arg_node, info *arg_info);
 extern node *EMREfundef (node *arg_node, info *arg_info);
 extern node *EMREgenarray (node *arg_node, info *arg_info);
 extern node *EMRElet (node *arg_node, info *arg_info);
+extern node *EMREid (node *arg_node, info *arg_info);
 extern node *EMREmodarray (node *arg_node, info *arg_info);
 extern node *EMREprf (node *arg_node, info *arg_info);
 extern node *EMREvardec (node *arg_node, info *arg_info);

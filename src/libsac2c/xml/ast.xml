@@ -3432,7 +3432,7 @@
         <node name="With" />
       </traverror>
     </traversal>
-    <traversal id="EMRE" name="Reuse elimination" default="none" include="reuseelimination.h">
+    <traversal id="EMRE" name="Reuse elimination" default="sons" include="reuseelimination.h">
       <travuser>
         <node name="Assign" />
         <node name="Block" />
@@ -3440,6 +3440,7 @@
         <node name="Fundef" />
         <node name="Genarray" />
         <node name="Let" />
+        <node name="Id" />
         <node name="Modarray" />
         <node name="Prf" />
         <node name="Vardec" />

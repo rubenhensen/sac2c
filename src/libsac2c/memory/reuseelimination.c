@@ -4,6 +4,35 @@
  * @ingroup mm
  *
  * @{
+ *
+ *  This traversal eliminates applications of the prfs
+ *  _reuse_, _reshape_, and _resize_.
+ *
+ *  An assignment of the form:
+ *
+ *     a = reuse( n, b);
+ *
+ *  is replaced by:
+ *
+ *     a = b; (if b is an argument of a loop function)
+ *
+ *  or it is eliminated completely and all occurances of 
+ *  'a' are replaced by 'b'.
+ *
+ *  In both cases, any DEC_RC operation on 'b' is removed.
+ *  In case n>1, we need to inject an INC_RC assignment.
+ *  
+ *  The implementation is rather straight-forward.
+ *  We use a dataflow mask in INFO_MASK to keep track of
+ *  all variables 'b' that require a DEC_RC adjustment
+ *  which is performed in EMREprf.
+ *  We use a LUT in INFO_LUT to keep track of the to-be-renamed
+ *  variables. For each such variable, we store the new N_avis
+ *  of 'b' under the key of the old N_avis of 'a'.
+ *  INFO_REMASSIGN signals to the surrounding N_assign that this 
+ *  assignment needs to be deleted.
+ *  INFO_POSTASSIGN is used to implement the possible injection 
+ *  of INC_RC assignments.
  */
 
 /**
@@ -300,6 +329,28 @@ EMRElet (node *arg_node, info *arg_info)
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMREid(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMREid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    ID_AVIS (arg_node) = (node *)LUTsearchInLutPp (INFO_LUT (arg_info),
+                                                   ID_AVIS (arg_node));
     DBUG_RETURN (arg_node);
 }
 
