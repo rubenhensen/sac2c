@@ -596,6 +596,15 @@ typedef struct DFT {
     node **deriveable_partials;
 } dft_res;
 
+typedef struct DFT_STATE {
+    size_t max_funs;
+    size_t cnt_funs;
+    node **fundefs;
+    bool *legal;
+    int *ups;
+    int *downs;
+} dft_state;
+
 /*
  * Type-Comparison
  */

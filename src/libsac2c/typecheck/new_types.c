@@ -122,14 +122,7 @@ typedef struct ATTR_POLYUSER {
     bool renest : 1;
 } attr_polyuser;
 
-typedef struct DFT_STATE {
-    size_t max_funs;
-    size_t cnt_funs;
-    node **fundefs;
-    bool *legal;
-    int *ups;
-    int *downs;
-} dft_state;
+
 
 typedef struct SIMPLE {
     simpletype simple;
@@ -237,13 +230,18 @@ struct NTYPE {
 #define UNION_MEMBER(n, i) ((n)->sons[i])
 #define PROD_MEMBER(n, i) ((n)->sons[i])
 
-#define FUN_POLY(n) ((n)->sons[0])
-#define FUN_UPOLY(n) ((n)->sons[1])
-#define FUN_IBASE(n, i) ((n)->sons[i + 2])
+#define FUN_POLY(n) ((n)->sons[0])          // delete?
+#define FUN_UPOLY(n) ((n)->sons[1])         // delete?
+#define FUN_IBASE(n, i) ((n)->sons[i + 2])  // delete?
+#define FUN_DEF(n, i)       ((n)->sons[i])
+#define DEF_PARAMS(n)       ((n)->sons[0])
+#define DEF_RES(n)          ((n)->sons[1])
+#define PARAMS_SET(n, i)    ((n)->sons[i])
+#define RES_SET(n, i)       ((n)->sons[i])
 
-#define IBASE_GEN(n) ((n)->sons[0])
-#define IBASE_SCAL(n) ((n)->sons[1])
-#define IBASE_IARR(n) ((n)->sons[2])
+#define IBASE_GEN(n)        ((n)->sons[0])
+#define IBASE_SCAL(n)       ((n)->sons[1])
+#define IBASE_IARR(n)       ((n)->sons[2])
 
 #define IARR_GEN(n) ((n)->sons[0])
 #define IARR_IDIM(n, i) ((n)->sons[i + 1])
@@ -1287,7 +1285,7 @@ TYgetPolyUserDeNest (ntype *type)
 bool
 TYgetPolyUserReNest (ntype *type)
 {
-    DBUG_ENTER ();
+    DBUG_ENTER (); 
 
     DBUG_ASSERT (NTYPE_CON (type) == TC_polyuser,
                  "TYgetPolyUserReNest applied to non polyuser type!");
@@ -1371,184 +1369,42 @@ TYgetBottomError (ntype *type)
  *   ntype * TYmakeFunType( ntype *arg, ntype *res, node *fun_info)
  *
  * description:
- *  function for creating function types. It implicitly creates the intersection
- *  type that contains all up-projections!
- *  For efficiency reasons, function types are represented by a kind of decision
- *  tree made up of type constructors. Its structure is similar to the hierarchy
- *  of array types but adjusted to the needs of dispatching overloaded functions
- *  by means of a given argument type.
- *  In general, we have the following structure :
- *
- *         TC_fun
- *       /   |    \  ...
- *      /<a> |<a=> \
- *   {trees here!}  TC_ibase -- scalar type (e.g. INT)
- *                 /    |    \
- *                /[]   |[*]  \
- *                             TC_iarr
- *                             /     \  ...
- *                            /[+]    \
- *                                     TC_idim -- dimensionality (e.g. 2)
- *                                     /     \  ...
- *                                    /[.,.]  \
- *                                             TC_ishape -- shape (e.g. [3,4])
- *                                             /
- *                                            /[3,4]
- *
- *  All "open ends" of this structure point to TC_ires nodes which hold the
- *  return types of the given function. The dots right of some edges indicate
- *  that there may be multiple of the lower nodes attached, i.e., there may be
- *  several TC_ibase nodes under a single TC_fun node, and there may also be
- *  several TC_idim and several TC_ishape nodes.
- *  However, since this function only creates the type for a single
- *  non-overloaded function, it does only create single ones. In case the
- *  parameter type of the function is a generic one, e.g. int[.,.], only that
- *  part of the tree is constructed that is necessary to accomodate it. In
- *  case of int[.,.], simply the lowest TC_ishape node would be missing.
- *
+ * A function creating a simple table like structure for function types. 
+ *               fun
+ *                |
+ *               prod
+ *          /           \
+ *         /             \
+ *        /               \
+ *    prod (args)          prod (returns)
+ *     /  |   \          /        |     \
+ * arg0  arg1  arg2     alpha0  alpha1  alpha2
  ******************************************************************************/
 
 ntype *
-TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
+TYmakeFunType (ntype *args, ntype *res_type, node *fundef) 
 {
+
     ntype *fun = NULL;
-    ntype *base = NULL;
-    ntype *arr = NULL;
-    ntype *dim = NULL;
-    ntype *shape = NULL;
+    ntype *def = NULL;
     ntype *res = NULL;
-    ntype *aks = NULL;
-
-#ifndef DBUG_OFF
-    char *tmp = NULL;
-    int i = 0;
-#endif
-
-    DBUG_ENTER ();
-    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on entering TYmakeFunType: %zu",
-                    global.current_allocated_mem);
-    DBUG_PRINT_TAG ("NTY", "fun: %s", CTIitemName (fundef));
-    DBUG_PRINT_TAG ("NTY", "rets: %zu", TCcountRets (FUNDEF_RETS (fundef)));
-
-    node *r = FUNDEF_RETS (fundef);
-    while (r != NULL) {
-        DBUG_PRINT_TAG ("NTY", "  arg %d: %s", i,
-                        TYtype2DebugString (RET_TYPE (r), FALSE, 0));
-        r = RET_NEXT (r);
-#ifndef DBUG_OFF
-        i++;
-#endif
-    }
 
     res = MakeNtype (TC_ires, 1);
-
     IRES_TYPE (res) = res_type;
-
     IRES_NUMFUNS (res) = 1;
     IRES_FUNDEFS (res) = (node **)MEMmalloc (sizeof (node *));
     IRES_FUNDEF (res, 0) = fundef;
     IRES_POSS (res) = (int *)MEMmalloc (sizeof (int));
     IRES_POS (res, 0) = 0;
 
-    base = MakeNtype (TC_ibase, 3);
+    def = MakeNtype (TC_prod, 2);
+    DEF_RES(def) = res;
+    DEF_PARAMS(def) = args;
 
-    switch (NTYPE_CON (arg)) {
-    case TC_akv:
-        DBUG_PRINT_TAG ("NTY", "AKV");
-        aks = TYeliminateAKV (arg);
-        arg = TYfreeType (arg);
-        arg = aks;
-        aks = NULL;
-        /**
-         * there is no break here, as we wish to re-use the AKS implementation.
-         * At a later stage, this has to be replaced by proper code suporting
-         * value specialized function instances.
-         */
-        /* Falls through. */
+    fun = MakeNtype (TC_fun, 1);    // non-overloaded function, thus only one branch
+    FUN_DEF(fun, 0) = def;
 
-    case TC_aks:
-        DBUG_PRINT_TAG ("NTY", "AKS");
-        if (TYgetDim (arg) == 0) {
-            IBASE_SCAL (base) = TYcopyType (res); /* scalar: definition case */
-            /* finally, we make res an up-projection as res will be used in AUD! */
-            IRES_POS (res, 0) = 1;
-        } else {
-            shape = MakeNtype (TC_ishape, 1);
-            ISHAPE_SHAPE (shape) = SHcopyShape (AKS_SHP (arg));
-            ISHAPE_GEN (shape) = TYcopyType (res); /* array AKS: definition case */
-
-            dim = MakeNtype (TC_idim, 2);
-            IDIM_DIM (dim) = TYgetDim (arg);
-            IDIM_ISHAPE (dim, 0) = shape;
-            IDIM_GEN (dim) = TYcopyType (res);
-            IRES_POS (IDIM_GEN (dim), 0) = 1; /* projecting AKS to AKD */
-
-            arr = MakeNtype (TC_iarr, 2);
-            IARR_IDIM (arr, 0) = dim;
-            IARR_GEN (arr) = TYcopyType (res);
-            IRES_POS (IARR_GEN (arr), 0) = 2; /* projecting AKS to AUDGZ */
-            /* finally, we make res an up-projection as res will be used in AUD! */
-            IRES_POS (res, 0) = 3;
-        }
-        break;
-
-    case TC_akd:
-        DBUG_PRINT_TAG ("NTY", "AKD");
-        if (TYgetDim (arg) == 0) {
-            IBASE_SCAL (base) = TYcopyType (res); /* scalar: definition case */
-        } else {
-            dim = MakeNtype (TC_idim, 1);
-            IDIM_DIM (dim) = TYgetDim (arg);
-            IDIM_GEN (dim) = TYcopyType (res); /* array AKD: definition case */
-
-            arr = MakeNtype (TC_iarr, 2);
-            IARR_IDIM (arr, 0) = dim;
-            IARR_GEN (arr) = TYcopyType (res);
-            IRES_POS (IARR_GEN (arr), 0) = 1; /* projecting AKD to AUDGZ */
-        }
-        /* finally, we make res an up-projection as res will be used in AUD! */
-        IRES_POS (res, 0) = 2;
-        break;
-
-    case TC_audgz:
-        DBUG_PRINT_TAG ("NTY", "AUDGZ");
-        arr = MakeNtype (TC_iarr, 1);
-        IARR_GEN (arr) = TYcopyType (res); /* AUDGZ definition case */
-
-        /* finally, we make res an up-projection as res will be used in AUD! */
-        IRES_POS (res, 0) = 1;
-        break;
-
-    case TC_aud:
-        DBUG_PRINT_TAG ("NTY", "AUD");
-        break;
-
-    default:
-        DBUG_UNREACHABLE ("argument type not yet supported");
-    }
-
-    IBASE_GEN (base) = res;
-    IBASE_BASE (base) = TYgetScalar (arg);
-    IBASE_IARR (base) = arr;
-
-    if (TYisPoly (IBASE_BASE (base))) {
-        DBUG_PRINT_TAG ("NTY", "fun type poly");
-        fun = MakeNtype (TC_fun, 2);
-        FUN_POLY (fun) = base;
-    } else if (TYisPolyUser (IBASE_BASE (base))) {
-        DBUG_PRINT_TAG ("NTY", "fun type poly user");
-        fun = MakeNtype (TC_fun, 2);
-        FUN_UPOLY (fun) = base;
-    } else {
-        DBUG_PRINT_TAG ("NTY", "fun type not poly");
-        fun = MakeNtype (TC_fun, 3);
-        FUN_IBASE (fun, 0) = base;
-    }
-
-    /*
-     * the only son of the arg type has been reused, now we free its constructor!
-     */
-    arg = TYfreeTypeConstructor (arg);
+    args = TYfreeTypeConstructor (args);
 
     DBUG_EXECUTE (tmp = TYtype2DebugString (fun, TRUE, 0));
     DBUG_PRINT ("fun type built: %s\n", tmp);
@@ -2536,20 +2392,29 @@ InsertFirstArgDFT_state (dft_state *state, ntype *ires, int lower)
     DBUG_ENTER ();
 
     cnt = 0;
-    for (i = 0; i < state->max_funs; i++) {
-        state->fundefs[i] = IRES_FUNDEF (ires, i);
-        if ((IRES_POS (ires, i) <= 0) || (lower == 0)) {
+    for (i = 0; i < state->max_funs; i++) { // Ga langs elk functie in ires
+        state->fundefs[i] = IRES_FUNDEF (ires, i); // set de fundef in state
+        if ((IRES_POS (ires, i) <= 0) || (lower == 0)) {// Als de best matchende functie een exacte match is (lower == 0), 
+                                                        // of als de functie is generieker het argument. 
+                                                        // i.e de fun1 is [*] -> () en arg is [.]
+                                                        // Dan cnt++, state is legal, en transform in ups en downs.
+                                                        // Dit betekent dat er een exact matchende functie kan zijn i.e. [.] met arg [.]
+                                                        // En dat er een specifiekere functie kan zijn met [9]. Die specifiekere functie
+                                                        // wordt dan niet weggegooid maar bewaard.
+
             cnt++;
             state->legal[i] = TRUE;
             if (IRES_POS (ires, i) > 0) {
-                state->ups[i] = IRES_POS (ires, i);
+                state->ups[i] = IRES_POS (ires, i); // Argument is Generieker dan de functie
                 state->downs[i] = 0;
             } else {
                 state->ups[i] = 0;
-                state->downs[i] = IRES_POS (ires, i) - lower;
+                state->downs[i] = IRES_POS (ires, i) - lower; // lower: hoeveel levels is het argument  Specifieker dan de functie
+                                                                // 
             }
         } else {
-            state->legal[i] = FALSE;
+            state->legal[i] = FALSE; // Als er geen exacte match is, en als de functie speciefieker is dan het argument
+                                        // i.e. functie is [.] en argument is [*].
         }
     }
 
@@ -2578,17 +2443,17 @@ InsertNextArgDFT_state (dft_state *state, ntype *ires, int lower)
 
     cnt = 0;
     j = 0;
-    for (i = 0; i < state->max_funs; i++) {
-        if ((j < IRES_NUMFUNS (ires)) && (IRES_FUNDEF (ires, j) == state->fundefs[i])) {
-            if (IRES_POS (ires, j) > 0) {
+    for (i = 0; i < state->max_funs; i++) {  // go through all functions again
+        if ((j < IRES_NUMFUNS (ires)) && (IRES_FUNDEF (ires, j) == state->fundefs[i])) { // Check if it is the same fundef, and not matching 2 diffent fundef
+            if (IRES_POS (ires, j) > 0) { // check if pos is > 0, i.e. the function is more specific than the argument
                 if (lower > 0) {
-                    state->legal[i] = FALSE;
+                    state->legal[i] = FALSE; // there is no exact match, then false
                 } else {
-                    state->ups[i] += IRES_POS (ires, j);
+                    state->ups[i] += IRES_POS (ires, j); // if there is a exact match, keep the more specific function
                     cnt++;
                 }
             } else {
-                state->downs[i] += IRES_POS (ires, j) - lower;
+                state->downs[i] += IRES_POS (ires, j) - lower; //The function is more generic than the arg so we can keep it.
                 cnt++;
             }
             j++;
@@ -2708,11 +2573,11 @@ DFT_state2dft_res (dft_state *state)
      *                                which in fact MUST have triggered a
      *                                specialization of the conflicting definition
      *                                (the deriveable_partial) as well
-     *   0     -m      - down projection
+     *   0     -m      - down projection (derivable) - er is een generieke functie beschikbaar, kies de meeste speciefieke van al die generieke functies.
      *                     choose the one with minimum |m| !
-     *   n      0      - partial
+     *   n      0      - partial - er is specifiekere functie beschikbaar, hou ze allemaal. Deze matchen nu nog niet, maar als we later bij runtime er achter komen dat het toch wel past, matchen ze wel.
      *                     keep them all!
-     *   n     -m      - deriveable partial
+     *   n     -m      - deriveable partial - Er is een functie die op sommige argumenten generieker is, en sommige specifieker is.
      *                     iff we do not have an exact definition, keep them all
      *                     (see comment above).
      *                     However, in SOME cases where we have partials /
@@ -2771,14 +2636,14 @@ DFT_state2dft_res (dft_state *state)
      *   fundef2:  int[.] -> int[4] -> gamma
      *
      *  assuming an application int[.] int[.] we obtain:
-     *  fundef0:  1  -2   => deriveable partial
-     *  fundef1:  1   0   => partial            [ shadows fundef0 ]
-     *  fundef2:  1   0   => partial            [ does not shadow fundef0 ]
+     *  fundef0:  -2 1  => deriveable partial
+     *  fundef1:   0 1  => partial            [ shadows fundef0 ]
+     *  fundef2:   0 1  => partial            [ does not shadow fundef0 ]
      *
      *  assuming an application int[2] int[.] we obtain:
-     *  fundef0:  1  -3   => deriveable partial
-     *  fundef1:  1  -1   => deriveable partial [ shadows fundef0 ]
-     *  fundef2:  1  -1   => deriveable partial [ does not shadow fundef0 ]
+     *  fundef0:  -3 1  => deriveable partial
+     *  fundef1:  -1 1  => deriveable partial [ shadows fundef0 ]
+     *  fundef2:  -1 1  => deriveable partial [ does not shadow fundef0 ]
      */
     /*
      * Therefore, we establish the following filter mechanism:
@@ -2862,12 +2727,12 @@ FindIbase (ntype *fun, ntype *scalar)
 
     DBUG_ENTER ();
 
-    while ((i < NTYPE_ARITY (fun) - 2)
-           && !TYeqTypes (IBASE_BASE (FUN_IBASE (fun, i)), scalar)) {
-        i++;
+    while ((i < NTYPE_ARITY (fun) - 2) 
+           && !TYeqTypes (IBASE_BASE (FUN_IBASE (fun, i)), scalar)) { // check for equal ibase
+        i++; // if multiple ibases, i++ and check next ibase
     }
-    if (i < (NTYPE_ARITY (fun) - 2)) {
-        res = FUN_IBASE (fun, i);
+    if (i < (NTYPE_ARITY (fun) - 2)) { // if no equal ibase, return null
+        res = FUN_IBASE (fun, i); // get the fiers equal ibase
     }
 
     DBUG_RETURN (res);
@@ -2916,7 +2781,7 @@ DispatchOneArg (int *lower_p, ntype *fun, ntype *arg)
     ntype *res = NULL;
     int lower = 0;
 
-    /* a matching base type is mendatory! */
+    /* a matching base type is mandatory! */
     fun = FindIbase (fun, TYgetScalar (arg));
 
     if (fun != NULL) {
@@ -2928,11 +2793,12 @@ DispatchOneArg (int *lower_p, ntype *fun, ntype *arg)
             && (TYgetDim (arg) == 0)) {
             /* argument is a scalar! */
             if (IBASE_SCAL (fun) == NULL) {
-                lower = ((NTYPE_CON (arg) == TC_akv) ? 2 : 1);
+                lower = ((NTYPE_CON (arg) == TC_akv) ? 2 : 1); // ? why 2 if arg is akv, why 1 if arg is not akv...
             } else {
                 res = IBASE_SCAL (fun);
             }
         } else {
+            // argument is not scalar
             if (NTYPE_CON (arg) != TC_aud) {
                 fun = IBASE_IARR (fun);
                 if (fun == NULL) {
@@ -3012,7 +2878,7 @@ DebugPrintDFT_state (dft_state *state)
 #endif /* DBUG_OFF */
 
 dft_res *
-TYdispatchFunType (ntype *fun, ntype *args)
+TYdispatchFunType (ntype *fun, ntype *args) // fun is called function, args is args in call
 {
     int lower;
     size_t i, n;
@@ -3037,11 +2903,11 @@ TYdispatchFunType (ntype *fun, ntype *args)
 
     } else {
 
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < n; i++) { // loop through all args
             arg = PROD_MEMBER (args, i);
-            ires = DispatchOneArg (&lower, fun, arg);
-            if (ires == NULL) {
-                fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (fun, 0)), 0);
+            ires = DispatchOneArg (&lower, fun, arg); // get the closest match in the tree and the arg. Return the ires-prod-alpha. Also, check how much lower the argument is, in regards to the fuction. I.e. fun [*], arg [.,.] is 3 lower.
+            if (ires == NULL) { // if there is not a exact match between arg en fun at all!
+                fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (fun, 0)), 0); // get fundef for error
                 CTIabort (LINE_TO_LOC (global.linenum),
                           "No definition found for a function \"%s\" that"
                           " accepts an argument of type \"%s\" as parameter"
@@ -3060,22 +2926,26 @@ TYdispatchFunType (ntype *fun, ntype *args)
              * Now, we accumulate the ups and downs:
              */
             if (i == 0) {
-                state = AllocDFT_state (IRES_NUMFUNS (ires));
+                state = AllocDFT_state (IRES_NUMFUNS (ires)); // create a state with all the same base functions (if arg is int, all int versions of a function)
                 state = InsertFirstArgDFT_state (state, ires, lower);
+                
             } else {
                 state = InsertNextArgDFT_state (state, ires, lower);
             }
 
+            DBUG_EXECUTE_TAG ("NTDIS", tmp_str = TYdft_state2DebugString (state));
+            DBUG_PRINT_TAG ("NTDIS", "%s", tmp_str);
+
             DBUG_PRINT_TAG ("NTDIS", "accumulated ups and downs:");
             DBUG_EXECUTE_TAG ("NTDIS", DebugPrintDFT_state (state));
 
-            fun = IRES_TYPE (ires);
-            if (NTYPE_CON (fun) != TC_fun) {
-                i = n;
+            fun = IRES_TYPE (ires); // go one level deeper in the tree
+            if (NTYPE_CON (fun) != TC_fun) { // if there is not a curried function underneath but there are still arguments, just break out of the loop
+                i = n; // break
             }
         }
 
-        state = FinalizeDFT_state (state);
+        state = FinalizeDFT_state (state); // remaining illegal fundefs to null
 
         DBUG_PRINT_TAG ("NTDIS", "final ups and downs:");
         DBUG_EXECUTE_TAG ("NTDIS", DebugPrintDFT_state (state));
@@ -3087,6 +2957,8 @@ TYdispatchFunType (ntype *fun, ntype *args)
          */
 
         res = DFT_state2dft_res (state);
+        DBUG_EXECUTE (tmp_str = TYdft_res2DebugString (res));
+        DBUG_PRINT ("%s", tmp_str);
 
         res->type = fun; /* insert the result type */
 
@@ -3102,6 +2974,15 @@ TYdispatchFunType (ntype *fun, ntype *args)
  *   char * TYdft_res2DebugString( dft_res *dft)
  *
  * description:
+ * typedef struct DFT {
+    ntype *type;
+    node *def;
+    node *deriveable;
+    int num_partials;
+    node **partials;
+    int num_deriveable_partials;
+    node **deriveable_partials;
+} dft_res;
  *
  ******************************************************************************/
 
@@ -3147,6 +3028,64 @@ TYdft_res2DebugString (dft_res *dft)
             }
         }
 
+        if (SBUFisEmpty (buf)) {
+            buf = SBUFprintf (buf, "no match!");
+        }
+    }
+
+    tmp_str = SBUF2str (buf);
+    SBUFflush (buf);
+
+    DBUG_RETURN (tmp_str);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char * TYdft_state2DebugString( dft_state *dft)
+ *
+ * description:
+ *
+ * typedef struct DFT_STATE {
+    size_t max_funs;
+    size_t cnt_funs;
+    node **fundefs;
+    bool *legal;
+    int *ups;
+    int *downs;
+} dft_state;
+ ******************************************************************************/
+
+char *
+TYdft_state2DebugString (dft_state *dft)
+{
+    static str_buf *buf = NULL;
+    int i;
+    char *tmp_str;
+
+    DBUG_ENTER ();
+
+    if (buf == NULL) {
+        buf = SBUFcreate (100);
+    }
+    if (dft == NULL) {
+        buf = SBUFprintf (buf, "--");
+    } else {
+        buf = SBUFprintf (buf, "max funs: %i \n", dft->max_funs);
+        buf = SBUFprintf (buf, "cnt funs: %i \n", dft->cnt_funs);
+        if (dft->fundefs) {
+            buf = SBUFprintf (buf, "fundefs: \n\t");
+            for (i = 0; i < dft->max_funs; i++) {
+                buf = SBUFprintf (buf, "fun%i: \n\t\t", i);
+                tmp_str = TUtypeSignature2String (dft->fundefs[i]);
+                buf = SBUFprintf (buf, "%s \n\t\t", tmp_str);
+                tmp_str = MEMfree (tmp_str);
+
+                buf = SBUFprintf (buf, "legal: %s \n\t\t", dft->legal[i] ? "true" : "false");
+                buf = SBUFprintf (buf, "ups: %i \n\t\t", dft->ups[i]);
+                buf = SBUFprintf (buf, "downs: %i \n", dft->downs[i]);
+            }
+        }
         if (SBUFisEmpty (buf)) {
             buf = SBUFprintf (buf, "no match!");
         }

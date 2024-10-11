@@ -33,17 +33,11 @@
  ******************************************************************************/
 
 static ntype *
-FuntypeFromArgs (ntype *res, node *args, node *fundef, bool all)
+FuntypeFromArgs (ntype *res, ntype *args, node *fundef)
 {
     DBUG_ENTER ();
-
-    if (args != NULL) {
-        res = FuntypeFromArgs (res, ARG_NEXT (args), fundef, all);
-        if (all || !ARG_ISARTIFICIAL (args)) {
-            res = TYmakeFunType (TYcopyType (ARG_NTYPE (args)), res, fundef);
-        }
-    }
-
+    // This func can be deleted
+    res = TYmakeFunType (args, res, fundef);
     DBUG_RETURN (res);
 }
 
@@ -58,7 +52,7 @@ TUcreateFuntype (node *fundef)
                  "TUcreateFuntype applied to non-fundef node!");
 
     res = FuntypeFromArgs (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)),
-                           FUNDEF_ARGS (fundef), fundef, TRUE);
+                           TUmakeProductTypeFromArgs (FUNDEF_ARGS (fundef)), fundef);
 
     DBUG_RETURN (res);
 }
@@ -68,6 +62,7 @@ TUcreateFuntypeIgnoreArtificials (node *fundef)
 {
     ntype *res;
     node *rets;
+    node *args;
 
     DBUG_ENTER ();
 
@@ -80,8 +75,13 @@ TUcreateFuntypeIgnoreArtificials (node *fundef)
         rets = RET_NEXT (rets);
     }
 
-    res = FuntypeFromArgs (TUmakeProductTypeFromRets (rets), FUNDEF_ARGS (fundef), fundef,
-                           FALSE);
+    args = FUNDEF_ARGS (fundef);
+
+    while ((args != NULL) && ARG_ISARTIFICIAL (args)) {
+        args = ARG_NEXT (args);
+    }
+
+    res = FuntypeFromArgs (TUmakeProductTypeFromRets (rets), TUmakeProductTypeFromArgs(args), fundef);
 
     DBUG_RETURN (res);
 }

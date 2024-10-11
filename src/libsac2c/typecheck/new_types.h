@@ -220,7 +220,7 @@ extern bool TYgetPolyUserReNest (ntype *poly);
 /*
  * Function Types:
  */
-extern ntype *TYmakeFunType (ntype *arg, ntype *res, node *fun_info);
+extern ntype *TYmakeFunType (ntype *args, ntype *res, node *fun_info);
 extern ntype *TYmakeOverloadedFunType (ntype *fun1, ntype *fun2);
 
 extern ntype *TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *, info *),
@@ -236,6 +236,7 @@ extern dft_res *TYdispatchFunType (ntype *fun, ntype *args);
 extern dft_res *TYmakeDft_res (ntype *type, int max_funs);
 extern dft_res *TYfreeDft_res (dft_res *res);
 extern char *TYdft_res2DebugString (dft_res *dft);
+extern char *TYdft_state2DebugString (dft_state *dft);
 
 /*
  * Type Variables:
