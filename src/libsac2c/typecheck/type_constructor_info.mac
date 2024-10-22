@@ -32,17 +32,26 @@
     TCITypeConstr (typeconstr) TCIArity (default_arity) TCIDbugString (dbug_str)         \
       TCIVariableArity (variable_arity)
 
-TCI (TC_simple, 0, "Simple", 0), TCI (TC_symbol, 0, "Symbol", 0),
-  TCI (TC_user, 0, "User", 0), TCI (TC_akv, 1, "AKV", 0), /* Known value */
+  TCI (TC_simple, 0, "Simple", 0), 
+  TCI (TC_symbol, 0, "Symbol", 0),
+  TCI (TC_user, 0, "User", 0), 
+  TCI (TC_akv, 1, "AKV", 0), /* Known value */
   TCI (TC_aks, 1, "AKS", 0),                              /* Known shape */
   TCI (TC_akd, 1, "AKD", 0),                              /* Known dimension */
   TCI (TC_aud, 1, "AUD", 0),                              /* Unknown dimension */
   TCI (TC_audgz, 1, "AUDGZ", 0), /* Unknown dimension, greater zero */
-  TCI (TC_prod, 0, "PROD", 1), TCI (TC_union, 2, "UNION", 1), TCI (TC_fun, 1, "FUN", 1),
-  TCI (TC_ibase, 3, "IBASE", 0), TCI (TC_iarr, 1, "IARR", 1), TCI (TC_idim, 1, "IDIM", 1),
-  TCI (TC_ishape, 1, "ISHAPE", 0), TCI (TC_ires, 1, "IRES", 0),
-  TCI (TC_alpha, 0, "ALPHA", 0), TCI (TC_bottom, 0, "BOTTOM", 0),
-  TCI (TC_poly, 0, "POLY", 0), TCI (TC_polyuser, 0, "POLYUSER", 0),
+  TCI (TC_prod, 0, "PROD", 1), 
+  TCI (TC_union, 2, "UNION", 1), 
+  TCI (TC_fun, 1, "FUN", 1),
+  // TCI (TC_ibase, 3, "IBASE", 0), 
+  // TCI (TC_iarr, 1, "IARR", 1), 
+  // TCI (TC_idim, 1, "IDIM", 1),
+  // TCI (TC_ishape, 1, "ISHAPE", 0), 
+  TCI (TC_ires, 1, "IRES", 0),
+  TCI (TC_alpha, 0, "ALPHA", 0), 
+  TCI (TC_bottom, 0, "BOTTOM", 0),
+  TCI (TC_poly, 0, "POLY", 0), 
+  TCI (TC_polyuser, 0, "POLYUSER", 0),
   TCI (TC_dummy, 0, "LastTCI", 0)
 
 #undef TCITypeConstr

@@ -1,0 +1,40 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../type-dispatch"
+		},
+		{
+			"path": "../sacoriginal"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.embeddedhtml": "html",
+			"*.sac": "c",
+			"bitset": "c",
+			"ranges": "c",
+			"__locale": "c",
+			"random": "c",
+			"algorithm": "c",
+			"functional": "c",
+			"iterator": "c",
+			"memory": "c",
+			"__node_handle": "c",
+			"array": "c",
+			"chrono": "c",
+			"compare": "c",
+			"istream": "c",
+			"ostream": "c",
+			"type_traits": "c",
+			"utility": "c",
+			"__functional_base": "c",
+			"__functional_base_03": "c",
+			"__tuple": "c",
+			"limits": "c",
+			"*.mac": "c"
+		}
+	}
+}

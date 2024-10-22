@@ -101,7 +101,8 @@ InsertWrapperCode (node *fundef)
                   && (FUNDEF_BODY (fundef) == NULL)),
                  "inconsistant wrapper function found!");
 
-    if (WrapperCodeIsNeeded (fundef) && WrapperCodeIsPossible (fundef)) {
+    if (WrapperCodeIsNeeded (fundef) && WrapperCodeIsPossible (fundef)) {   // if a function is local it needs a wrapper
+                                                                            // and if it has fixed arity, then we make a wrapper function
 
         DBUG_PRINT ("creating wrapper body for %s", CTIitemName (fundef));
 

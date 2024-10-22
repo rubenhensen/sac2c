@@ -187,6 +187,7 @@ containsLocalInstances (node *wrapper)
 static node *
 SplitWrapper (node *fundef, info *arg_info)
 {
+    // This might need to be changed
     ntype *old_type, *tmp_type;
     ntype *new_type, *new_rets;
     ntype *bottom = NULL;
