@@ -229,7 +229,7 @@ extern ntype *TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *, i
 extern void *TYfoldFunctionInstances (ntype *funtype, void *(*foldfun) (node *, void *),
                                       void *initial);
 
-extern size_t TYgetArity (ntype *fun);
+// extern size_t TYgetArity (ntype *fun);
 
 extern dft_res *TYdispatchFunType (ntype *fun, ntype *args);
 
@@ -330,7 +330,7 @@ extern ntype *TYdeNestTypeFromOuter (ntype *nested, ntype *outer);
  */
 extern ntype *TYsplitWrapperType (ntype *type, int *pathes_remaining);
 extern ntype *TYgetWrapperRetType (ntype *type);
-extern node *TYcorrectWrapperArgTypes (node *args, ntype *type);
+extern node *TYcorrectWrapperArgTypes (node *args, ntype *type, size_t level);
 extern node *TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs);
 
 /*

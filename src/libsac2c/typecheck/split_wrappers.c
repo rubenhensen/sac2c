@@ -206,8 +206,9 @@ SplitWrapper (node *fundef, info *arg_info)
     DBUG_PRINT ("splitting wrapper of %s", CTIitemName (fundef));
 
     do {
-        new_fundef = DUPdoDupNode (fundef);
-        new_type = TYsplitWrapperType (tmp_type, &pathes_remaining);
+        new_fundef = DUPdoDupNode (fundef); //copy only node (only 1 fun?)
+        new_type = TYsplitWrapperType (tmp_type, &pathes_remaining); // one path in overloaded tree
+        DBUG_PRINT ("  pathes remaining: \n%i : ", pathes_remaining);
         if (pathes_remaining == 1) {
             tmp_type = NULL;
         }
@@ -219,8 +220,8 @@ SplitWrapper (node *fundef, info *arg_info)
         DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
         FUNDEF_WRAPPERTYPE (new_fundef) = new_type;
-        new_rets = TYgetWrapperRetType (new_type);
-        bottom = TYgetBottom (new_rets);
+        new_rets = TYgetWrapperRetType (new_type); // get prod return values from type
+        bottom = TYgetBottom (new_rets); // check if there are bottoms in type
         if (bottom != NULL) {
             CTIerror (LINE_TO_LOC (global.linenum), "All instances of \"%s\" contain type errors",
                       FUNDEF_NAME (new_fundef));
@@ -230,7 +231,7 @@ SplitWrapper (node *fundef, info *arg_info)
         FUNDEF_RETS (new_fundef) = TUreplaceRetTypes (FUNDEF_RETS (new_fundef), new_rets);
 
         FUNDEF_ARGS (new_fundef)
-          = TYcorrectWrapperArgTypes (FUNDEF_ARGS (new_fundef), new_type);
+          = TYcorrectWrapperArgTypes (FUNDEF_ARGS (new_fundef), new_type, 0);
 
         /*
          * mark new wrapper as needed, so it can be easily distinguished

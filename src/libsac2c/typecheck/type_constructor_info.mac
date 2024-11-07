@@ -40,6 +40,7 @@
   TCI (TC_akd, 1, "AKD", 0),                              /* Known dimension */
   TCI (TC_aud, 1, "AUD", 0),                              /* Unknown dimension */
   TCI (TC_audgz, 1, "AUDGZ", 0), /* Unknown dimension, greater zero */
+  TCI (TC_scal, 0, "SCAL", 0),
   TCI (TC_prod, 0, "PROD", 1), 
   TCI (TC_union, 2, "UNION", 1), 
   TCI (TC_fun, 1, "FUN", 1),

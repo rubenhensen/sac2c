@@ -92,6 +92,7 @@
 #include "traverse.h"
 #include "flattengenerators.h"
 
+#include <execinfo.h>
 /*
  * Since all type constructors may have different attributes,
  * for each type constructor TC_xx that requires at least two attributes
@@ -198,9 +199,9 @@ struct NTYPE {
 #define AKD_SHP(n) ((n)->mtypeattr.a_akd.shp)
 #define AKD_DOTS(n) ((n)->mtypeattr.a_akd.dots)
 
-#define IBASE_BASE(n) ((n)->mtypeattr.a_ibase)
-#define IDIM_DIM(n) ((n)->mtypeattr.a_idim)
-#define ISHAPE_SHAPE(n) ((n)->mtypeattr.a_ishape)
+// #define IBASE_BASE(n) ((n)->mtypeattr.a_ibase)
+// #define IDIM_DIM(n) ((n)->mtypeattr.a_idim)
+// #define ISHAPE_SHAPE(n) ((n)->mtypeattr.a_ishape)
 #define IRES_NUMFUNS(n) ((n)->mtypeattr.a_ires.num_funs)
 #define IRES_FUNDEFS(n) ((n)->mtypeattr.a_ires.fundefs)
 #define IRES_FUNDEF(n, i) ((n)->mtypeattr.a_ires.fundefs[i])
@@ -230,26 +231,26 @@ struct NTYPE {
 #define UNION_MEMBER(n, i) ((n)->sons[i])
 #define PROD_MEMBER(n, i) ((n)->sons[i])
 
-#define FUN_POLY(n) ((n)->sons[0])          // delete?
-#define FUN_UPOLY(n) ((n)->sons[1])         // delete?
-#define FUN_IBASE(n, i) ((n)->sons[i + 2])  // delete?
+// #define FUN_POLY(n) ((n)->sons[0])          // delete?
+// #define FUN_UPOLY(n) ((n)->sons[1])         // delete?
+// #define FUN_IBASE(n, i) ((n)->sons[i + 2])  // delete?
 #define FUN_DEF(n, i)       ((n)->sons[i])
 #define DEF_PARAMS(n)       ((n)->sons[0])
 #define DEF_RES(n)          ((n)->sons[1])
 #define PARAMS_SET(n, i)    ((n)->sons[i])
 #define RES_SET(n, i)       ((n)->sons[i])
 
-#define IBASE_GEN(n)        ((n)->sons[0])
-#define IBASE_SCAL(n)       ((n)->sons[1])
-#define IBASE_IARR(n)       ((n)->sons[2])
+// #define IBASE_GEN(n)        ((n)->sons[0])
+// #define IBASE_SCAL(n)       ((n)->sons[1])
+// #define IBASE_IARR(n)       ((n)->sons[2])
 
-#define IARR_GEN(n) ((n)->sons[0])
-#define IARR_IDIM(n, i) ((n)->sons[i + 1])
+// #define IARR_GEN(n) ((n)->sons[0])
+// #define IARR_IDIM(n, i) ((n)->sons[i + 1])
 
-#define IDIM_GEN(n) ((n)->sons[0])
-#define IDIM_ISHAPE(n, i) ((n)->sons[i + 1])
+// #define IDIM_GEN(n) ((n)->sons[0])
+// #define IDIM_ISHAPE(n, i) ((n)->sons[i + 1])
 
-#define ISHAPE_GEN(n) ((n)->sons[0])
+// #define ISHAPE_GEN(n) ((n)->sons[0])
 
 #define IRES_TYPE(n) ((n)->sons[0])
 
@@ -1094,6 +1095,16 @@ TYgetProductSize (ntype *prod)
 {
     DBUG_ENTER ();
 
+    if (NTYPE_CON (prod) != TC_prod) {
+
+        void* callstack[128];
+        int i, frames = backtrace(callstack, 128);
+        char** strs = backtrace_symbols(callstack, frames);
+        for (i = 0; i < frames; ++i) {
+            printf("%s\n", strs[i]);
+        }
+        free(strs);
+    }
     DBUG_ASSERT (NTYPE_CON (prod) == TC_prod,
                  "TYgetProductSize applied to non-product type");
 
@@ -1404,6 +1415,7 @@ TYmakeFunType (ntype *args, ntype *res_type, node *fundef)
     IRES_POSS (res) = (int *)MEMmalloc (sizeof (int));
     IRES_POS (res, 0) = 0;
 
+    // TYmakeProductType use this maybe
     def = MakeNtype (TC_prod, 2);
     DEF_RES(def) = res;
     DEF_PARAMS(def) = args;
@@ -1448,109 +1460,109 @@ static void DebugPrintDispatchInfo (char *dbug_str, ntype *ires);
 
 // static ntype *MakeOverloadedFunType (ntype *fun1, ntype *fun2);
 
-ntype *
-FilterFundefs (ntype *fun, int num_kills, node **kill_list)
-{
-    size_t i;
-    int j;
-    size_t new_numfuns = 0;
-    node **new_fundefs;
-    int *new_poss;
+// ntype *
+// FilterFundefs (ntype *fun, int num_kills, node **kill_list)
+// {
+//     size_t i;
+//     int j;
+//     size_t new_numfuns = 0;
+//     node **new_fundefs;
+//     int *new_poss;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    if (fun != NULL) {
-        switch (NTYPE_CON (fun)) {
-        case TC_fun:
-            for (i = 2; i < NTYPE_ARITY (fun);) {
-                NTYPE_SON (fun, i)
-                  = FilterFundefs (NTYPE_SON (fun, i), num_kills, kill_list);
-                if (NTYPE_SON (fun, i) == NULL) {
-                    fun = DeleteSon (fun, i);
-                } else {
-                    i++;
-                }
-            }
-            break;
-        // case TC_ibase:
-        //     IBASE_GEN (fun) = FilterFundefs (IBASE_GEN (fun), num_kills, kill_list);
-        //     if (IBASE_GEN (fun) == NULL) {
-        //         fun = TYfreeType (fun);
-        //     } else {
-        //         IBASE_SCAL (fun) = FilterFundefs (IBASE_SCAL (fun), num_kills, kill_list);
-        //         IBASE_IARR (fun) = FilterFundefs (IBASE_IARR (fun), num_kills, kill_list);
-        //     }
-        //     break;
-        // case TC_iarr:
-        // case TC_idim:
-        // case TC_ishape:
-        //     NTYPE_SON (fun, 0) = FilterFundefs (NTYPE_SON (fun, 0), num_kills, kill_list);
-        //     if (NTYPE_SON (fun, 0) == NULL) {
-        //         fun = TYfreeType (fun);
-        //     } else {
-        //         i = 1;
-        //         while (i < NTYPE_ARITY (fun)) {
-        //             NTYPE_SON (fun, i)
-        //               = FilterFundefs (NTYPE_SON (fun, i), num_kills, kill_list);
-        //             if (NTYPE_SON (fun, i) == NULL) {
-        //                 fun = DeleteSon (fun, i);
-        //             } else {
-        //                 i++;
-        //             }
-        //         }
-        //     }
-        //     break;
-        case TC_ires:
-            /* First, we count the number of functions that survive: */
-            for (i = 0; i < IRES_NUMFUNS (fun); i++) {
-                j = 0;
-                while ((j < num_kills) && (IRES_FUNDEF (fun, i) != kill_list[j])) {
-                    j++;
-                }
-                if (j == num_kills) { /* not found! */
-                    new_numfuns++;
-                } else {
-                    IRES_FUNDEF (fun, i) = NULL;
-                }
-            }
+//     if (fun != NULL) {
+//         switch (NTYPE_CON (fun)) {
+//         case TC_fun:
+//             for (i = 2; i < NTYPE_ARITY (fun);) {
+//                 NTYPE_SON (fun, i)
+//                   = FilterFundefs (NTYPE_SON (fun, i), num_kills, kill_list);
+//                 if (NTYPE_SON (fun, i) == NULL) {
+//                     fun = DeleteSon (fun, i);
+//                 } else {
+//                     i++;
+//                 }
+//             }
+//             break;
+//         // case TC_ibase:
+//         //     IBASE_GEN (fun) = FilterFundefs (IBASE_GEN (fun), num_kills, kill_list);
+//         //     if (IBASE_GEN (fun) == NULL) {
+//         //         fun = TYfreeType (fun);
+//         //     } else {
+//         //         IBASE_SCAL (fun) = FilterFundefs (IBASE_SCAL (fun), num_kills, kill_list);
+//         //         IBASE_IARR (fun) = FilterFundefs (IBASE_IARR (fun), num_kills, kill_list);
+//         //     }
+//         //     break;
+//         // case TC_iarr:
+//         // case TC_idim:
+//         // case TC_ishape:
+//         //     NTYPE_SON (fun, 0) = FilterFundefs (NTYPE_SON (fun, 0), num_kills, kill_list);
+//         //     if (NTYPE_SON (fun, 0) == NULL) {
+//         //         fun = TYfreeType (fun);
+//         //     } else {
+//         //         i = 1;
+//         //         while (i < NTYPE_ARITY (fun)) {
+//         //             NTYPE_SON (fun, i)
+//         //               = FilterFundefs (NTYPE_SON (fun, i), num_kills, kill_list);
+//         //             if (NTYPE_SON (fun, i) == NULL) {
+//         //                 fun = DeleteSon (fun, i);
+//         //             } else {
+//         //                 i++;
+//         //             }
+//         //         }
+//         //     }
+//         //     break;
+//         case TC_ires:
+//             /* First, we count the number of functions that survive: */
+//             for (i = 0; i < IRES_NUMFUNS (fun); i++) {
+//                 j = 0;
+//                 while ((j < num_kills) && (IRES_FUNDEF (fun, i) != kill_list[j])) {
+//                     j++;
+//                 }
+//                 if (j == num_kills) { /* not found! */
+//                     new_numfuns++;
+//                 } else {
+//                     IRES_FUNDEF (fun, i) = NULL;
+//                 }
+//             }
 
-            /*
-             * Now, we do know that
-             *  a) new_numfuns  fundefs survived
-             *  b) all fundefs to be killed are NULLed
-             */
-            if (new_numfuns == 0) {
-                fun = TYfreeType (fun);
-            } else {
-                new_fundefs = (node **)MEMmalloc (sizeof (node *) * new_numfuns);
-                new_poss = (int *)MEMmalloc (sizeof (int) * new_numfuns);
-                j = 0;
-                for (i = 0; i < IRES_NUMFUNS (fun); i++) {
-                    if (IRES_FUNDEF (fun, i) != NULL) {
-                        new_fundefs[j] = IRES_FUNDEF (fun, i);
-                        new_poss[j] = IRES_POS (fun, i);
-                        j++;
-                    }
-                }
-                IRES_FUNDEFS (fun) = MEMfree (IRES_FUNDEFS (fun));
-                IRES_POSS (fun) = MEMfree (IRES_POSS (fun));
-                IRES_NUMFUNS (fun) = new_numfuns;
-                IRES_FUNDEFS (fun) = new_fundefs;
-                IRES_POSS (fun) = new_poss;
+//             /*
+//              * Now, we do know that
+//              *  a) new_numfuns  fundefs survived
+//              *  b) all fundefs to be killed are NULLed
+//              */
+//             if (new_numfuns == 0) {
+//                 fun = TYfreeType (fun);
+//             } else {
+//                 new_fundefs = (node **)MEMmalloc (sizeof (node *) * new_numfuns);
+//                 new_poss = (int *)MEMmalloc (sizeof (int) * new_numfuns);
+//                 j = 0;
+//                 for (i = 0; i < IRES_NUMFUNS (fun); i++) {
+//                     if (IRES_FUNDEF (fun, i) != NULL) {
+//                         new_fundefs[j] = IRES_FUNDEF (fun, i);
+//                         new_poss[j] = IRES_POS (fun, i);
+//                         j++;
+//                     }
+//                 }
+//                 IRES_FUNDEFS (fun) = MEMfree (IRES_FUNDEFS (fun));
+//                 IRES_POSS (fun) = MEMfree (IRES_POSS (fun));
+//                 IRES_NUMFUNS (fun) = new_numfuns;
+//                 IRES_FUNDEFS (fun) = new_fundefs;
+//                 IRES_POSS (fun) = new_poss;
 
-                IRES_TYPE (fun) = FilterFundefs (IRES_TYPE (fun), num_kills, kill_list);
-            }
-            break;
-        case TC_prod:
-        case TC_alpha:
-            break;
-        default:
-            DBUG_UNREACHABLE ("FilterFundefs called with illegal funtype!");
-        }
-    }
+//                 IRES_TYPE (fun) = FilterFundefs (IRES_TYPE (fun), num_kills, kill_list);
+//             }
+//             break;
+//         case TC_prod:
+//         case TC_alpha:
+//             break;
+//         default:
+//             DBUG_UNREACHABLE ("FilterFundefs called with illegal funtype!");
+//         }
+//     }
 
-    DBUG_RETURN (fun);
-}
+//     DBUG_RETURN (fun);
+// }
 
 /******************************************************************************
  *
@@ -1566,53 +1578,53 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
  *
  ******************************************************************************/
 
-static ntype *
-ProjDown (ntype *ires, ntype *xtemplate)
-{
-    size_t i;
-    int new_numfuns = 0;
-    int num_kills = 0;
-    ntype *res = NULL;
-    ntype *tmp = NULL;
-    node **kill_list;
+// static ntype *
+// ProjDown (ntype *ires, ntype *xtemplate)
+// {
+//     size_t i;
+//     int new_numfuns = 0;
+//     int num_kills = 0;
+//     ntype *res = NULL;
+//     ntype *tmp = NULL;
+//     node **kill_list;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    kill_list = (node **)MEMmalloc (sizeof (node *) * IRES_NUMFUNS (ires));
+//     kill_list = (node **)MEMmalloc (sizeof (node *) * IRES_NUMFUNS (ires));
 
-    /*
-     * First, we count the number of functions that can be projected and
-     * we initialize the kill_list with all those that cannot be projected.
-     */
-    for (i = 0; i < IRES_NUMFUNS (ires); i++) {
-        if (IRES_POS (ires, i) <= 0) {
-            new_numfuns++;
-        } else {
-            kill_list[num_kills] = IRES_FUNDEF (ires, i);
-            num_kills++;
-        }
-    }
+//     /*
+//      * First, we count the number of functions that can be projected and
+//      * we initialize the kill_list with all those that cannot be projected.
+//      */
+//     for (i = 0; i < IRES_NUMFUNS (ires); i++) {
+//         if (IRES_POS (ires, i) <= 0) {
+//             new_numfuns++;
+//         } else {
+//             kill_list[num_kills] = IRES_FUNDEF (ires, i);
+//             num_kills++;
+//         }
+//     }
 
-    /* If no function can be projected, we are done */
-    if (new_numfuns > 0) {
-        res = TYcopyFixedType (ires);
-        res = FilterFundefs (res, num_kills, kill_list);
-        for (i = 0; i < IRES_NUMFUNS (res); i++) {
-            IRES_POS (res, i) = IRES_POS (res, i) - 1;
-        }
-        if (NTYPE_CON (xtemplate) != TC_ires) {
-            tmp = res;
-            res = TYcopyTypeConstructor (xtemplate);
-            NTYPE_ARITY (res) = 1;
-            NTYPE_SONS (res) = (ntype **)MEMmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
-            NTYPE_SON (res, 0) = tmp;
-        }
-    }
+//     /* If no function can be projected, we are done */
+//     if (new_numfuns > 0) {
+//         res = TYcopyFixedType (ires);
+//         res = FilterFundefs (res, num_kills, kill_list);
+//         for (i = 0; i < IRES_NUMFUNS (res); i++) {
+//             IRES_POS (res, i) = IRES_POS (res, i) - 1;
+//         }
+//         if (NTYPE_CON (xtemplate) != TC_ires) {
+//             tmp = res;
+//             res = TYcopyTypeConstructor (xtemplate);
+//             NTYPE_ARITY (res) = 1;
+//             NTYPE_SONS (res) = (ntype **)MEMmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
+//             NTYPE_SON (res, 0) = tmp;
+//         }
+//     }
 
-    kill_list = MEMfree (kill_list);
+//     kill_list = MEMfree (kill_list);
 
-    DBUG_RETURN (res);
-}
+//     DBUG_RETURN (res);
+// }
 
 typedef bool (*cmp_ntype_fun_t) (ntype *, ntype *);
 
@@ -1667,49 +1679,49 @@ typedef bool (*cmp_ntype_fun_t) (ntype *, ntype *);
 //     return (fun2);
 // }
 
-static void
-FindOrAdjustSons (ntype **fun1_p, ntype **fun2_p, size_t start, cmp_ntype_fun_t CmpFun)
-{
-    size_t i, j;
-    bool found;
-    ntype *fun1, *fun2, *tmp;
+// static void
+// FindOrAdjustSons (ntype **fun1_p, ntype **fun2_p, size_t start, cmp_ntype_fun_t CmpFun)
+// {
+//     size_t i, j;
+//     bool found;
+//     ntype *fun1, *fun2, *tmp;
 
-    fun1 = *fun1_p;
-    fun2 = *fun2_p;
+//     fun1 = *fun1_p;
+//     fun2 = *fun2_p;
 
-    for (i = start; i < NTYPE_ARITY (fun1); i++) {
-        found = FALSE;
-        j = start;
-        while ((j < NTYPE_ARITY (fun2)) && !found) {
-            found = CmpFun (NTYPE_SON (fun1, i), NTYPE_SON (fun2, j));
-            j++;
-        }
-        if (!found) {
-            tmp = ProjDown (NTYPE_SON (fun2, 0), NTYPE_SON (fun1, i));
-            if (tmp != NULL) {
-                fun2 = MakeNewSon (fun2, tmp);
-            }
-        }
-    }
+//     for (i = start; i < NTYPE_ARITY (fun1); i++) {
+//         found = FALSE;
+//         j = start;
+//         while ((j < NTYPE_ARITY (fun2)) && !found) {
+//             found = CmpFun (NTYPE_SON (fun1, i), NTYPE_SON (fun2, j));
+//             j++;
+//         }
+//         if (!found) {
+//             tmp = ProjDown (NTYPE_SON (fun2, 0), NTYPE_SON (fun1, i));
+//             if (tmp != NULL) {
+//                 fun2 = MakeNewSon (fun2, tmp);
+//             }
+//         }
+//     }
 
-    for (i = start; i < NTYPE_ARITY (fun2); i++) {
-        found = FALSE;
-        j = start;
-        while ((j < NTYPE_ARITY (fun1)) && !found) {
-            found = CmpFun (NTYPE_SON (fun2, i), NTYPE_SON (fun1, j));
-            j++;
-        }
-        if (!found) {
-            tmp = ProjDown (NTYPE_SON (fun1, 0), NTYPE_SON (fun2, i));
-            if (tmp != NULL) {
-                fun1 = MakeNewSon (fun1, tmp);
-            }
-        }
-    }
+//     for (i = start; i < NTYPE_ARITY (fun2); i++) {
+//         found = FALSE;
+//         j = start;
+//         while ((j < NTYPE_ARITY (fun1)) && !found) {
+//             found = CmpFun (NTYPE_SON (fun2, i), NTYPE_SON (fun1, j));
+//             j++;
+//         }
+//         if (!found) {
+//             tmp = ProjDown (NTYPE_SON (fun1, 0), NTYPE_SON (fun2, i));
+//             if (tmp != NULL) {
+//                 fun1 = MakeNewSon (fun1, tmp);
+//             }
+//         }
+//     }
 
-    *fun1_p = fun1;
-    *fun2_p = fun2;
-}
+//     *fun1_p = fun1;
+//     *fun2_p = fun2;
+// }
 
 /******************************************************************************
  *
@@ -1748,34 +1760,34 @@ FindOrAdjustSons (ntype **fun1_p, ntype **fun2_p, size_t start, cmp_ntype_fun_t 
  *
  ******************************************************************************/
 
-static void
-AdjustSons (ntype **fun1_p, ntype **fun2_p, int start, int stop)
-{
-    ntype *fun1, *fun2;
-    int i;
+// static void
+// AdjustSons (ntype **fun1_p, ntype **fun2_p, int start, int stop)
+// {
+//     ntype *fun1, *fun2;
+//     int i;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    fun1 = *fun1_p;
-    fun2 = *fun2_p;
+//     fun1 = *fun1_p;
+//     fun2 = *fun2_p;
 
-    for (i = start; i < (stop); i++) {
-        if (NTYPE_SON (fun1, i) != NULL) {
-            if (NTYPE_SON (fun2, i) == NULL) {
-                NTYPE_SON (fun2, i) = ProjDown (NTYPE_SON (fun2, 0), NTYPE_SON (fun1, i));
-            }
-        } else {
-            if (NTYPE_SON (fun2, i) != NULL) {
-                NTYPE_SON (fun1, i) = ProjDown (NTYPE_SON (fun1, 0), NTYPE_SON (fun2, i));
-            }
-        }
-    }
+//     for (i = start; i < (stop); i++) {
+//         if (NTYPE_SON (fun1, i) != NULL) {
+//             if (NTYPE_SON (fun2, i) == NULL) {
+//                 NTYPE_SON (fun2, i) = ProjDown (NTYPE_SON (fun2, 0), NTYPE_SON (fun1, i));
+//             }
+//         } else {
+//             if (NTYPE_SON (fun2, i) != NULL) {
+//                 NTYPE_SON (fun1, i) = ProjDown (NTYPE_SON (fun1, 0), NTYPE_SON (fun2, i));
+//             }
+//         }
+//     }
 
-    *fun1_p = fun1;
-    *fun2_p = fun2;
+//     *fun1_p = fun1;
+//     *fun2_p = fun2;
 
-    DBUG_RETURN ();
-}
+//     DBUG_RETURN ();
+// }
 
 /******************************************************************************
  *
@@ -1845,6 +1857,7 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
             fun1 = MakeNewSon(fun1, NTYPE_SON(fun2,i));
         }
         res = fun1;
+        fun1 = TYfreeTypeConstructor (fun2);
     }
 
     
@@ -1865,7 +1878,7 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
     DBUG_PRINT ("overloaded into : %s", tmp);
     DBUG_EXECUTE (tmp = MEMfree (tmp));
     // Memfree fun2?
-
+    
     DBUG_RETURN (res);
 }
 
@@ -2395,6 +2408,24 @@ CopyDFT_state (dft_state *state)
     DBUG_RETURN (new_state);
 }
 
+static dft_state *
+insertFuncDFT_state (dft_state *state, size_t i, ntype *ires, int ups, int downs, bool legal)
+{
+    DBUG_ENTER ();
+
+    state->legal[i] = legal;
+
+    if (legal) {
+        state->fundefs[i] = IRES_FUNDEF (ires, i);
+        state->ups[i] = ups;
+        state->downs[i] = downs;
+        state->cnt_funs += 1;
+    } else {
+        state->fundefs[i] = NULL;
+    }
+    
+    DBUG_RETURN (state);
+}
 /******************************************************************************
  *
  * Function:
@@ -2406,55 +2437,55 @@ CopyDFT_state (dft_state *state)
  *
  ******************************************************************************/
 
-static dft_state *
-InsertFirstArgDFT_state (dft_state *state, ntype *ires, int lower)
-{
-    size_t cnt, i;
+// static dft_state *
+// InsertFirstArgDFT_state (dft_state *state, ntype *ires, int lower)
+// {
+//     size_t cnt, i;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    cnt = 0;
-    for (i = 0; i < state->max_funs; i++) {             // Ga langs elk functie in ires
-        state->fundefs[i] = IRES_FUNDEF (ires, i);      // set de fundef in state
-        if ((IRES_POS (ires, i) <= 0) || (lower == 0)) { //
-            // Er is een matchende argument met param
-            // of er is een generieke functie, en dit is de dichtsbijzijnde generiekere functie, of een nog generiekere functie
+//     cnt = 0;
+//     for (i = 0; i < state->max_funs; i++) {             // Ga langs elk functie in ires
+//         state->fundefs[i] = IRES_FUNDEF (ires, i);      // set de fundef in state
+//         if ((IRES_POS (ires, i) <= 0) || (lower == 0)) { //
+//             // Er is een matchende argument met param
+//             // of er is een generieke functie, en dit is de dichtsbijzijnde generiekere functie, of een nog generiekere functie
 
 
-            // Als de best matchende functie een "exacte match" is (lower == 0), 
-                                                        // of als de functie is generieker het argument. 
-                                                        // i.e de fun1 is [*] -> () en arg is [.]
-                                                        // Dan cnt++, state is legal, en transform in ups en downs.
-                                                        // Dit betekent dat er een exact matchende functie kan zijn i.e. [.] met arg [.]
-                                                        // En dat er een specifiekere functie kan zijn met [9]. Die specifiekere functie
-                                                        // wordt dan niet weggegooid maar bewaard.
+//             // Als de best matchende functie een "exacte match" is (lower == 0), 
+//                                                         // of als de functie is generieker het argument. 
+//                                                         // i.e de fun1 is [*] -> () en arg is [.]
+//                                                         // Dan cnt++, state is legal, en transform in ups en downs.
+//                                                         // Dit betekent dat er een exact matchende functie kan zijn i.e. [.] met arg [.]
+//                                                         // En dat er een specifiekere functie kan zijn met [9]. Die specifiekere functie
+//                                                         // wordt dan niet weggegooid maar bewaard.
 
-            cnt++;
-            state->legal[i] = TRUE;
-            if (IRES_POS (ires, i) > 0) {
-                // Als er een "exacte match" is op de functie, dan mag deze functie ook specifieker zijn dan het argument? (want we hebben nog niet alle info), 
-                // dus misschien wordt het argument nog specifieker, en dan past het wel
+//             cnt++;
+//             state->legal[i] = TRUE;
+//             if (IRES_POS (ires, i) > 0) {
+//                 // Als er een "exacte match" is op de functie, dan mag deze functie ook specifieker zijn dan het argument? (want we hebben nog niet alle info), 
+//                 // dus misschien wordt het argument nog specifieker, en dan past het wel
 
-                           // Als argument exact is op een ander functie, deze functie is specifieker dan het argument 
-                state->ups[i] = IRES_POS (ires, i); // De functie is specifieker dan het argument (partial)
-                state->downs[i] = 0;
-            } else { // (IRES_POS (ires, i) <= 0)
-                state->ups[i] = 0;                              // deze functie is generieker dan het argument (deriveable)
-                state->downs[i] = IRES_POS (ires, i) - lower;   // lower > 0, de arg is nog specifieker, maar die node hebben we niet. 
-                                                                // Dus we moeten de echte waarde bereken hoe veel de functie generieker is.
-            }
-        } else { // (IRES_POS (ires, i) > 0) && lower != 0
-            state->legal[i] = FALSE;    // Als er geen "exacte match" is, en als de functie specifieker is dan het argument
-                                        // i.e. functie is [2,3] en argument is [.]. Dit betekent dat de functie echt niet past.
-                                        // Als de f [2] was en het arg [.] was lower == 0.
+//                            // Als argument exact is op een ander functie, deze functie is specifieker dan het argument 
+//                 state->ups[i] = IRES_POS (ires, i); // De functie is specifieker dan het argument (partial)
+//                 state->downs[i] = 0;
+//             } else { // (IRES_POS (ires, i) <= 0)
+//                 state->ups[i] = 0;                              // deze functie is generieker dan het argument (deriveable)
+//                 state->downs[i] = IRES_POS (ires, i) - lower;   // lower > 0, de arg is nog specifieker, maar die node hebben we niet. 
+//                                                                 // Dus we moeten de echte waarde bereken hoe veel de functie generieker is.
+//             }
+//         } else { // (IRES_POS (ires, i) > 0) && lower != 0
+//             state->legal[i] = FALSE;    // Als er geen "exacte match" is, en als de functie specifieker is dan het argument
+//                                         // i.e. functie is [2,3] en argument is [.]. Dit betekent dat de functie echt niet past.
+//                                         // Als de f [2] was en het arg [.] was lower == 0.
 
-        }
-    }
+//         }
+//     }
 
-    state->cnt_funs = cnt;
+//     state->cnt_funs = cnt;
 
-    DBUG_RETURN (state);
-}
+//     DBUG_RETURN (state);
+// }
 
 /******************************************************************************
  *
@@ -2467,40 +2498,40 @@ InsertFirstArgDFT_state (dft_state *state, ntype *ires, int lower)
  *
  ******************************************************************************/
 
-static dft_state *
-InsertNextArgDFT_state (dft_state *state, ntype *ires, int lower)
-{
-    size_t cnt, i, j;
+// static dft_state *
+// InsertNextArgDFT_state (dft_state *state, ntype *ires, int lower)
+// {
+//     size_t cnt, i, j;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    cnt = 0;
-    j = 0;
-    for (i = 0; i < state->max_funs; i++) {  // i gaat door alle functies die er de vorige ronde waren
-                                             // , j door alle huidige overloaded numfuns?
-        if ((j < IRES_NUMFUNS (ires)) && (IRES_FUNDEF (ires, j) == state->fundefs[i])) { 
-            // Als er een fundef minder is in de huidige staat, dan zetten we het die op NULL
-            if (IRES_POS (ires, j) > 0) { // check if pos is > 0, i.e. the function is more specific than the argument
-                if (lower > 0) { // Weer hetzelfde, als de funcie [2,3] is, en de arg [.], dan gaat het nooit passen.
-                    state->legal[i] = FALSE; // Dit kan nooit, dus state naar false
-                } else {
-                    state->ups[i] += IRES_POS (ires, j); // Er is een "Exacte match", tel hoeveel de functie specifieker is op.
-                    cnt++;
-                }
-            } else {
-                state->downs[i] += IRES_POS (ires, j) - lower; // The function is more generic than the arg so we can keep it.
-                cnt++;
-            }
-            j++;
-        } else {
-            state->fundefs[i] = NULL;
-        }
-    }
+//     cnt = 0;
+//     j = 0;
+//     for (i = 0; i < state->max_funs; i++) {  // i gaat door alle functies die er de vorige ronde waren
+//                                              // , j door alle huidige overloaded numfuns?
+//         if ((j < IRES_NUMFUNS (ires)) && (IRES_FUNDEF (ires, j) == state->fundefs[i])) { 
+//             // Als er een fundef minder is in de huidige staat, dan zetten we het die op NULL
+//             if (IRES_POS (ires, j) > 0) { // check if pos is > 0, i.e. the function is more specific than the argument
+//                 if (lower > 0) { // Weer hetzelfde, als de funcie [2,3] is, en de arg [.], dan gaat het nooit passen.
+//                     state->legal[i] = FALSE; // Dit kan nooit, dus state naar false
+//                 } else {
+//                     state->ups[i] += IRES_POS (ires, j); // Er is een "Exacte match", tel hoeveel de functie specifieker is op.
+//                     cnt++;
+//                 }
+//             } else {
+//                 state->downs[i] += IRES_POS (ires, j) - lower; // The function is more generic than the arg so we can keep it.
+//                 cnt++;
+//             }
+//             j++;
+//         } else {
+//             state->fundefs[i] = NULL;
+//         }
+//     }
 
-    state->cnt_funs = cnt;
+//     state->cnt_funs = cnt;
 
-    DBUG_RETURN (state);
-}
+//     DBUG_RETURN (state);
+// }
 
 /******************************************************************************
  *
@@ -2512,29 +2543,29 @@ InsertNextArgDFT_state (dft_state *state, ntype *ires, int lower)
  *
  ******************************************************************************/
 
-static dft_state *
-FinalizeDFT_state (dft_state *state)
-{
-    size_t i;
+// static dft_state *
+// FinalizeDFT_state (dft_state *state)
+// {
+//     size_t i;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    /*
-     * all those that are lower than up-projections were marked as illegal
-     * before; now, we set the according fundefs to NULL.
-     * In contrast to (errorneous) considerations made before, these cannot(!)
-     * be set to NULL earlier since that would not guarantee the i / j mechanism
-     * in InsertNextArgDFT_state() to work properly anymore.
-     */
+//     /*
+//      * all those that are lower than up-projections were marked as illegal
+//      * before; now, we set the according fundefs to NULL.
+//      * In contrast to (errorneous) considerations made before, these cannot(!)
+//      * be set to NULL earlier since that would not guarantee the i / j mechanism
+//      * in InsertNextArgDFT_state() to work properly anymore.
+//      */
 
-    for (i = 0; i < state->max_funs; i++) {
-        if (!state->legal[i]) {
-            state->fundefs[i] = NULL;
-        }
-    }
+//     for (i = 0; i < state->max_funs; i++) {
+//         if (!state->legal[i]) {
+//             state->fundefs[i] = NULL;
+//         }
+//     }
 
-    DBUG_RETURN (state);
-}
+//     DBUG_RETURN (state);
+// }
 
 /******************************************************************************
  *
@@ -2627,7 +2658,7 @@ DFT_state2dft_res (dft_state *state)
     max_deriveable = 1 - INT_MAX;
     i = 0;
     for (k = 0; k < state->max_funs; k++, i++) { // loop through all funcs
-        if (state->fundefs[k] != NULL) { // if fundef is not null? Has a meaning I do not know yet
+        if (state->fundefs[k] != NULL) { // if it is a valid option
             if (state->ups[k] == 0) { 
                 if (state->downs[k] == 0) { // exact match on all args
                     res->def = state->fundefs[k]; // set the result definition to this function
@@ -2773,110 +2804,110 @@ DFT_state2dft_res (dft_state *state)
 //     DBUG_RETURN (res);
 // }
 
-static ntype *
-FindIdim (ntype *iarr, size_t dim)
-{
-    ntype *res = NULL;
-    size_t i = 0;
+// static ntype *
+// FindIdim (ntype *iarr, size_t dim)
+// {
+//     ntype *res = NULL;
+//     size_t i = 0;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    while ((i < (NTYPE_ARITY (iarr) - 1)) && (IDIM_DIM (IARR_IDIM (iarr, i)) != dim)) {
-        i++;
-    }
-    if (i < (NTYPE_ARITY (iarr) - 1)) {
-        res = IARR_IDIM (iarr, i);
-    }
+//     while ((i < (NTYPE_ARITY (iarr) - 1)) && (IDIM_DIM (IARR_IDIM (iarr, i)) != dim)) {
+//         i++;
+//     }
+//     if (i < (NTYPE_ARITY (iarr) - 1)) {
+//         res = IARR_IDIM (iarr, i);
+//     }
 
-    DBUG_RETURN (res);
-}
+//     DBUG_RETURN (res);
+// }
 
-static ntype *
-FindIshape (ntype *idim, shape *shp)
-{
-    ntype *res = NULL;
-    size_t i = 0;
+// static ntype *
+// FindIshape (ntype *idim, shape *shp)
+// {
+//     ntype *res = NULL;
+//     size_t i = 0;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    while ((i < (NTYPE_ARITY (idim) - 1))
-           && !SHcompareShapes (ISHAPE_SHAPE (IDIM_ISHAPE (idim, i)), shp)) {
-        i++;
-    }
-    if (i < (NTYPE_ARITY (idim) - 1)) {
-        res = IDIM_ISHAPE (idim, i);
-    }
+//     while ((i < (NTYPE_ARITY (idim) - 1))
+//            && !SHcompareShapes (ISHAPE_SHAPE (IDIM_ISHAPE (idim, i)), shp)) {
+//         i++;
+//     }
+//     if (i < (NTYPE_ARITY (idim) - 1)) {
+//         res = IDIM_ISHAPE (idim, i);
+//     }
 
-    DBUG_RETURN (res);
-}
+//     DBUG_RETURN (res);
+// }
 
-static ntype *
-DispatchOneArg (int *lower_p, ntype *fun, ntype *arg)
-{
-    ntype *res = NULL;
-    int lower = 0;
+// static ntype *
+// DispatchOneArg (int *lower_p, ntype *fun, ntype *arg)
+// {
+//     ntype *res = NULL;
+//     int lower = 0;
 
-    /* a matching base type is mandatory! */
-    // fun = FindIbase (fun, TYgetScalar (arg));
+//     /* a matching base type is mandatory! */
+//     // fun = FindIbase (fun, TYgetScalar (arg));
 
-    if (fun != NULL) {
-        /*   new default:   <base>[*]   */
-        res = IBASE_GEN (fun);
+//     if (fun != NULL) {
+//         /*   new default:   <base>[*]   */
+//         res = IBASE_GEN (fun);
 
-        if (((NTYPE_CON (arg) == TC_akv) || (NTYPE_CON (arg) == TC_aks)
-             || (NTYPE_CON (arg) == TC_akd))
-            && (TYgetDim (arg) == 0)) {
-            /* argument is a scalar! */
-            if (IBASE_SCAL (fun) == NULL) { // fun does not have a scalar param
-                lower = ((NTYPE_CON (arg) == TC_akv) ? 2 : 1); // ? why 2 if arg is akv, why 1 if arg is not akv...
-            } else {
-                res = IBASE_SCAL (fun); // fun has a scalar param
-            }
-        } else {
-            // argument is not scalar
-            if (NTYPE_CON (arg) != TC_aud) {
-                fun = IBASE_IARR (fun); // check if there is a IARR
-                if (fun == NULL) {      // there is no IARR in function
-                    lower = ((NTYPE_CON (arg) == TC_akv) // if the arg is akv, and the fun only hase aud, the lower is 4 (akv-> aks -> akd -> augzd -> aud)
-                               ? 4
-                               : ((NTYPE_CON (arg) == TC_aks) // if the arg is akv, and the fun only hase aud, the lower is 3 ( aks -> akd -> augzd -> aud)
-                                    ? 3
-                                    : ((NTYPE_CON (arg) == TC_akd) ? 2 : 1)));// if the arg is akd, and the fun only hase aud, the lower is 3 (akd -> augzd -> aud)
-                } else {                                                        // if the arg is augzd, and the fun only hase aud, the lower is 3 (augzd -> aud)
+//         if (((NTYPE_CON (arg) == TC_akv) || (NTYPE_CON (arg) == TC_aks)
+//              || (NTYPE_CON (arg) == TC_akd))
+//             && (TYgetDim (arg) == 0)) {
+//             /* argument is a scalar! */
+//             if (IBASE_SCAL (fun) == NULL) { // fun does not have a scalar param
+//                 lower = ((NTYPE_CON (arg) == TC_akv) ? 2 : 1); // ? why 2 if arg is akv, why 1 if arg is not akv...
+//             } else {
+//                 res = IBASE_SCAL (fun); // fun has a scalar param
+//             }
+//         } else {
+//             // argument is not scalar
+//             if (NTYPE_CON (arg) != TC_aud) {
+//                 fun = IBASE_IARR (fun); // check if there is a IARR
+//                 if (fun == NULL) {      // there is no IARR in function
+//                     lower = ((NTYPE_CON (arg) == TC_akv) // if the arg is akv, and the fun only hase aud, the lower is 4 (akv-> aks -> akd -> augzd -> aud)
+//                                ? 4
+//                                : ((NTYPE_CON (arg) == TC_aks) // if the arg is akv, and the fun only hase aud, the lower is 3 ( aks -> akd -> augzd -> aud)
+//                                     ? 3
+//                                     : ((NTYPE_CON (arg) == TC_akd) ? 2 : 1)));// if the arg is akd, and the fun only hase aud, the lower is 3 (akd -> augzd -> aud)
+//                 } else {                                                        // if the arg is augzd, and the fun only hase aud, the lower is 3 (augzd -> aud)
 
-                    /*   new default:   <base>[+]   */
-                    res = IARR_GEN (fun);
+//                     /*   new default:   <base>[+]   */
+//                     res = IARR_GEN (fun);
 
-                    if (NTYPE_CON (arg) != TC_audgz) {
-                        fun = FindIdim (fun, TYgetDim (arg)); // find idim with correct amount of dimensions!
-                        if (fun == NULL) {
-                            lower = ((NTYPE_CON (arg) == TC_akv)
-                                       ? 3
-                                       : (NTYPE_CON (arg) == TC_aks ? 2 : 1));
-                        } else {
+//                     if (NTYPE_CON (arg) != TC_audgz) {
+//                         fun = FindIdim (fun, TYgetDim (arg)); // find idim with correct amount of dimensions!
+//                         if (fun == NULL) {
+//                             lower = ((NTYPE_CON (arg) == TC_akv)
+//                                        ? 3
+//                                        : (NTYPE_CON (arg) == TC_aks ? 2 : 1));
+//                         } else {
 
-                            /*   new default:   <base>[...]   */
-                            res = IDIM_GEN (fun);
+//                             /*   new default:   <base>[...]   */
+//                             res = IDIM_GEN (fun);
 
-                            if (NTYPE_CON (arg) != TC_akd) {
-                                fun = FindIshape (fun, TYgetShape (arg)); // find ishape with correct shape!
-                                if (fun == NULL) {
-                                    lower = (NTYPE_CON (arg) == TC_akv ? 2 : 1);
-                                } else {
-                                    res = ISHAPE_GEN (fun);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+//                             if (NTYPE_CON (arg) != TC_akd) {
+//                                 fun = FindIshape (fun, TYgetShape (arg)); // find ishape with correct shape!
+//                                 if (fun == NULL) {
+//                                     lower = (NTYPE_CON (arg) == TC_akv ? 2 : 1);
+//                                 } else {
+//                                     res = ISHAPE_GEN (fun);
+//                                 }
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
 
-    *lower_p = lower;
+//     *lower_p = lower;
 
-    return (res); // this keeps returning ires with underneath new funs, until the last arg, then it returns a ires
-}
+//     return (res); // this keeps returning ires with underneath new funs, until the last arg, then it returns a ires
+// }
 
 #ifndef DBUG_OFF
 
@@ -2915,14 +2946,14 @@ DebugPrintDFT_state (dft_state *state)
 dft_res *
 TYdispatchFunType (ntype *fun, ntype *args) // fun is called function, args is args in call
 {
-    int lower, ups, downs;
-    size_t i, j, nArgs, nFuns, nParams;
-    ntype *arg, *ires, *f, *param;
+    int ups, downs;
+    size_t i, nArgs, nFuns, nParams;
+    ntype *arg, *f, *param, *fParams;
     node *fundef;
     dft_res *res;
     dft_state *state = NULL;
-    bool illegal;
-    ct_res cmp;
+    bool legal;
+    ntype *ires = NULL;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
 #endif
@@ -2940,139 +2971,124 @@ TYdispatchFunType (ntype *fun, ntype *args) // fun is called function, args is a
     if (nArgs == 0) {
         res = NULL;
     } else {
+        // initialize state
+        state = AllocDFT_state (nFuns); // create a state with all the same base functions (if arg is int, all int versions of a function)
+        
         for (i = 0; i < nFuns; i++) { // loop through all funcs
             ups = 0;
             downs = 0;
             legal = true;
             f = NTYPE_SON(fun, i);
-            nParams = NTYPE_ARITY(f); 
-            
-            if (nArgs == nParams) { 
-                for (j = 0; j < nParams && legal; j++) { // loop through all args
+            fParams = NTYPE_SON(f, 0);
+            nParams = NTYPE_ARITY(fParams); 
+
+            // accumulate ups and downs, remove illegals
+            if (nArgs == nParams) { // arity must match
+                for (size_t j = 0; j < nParams && legal; j++) { // loop through all args
                     arg = NTYPE_SON(args, j);
-                    param = NTYPE_SON(f, j);
+                    param = NTYPE_SON(fParams, j);
                     // Check base, if not match, null,
-                    switch (TYcmpTypes(TYgetScalar(param), TYgetScalar(arg)))
-                    {
-                        case TY_eq: /* types are identical */
-                            // ups down 0
-                            break; 
-                        case TY_lt: /* first type is subtype of second one */
-                            if (NTYPE_CON(param) == TC_akv) {
-                                NTYPE_CON(arg) == TC_aks 
-                                    ? 1
-                                    : NTYPE_CON(arg) == TC_akd
-                                        ? 2 
+
+                    if (((NTYPE_CON (arg) == TC_akv) || (NTYPE_CON (arg) == TC_aks)
+                        || (NTYPE_CON (arg) == TC_akd))
+                        && (TYgetDim (arg) == 0)) { /* argument is a scalar! */
+                        if ((((NTYPE_CON (param) == TC_akv) || (NTYPE_CON (param) == TC_aks)
+                        || (NTYPE_CON (param) == TC_akd))
+                        && (TYgetDim (param) == 0))) { /* param is a scalar! */
+                            // ups and downs 0
+                        } else {
+                            downs += NTYPE_CON (arg) == TC_akv ? 2 : 1;
+                        }
+                    } else {
+                        switch (TYcmpTypes(param, arg))
+                        {
+                            case TY_eq: /* types are identical */
+                                // ups and downs 0
+                                break; 
+                            case TY_lt: // function param is more specific than the arg 
+                                if (NTYPE_CON(param) == TC_akv) {
+                                    ups += NTYPE_CON(arg) == TC_aks 
+                                        ? 1
+                                        : NTYPE_CON(arg) == TC_akd
+                                            ? 2 
+                                            : NTYPE_CON(arg) == TC_audgz
+                                                ? 3 : 4;
+
+                                } else if (NTYPE_CON(param) == TC_aks) {
+                                    ups += NTYPE_CON(arg) == TC_akd 
+                                        ? 1
                                         : NTYPE_CON(arg) == TC_audgz
-                                            ? 3 : 4;
+                                            ? 2 : 3;
+                                } else if (NTYPE_CON(param) == TC_akd) {
+                                    ups += NTYPE_CON(arg) == TC_audgz
+                                        ? 1 : 2;
+                                }
+                                break;
+                            case TY_gt: // function param is more generic (supertype) than the arg
+                                if (NTYPE_CON(param) == TC_aud) {
+                                    downs -= NTYPE_CON(arg) == TC_audgz
+                                        ? 1
+                                        : NTYPE_CON(arg) == TC_akd
+                                            ? 2 
+                                            : NTYPE_CON(arg) == TC_aks
+                                                ? 3 : 4;
 
-                            } else if (NTYPE_CON(param) == TC_aks) {
-                                NTYPE_CON(arg) == TC_akd 
-                                    ? 1
-                                    : NTYPE_CON(arg) == TC_audgz
-                                        ? 2 : 3;
-                            } else if (NTYPE_CON(param) == TC_akd) {
-                                NTYPE_CON(arg) == TC_audgz
-                                    ? 1 : 2;
-                            }
-                            break;
-                        case TY_gt: /* first type is supertype of second one */
-
-                            break;
-                        case TY_hcs: /* types are unrelated but do have a common supertype */
-                            // Remove
-                            legal = false;
-                            break;
-                        case TY_dis: /* types are disjoint */
-                            // Remove
-                            legal = false;
-                            break;
-                        default: 
-                            legal = false;
-                            // throw error
-                            break;
+                                } else if (NTYPE_CON(param) == TC_audgz) {
+                                    downs -= NTYPE_CON(arg) == TC_akd 
+                                        ? 1
+                                        : NTYPE_CON(arg) == TC_aks
+                                            ? 2 : 3;
+                                } else if (NTYPE_CON(param) == TC_akd) {
+                                    downs -= NTYPE_CON(arg) == TC_aks
+                                        ? 1 : 2;
+                                }
+                                break;
+                            case TY_hcs: /* types are unrelated but do have a common supertype */
+                                // Remove/ set to null
+                                legal = false;
+                                break;
+                            case TY_dis: /* types are disjoint */
+                                // Remove / set to null
+                                legal = false;
+                                break;
+                            default: 
+                                legal = false;
+                                DBUG_UNREACHABLE ("Illegal type comparison");  
+                                break;
+                        }
                     }
-                   
-
                 }
+                if (legal) {
+                    ires = IRES_TYPE(NTYPE_SON(f,1));
+                }
+                state = insertFuncDFT_state(state, i, NTYPE_SON(f, 1), ups, downs, legal);
             } else {
                 // Variable arity functions!
             }
-
-
-            // if (i == 0) {
-            //     state = AllocDFT_state (nFuns); // create a state with all the same base functions (if arg is int, all int versions of a function)
-            //     state = InsertFirstArgDFT_state (state, ires, lower);
-                
-            // } else {
-            //     state = InsertNextArgDFT_state (state, ires, lower);
-            // }
         }
+
+        if (ires == NULL) {
+            f = NTYPE_SON(fun, 0);
+            ires = NTYPE_SON(f,1);
+            arg = NTYPE_SON(args, 0);
+            // fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (f, 0)), 0);
+            fundef = IRES_FUNDEF(ires,0);
+            CTIabort (LINE_TO_LOC (global.linenum),
+                        "No definition found for a function \"%s\" that"
+                        " accepts an argument of type \"%s\" as parameter"
+                        " no %zu. Full argument types are \"%s\".",
+                        CTIitemName (fundef), TYtype2String (arg, FALSE, 0), i + 1,
+                        TYtype2String (args, FALSE, 0));
+        }
+
+        res = DFT_state2dft_res (state);
+        DBUG_EXECUTE (tmp_str = TYdft_res2DebugString (res));
+        DBUG_PRINT ("DFT RES: %s", tmp_str);
+
+        res->type = ires; /* insert the result type */
+
+        state = freeDFT_state (state);
     }
-    //     for (i = 0; i < n; i++) {                       // loop through all args
-    //         arg = PROD_MEMBER (args, i);                // get arg
-    //         ires = DispatchOneArg (&lower, fun, arg);   // get the closest match in the tree and the arg. 
-    //                                                     // Return the ires-prod-alpha. Also, check how much 
-    //                                                     // lower the argument is, in regards to the fuction. 
-    //                                                     // I.e. fun [*], arg [.,.] is 3 lower.
-    //         if (ires == NULL) {                         // No matching ibase, if there is not a exact match between arg en fun at all!
-    //             fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (fun, 0)), 0); // get fundef for error
-    //             CTIabort (LINE_TO_LOC (global.linenum),
-    //                       "No definition found for a function \"%s\" that"
-    //                       " accepts an argument of type \"%s\" as parameter"
-    //                       " no %zu. Full argument types are \"%s\".",
-    //                       CTIitemName (fundef), TYtype2String (arg, FALSE, 0), i + 1,
-    //                       TYtype2String (args, FALSE, 0));
-    //         }
-
-    //         DBUG_EXECUTE_TAG ("NTDIS", tmp_str = TYtype2String (arg, FALSE, 0));
-    //         DBUG_PRINT_TAG ("NTDIS", "arg #%zu: %s yields (lifted by %d):", i, tmp_str,
-    //                         lower);
-    //         DBUG_EXECUTE_TAG ("NTDIS", tmp_str = MEMfree (tmp_str));
-    //         DBUG_EXECUTE_TAG ("NTDIS", DebugPrintDispatchInfo ("NTDIS", ires));
-
-    //         /*
-    //          * Now, we accumulate the ups and downs:
-    //          */
-    //         if (i == 0) {
-    //             state = AllocDFT_state (IRES_NUMFUNS (ires)); // create a state with all the same base functions (if arg is int, all int versions of a function)
-    //             state = InsertFirstArgDFT_state (state, ires, lower);
-                
-    //         } else {
-    //             state = InsertNextArgDFT_state (state, ires, lower);
-    //         }
-
-    //         DBUG_EXECUTE_TAG ("NTDIS", tmp_str = TYdft_state2DebugString (state));
-    //         DBUG_PRINT_TAG ("NTDIS", "%s", tmp_str);
-
-    //         DBUG_PRINT_TAG ("NTDIS", "accumulated ups and downs:");
-    //         DBUG_EXECUTE_TAG ("NTDIS", DebugPrintDFT_state (state));
-
-    //         fun = IRES_TYPE (ires); // go one level deeper in the tree
-    //         if (NTYPE_CON (fun) != TC_fun) { // if there is not a curried function underneath but there are still arguments, just break out of the loop
-    //             i = n; // break
-    //         }
-    //     }
-
-    //     state = FinalizeDFT_state (state); // remaining illegal fundefs to null
-
-    //     DBUG_PRINT_TAG ("NTDIS", "final ups and downs:");
-    //     DBUG_EXECUTE_TAG ("NTDIS", DebugPrintDFT_state (state));
-
-    //     /*
-    //      * Finally, we export our findings via a dft_res structure.
-    //      * However, in case of 0 args (n==0), no dispatch has to be made
-    //      * (since no overloading is allowed) so we return NULL!!
-    //      */
-
-    //     res = DFT_state2dft_res (state);
-    //     DBUG_EXECUTE (tmp_str = TYdft_res2DebugString (res));
-    //     DBUG_PRINT ("%s", tmp_str);
-
-    //     res->type = fun; /* insert the result type */
-
-    //     state = freeDFT_state (state);
-    // }
 
     DBUG_RETURN (res);
 }
@@ -4441,7 +4457,7 @@ TYfreeTypeConstructor (ntype *type)
         AKD_SHP (type) = SHfreeShape (AKD_SHP (type));
         break;
     // case TC_ibase:
-    //     IBASE_BASE (type) = TYfreeType (IBASE_BASE (type));
+        // IBASE_BASE (type) = TYfreeType (IBASE_BASE (type));
     //     break;
     // case TC_ishape:
     //     ISHAPE_SHAPE (type) = SHfreeShape (ISHAPE_SHAPE (type));
@@ -4668,7 +4684,7 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
             AKD_DOTS (res) = AKD_DOTS (type);
             break;
         // case TC_ibase:
-        //     IBASE_BASE (res) = TYcopyType (IBASE_BASE (type));
+            // IBASE_BASE (res) = TYcopyType (IBASE_BASE (type));
         //     break;
         // case TC_idim:
         //     IDIM_DIM (res) = IDIM_DIM (type);
@@ -4971,6 +4987,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, size_t offset)
     size_t i;
     // size_t scal_len = 0;
     bool sep_needed = FALSE;
+    ntype *args;
 
     DBUG_ENTER ();
 
@@ -4993,6 +5010,21 @@ FunType2String (ntype *type, char *scal_str, bool multiline, size_t offset)
         }
         buf = SBUFprintf (buf, "}");
         break;
+    
+    case TC_prod: // this gets called on every functions in TC_fun
+        args = TYgetProductMember(type, 0);
+        for (i = 0; i < NTYPE_ARITY(args); i++) {
+            offset += 4;
+            tmp_str = TYtype2String (TYgetProductMember(args,i), multiline, offset);
+            buf = SBUFprint (buf, tmp_str);
+            buf = SBUFprintf (buf, " -> ");
+            tmp_str = MEMfree (tmp_str);
+        }
+        tmp_str = FunType2String(TYgetProductMember(type, 1), scal_str, multiline, offset);
+        buf = SBUFprint (buf, tmp_str);
+        tmp_str = MEMfree (tmp_str);
+        break;
+
 
     // case TC_ibase:
     //     DBUG_ASSERT (IBASE_GEN (type), "fun type without generic instance!");
@@ -5112,7 +5144,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, size_t offset)
     case TC_ires:
         offset += 4;
         tmp_str = TYtype2String (IRES_TYPE (type), multiline, offset);
-        buf = SBUFprintf (buf, " -> ");
+        // buf = SBUFprintf (buf, " -> ");
         buf = SBUFprint (buf, tmp_str);
         tmp_str = MEMfree (tmp_str);
         break;
@@ -5943,22 +5975,42 @@ TYdeNestTypeFromOuter (ntype *nested, ntype *outer)
  *
  ******************************************************************************/
 
-static void
-ExtractTopBaseSignature (ntype *fun, ntype **frame)
-{
-    ntype *next;
+// static void
+// ExtractTopBaseSignature (ntype *fun, ntype **frame)
+// {
+//     ntype *f, *fParams;
+//     size_t i;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    *frame = TYcopyType (IBASE_BASE (FUN_IBASE (fun, 0)));
-    next = IRES_TYPE (IBASE_GEN (FUN_IBASE (fun, 0)));
+//     f = NTYPE_SON(fun, 0);
+//     fParams = NTYPE_SON(f, 0);
 
-    if (NTYPE_CON (next) == TC_fun) {
-        ExtractTopBaseSignature (next, frame + 1);
-    }
+//     for (i=0; i < NTYPE_ARITY(fParams); i++) {
+//         *frame = TYcopyType(NTYPE_SON(NTYPE_SON(fParams, i),0));
+//         frame = frame + 1;
+//     }
 
-    DBUG_RETURN ();
-}
+//     DBUG_RETURN ();
+// }
+
+// static void
+// ExtractTopBaseSignature (ntype *fun, ntype **frame)
+// {
+//     ntype *next;
+
+//     DBUG_ENTER ();
+
+//     *frame = TYcopyType (IBASE_BASE (FUN_IBASE (fun, 0))); // get first "real" base of fun, that is a frame
+//     next = IRES_TYPE (IBASE_GEN (FUN_IBASE (fun, 0))); // go one param deeper
+
+//     if (NTYPE_CON (next) == TC_fun) {
+//         ExtractTopBaseSignature (next, frame + 1);
+//     }
+
+//     DBUG_RETURN ();
+// }
+
 
 /** <!--********************************************************************-->
  *
@@ -5971,22 +6023,66 @@ ExtractTopBaseSignature (ntype *fun, ntype **frame)
  *
  ******************************************************************************/
 
-static int
-FindBase (ntype *scalar, ntype *fun)
+// static int
+// FindBase (ntype *scalar, ntype *fun)
+// {
+//     int res = -1;
+//     size_t i;
+
+//     DBUG_ENTER ();
+
+//     for (i = 2; i < NTYPE_ARITY (fun); i++) {
+//         if (TYeqTypes (scalar, IBASE_BASE (NTYPE_SON (fun, i)))) {
+//             res = (int)i;
+//         }
+//     }
+
+//     DBUG_RETURN (res);
+// }
+
+
+// Return true if all params are of the same type.
+static bool
+CmpParams (ntype *param1, ntype *param2)
 {
-    int res = -1;
+    DBUG_ENTER();
+
     size_t i;
+    bool eq = true;
 
-    DBUG_ENTER ();
-
-    for (i = 2; i < NTYPE_ARITY (fun); i++) {
-        if (TYeqTypes (scalar, IBASE_BASE (NTYPE_SON (fun, i)))) {
-            res = (int)i;
-        }
+    for (i=0; i < NTYPE_ARITY(param1); i++) { 
+        switch (TYcmpTypes(NTYPE_SON(NTYPE_SON(param1, i),0), NTYPE_SON(NTYPE_SON(param1, i),0))) {
+            case TY_eq:
+                break;
+            default:
+                eq = false;
+                break;
+        } 
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN(eq);
 }
+
+// Calculates how many different paths there are in a single overloaded type.
+static void
+CalcPathsRemaining (ntype *type, int *pathes_remaining) 
+{
+    int i, j;
+    bool bl;
+
+    *pathes_remaining = 0;
+
+    for (i = 0; i < NTYPE_ARITY(type); i++) {
+        bl = 1; //or 'true' for print
+        for (j = i-1; j >= 0; j--) {
+            if (CmpParams(NTYPE_SON(NTYPE_SON(type,i),0), NTYPE_SON(NTYPE_SON(type,j),0))) {
+                bl = 0; //print 'false'
+            }
+        }
+        if (bl) { *pathes_remaining += 1; } 
+    }
+}
+
 
 /******************************************************************************
  *
@@ -6002,141 +6098,47 @@ FindBase (ntype *scalar, ntype *fun)
  ******************************************************************************/
 
 static ntype *
-SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
-{
-    ntype *new_type, *son;
-    int pos_i, pathes_found;
-    size_t i, pos;
-    size_t mandatory = 1;
-#ifndef DBUG_OFF
-    char *tmp_str = NULL;
-#endif
+SplitWrapperType (ntype *type, int *pathes_remaining)
+{ 
+    DBUG_ENTER();
 
-    DBUG_ENTER ();
+    ntype *new_type, *f, *fp, *fParams, *fpParams, *type1, *type2;
+    size_t i, j, nParams;
+    new_type = TYcopyType (type); // copy the type
 
-    if (type == NULL) {
-        new_type = NULL;
-    } else {
-        new_type = CopyTypeConstructor (type, tv_id);
+    f = NTYPE_SON(new_type, 0);
+    fParams = NTYPE_SON(f, 0);
+    nParams = NTYPE_ARITY(fParams);
 
-        DBUG_PRINT_TAG ("NTY_SPLIT", "processing %s node at" F_PTR "(cpy:" F_PTR ")",
-                        dbug_str[NTYPE_CON (type)], (void *)type, (void *)new_type);
-        switch (NTYPE_CON (type)) {
+    *pathes_remaining -= 1;
 
-        case TC_fun:
-            DBUG_ASSERT (NTYPE_ARITY (type) >= 3, "TC_fun with (ARITY < 3) found!");
-            DBUG_ASSERT (FUN_POLY (type) == NULL,
-                         "SplitWrapperType called in the presence of poly version!");
-            DBUG_ASSERT (FUN_UPOLY (type) == NULL,
-                         "SplitWrapperType called in the presence of poly-user version!");
+    if (*pathes_remaining < 0) {
+        CalcPathsRemaining(type, pathes_remaining);
+    } 
 
-            DBUG_EXECUTE_TAG ("NTY_SPLIT",
-                              tmp_str = TYtype2DebugString (frame[level], FALSE, 0));
-            DBUG_PRINT_TAG ("NTY_SPLIT", "--looking for %s", tmp_str);
-            DBUG_EXECUTE_TAG ("NTY_SPLIT", tmp_str = MEMfree (tmp_str));
-
-            pos_i = FindBase (frame[level], type);
-            if (pos_i < 0) {
-                /**
-                 * we found a dead end => switch to kill-mode
-                 */
-
-                DBUG_PRINT_TAG ("NTY_SPLIT", "--not found switching to kill mode");
-                *pathes_remaining = 0;
-
-            } else {
-                pos = (size_t)pos_i;
-                DBUG_PRINT_TAG ("NTY_SPLIT", "--found in position %zu", pos);
-                son = SplitWrapperType (NTYPE_SON (type, pos), level + 1, frame,
-                                        pathes_remaining);
-
-                DBUG_PRINT_TAG ("NTY_SPLIT", "--adding " F_PTR " to " F_PTR,
-                                (void *)son,
-                                (void *)new_type);
-                new_type = MakeNewSon (new_type, NULL);
-                new_type = MakeNewSon (new_type, NULL);
-                new_type = MakeNewSon (new_type, son);
-
-                if (*pathes_remaining == 1) {
-                    *pathes_remaining = (int)NTYPE_ARITY (type) - 2;
-                    DBUG_PRINT_TAG ("NTY_SPLIT", "--deleting " F_PTR " from " F_PTR,
-                                    (void *)NTYPE_SON (type, pos), (void *)type);
-                    type = DeleteSon (type, pos);
-                } else {
-                    *pathes_remaining *= (int)NTYPE_ARITY (type) - 2;
-                }
-            }
-            break;
-
-        // case TC_ibase:
-        //     mandatory = 3;
-        //     /* Falls through. */
-        // case TC_iarr:
-        // case TC_idim:
-        // case TC_ishape:
-        case TC_ires:
-            pathes_found = 0;
-            for (i = 0; i < NTYPE_ARITY (type); i++) {
-                *pathes_remaining = 1;
-                son = SplitWrapperType (NTYPE_SON (type, i), level, frame,
-                                        pathes_remaining);
-                if ((*pathes_remaining > 0) || (i < mandatory)) {
-                    /**
-                     * NB: In certain situations NULL sons NEED to be inserted.
-                     *     These are mandatory nodes such as [] and [*] in IBASE.
-                     */
-                    DBUG_PRINT_TAG ("NTY_SPLIT", "--adding " F_PTR " to " F_PTR, (void *)son,
-                                    (void *)new_type);
-                    new_type = MakeNewSon (new_type, son);
-                    if (*pathes_remaining == 1) {
-                        if (i >= mandatory) {
-                            DBUG_PRINT_TAG ("NTY_SPLIT",
-                                            "**deleting " F_PTR " from " F_PTR,
-                                            (void *)NTYPE_SON (type, i), (void *)type);
-                            type = DeleteSon (type, i);
-                            /**
-                             * ATTENTION: DeleteSons decrements our arity and thus the
-                             * position of all sons that follow!
-                             * therefore, we must not increment i !!!
-                             * Instead we compensate the i++ from the for loop:
-                             */
-                            i--;
-                        } else {
-                            DBUG_PRINT_TAG ("NTY_SPLIT",
-                                            "**setting " F_PTR " from " F_PTR " to NULL",
-                                            (void *)NTYPE_SON (type, i), (void *)type);
-                            NTYPE_SON (type, i) = NULL;
-                        }
-                    }
-                }
-                pathes_found
-                  = (pathes_found < *pathes_remaining ? *pathes_remaining : pathes_found);
-            }
-            *pathes_remaining = pathes_found;
-            break;
-        default:
-            new_type = MEMfree (new_type);
-            new_type = TYcopyType (type);
+    // Check all params. Everything with the same base type as the first function stays.
+    for (i=1; i < NTYPE_ARITY(type); i++) { // go through all funs
+        fp = NTYPE_SON(type, i);
+        fpParams = NTYPE_SON(f, 0);
+        for (j=0; j < nParams; j++) { // go through all params
+            type1 = TYcopyType(NTYPE_SON(fParams, j));
+            type2 = TYcopyType(NTYPE_SON(fpParams, j));
+            if (TYcmpTypes(type1, type2)) {
+                new_type = DeleteSon(new_type, i);
+                break;
+            } 
         }
-
-        if (*pathes_remaining == 0) {
-            DBUG_PRINT_TAG ("NTY_SPLIT", "--killing %s node at" F_PTR,
-                            dbug_str[NTYPE_CON (type)], (void *)new_type);
-            new_type = MEMfree (new_type);
-        } else if (*pathes_remaining == 1) {
-            DBUG_PRINT_TAG ("NTY_SPLIT", "**freeing " F_PTR, (void *)type);
-            type = TYfreeTypeConstructor (type);
-        }
+        type = DeleteSon(type, i);
+        i--;
     }
 
     DBUG_RETURN (new_type);
 }
 
+
 ntype *
 TYsplitWrapperType (ntype *type, int *pathes_remaining)
 {
-    size_t n;
-    ntype **frame;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
 #endif
@@ -6151,19 +6153,21 @@ TYsplitWrapperType (ntype *type, int *pathes_remaining)
 
         DBUG_EXECUTE_TAG ("NTY_SPLIT", tmp_str = MEMfree (tmp_str));
 
-        n = NTYPE_ARITY(type); // Simplified without exactly knowing what it does
-        frame = (ntype **)MEMmalloc (n * sizeof (ntype *));
-        ExtractTopBaseSignature (type, frame);
+        // n = NTYPE_ARITY(NTYPE_SON(NTYPE_SON(type,0),0)); // Amount of params in func? Or amount of overloaded funs
+        // frame = (ntype **)MEMmalloc (n * sizeof (ntype *)); // list of ntypes, of arity of fun, at least 3, maybe more 
+        // ExtractTopBaseSignature (type, frame); // this creates error, makes use of old fun structure
+        // makes list of all types of all params, i.e. int[.] -> float[*] -> double, -> [int, float]
+        // if overloaded, just get all the first options, i.e. branch [2] of fun
 
-        *pathes_remaining = 1;
+        *pathes_remaining = -1;
 
-        type = SplitWrapperType (type, 0, frame, pathes_remaining);
+        type = SplitWrapperType (type, pathes_remaining); // takes a single path from the tree, and removes rest of tree
 
-        while (n > 0) {
-            n--;
-            frame[n] = MEMfree (frame[n]);
-        }
-        frame = MEMfree (frame);
+        // while (n > 0) { // go through all params
+        //     n--;
+        //     frame[n] = MEMfree (frame[n]);
+        // }
+        // frame = MEMfree (frame);
 
         DBUG_EXECUTE_TAG ("NTY_SPLIT", tmp_str = TYtype2DebugString (type, TRUE, 20));
 
@@ -6200,10 +6204,8 @@ TYgetWrapperRetType (ntype *type)
     DBUG_ASSERT (type != NULL, "no type found!");
 
     if (TYisFun (type)) {
-        DBUG_ASSERT (NTYPE_ARITY (type) == 3, "multiple FUN_IBASE found!");
-
-        type = IRES_TYPE (IBASE_GEN (FUN_IBASE (type, 0)));
-        DBUG_ASSERT (type != NULL, "IBASE_GEN not found!");
+        type = NTYPE_SON(NTYPE_SON(NTYPE_SON(type, 0), 1), 0);
+        DBUG_ASSERT (type != NULL, "ires not found!");
         ret_type = TYgetWrapperRetType (type);
     } else {
         DBUG_ASSERT (TYisProd (type), "neither TC_fun nor TC_prod found!");
@@ -6224,32 +6226,32 @@ TYgetWrapperRetType (ntype *type)
  ******************************************************************************/
 
 node *
-TYcorrectWrapperArgTypes (node *args, ntype *type)
+TYcorrectWrapperArgTypes (node *args, ntype *type, size_t level)
 {
     DBUG_ENTER ();
 
     if (args != NULL) {
         DBUG_ASSERT (NODE_TYPE (args) == N_arg, "no N_arg node found!");
         DBUG_ASSERT (TYisFun (type), "no TC_fun found!");
-        DBUG_ASSERT (NTYPE_ARITY (type) == 3, "multiple FUN_IBASE found!");
+        // DBUG_ASSERT (NTYPE_ARITY (type) == 3, "multiple FUN_IBASE found!");
 
         AVIS_TYPE (ARG_AVIS (args)) = TYfreeType (AVIS_TYPE (ARG_AVIS (args)));
 
         if (ARG_ISARTIFICIAL (args) || ARG_ISREFERENCE (args)
             || ARG_WASREFERENCE (args)) {
             AVIS_TYPE (ARG_AVIS (args))
-              = TYmakeAKS (TYcopyType (IBASE_BASE (FUN_IBASE (type, 0))),
+              = TYmakeAKS (TYcopyType (NTYPE_SON(NTYPE_SON(NTYPE_SON(NTYPE_SON(type,0),0),level),0)),
                            SHcreateShape (0));
         } else {
             AVIS_TYPE (ARG_AVIS (args))
-              = TYmakeAUD (TYcopyType (IBASE_BASE (FUN_IBASE (type, 0))));
+              = TYmakeAUD (TYcopyType (NTYPE_SON(NTYPE_SON(NTYPE_SON(NTYPE_SON(type,0),0),level),0)));
         }
 
         AVIS_DECLTYPE (ARG_AVIS (args)) = TYfreeType (AVIS_DECLTYPE (ARG_AVIS (args)));
         AVIS_DECLTYPE (ARG_AVIS (args)) = TYcopyType (AVIS_TYPE (ARG_AVIS (args)));
 
-        type = IRES_TYPE (IBASE_GEN (FUN_IBASE (type, 0)));
-        ARG_NEXT (args) = TYcorrectWrapperArgTypes (ARG_NEXT (args), type);
+        level += 1;
+        ARG_NEXT (args) = TYcorrectWrapperArgTypes (ARG_NEXT (args), type, level);
     }
 
     DBUG_RETURN (args);
@@ -6806,160 +6808,262 @@ IsRelevant (ntype *type)
     DBUG_RETURN (ret);
 }
 
-static node *
-CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node *arg,
-                   node *args, node *rets, node *vardecs, node **new_vardecs)
+static int*
+DeleteDown(int* downs, int size, int j) 
 {
-    node *assigns;
-    // node *tmp_ass;
-    // size_t i;
-    // node *dimnum;
-#ifndef DBUG_OFF
-    char *dbug_str = NULL;
-#endif
+    
+    int *new_downs;
+    size_t i;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (size != 0, "Size 0 found.");
+    if (size == 1) {
+        downs = MEMfree (downs);
+    } else {
+        new_downs = (int *)MEMmalloc ((size-1) * sizeof (int));
+        for (i = 0; i < j; i++) {
+            new_downs[i] = downs[i];
+        }
+        for (i = j; i < size-1; i++) {
+            new_downs[i] = downs[i+1];
+        }
+        downs = MEMfree (downs);
+        downs = new_downs;
+    }
+
+
+
+    DBUG_RETURN (downs);
+}
+
+static ct_res
+CmpTypeConstructor(typeconstr t1, typeconstr t2) 
+{
+    ct_res res = TY_dis;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (type != NULL, "no type found!");
-
-    DBUG_EXECUTE (dbug_str = TYtype2DebugString (type, TRUE, 0));
-    DBUG_PRINT ("building wrapper for type: %s\n", dbug_str);
-    DBUG_EXECUTE (dbug_str = MEMfree (dbug_str));
-
-    switch (TYgetConstr (type)) {
-    case TC_fun:
-        DBUG_ASSERT (NTYPE_ARITY (type) == 3, "multipe FUN_IBASE found!");
-        assigns = CreateWrapperCode (FUN_IBASE (type, 0), state, lower, funname, arg,
-                                     args, rets, vardecs, new_vardecs);
+    switch (t1) {
+    case TC_akv:
+        switch (t2) {
+        case TC_akv:
+            res = TY_eq;
+            break;
+        case TC_aks:
+            res = TY_lt;
+            break;
+        case TC_akd:
+            res = TY_lt;
+            break;
+        case TC_audgz:
+            res = TY_lt;
+            break;
+        case TC_aud:
+            res = TY_lt;
+        default:
+            break;
+        }
         break;
+    case TC_aks:
+        switch (t2) {
+        case TC_akv:
+            res = TY_gt;
+            break;
+        case TC_aks:
+            res = TY_eq;
+            break;
+        case TC_akd:
+            res = TY_lt;
+            break;
+        case TC_audgz:
+            res = TY_lt;
+            break;
+        case TC_aud:
+            res = TY_lt;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TC_akd:
+        switch (t2) {
+        case TC_akv:
+        case TC_aks:
+            res = TY_gt;
+            break;
+        case TC_akd:
+            res = TY_eq;
+            break;
+        case TC_audgz:
+            res = TY_lt;
+            break;
+        case TC_aud:
+            res = TY_lt;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TC_audgz:
+        switch (t2) {
+        case TC_akv:
+        case TC_aks:
+        case TC_akd:
+            res = TY_gt;
+            break;
+        case TC_audgz:
+            res = TY_eq;
+            break;
+        case TC_aud:
+            res = TY_lt;
+            break;
+        default:
+            break;
+        }
+        break;
+    case TC_aud:
+        switch (t2) {
+        case TC_akv:
+        case TC_aks:
+        case TC_akd:
+        case TC_audgz:
+            res = TY_gt;
+            break;
+        case TC_aud:
+            res = TY_eq;
+            break;
+        default:
+            break;
+        }
+        break;
+    default:
+        DBUG_UNREACHABLE ("Type comparison for non-array types not yet implemented!");
+    }
 
-    // case TC_ibase:
-    //     if (ARG_ISREFERENCE (arg) || ARG_ISARTIFICIAL (arg) || ARG_WASREFERENCE (arg)) {
-    //         /*
-    //          * this should identify all legal unique argument types!
-    //          */
-    //         DBUG_ASSERT (IBASE_SCAL (type) != NULL,
-    //                      "fun without instance for scalar unique argument found");
-    //         assigns = CreateWrapperCode (IBASE_SCAL (type), state, 0, funname, arg, args,
-    //                                      rets, vardecs, new_vardecs);
-    //     } else {
+    DBUG_PRINT_TAG ("NTY_CMP", "result: %d", res);
+    DBUG_RETURN (res);
+}
 
-    //         DBUG_ASSERT (IBASE_GEN (type) != NULL, "IBASE_GEN not found!");
-    //         if (IBASE_IARR (type) != NULL) {
-    //             assigns = CreateWrapperCode (IBASE_IARR (type), state, lower, funname,
-    //                                          arg, args, rets, vardecs, new_vardecs);
-    //             if (IsRelevant (IBASE_IARR (type))) {
-    //                 /*
-    //                  * this conditional is needed only iff an instance with type [+]
-    //                  * exists
-    //                  */
-    //                 tmp_ass = BuildDimAssign (arg, new_vardecs);
-    //                 dimnum = TBmakeNum (0);
-    //                 // dimnum = FLATGexpression2Avis( dimnum, new_vardecs, &assigns,
-    //                 // NULL);
-    //                 assigns
-    //                   = BuildCondAssign (tmp_ass, F_gt_SxS, dimnum, assigns,
-    //                                      CreateWrapperCode (IBASE_GEN (type), state, 3,
-    //                                                         funname, arg, args, rets,
-    //                                                         vardecs, new_vardecs),
-    //                                      new_vardecs);
-    //                 assigns = TCappendAssign (tmp_ass, assigns);
-    //             }
-    //         } else {
-    //             assigns = CreateWrapperCode (IBASE_GEN (type), state, 3, funname, arg,
-    //                                          args, rets, vardecs, new_vardecs);
-    //         }
-    //         if (IBASE_SCAL (type) != NULL) {
-    //             tmp_ass = BuildDimAssign (arg, new_vardecs);
-    //             dimnum = TBmakeNum (0);
-    //             // dimnum = FLATGexpression2Avis( dimnum, new_vardecs, &assigns, NULL);
-    //             assigns = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
-    //                                        CreateWrapperCode (IBASE_SCAL (type), state, 0,
-    //                                                           funname, arg, args, rets,
-    //                                                           vardecs, new_vardecs),
-    //                                        assigns, new_vardecs);
-    //             assigns = TCappendAssign (tmp_ass, assigns);
-    //         }
-    //     }
-    //     break;
 
-    // case TC_iarr:
-    //     DBUG_ASSERT (IARR_GEN (type) != NULL, "IARR_GEN not found!");
-    //     assigns = CreateWrapperCode (IARR_GEN (type), state, 2, funname, arg, args, rets,
-    //                                  vardecs, new_vardecs);
+static ntype * 
+filter_funs (ntype *funs, int *downs, typeconstr tc, int level) 
+{
+    int i;
+    ntype *f, *fParams, *fParam;
 
-    //     if (NTYPE_ARITY (type) >= 2) {
-    //         tmp_ass = BuildDimAssign (arg, new_vardecs);
-    //         /*
-    //          * decrement after check for > 0, safe method for reverse loop ending on 0
-    //          * i : (arity - 2) to 0
-    //          */
-    //         for (i = NTYPE_ARITY (type) - 1; i-- > 0; ) {
-    //             if (IARR_IDIM (type, i) != NULL) {
-    //                 dimnum = TBmakeNum (IDIM_DIM (IARR_IDIM (type, i)));
-    //                 // dimnum = FLATGexpression2Avis( dimnum, new_vardecs, &assigns,
-    //                 // NULL);
-    //                 assigns
-    //                   = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
-    //                                      CreateWrapperCode (IARR_IDIM (type, i), state,
-    //                                                         lower, funname, arg, args,
-    //                                                         rets, vardecs, new_vardecs),
-    //                                      assigns, new_vardecs);
-    //             }
-    //         }
-    //         assigns = TCappendAssign (tmp_ass, assigns);
-    //     }
-    //     break;
+    for (i=0; i < NTYPE_ARITY(funs); i++) {
+        f = NTYPE_SON(funs,i);
+        fParams = NTYPE_SON(f,0);
+        fParam = NTYPE_SON(fParams,level);
+        switch (tc) {
+            case TC_scal: 
+                if ((((NTYPE_CON (fParam) == TC_akv) 
+                                                || (NTYPE_CON (fParam) == TC_aks)
+                                                || (NTYPE_CON (fParam) == TC_akd)) && TYgetDim (fParam) == 0)) { // param is scalar
+                        // arg and fun have a scal, keep fun, downs are 0
+                    } 
+                    else if (NTYPE_CON (fParam) == TC_aud) {
+                        // function has an aud, keep function, but downs to 3.
+                        downs[i] += 3;
+                    } else {
+                        // arg is scalar, and function is [+] or more specific. it does not fit, delete son and down
+                        downs = DeleteDown(downs, NTYPE_ARITY(funs), i);
+                        funs = DeleteSon(funs, i); // fun does not have a scal, delete fun
+                        i--;
+                    }
+                        
+                break;
+            default:
+                if (CmpTypeConstructor(NTYPE_CON(fParam), tc) == TY_lt) { // if param is shp and arg is aud, then we get error, so delete
+                    downs = DeleteDown(downs, NTYPE_ARITY(funs), i);
+                    funs = DeleteSon(funs, i);
+                    i--;
+                } else if (CmpTypeConstructor(NTYPE_CON(fParam), tc) == TY_gt) { // if param is aud en arg is shp. This is fine, but down is increased
+                    switch (tc) {
+                        case TC_aks:
+                            downs[i] += NTYPE_CON(fParam) == TC_aud ? 3
+                                : NTYPE_CON(fParam) == TC_audgz ? 2 : 1;
+                            break;
+                        case TC_akd:
+                            downs[i] += NTYPE_CON(fParam) == TC_aud ? 2 : 1;
+                            break;
+                        case TC_audgz:
+                            downs[i] += 1;
+                            break;
+                        default:
+                            // error
+                            break;
+                    }
+                } else if (CmpTypeConstructor(NTYPE_CON(fParam), tc) == TY_eq) { // This is great, keep fun, no changes to downs
+                    // do nothing
+                }
+        }
+    }
 
-    // case TC_idim:
-    //     DBUG_ASSERT (IDIM_GEN (type) != NULL, "IDIM_GEN not found!");
-    //     assigns = CreateWrapperCode (IDIM_GEN (type), state, 1, funname, arg, args, rets,
-    //                                  vardecs, new_vardecs);
+    return funs;
+}
 
-    //     if (NTYPE_ARITY (type) >= 2) {
-    //         tmp_ass = BuildShapeAssign (arg, new_vardecs);
-    //         /*
-    //          * decrement after check for > 0, safe method for reverse loop ending on 0
-    //          * i : (arity - 2) to 0
-    //          */
-    //         for (i = NTYPE_ARITY (type) - 1; i-- > 0; ) {
-    //             if (IDIM_ISHAPE (type, i) != NULL) {
-    //                 assigns
-    //                   = BuildCondAssign (tmp_ass, F_eq_SxS,
-    //                                      SHshape2Array (
-    //                                        ISHAPE_SHAPE (IDIM_ISHAPE (type, i))),
-    //                                      CreateWrapperCode (IDIM_ISHAPE (type, i), state,
-    //                                                         lower, funname, arg, args,
-    //                                                         rets, vardecs, new_vardecs),
-    //                                      assigns, new_vardecs);
-    //             }
-    //         }
-    //         assigns = TCappendAssign (tmp_ass, assigns);
-    //     }
-    //     break;
+// static int*
+// CalcDowns(ntype *shape_filtered, int level)
+// {
+//     size_t nFuns = NTYPE_ARITY(shape_filtered);
+//     size_t i;
+//     ntype *f, *fParam;
+//     int downs[nFuns];
+//     for (i = 0; i < nFuns; i++) {
+//         f = NTYPE_SON(shape_filtered, i);
+//         fParam = NTYPE_SON(f,level);
 
-    // case TC_ishape:
-    //     DBUG_ASSERT (ISHAPE_GEN (type) != NULL, "ISHAPE_GEN not found!");
-    //     assigns = CreateWrapperCode (ISHAPE_GEN (type), state, 0, funname, arg, args,
-    //                                  rets, vardecs, new_vardecs);
-    //     break;
+//         downs[i] = NTYPE_CON(fParam) == TC_aud ? 3
+//             : NTYPE_CON(fParam) == TC_audgz ? 2
+//                 : NTYPE_CON(fParam) == TC_akd ? 1 : 0;
+//     }
 
-    case TC_ires:
+//     return downs;
+// }
+
+static node *
+CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node *arg,
+                   node *args, node *rets, node *vardecs, node **new_vardecs, int level, int *downs, typeconstr tc)
+{
+    node *assigns, *assigns_else;
+    node *tmp_ass;
+    size_t i, j, nParams, nFuns;
+    node *dimnum;
+    ntype *copy, *filtered;
+    int *cdowns;
+// #ifndef DBUG_OFF
+//     char *dbug_str = NULL;
+// #endif
+
+    DBUG_ENTER ();
+
+    nFuns = NTYPE_ARITY(type);
+    nParams = NTYPE_ARITY(NTYPE_SON(NTYPE_SON(type,0),0));
+    assigns = NULL;
+
+    if (level == 0 && downs == NULL) {
+        downs = (int *)MEMmalloc (nFuns * sizeof (int)); 
+        for (i=0; i < nFuns; i++) {
+            downs[i] = 0;
+        }
+    }
+
+    if (level >= nParams) { // put all ires from remaining functions in dft, transform and return assign
         if (state == NULL) {
-            state = AllocDFT_state (IRES_NUMFUNS (type));
-            state = InsertFirstArgDFT_state (state, type, lower);
-        } else {
-            state = CopyDFT_state (state); /* VERY ugly indeed ... */
-            state = InsertNextArgDFT_state (state, type, lower);
+            state = AllocDFT_state (nFuns);
+        }
+        for (i=0; i < nFuns; i++) {
+            state = insertFuncDFT_state (state, i, NTYPE_SON(NTYPE_SON(type,i),1), 0, downs[i], true);
         }
 
         if (state->cnt_funs <= 0) {
-            assigns = BuildDispatchErrorAssign (funname, args, rets, vardecs);
-        } else if (TYisProd (IRES_TYPE (type))) {
+            assigns = BuildDispatchErrorAssign (funname, args, rets, vardecs); // there is not a fun that is callable with these args
+        } else { 
             dft_res *res;
             node *fundef;
 
-            state = FinalizeDFT_state (state);
+            // state = FinalizeDFT_state (state);
             res = DFT_state2dft_res (state);
             DBUG_ASSERT (((res->num_partials == 0)
                           && (res->num_deriveable_partials == 0)),
@@ -6982,19 +7086,203 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             }
 
             res = TYfreeDft_res (res);
-        } else {
-            assigns
-              = CreateWrapperCode (IRES_TYPE (type), state, lower, funname,
-                                   ARG_NEXT (arg), args, rets, vardecs, new_vardecs);
-        }
+        } 
 
         state = freeDFT_state (state);
-        break;
+        DBUG_RETURN(assigns);
+    }
 
-    default:
-        DBUG_UNREACHABLE ("illegal ntype constructor found!");
-        assigns = NULL;
-        break;
+    switch (tc) {
+        case TC_fun: // start block
+            assigns = CreateWrapperCode (type, state, 0, funname, arg, args, rets,
+                                            vardecs, new_vardecs, level, downs, TC_scal);
+            break;
+
+        case TC_scal:
+            assigns_else = CreateWrapperCode (type, state, 0, funname, arg, args, rets,
+                                            vardecs, new_vardecs, level, downs, TC_aud);
+            copy = TYcopyType(type);
+            cdowns = MEMcopy(NTYPE_ARITY(copy)* sizeof (int),downs);
+            filtered = filter_funs(copy, cdowns, TC_scal, level);
+
+            if (assigns_else != NULL && NTYPE_ARITY(filtered) != 0) { // We have a scalar or some aud/audgz/dim/shp, if arg dim == 0, choose
+                                                                      // scalar. Else, choose the aud/audgz/dim/shp.
+                tmp_ass = BuildDimAssign (arg, new_vardecs);
+                dimnum = TBmakeNum (0);
+                assigns = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
+                                           CreateWrapperCode (filtered, state, 0,
+                                                              funname, arg, args, rets,
+                                                              vardecs, new_vardecs, level+1, downs, TC_scal),
+                                           assigns_else, new_vardecs);
+                assigns = TCappendAssign (tmp_ass, assigns);
+            } else if (assigns_else != NULL) { // There is only aud/audgz/dim/shp, always choose aud/audgz/dim/shp
+                assigns = assigns_else;
+            } else if (NTYPE_ARITY(filtered) != 0 ) { // There is only scalar, choose scalar
+                assigns = CreateWrapperCode (filtered, state, 0, funname, arg, args, rets,
+                                            vardecs, new_vardecs, level+1, downs, TC_scal);
+            } else { // There is no scalar, and nothing else that matches the arg. So return null.
+                TYfreeType(filtered);
+                assigns = NULL;
+            }
+            break;
+
+        case TC_aud:
+            assigns_else = CreateWrapperCode (type, state, 0, funname, arg, args, rets,
+                                            vardecs, new_vardecs, level, downs, TC_audgz);
+            copy = TYcopyType(type);
+            cdowns = MEMcopy(NTYPE_ARITY(copy)* sizeof (int),downs);
+            filtered = filter_funs(copy, cdowns, TC_aud, level);
+
+            if (assigns_else != NULL && NTYPE_ARITY(filtered) != 0) { // We have a aud, and a audgz/dim/shp. If scalar, choose aud.
+                                                                      // Otherwise choose audgz/dim/shp.
+                tmp_ass = BuildDimAssign (arg, new_vardecs);
+                dimnum = TBmakeNum (0);
+                assigns = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
+                                           CreateWrapperCode (filtered, state, 0,
+                                                              funname, arg, args, rets,
+                                                              vardecs, new_vardecs, level+1, downs, TC_scal),
+                                        assigns_else, new_vardecs);
+                assigns = TCappendAssign (tmp_ass, assigns);
+            } else if (assigns_else != NULL) { // There is only audgz/dim/shp, so choose that.
+                assigns = assigns_else;
+            } else if (NTYPE_ARITY(filtered) != 0 ) { // There is only aud, so choose aud.
+                assigns = CreateWrapperCode (filtered, state, 0, funname, arg, args, rets,
+                                            vardecs, new_vardecs, level+1, downs, TC_scal);
+            } else {
+                TYfreeType(filtered);
+                assigns = NULL;
+            }
+            break;
+
+        case TC_audgz:
+            copy = TYcopyType(type);
+            cdowns = MEMcopy(NTYPE_ARITY(copy)* sizeof (int),downs);
+            filtered = filter_funs(copy, cdowns, TC_audgz, level);
+            int dots, dotsp;
+
+            if (NTYPE_ARITY(filtered) != 0) {
+                assigns = CreateWrapperCode (filtered, state,
+                                                            lower, funname, arg, args,
+                                                            rets, vardecs, new_vardecs, level+1, downs, TC_scal);
+                tmp_ass = BuildDimAssign (arg, new_vardecs);
+
+                for (i=0; i < NTYPE_ARITY(type); i++) {
+                    ntype* dim_filtered = TYcopyType(type);
+                    ntype *p = NTYPE_SON(NTYPE_SON(dim_filtered,i),level);
+
+                    if (p->mtypeconstr == TC_akd) {
+                        dots = p->mtypeattr.a_akd.dots;
+                        DeleteSon(type,i);
+                        i--;
+                    } else if (p->mtypeconstr == TC_aks) {
+                        // DeleteSon(type,i);
+                        // DeleteSon(dim_filtered,i);
+                        // i--;
+                        continue;
+                    } else {
+                        continue;
+                    }
+
+                    for (j=0; j < NTYPE_ARITY(type) && i != j; j++) {
+                        ntype *pp = NTYPE_SON(NTYPE_SON(type,i),level);
+                        
+                        if (pp->mtypeconstr == TC_aud || pp->mtypeconstr == TC_audgz) {
+                            // keep, do nothing
+                        } else if (pp->mtypeconstr == TC_aks) {
+                            if (SHgetDim(AKS_SHP(pp)) == dots) {
+                                // keep
+                            } else {
+                                DeleteSon(dim_filtered,j);
+                            }
+                            // DeleteSon(type,j);
+                            // DeleteSon(dim_filtered,j);
+                            // i--;
+                            continue;
+                        } else if (pp->mtypeconstr == TC_akd){
+                            dotsp = pp->mtypeattr.a_akd.dots;
+                            if (dots == dotsp) {
+                                DeleteSon(type,j);
+                            } else {
+                                DeleteSon(dim_filtered,j);
+                            }
+                        }
+                    }
+
+                    dimnum = TBmakeNum(dots);
+                    assigns = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
+                                         CreateWrapperCode (dim_filtered, state,
+                                                            lower, funname, arg, args,
+                                                            rets, vardecs, new_vardecs, level, downs, TC_aks),
+                                         assigns, new_vardecs);
+
+                }
+                assigns = TCappendAssign (tmp_ass, assigns);
+            } else {
+                TYfreeType(filtered);
+                assigns = NULL;
+            }
+            break;
+
+        case TC_akd: // get all more general (aud), all dims, and all shapes with the same dims
+            copy = TYcopyType(type);
+            cdowns = MEMcopy(NTYPE_ARITY(copy)* sizeof (int),downs);
+            filtered = filter_funs(copy, cdowns, TC_akd, level);
+            shape *shp, *shpp;
+
+            if (NTYPE_ARITY(filtered) != 0) {
+                assigns = CreateWrapperCode (filtered, state,
+                                                            lower, funname, arg, args,
+                                                            rets, vardecs, new_vardecs, level+1, downs, TC_scal);
+                tmp_ass = BuildDimAssign (arg, new_vardecs);
+
+                for (i=0; i < NTYPE_ARITY(type); i++) {
+                    ntype* shp_filtered = TYcopyType(type);
+                    ntype *p = NTYPE_SON(NTYPE_SON(shp_filtered,i),level);
+
+                    if (p->mtypeconstr == TC_aks) {
+                        shp = AKS_SHP(p);
+                        DeleteSon(type,i);
+                        i--;
+                    } else {
+                        continue;
+                    }
+
+                    for (j=0; j < NTYPE_ARITY(type) && i != j; j++) {
+                        ntype *pp = NTYPE_SON(NTYPE_SON(type,i),level);
+                        
+                        if (pp->mtypeconstr == TC_aud || pp->mtypeconstr == TC_audgz || pp->mtypeconstr == TC_akd) {
+                            // keep, do nothing
+                        } else if (pp->mtypeconstr == TC_aks){
+                            shpp = AKS_SHP(pp);
+                            if (SHcompareShapes(shp,shpp)) { 
+                                DeleteSon(type,j);
+                            } else {
+                                DeleteSon(shp_filtered,j);
+                            }
+                        }
+                    }
+
+                    dimnum = SHshape2Array(shp);
+                    assigns = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
+                                         CreateWrapperCode (shp_filtered, state,
+                                                            lower, funname, arg, args,
+                                                            rets, vardecs, new_vardecs, level+1, downs, TC_scal),
+                                         assigns, new_vardecs);
+
+                }
+                assigns = TCappendAssign (tmp_ass, assigns);
+            } else {
+                TYfreeType(filtered);
+                assigns = NULL;
+            }
+            break;
+        default:
+            // error
+            break;
+    }
+    
+    if (assigns == NULL) {
+        assigns = BuildDispatchErrorAssign (funname, args, rets, vardecs);
     }
 
     DBUG_RETURN (assigns);
@@ -7009,11 +7297,11 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 
     DBUG_ENTER ();
 
-    if (FUNDEF_ARGS (fundef) == NULL) {
+    if (FUNDEF_ARGS (fundef) == NULL) { // if it has no params
         DBUG_ASSERT (FUNDEF_IMPL (fundef) != NULL, "FUNDEF_IMPL not found!");
         assigns = BuildApAssign (FUNDEF_IMPL (fundef), FUNDEF_ARGS (fundef), vardecs,
                                  new_vardecs);
-    } else {
+    } else { // if it has static params and rets
         DBUG_ASSERT (!FUNDEF_HASDOTRETS (fundef),
                      "wrapper function with ... return type found!");
         DBUG_ASSERT (!FUNDEF_HASDOTARGS (fundef),
@@ -7023,7 +7311,7 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 
         assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0, tmp,
                                      FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef),
-                                     FUNDEF_RETS (fundef), vardecs, new_vardecs);
+                                     FUNDEF_RETS (fundef), vardecs, new_vardecs, 0, NULL, TC_fun);
 
         tmp = MEMfree (tmp);
     }
@@ -7247,94 +7535,94 @@ SerializeFunType (FILE *file, ntype *type)
     DBUG_RETURN ();
 }
 
-static void
-SerializeIBaseType (FILE *file, ntype *type)
-{
-    DBUG_ENTER ();
+// static void
+// SerializeIBaseType (FILE *file, ntype *type)
+// {
+//     DBUG_ENTER ();
 
-    fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
+//     fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
 
-    TYserializeType (file, IBASE_BASE (type));
+//     TYserializeType (file, IBASE_BASE (type));
 
-    fprintf (file, ", ");
+//     fprintf (file, ", ");
 
-    TYserializeType (file, IBASE_SCAL (type));
+//     TYserializeType (file, IBASE_SCAL (type));
 
-    fprintf (file, ", ");
+//     fprintf (file, ", ");
 
-    TYserializeType (file, IBASE_GEN (type));
+//     TYserializeType (file, IBASE_GEN (type));
 
-    fprintf (file, ", ");
+//     fprintf (file, ", ");
 
-    TYserializeType (file, IBASE_IARR (type));
+//     TYserializeType (file, IBASE_IARR (type));
 
-    fprintf (file, ")");
+//     fprintf (file, ")");
 
-    DBUG_RETURN ();
-}
+//     DBUG_RETURN ();
+// }
 
-static void
-SerializeIArrType (FILE *file, ntype *type)
-{
-    size_t cnt;
+// static void
+// SerializeIArrType (FILE *file, ntype *type)
+// {
+//     size_t cnt;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    fprintf (file, "TYdeserializeType( %d, %zu, ", NTYPE_CON (type), NTYPE_ARITY (type));
+//     fprintf (file, "TYdeserializeType( %d, %zu, ", NTYPE_CON (type), NTYPE_ARITY (type));
 
-    TYserializeType (file, IARR_GEN (type));
+//     TYserializeType (file, IARR_GEN (type));
 
-    for (cnt = 0; NTYPE_ARITY (type) > 0 && cnt < NTYPE_ARITY (type) - 1; cnt++) {
-        fprintf (file, ", ");
+//     for (cnt = 0; NTYPE_ARITY (type) > 0 && cnt < NTYPE_ARITY (type) - 1; cnt++) {
+//         fprintf (file, ", ");
 
-        TYserializeType (file, IARR_IDIM (type, cnt));
-    }
+//         TYserializeType (file, IARR_IDIM (type, cnt));
+//     }
 
-    fprintf (file, ")");
+//     fprintf (file, ")");
 
-    DBUG_RETURN ();
-}
+//     DBUG_RETURN ();
+// }
 
-static void
-SerializeIDimType (FILE *file, ntype *type)
-{
-    size_t cnt;
+// static void
+// SerializeIDimType (FILE *file, ntype *type)
+// {
+//     size_t cnt;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    fprintf (file, "TYdeserializeType( %d, %zu, %zu, ", NTYPE_CON (type),
-             NTYPE_ARITY (type), IDIM_DIM (type));
+//     fprintf (file, "TYdeserializeType( %d, %zu, %zu, ", NTYPE_CON (type),
+//              NTYPE_ARITY (type), IDIM_DIM (type));
 
-    TYserializeType (file, IDIM_GEN (type));
+//     TYserializeType (file, IDIM_GEN (type));
 
-    for (cnt = 0; NTYPE_ARITY (type) > 0 && cnt < NTYPE_ARITY (type) - 1; cnt++) {
-        fprintf (file, ", ");
+//     for (cnt = 0; NTYPE_ARITY (type) > 0 && cnt < NTYPE_ARITY (type) - 1; cnt++) {
+//         fprintf (file, ", ");
 
-        TYserializeType (file, IDIM_ISHAPE (type, cnt));
-    }
+//         TYserializeType (file, IDIM_ISHAPE (type, cnt));
+//     }
 
-    fprintf (file, ")");
+//     fprintf (file, ")");
 
-    DBUG_RETURN ();
-}
+//     DBUG_RETURN ();
+// }
 
-static void
-SerializeIShapeType (FILE *file, ntype *type)
-{
-    DBUG_ENTER ();
+// static void
+// SerializeIShapeType (FILE *file, ntype *type)
+// {
+//     DBUG_ENTER ();
 
-    fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
+//     fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
 
-    SHserializeShape (file, ISHAPE_SHAPE (type));
+//     SHserializeShape (file, ISHAPE_SHAPE (type));
 
-    fprintf (file, ", ");
+//     fprintf (file, ", ");
 
-    TYserializeType (file, ISHAPE_GEN (type));
+//     TYserializeType (file, ISHAPE_GEN (type));
 
-    fprintf (file, ")");
+//     fprintf (file, ")");
 
-    DBUG_RETURN ();
-}
+//     DBUG_RETURN ();
+// }
 
 static void
 SerializeIResType (FILE *file, ntype *type)
@@ -7503,6 +7791,9 @@ TYserializeType (FILE *file, ntype *type)
             break;
         case TC_dummy:
             SerializeDummyType (file, type);
+            break;
+        default:
+            // Add serialize for scall
             break;
         }
 
@@ -7742,7 +8033,11 @@ TYdeserializeType (int _con, ...)
     case TC_dummy: {
         result = MakeNtype (TC_dummy, 0);
     } break;
+    default:
+        // Add scal deserialize
+        break;
     }
+    
 
 #if !IS_CYGWIN
     va_end (args);

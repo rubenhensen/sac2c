@@ -34,7 +34,26 @@
 			"__functional_base_03": "c",
 			"__tuple": "c",
 			"limits": "c",
-			"*.mac": "c"
+			"*.mac": "c",
+			"locale": "c",
+			"string": "c",
+			"string_view": "c",
+			"initializer_list": "c",
+			"span": "c",
+			"__hash_table": "c",
+			"__split_buffer": "c",
+			"__tree": "c",
+			"deque": "c",
+			"map": "c",
+			"queue": "c",
+			"set": "c",
+			"stack": "c",
+			"unordered_map": "c",
+			"vector": "c",
+			"*.tcc": "c",
+			"__bit_reference": "c",
+			"__string": "c",
+			"filesystem": "c"
 		}
 	}
 }
