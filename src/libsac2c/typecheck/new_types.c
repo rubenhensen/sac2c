@@ -1404,9 +1404,10 @@ TYmakeFunType (ntype *args, ntype *res_type, node *fundef)
 
     #ifndef DBUG_OFF
     char *tmp = NULL;
-    // int i = 0;
+    int i = 0;
     #endif
-
+    node *r = FUNDEF_RETS (fundef);
+    
     res = MakeNtype (TC_ires, 1);
     IRES_TYPE (res) = res_type;
     IRES_NUMFUNS (res) = 1;
@@ -2416,7 +2417,7 @@ insertFuncDFT_state (dft_state *state, size_t i, ntype *ires, int ups, int downs
     state->legal[i] = legal;
 
     if (legal) {
-        state->fundefs[i] = IRES_FUNDEF (ires, i);
+        state->fundefs[i] = IRES_FUNDEF (ires, 0);
         state->ups[i] = ups;
         state->downs[i] = downs;
         state->cnt_funs += 1;
@@ -2956,6 +2957,8 @@ TYdispatchFunType (ntype *fun, ntype *args) // fun is called function, args is a
     ntype *ires = NULL;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
+    char *tmp = NULL;
+    char *tmp2 = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -2966,6 +2969,13 @@ TYdispatchFunType (ntype *fun, ntype *args) // fun is called function, args is a
 
     nArgs = NTYPE_ARITY (args);
     nFuns = NTYPE_ARITY (fun);
+
+    DBUG_EXECUTE (tmp = TYtype2DebugString (fun, TRUE, 0);
+                  tmp2 = TYtype2DebugString (args, TRUE, 0));
+    DBUG_PRINT ("fun:        %s", tmp);
+    DBUG_PRINT ("args:               %s", tmp2);
+    DBUG_EXECUTE (tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2));
+
     
 
     if (nArgs == 0) {
@@ -3063,7 +3073,8 @@ TYdispatchFunType (ntype *fun, ntype *args) // fun is called function, args is a
                 }
                 state = insertFuncDFT_state(state, i, NTYPE_SON(f, 1), ups, downs, legal);
             } else {
-                // Variable arity functions!
+                CTIabort (LINE_TO_LOC (global.linenum),
+                        "Variable arity not implemented.");
             }
         }
 
