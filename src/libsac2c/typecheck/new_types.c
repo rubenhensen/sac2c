@@ -1404,9 +1404,7 @@ TYmakeFunType (ntype *args, ntype *res_type, node *fundef)
 
     #ifndef DBUG_OFF
     char *tmp = NULL;
-    int i = 0;
     #endif
-    node *r = FUNDEF_RETS (fundef);
     
     res = MakeNtype (TC_ires, 1);
     IRES_TYPE (res) = res_type;
@@ -6062,7 +6060,7 @@ CmpParams (ntype *param1, ntype *param2)
     bool eq = true;
 
     for (i=0; i < NTYPE_ARITY(param1); i++) { 
-        switch (TYcmpTypes(NTYPE_SON(NTYPE_SON(param1, i),0), NTYPE_SON(NTYPE_SON(param1, i),0))) {
+        switch (TYcmpTypes(NTYPE_SON(NTYPE_SON(param1, i),0), NTYPE_SON(NTYPE_SON(param2, i),0))) {
             case TY_eq:
                 break;
             default:
@@ -6114,7 +6112,9 @@ SplitWrapperType (ntype *type, int *pathes_remaining)
     DBUG_ENTER();
 
     ntype *new_type, *f, *fp, *fParams, *fpParams, *type1, *type2;
-    size_t i, j, nParams;
+    size_t nParams;
+    int i, j, k;
+    bool del;
     new_type = TYcopyType (type); // copy the type
 
     f = NTYPE_SON(new_type, 0);
@@ -6128,20 +6128,26 @@ SplitWrapperType (ntype *type, int *pathes_remaining)
     } 
 
     // Check all params. Everything with the same base type as the first function stays.
-    for (i=1; i < NTYPE_ARITY(type); i++) { // go through all funs
+    for (i=1, k=1; i < NTYPE_ARITY(type); i++, k++) { // go through all funs
+        del = true;
         fp = NTYPE_SON(type, i);
-        fpParams = NTYPE_SON(f, 0);
+        fpParams = NTYPE_SON(fp, 0);
         for (j=0; j < nParams; j++) { // go through all params
             type1 = TYcopyType(NTYPE_SON(fParams, j));
             type2 = TYcopyType(NTYPE_SON(fpParams, j));
-            if (TYcmpTypes(type1, type2)) {
-                new_type = DeleteSon(new_type, i);
+            if (TYcmpTypes(type1, type2) != TY_eq) {
+                new_type = DeleteSon(new_type, k);
+                del = false;
+                k--;
                 break;
             } 
         }
-        type = DeleteSon(type, i);
-        i--;
+        if (del) {
+            type = DeleteSon(type, i);
+            i--;
+        }
     }
+    type = DeleteSon(type, 0);
 
     DBUG_RETURN (new_type);
 }
