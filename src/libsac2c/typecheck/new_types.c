@@ -1399,12 +1399,33 @@ TYmakeFunType (ntype *args, ntype *res_type, node *fundef)
     ntype *fun = NULL;
     ntype *def = NULL;
     ntype *res = NULL;
-
-    DBUG_ENTER ();
+    ntype *aks = NULL;
 
     #ifndef DBUG_OFF
     char *tmp = NULL;
+    int i = 0;
     #endif
+
+    DBUG_ENTER ();
+    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on entering TYmakeFunType: %zu",
+                    global.current_allocated_mem);
+    DBUG_PRINT_TAG ("NTY", "fun: %s", CTIitemName (fundef));
+    DBUG_PRINT_TAG ("NTY", "rets: %zu", TCcountRets (FUNDEF_RETS (fundef)));
+
+    node *r = FUNDEF_RETS (fundef);
+    while (r != NULL) {
+        DBUG_PRINT_TAG ("NTY", "  arg %d: %s", i,
+                        TYtype2DebugString (RET_TYPE (r), FALSE, 0));
+        r = RET_NEXT (r);
+        #ifndef DBUG_OFF
+        i++;
+        #endif
+    }
+
+    aks = TYeliminateAKV (args);
+    args = TYfreeType (args);
+    args = aks;
+    aks = NULL;
     
     res = MakeNtype (TC_ires, 1);
     IRES_TYPE (res) = res_type;
@@ -2995,75 +3016,77 @@ TYdispatchFunType (ntype *fun, ntype *args) // fun is called function, args is a
                 for (size_t j = 0; j < nParams && legal; j++) { // loop through all args
                     arg = NTYPE_SON(args, j);
                     param = NTYPE_SON(fParams, j);
-                    // Check base, if not match, null,
 
-                    if (((NTYPE_CON (arg) == TC_akv) || (NTYPE_CON (arg) == TC_aks)
-                        || (NTYPE_CON (arg) == TC_akd))
-                        && (TYgetDim (arg) == 0)) { /* argument is a scalar! */
-                        if ((((NTYPE_CON (param) == TC_akv) || (NTYPE_CON (param) == TC_aks)
-                        || (NTYPE_CON (param) == TC_akd))
-                        && (TYgetDim (param) == 0))) { /* param is a scalar! */
-                            // ups and downs 0
+                    // Check base, if not match, null,
+                    if (TYeqTypes(TYgetScalar(arg), TYgetScalar(param))) { // Check if base is equal
+                        if (((NTYPE_CON (arg) == TC_akv) || (NTYPE_CON (arg) == TC_aks)
+                            || (NTYPE_CON (arg) == TC_akd)) && (TYgetDim (arg) == 0)) { /* argument is a scalar! */
+                            if ((((NTYPE_CON (param) == TC_akv) || (NTYPE_CON (param) == TC_aks)
+                                || (NTYPE_CON (param) == TC_akd)) && (TYgetDim (param) == 0))) { /* param is a scalar! */
+                                // ups and downs 0
+                            } else {
+                                downs += NTYPE_CON (arg) == TC_akv ? 2 : 1;
+                            }
                         } else {
-                            downs += NTYPE_CON (arg) == TC_akv ? 2 : 1;
+                            switch (TYcmpTypes(param, arg))
+                            {
+                                case TY_eq: /* types are identical */
+                                    // ups and downs 0
+                                    break; 
+                                case TY_lt: // function param is more specific than the arg 
+                                    if (NTYPE_CON(param) == TC_akv) {
+                                        ups += NTYPE_CON(arg) == TC_aks 
+                                            ? 1
+                                            : NTYPE_CON(arg) == TC_akd
+                                                ? 2 
+                                                : NTYPE_CON(arg) == TC_audgz
+                                                    ? 3 : 4;
+
+                                    } else if (NTYPE_CON(param) == TC_aks) {
+                                        ups += NTYPE_CON(arg) == TC_akd 
+                                            ? 1
+                                            : NTYPE_CON(arg) == TC_audgz
+                                                ? 2 : 3;
+                                    } else if (NTYPE_CON(param) == TC_akd) {
+                                        ups += NTYPE_CON(arg) == TC_audgz
+                                            ? 1 : 2;
+                                    }
+                                    break;
+                                case TY_gt: // function param is more generic (supertype) than the arg
+                                    if (NTYPE_CON(param) == TC_aud) {
+                                        downs -= NTYPE_CON(arg) == TC_audgz
+                                            ? 1
+                                            : NTYPE_CON(arg) == TC_akd
+                                                ? 2 
+                                                : NTYPE_CON(arg) == TC_aks
+                                                    ? 3 : 4;
+
+                                    } else if (NTYPE_CON(param) == TC_audgz) {
+                                        downs -= NTYPE_CON(arg) == TC_akd 
+                                            ? 1
+                                            : NTYPE_CON(arg) == TC_aks
+                                                ? 2 : 3;
+                                    } else if (NTYPE_CON(param) == TC_akd) {
+                                        downs -= NTYPE_CON(arg) == TC_aks
+                                            ? 1 : 2;
+                                    }
+                                    break;
+                                case TY_hcs: /* types are unrelated but do have a common supertype */
+                                    // Remove/ set to null
+                                    legal = false;
+                                    break;
+                                case TY_dis: /* types are disjoint */
+                                    // Remove / set to null
+                                    legal = false;
+                                    break;
+                                default: 
+                                    legal = false;
+                                    DBUG_UNREACHABLE ("Illegal type comparison");  
+                                    break;
+                            }
                         }
                     } else {
-                        switch (TYcmpTypes(param, arg))
-                        {
-                            case TY_eq: /* types are identical */
-                                // ups and downs 0
-                                break; 
-                            case TY_lt: // function param is more specific than the arg 
-                                if (NTYPE_CON(param) == TC_akv) {
-                                    ups += NTYPE_CON(arg) == TC_aks 
-                                        ? 1
-                                        : NTYPE_CON(arg) == TC_akd
-                                            ? 2 
-                                            : NTYPE_CON(arg) == TC_audgz
-                                                ? 3 : 4;
-
-                                } else if (NTYPE_CON(param) == TC_aks) {
-                                    ups += NTYPE_CON(arg) == TC_akd 
-                                        ? 1
-                                        : NTYPE_CON(arg) == TC_audgz
-                                            ? 2 : 3;
-                                } else if (NTYPE_CON(param) == TC_akd) {
-                                    ups += NTYPE_CON(arg) == TC_audgz
-                                        ? 1 : 2;
-                                }
-                                break;
-                            case TY_gt: // function param is more generic (supertype) than the arg
-                                if (NTYPE_CON(param) == TC_aud) {
-                                    downs -= NTYPE_CON(arg) == TC_audgz
-                                        ? 1
-                                        : NTYPE_CON(arg) == TC_akd
-                                            ? 2 
-                                            : NTYPE_CON(arg) == TC_aks
-                                                ? 3 : 4;
-
-                                } else if (NTYPE_CON(param) == TC_audgz) {
-                                    downs -= NTYPE_CON(arg) == TC_akd 
-                                        ? 1
-                                        : NTYPE_CON(arg) == TC_aks
-                                            ? 2 : 3;
-                                } else if (NTYPE_CON(param) == TC_akd) {
-                                    downs -= NTYPE_CON(arg) == TC_aks
-                                        ? 1 : 2;
-                                }
-                                break;
-                            case TY_hcs: /* types are unrelated but do have a common supertype */
-                                // Remove/ set to null
-                                legal = false;
-                                break;
-                            case TY_dis: /* types are disjoint */
-                                // Remove / set to null
-                                legal = false;
-                                break;
-                            default: 
-                                legal = false;
-                                DBUG_UNREACHABLE ("Illegal type comparison");  
-                                break;
-                        }
+                        legal = false;
                     }
                 }
                 if (legal) {
@@ -6135,7 +6158,7 @@ SplitWrapperType (ntype *type, int *pathes_remaining)
         for (j=0; j < nParams; j++) { // go through all params
             type1 = TYcopyType(NTYPE_SON(fParams, j));
             type2 = TYcopyType(NTYPE_SON(fpParams, j));
-            if (TYcmpTypes(type1, type2) != TY_eq) {
+            if (TYcmpTypes(type1, type2) != TY_eq && TYcmpTypes(type1, type2) != TY_lt) {
                 new_type = DeleteSon(new_type, k);
                 del = false;
                 k--;
@@ -7040,7 +7063,7 @@ filter_funs (ntype *funs, int *downs, typeconstr tc, int level)
 // }
 
 static node *
-CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node *arg,
+CreateWrapperCode (ntype *type, dft_state *state, char *funname, node *arg,
                    node *args, node *rets, node *vardecs, node **new_vardecs, int level, int *downs, typeconstr tc)
 {
     node *assigns, *assigns_else;
@@ -7049,11 +7072,18 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
     node *dimnum;
     ntype *copy, *filtered;
     int *cdowns;
-// #ifndef DBUG_OFF
-//     char *dbug_str = NULL;
-// #endif
+#ifndef DBUG_OFF
+    char *dbug_str = NULL;
+#endif
 
     DBUG_ENTER ();
+
+
+    DBUG_ASSERT (type != NULL, "no type found!");
+
+    DBUG_EXECUTE (dbug_str = TYtype2DebugString (type, TRUE, 0));
+    DBUG_PRINT ("building wrapper for type: %s\n", dbug_str);
+    DBUG_EXECUTE (dbug_str = MEMfree (dbug_str));
 
     nFuns = NTYPE_ARITY(type);
     nParams = NTYPE_ARITY(NTYPE_SON(NTYPE_SON(type,0),0));
@@ -7080,7 +7110,6 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             dft_res *res;
             node *fundef;
 
-            // state = FinalizeDFT_state (state);
             res = DFT_state2dft_res (state);
             DBUG_ASSERT (((res->num_partials == 0)
                           && (res->num_deriveable_partials == 0)),
@@ -7111,12 +7140,12 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
     switch (tc) {
         case TC_fun: // start block
-            assigns = CreateWrapperCode (type, state, 0, funname, arg, args, rets,
+            assigns = CreateWrapperCode (type, state, funname, arg, args, rets,
                                             vardecs, new_vardecs, level, downs, TC_scal);
             break;
 
         case TC_scal:
-            assigns_else = CreateWrapperCode (type, state, 0, funname, arg, args, rets,
+            assigns_else = CreateWrapperCode (type, state, funname, arg, args, rets,
                                             vardecs, new_vardecs, level, downs, TC_aud);
             copy = TYcopyType(type);
             cdowns = MEMcopy(NTYPE_ARITY(copy)* sizeof (int),downs);
@@ -7127,7 +7156,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
                 tmp_ass = BuildDimAssign (arg, new_vardecs);
                 dimnum = TBmakeNum (0);
                 assigns = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
-                                           CreateWrapperCode (filtered, state, 0,
+                                           CreateWrapperCode (filtered, state,
                                                               funname, arg, args, rets,
                                                               vardecs, new_vardecs, level+1, downs, TC_scal),
                                            assigns_else, new_vardecs);
@@ -7135,7 +7164,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             } else if (assigns_else != NULL) { // There is only aud/audgz/dim/shp, always choose aud/audgz/dim/shp
                 assigns = assigns_else;
             } else if (NTYPE_ARITY(filtered) != 0 ) { // There is only scalar, choose scalar
-                assigns = CreateWrapperCode (filtered, state, 0, funname, arg, args, rets,
+                assigns = CreateWrapperCode (filtered, state, funname, arg, args, rets,
                                             vardecs, new_vardecs, level+1, downs, TC_scal);
             } else { // There is no scalar, and nothing else that matches the arg. So return null.
                 TYfreeType(filtered);
@@ -7144,7 +7173,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             break;
 
         case TC_aud:
-            assigns_else = CreateWrapperCode (type, state, 0, funname, arg, args, rets,
+            assigns_else = CreateWrapperCode (type, state, funname, arg, args, rets,
                                             vardecs, new_vardecs, level, downs, TC_audgz);
             copy = TYcopyType(type);
             cdowns = MEMcopy(NTYPE_ARITY(copy)* sizeof (int),downs);
@@ -7155,7 +7184,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
                 tmp_ass = BuildDimAssign (arg, new_vardecs);
                 dimnum = TBmakeNum (0);
                 assigns = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
-                                           CreateWrapperCode (filtered, state, 0,
+                                           CreateWrapperCode (filtered, state,
                                                               funname, arg, args, rets,
                                                               vardecs, new_vardecs, level+1, downs, TC_scal),
                                         assigns_else, new_vardecs);
@@ -7163,7 +7192,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             } else if (assigns_else != NULL) { // There is only audgz/dim/shp, so choose that.
                 assigns = assigns_else;
             } else if (NTYPE_ARITY(filtered) != 0 ) { // There is only aud, so choose aud.
-                assigns = CreateWrapperCode (filtered, state, 0, funname, arg, args, rets,
+                assigns = CreateWrapperCode (filtered, state, funname, arg, args, rets,
                                             vardecs, new_vardecs, level+1, downs, TC_scal);
             } else {
                 TYfreeType(filtered);
@@ -7179,7 +7208,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
             if (NTYPE_ARITY(filtered) != 0) {
                 assigns = CreateWrapperCode (filtered, state,
-                                                            lower, funname, arg, args,
+                                                            funname, arg, args,
                                                             rets, vardecs, new_vardecs, level+1, downs, TC_scal);
                 tmp_ass = BuildDimAssign (arg, new_vardecs);
 
@@ -7228,7 +7257,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
                     dimnum = TBmakeNum(dots);
                     assigns = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
                                          CreateWrapperCode (dim_filtered, state,
-                                                            lower, funname, arg, args,
+                                                            funname, arg, args,
                                                             rets, vardecs, new_vardecs, level, downs, TC_aks),
                                          assigns, new_vardecs);
 
@@ -7248,7 +7277,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
             if (NTYPE_ARITY(filtered) != 0) {
                 assigns = CreateWrapperCode (filtered, state,
-                                                            lower, funname, arg, args,
+                                                            funname, arg, args,
                                                             rets, vardecs, new_vardecs, level+1, downs, TC_scal);
                 tmp_ass = BuildDimAssign (arg, new_vardecs);
 
@@ -7282,7 +7311,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
                     dimnum = SHshape2Array(shp);
                     assigns = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
                                          CreateWrapperCode (shp_filtered, state,
-                                                            lower, funname, arg, args,
+                                                            funname, arg, args,
                                                             rets, vardecs, new_vardecs, level+1, downs, TC_scal),
                                          assigns, new_vardecs);
 
@@ -7294,6 +7323,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             }
             break;
         default:
+            assigns = BuildDispatchErrorAssign (funname, args, rets, vardecs);
             // error
             break;
     }
@@ -7326,7 +7356,7 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 
         tmp = TUwrapperTypeSignature2String (fundef);
 
-        assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0, tmp,
+        assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, tmp,
                                      FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef),
                                      FUNDEF_RETS (fundef), vardecs, new_vardecs, 0, NULL, TC_fun);
 

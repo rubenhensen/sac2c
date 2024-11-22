@@ -296,10 +296,16 @@ SplitWrapper (node *fundef, info *arg_info)
             FUNDEF_SPECNS (new_fundef) = NSdupNamespace (FUNDEF_SPECNS (fundef));
         }
 
+        DBUG_EXECUTE (tmp_str = TUtypeSignature2String(new_fundef));
+        DBUG_PRINT ("TUtypeSignature2String(fundef): \n%s : ", tmp_str);
+        DBUG_EXECUTE (tmp_str = TUwrapperTypeSignature2String(new_fundef));
+        DBUG_PRINT ("TUwrapperTypeSignature2String(fundef): \n%s : ", tmp_str);
+
         FUNDEF_NEXT (new_fundef) = new_fundefs;
         new_fundefs = new_fundef;
     } while (pathes_remaining > 1);
     FUNDEF_WRAPPERTYPE (fundef) = old_type;
+
 
     DBUG_RETURN (new_fundefs);
 }

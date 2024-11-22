@@ -95,6 +95,10 @@ InsertWrapperCode (node *fundef)
     node *vardec;
     node *vardecs1, *vardecs2;
 
+    #ifndef DBUG_OFF
+    char *tmp_str = NULL;
+    #endif
+
     DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (fundef) == N_fundef) && FUNDEF_ISWRAPPERFUN (fundef)
@@ -134,6 +138,11 @@ InsertWrapperCode (node *fundef)
          */
         FUNDEF_BODY (fundef) = TBmakeBlock (assigns, TCappendVardec (vardecs1, vardecs2));
     }
+
+    DBUG_EXECUTE (tmp_str = TUtypeSignature2String(fundef));
+    DBUG_PRINT ("TUtypeSignature2String(fundef): \n%s : ", tmp_str);
+    DBUG_EXECUTE (tmp_str = TUwrapperTypeSignature2String(fundef));
+    DBUG_PRINT ("TUwrapperTypeSignature2String(fundef): \n%s : ", tmp_str);
 
     DBUG_RETURN (fundef);
 }
