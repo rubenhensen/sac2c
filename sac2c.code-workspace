@@ -53,7 +53,8 @@
 			"*.tcc": "c",
 			"__bit_reference": "c",
 			"__string": "c",
-			"filesystem": "c"
+			"filesystem": "c",
+			"tuple": "c"
 		}
 	}
 }

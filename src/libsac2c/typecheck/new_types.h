@@ -221,6 +221,7 @@ extern bool TYgetPolyUserReNest (ntype *poly);
  * Function Types:
  */
 extern ntype *TYmakeFunType (ntype *args, ntype *res, node *fun_info);
+extern ntype *TYmakeOvFunType(ntype *fun);
 extern ntype *TYmakeOverloadedFunType (ntype *fun1, ntype *fun2);
 
 extern ntype *TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *, info *),
@@ -273,6 +274,7 @@ extern bool TYisArrayOrFixedAlpha (ntype *);
 extern bool TYisUnion (ntype *);
 extern bool TYisProd (ntype *);
 extern bool TYisFun (ntype *);
+extern bool TYisOvFun (ntype *);
 
 extern bool TYisAKSSymb (ntype *);
 extern bool TYisAKSUdt (ntype *);
