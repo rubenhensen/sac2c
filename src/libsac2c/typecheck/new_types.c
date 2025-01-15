@@ -1331,7 +1331,6 @@ TYgetBottomError (ntype *type)
 ntype *
 TYmakeFunType (ntype *params, ntype *res_type, node *fundef) 
 {
-
     ntype *fun = NULL;
     ntype *aks = NULL;
 
@@ -1364,7 +1363,7 @@ TYmakeFunType (ntype *params, ntype *res_type, node *fundef)
     fun = MakeNtype (TC_fun, 2);
     FUN_RETS(fun) = res_type;
     FUN_PARAMS(fun) = params;
-    FUN_FUNDEF(fun) = (node **)MEMmalloc (sizeof (node *));
+    FUN_FUNDEF(fun) = (node *)MEMmalloc (sizeof (node *));
     FUN_FUNDEF(fun) = fundef;
 
     DBUG_EXECUTE (tmp = TYtype2DebugString (fun, TRUE, 0));
@@ -1373,6 +1372,8 @@ TYmakeFunType (ntype *params, ntype *res_type, node *fundef)
 
     DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on leaving  TYmakeFunType: %zu",
                     global.current_allocated_mem);
+
+    // fun = TYmakeOvFunType(fun);
 
     DBUG_RETURN (fun);
 }
@@ -1425,18 +1426,19 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
     DBUG_PRINT ("and               %s", tmp2);
     DBUG_EXECUTE (tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2));
 
+    if (TYisNonOvFun(fun1)) {
+        fun1 = TYmakeOvFunType(fun1);
+    }
+
+    if (TYisNonOvFun(fun2)) {
+        fun2 = TYmakeOvFunType(fun2);
+    }
+
     if (fun1 == NULL) {
         res = fun2;
     } else if (fun2 == NULL) {
         res = fun1;
     } else {
-        if (!TYisOvFun(fun1)) {
-            fun1 = TYmakeOvFunType(fun1);
-        }
-
-        if (!TYisOvFun(fun2)) {
-            fun2 = TYmakeOvFunType(fun2);
-        }
 
         if (OVFUN_NFUNS(fun1) <= OVFUN_NFUNS(fun2)) {
             res = fun2;
@@ -2184,16 +2186,15 @@ DebugPrintDFT_state (dft_state *state)
 #endif /* DBUG_OFF */
 
 dft_res *
-TYdispatchFunType (ntype *ovfun, ntype *args) // fun is called function, args is args in call
+TYdispatchFunType (ntype *fun, ntype *args) // fun is called function, args is args in call
 {
     int ups, downs;
     size_t i, nArgs, nFuns, nParams;
-    ntype *arg, *f, *param, *fParams, *rets;
+    ntype *arg, *f, *param, *fParams, *rets, *ovfun;
     node *fundef;
     dft_res *res;
     dft_state *state = NULL;
     bool legal;
-    ntype *ires = NULL;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
     char *tmp = NULL;
@@ -2202,10 +2203,15 @@ TYdispatchFunType (ntype *ovfun, ntype *args) // fun is called function, args is
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (ovfun != NULL, "first arg of TYDispatchFunType is NULL funtype !");
-    DBUG_ASSERT (TYisOvFun(ovfun), "function is not overloaded !");
+    DBUG_ASSERT (fun != NULL, "first arg of TYDispatchFunType is NULL funtype !");
     DBUG_ASSERT (NTYPE_CON (args) == TC_prod,
                  "second arg of TYDispatchFunType non-product type!");
+
+    if (TYisNonOvFun(fun)) {
+        ovfun = TYmakeOvFunType(fun);
+    } else {
+        ovfun = fun;
+    }
 
     nArgs = ARGS_NARGS (args);
     nFuns = OVFUN_NFUNS (ovfun);
@@ -2233,7 +2239,7 @@ TYdispatchFunType (ntype *ovfun, ntype *args) // fun is called function, args is
             nParams = PARAMS_NPARAMS(fParams); 
 
             // accumulate ups and downs, remove illegals
-            if (nArgs == nParams) { // arity must match
+            if (nArgs == nParams) { // arity must match, TODO: it shouldnt have to though!!
                 for (size_t j = 0; j < nParams && legal; j++) { // loop through all args
                     arg = NTYPE_SON(args, j);
                     param = NTYPE_SON(fParams, j);
@@ -2313,14 +2319,14 @@ TYdispatchFunType (ntype *ovfun, ntype *args) // fun is called function, args is
                 if (legal) {
                     rets = FUN_RETS(f);
                 }
-                state = insertFuncDFT_state(state, i, NTYPE_SON(f, 1), ups, downs, legal);
+                state = insertFuncDFT_state(state, i, f, ups, downs, legal);
             } else {
                 CTIabort (LINE_TO_LOC (global.linenum),
                         "Variable arity not implemented.");
             }
         }
 
-        if (ires == NULL) {
+        if (rets == NULL) {
             f = OVFUN_FUN(ovfun, 0);
             rets = FUN_RETS(f);
             arg = ARGS_ARG(args, 0);
@@ -2777,14 +2783,24 @@ bool
 TYisFun (ntype *type)
 {
     DBUG_ENTER ();
-    DBUG_RETURN (NTYPE_CON (type) == TC_fun);
+    if (type == NULL) {DBUG_RETURN(false);}
+    DBUG_RETURN (NTYPE_CON (type) == TC_fun || NTYPE_CON (type) == TC_ovfun);
 }
 
 bool
 TYisOvFun (ntype *type)
 {
     DBUG_ENTER ();
+    if (type == NULL) {DBUG_RETURN(false);}
     DBUG_RETURN (NTYPE_CON (type) == TC_ovfun);
+}
+
+bool
+TYisNonOvFun (ntype *type)
+{
+    DBUG_ENTER ();
+    if (type == NULL) {DBUG_RETURN(false);}
+    DBUG_RETURN (NTYPE_CON (type) == TC_fun);
 }
 
 /******************************************************************************
@@ -3696,6 +3712,7 @@ TYfreeTypeConstructor (ntype *type)
         break;
     case TC_alpha:
         /* type variables are never freed since they are used in sharing! */
+    case TC_ovfun:
     case TC_fun:
     case TC_aud:
     case TC_audgz:
@@ -4193,6 +4210,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, size_t offset)
 
     buf = SBUFcreate (4096);
     switch (NTYPE_CON (type)) {
+    case TC_ovfun:
+    
     case TC_fun:
         buf = SBUFprintf (buf, "{ ");
         offset += 2;
@@ -4212,7 +4231,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, size_t offset)
         break;
     
     case TC_prod: // this gets called on every functions in TC_fun
-        args = TYgetProductMember(type, 0);
+        args = type;
         for (i = 0; i < NTYPE_ARITY(args); i++) {
             offset += 4;
             tmp_str = TYtype2String (TYgetProductMember(args,i), multiline, offset);
@@ -4220,9 +4239,9 @@ FunType2String (ntype *type, char *scal_str, bool multiline, size_t offset)
             buf = SBUFprintf (buf, " -> ");
             tmp_str = MEMfree (tmp_str);
         }
-        tmp_str = FunType2String(TYgetProductMember(type, 1), scal_str, multiline, offset);
-        buf = SBUFprint (buf, tmp_str);
-        tmp_str = MEMfree (tmp_str);
+        // tmp_str = FunType2String(TYgetProductMember(type, 1), scal_str, multiline, offset);
+        // buf = SBUFprint (buf, tmp_str);
+        // tmp_str = MEMfree (tmp_str);
         break;
 
 
@@ -4382,6 +4401,9 @@ TYtype2String (ntype *type, bool multiline, size_t offset)
         case TC_aks:
         case TC_akv:
             res = ArrayType2String (type);
+            break;
+        case TC_ovfun:
+            res = FunType2String (type, NULL, multiline, offset);
             break;
         case TC_fun:
             res = FunType2String (type, NULL, multiline, offset);
@@ -5301,6 +5323,7 @@ static ntype *
 SplitWrapperType (ntype *type, int *pathes_remaining)
 { 
     DBUG_ENTER();
+    DBUG_ASSERT(TYisOvFun(type), "Is not a overloaded function");
 
     ntype *new_type, *f, *fp, *fParams, *fpParams, *type1, *type2;
     size_t nParams;
@@ -5353,7 +5376,7 @@ TYsplitWrapperType (ntype *type, int *pathes_remaining)
 
     DBUG_ENTER ();
 
-    if (NTYPE_CON (type) == TC_fun) {
+    if (TYisFun(type)) {
 
         DBUG_EXECUTE_TAG ("NTY_SPLIT", tmp_str = TYtype2DebugString (type, TRUE, 20));
 
@@ -5405,16 +5428,24 @@ TYsplitWrapperType (ntype *type, int *pathes_remaining)
 ntype *
 TYgetWrapperRetType (ntype *type)
 {
-    ntype *ret_type;
+    ntype *ret_type, *f, *fres;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (type != NULL, "no type found!");
 
-    if (TYisFun (type)) {
-        type = NTYPE_SON(NTYPE_SON(NTYPE_SON(type, 0), 1), 0);
+    if (TYisOvFun (type)) {
+        // Used to grab son of root ibase ires. Could be prod or fun. 
+        // We do not have this anymore, so what should this do?
+        // Currently grabbing rets of 1st fun.
+        f = OVFUN_FUN(type,0);
+        fres = FUN_RETS(f);
         DBUG_ASSERT (type != NULL, "ires not found!");
-        ret_type = TYgetWrapperRetType (type);
+        ret_type = TYgetWrapperRetType (fres);
+    } else if (TYisNonOvFun (type)) {
+        fres = FUN_RETS(type);
+        DBUG_ASSERT (type != NULL, "ires not found!");
+        ret_type = TYgetWrapperRetType (fres);
     } else {
         DBUG_ASSERT (TYisProd (type), "neither TC_fun nor TC_prod found!");
         ret_type = type;

@@ -54,7 +54,9 @@
 			"__bit_reference": "c",
 			"__string": "c",
 			"filesystem": "c",
-			"tuple": "c"
+			"tuple": "c",
+			"new_types.h": "c",
+			"specialization_oracle_static_shape_knowledge.h": "c"
 		}
 	}
 }

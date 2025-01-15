@@ -275,6 +275,7 @@ extern bool TYisUnion (ntype *);
 extern bool TYisProd (ntype *);
 extern bool TYisFun (ntype *);
 extern bool TYisOvFun (ntype *);
+extern bool TYisNonOvFun (ntype *);
 
 extern bool TYisAKSSymb (ntype *);
 extern bool TYisAKSUdt (ntype *);
